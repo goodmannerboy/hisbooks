@@ -32,6 +32,7 @@
 - **데스크톱 Claude Code**: `index.html`을 직접 열어 편집·커밋(로컬 파일).
 - **원격/웹 환경**(이 저장소가 클론된 샌드박스): 페이로드가 JSON 인코딩이라 파이썬으로 디코드(json.loads)→편집→재인코딩(json.dumps 후 `/`→`/`, `</script` 없는지 assert) 필요. node --check로 컴포넌트 JS 문법 검증.
 - 클라우드 로그인 UI는 페이로드 `<body>` 직후 오버레이(#cloud-gate) + `</body>` 직전 supabase-js(CDN)+로직 주입돼 있음.
+- ⚠️ **DC 템플릿 이벤트 바인딩 규칙(중요)**: `onclick="{{ ... }}"`에는 **인라인 화살표함수를 쓰면 안 됨** — `{{ () => this.setState({...}) }}`, `{{ () => this.openBulk() }}` 같은 인라인 표현식은 프레임워크가 핸들러로 **바인딩하지 못해 버튼이 완전히 먹통**이 됨(`button.onclick`이 null, scp 클래스 미부여). **반드시 핸들러 "참조"**를 써야 함: rv(렌더값) 객체에 `navGoFee: (() => this.setState({...}))` 처럼 함수 프로퍼티를 만들고 `onclick="{{ navGoFee }}"`로 참조. (v32.349에서 홈 빠른이동 3개+모바일 하단바 5개 버튼이 이 문제로 전부 먹통이던 것을 root rv에 `navGoHome/navGoBulk/navGoCheckin/navGoSchedule/navGoAdmin/navGoFee` 핸들러 추가해 수정. 새 네비 버튼 만들 때 이 패턴 준수.)
 
 ## 4. Supabase
 - URL: `https://vcfhttzbzgtszpuahibe.supabase.co`
