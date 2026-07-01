@@ -50,12 +50,12 @@
 - 딥그린 `#0C4631`, 크림 `#F4ECD7`, 골드 `#C9A227`. 폰트: -apple-system/SF Pro/Apple SD Gothic Neo.
 - 헤더: 크림 바탕 + "HIS Management System" 세리프 워드마크(딥그린) + HIS 물고기 마크.
 
-## 7-1. 알려진 프레임워크 버그: "탭 콘텐츠가 main 밖에 렌더링됨" (v32.339~343, 근본 수정 v32.343)
-- **증상**: 특정 탭(선생님 일지/학원 일지 등, 콘텐츠가 크고 무거운 뷰)이 빈 화면으로 보이다가 스크롤/재배치 트리거 시에만 나타남.
-- **근본 원인**: 번들러 프레임워크가 해당 뷰의 `sc-if` 콘텐츠를 `<main class="scroll-y">` **안이 아니라 `.sc-host`의 형제(sibling) `<div>`로** 렌더링하는 버그가 있음(템플릿 소스는 정상 중첩인데 런타임 DOM이 다름 — 프레임워크 자체 결함, 우리 코드로 원인 수정 불가).
-- **우회 수정(v32.347 최종)**: `componentDidUpdate`/`componentDidMount`의 `this._fixStrayView()` — `.sc-host`의 직계 자식 중 `<header>`를 포함하지 않는 `<div>`(= 엉뚱하게 렌더링된 콘텐츠, **1개 이상일 수 있음** — 예: 학원일지 탭은 `isAdminView`+`isFee` 두 블록이 동시에 stray가 됨)를 찾아, **`.sc-host` 자체를 `overflow-y:auto`로 스크롤시키고, header는 `position:sticky`, wrap(헤더+main 컨테이너)과 main은 `flex:0 0 auto`로 축소, 각 stray div는 `position:static`(순서대로 쌓임) + main-pad와 동일한 패딩**을 적용. 예전엔 stray div마다 `position:absolute`로 개별 배치했었는데, stray가 2개 이상이면 서로 같은 자리에 겹쳐버리는 버그가 있어서(예: 학원일지에서 헤더+세그먼트탭이 사라지고 수강료장부만 보임) 이 방식으로 교체함.
-- **주의**: flex(`flex:0 0 auto` 등)만으로 공간을 나누려던 초기 시도는 실패했었음 — `.sc-host > div { flex-shrink:0 !important }` 같은 기존 CSS와 충돌해서 `wrap`이 안 줄어듦. 지금은 `host` 자체를 스크롤시키고 `wrap`/`main` 모두에 `flex:0 0 auto`를 강제해서 우회함. 다른 탭에서도 같은 증상 재발하면 stray가 몇 개인지부터 콘솔에서 확인(`[...document.querySelector('.sc-host').children].filter(c=>c.tagName==='DIV'&&!c.contains(document.querySelector('main.scroll-y'))&&!c.querySelector('header')).length`).
-- **진단 시 사용한 방법**: 콘솔에서 `.sc-host` 자식 중 `main.scroll-y`를 포함 안 하고 `header`도 없는 div를 찾아 `getBoundingClientRect()`로 좌표 실측 → top 값이 `.sc-host` 높이와 같으면(=화면 바로 아래에서 시작) 이 버그로 확정.
+## 7-1. [해결됨] "선생님일지·학원일지 빈화면/스크롤" 버그 — 진짜 원인은 템플릿 구조 오류 (근본 수정 v32.348)
+- **증상**: 선생님 일지/학원 일지 탭이 빈 화면으로 보이거나, 스크롤을 한참 내려야 내용이 나옴. 학원일지는 헤더+세그먼트탭이 사라지고 하위 콘텐츠만 겹쳐 보이기도 함.
+- **진짜 근본 원인(v32.348에서 규명)**: 프레임워크 버그가 **아니었음**. 템플릿 페이로드에서 **`<div class="main-pad">`(스크롤 컨테이너 `<main class="scroll-y">` 안의 내용 래퍼)가 너무 일찍 닫혀 있었음.** 정상 5개 뷰(`isHome`/`isManage`/`isBulk`/`isMonthly`/`isExams`)는 전부 `.main-pad` 안에 있는데, `isAdminView`(학원일지)와 `isSchedule`(선생님일지) 두 `<sc-if>` 블록만 `.main-pad`가 닫힌 **뒤에**(=`<main>`의 직계 자식, main-pad의 형제) 위치해 있었음. 그래서 이 두 뷰만 스크롤 영역 밖/앱 레이아웃 밖으로 밀려나 빈화면·겹침이 발생.
+- **근본 수정**: `.main-pad`의 닫는 `</div>`를 뒤로 옮겨서 `isAdminView`+`isSchedule`까지 감싸도록 함(신규생 상담 overlay는 `position:fixed`라 안에 들어가도 무방). 이 한 번의 구조 수정으로 두 뷰가 다른 5개 뷰와 **완전히 동일한 DOM 위치**(main 안)에 렌더됨. 브라우저 실측으로 6개 탭 전부 stray 0개·정상 렌더 확인.
+- **제거된 임시 우회코드**: v32.326~347에서 시도했던 `_fixStrayView()` 메서드, `componentDidMount`의 MutationObserver 감시, 진단용 에러배너(`__his_err_banner`)를 **전부 삭제**함. 이제 코드가 깨끗함. (교훈: DOM을 사후에 JS로 옮기거나 스타일 패치하지 말고, **템플릿 구조에서 `.main-pad` 안/밖 여부부터 확인**할 것.)
+- **재발 시 진단법**: 새 탭 추가 시 그 뷰의 `<sc-if>` 블록이 `.main-pad`(약 254623~) 안에 있는지 확인. 콘솔 빠른 체크: `[...document.querySelector('.sc-host').children].filter(c=>c.tagName==='DIV'&&!c.contains(document.querySelector('main.scroll-y'))&&!c.querySelector('header')).length` 가 0보다 크면 그 뷰가 main 밖으로 샌 것 → 템플릿에서 `.main-pad` 밖에 있는지 확인.
 
 ## 7. 남은 일 / 아이디어
 - [x] **학원 일지 탭**(수강료+데이터 병합, 한눈에 대시보드, 선생님 현황) 구현·배포. (라이브 검증 필요)
