@@ -24,6 +24,32 @@
 <body>
   <script>/*compat-guard*/(function(){try{var ok=('DecompressionStream' in window)&&(typeof Promise!=='undefined')&&(typeof fetch!=='undefined')&&(typeof Uint8Array!=='undefined')&&(typeof Object.assign==='function');if(!ok){var w=document.createElement('div');w.setAttribute('style','position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:#0C4631;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font-family:sans-serif;padding:24px');var a=document.createElement('div');a.setAttribute('style','font-size:20px;font-weight:bold;margin-bottom:12px');a.textContent='이 브라우저에서는 열 수 없어요';var b=document.createElement('div');b.setAttribute('style','font-size:15px;line-height:1.6;opacity:.92;max-width:420px');b.textContent='최신 크롬(Chrome) 또는 엣지(Edge)로 이 주소를 다시 열어주세요. 인터넷 익스플로러나 오래된 브라우저는 지원되지 않습니다.';var c=document.createElement('div');c.appendChild(a);c.appendChild(b);w.appendChild(c);document.documentElement.appendChild(w);}}catch(e){}})();</script><div id="__bundler_thumbnail"></div>
   <div id="__bundler_loading" style="display:none;"></div>
+  <script>/*err-banner*/(function(){
+    function showErr(msg){
+      try{
+        var b=document.getElementById('__his_err_banner');
+        if(!b){
+          b=document.createElement('div');
+          b.id='__his_err_banner';
+          b.setAttribute('style','position:fixed;left:8px;right:8px;top:8px;z-index:2147483647;background:#b03030;color:#fff;font:12px/1.5 monospace;padding:10px 12px;border-radius:8px;max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-all;box-shadow:0 4px 16px rgba(0,0,0,.35);');
+          document.documentElement.appendChild(b);
+        }
+        var line=document.createElement('div');
+        line.style.borderTop='1px solid rgba(255,255,255,.3)';
+        line.style.paddingTop='6px';
+        line.style.marginTop='6px';
+        line.textContent=new Date().toLocaleTimeString()+' : '+msg;
+        b.appendChild(line);
+      }catch(e){}
+    }
+    window.addEventListener('error', function(e){
+      showErr((e && e.message) + ' @ ' + (e && e.filename) + ':' + (e && e.lineno) + (e && e.error && e.error.stack ? ('\n'+e.error.stack) : ''));
+    });
+    window.addEventListener('unhandledrejection', function(e){
+      var r = e && e.reason;
+      showErr('Promise rejection: ' + (r && r.message ? r.message : String(r)) + (r && r.stack ? ('\n'+r.stack) : ''));
+    });
+  })();</script>
 
   <script>
     
