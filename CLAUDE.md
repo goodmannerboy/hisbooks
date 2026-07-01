@@ -50,6 +50,13 @@
 - 딥그린 `#0C4631`, 크림 `#F4ECD7`, 골드 `#C9A227`. 폰트: -apple-system/SF Pro/Apple SD Gothic Neo.
 - 헤더: 크림 바탕 + "HIS Management System" 세리프 워드마크(딥그린) + HIS 물고기 마크.
 
+## 7-1. 알려진 프레임워크 버그: "탭 콘텐츠가 main 밖에 렌더링됨" (v32.339~343, 근본 수정 v32.343)
+- **증상**: 특정 탭(선생님 일지/학원 일지 등, 콘텐츠가 크고 무거운 뷰)이 빈 화면으로 보이다가 스크롤/재배치 트리거 시에만 나타남.
+- **근본 원인**: 번들러 프레임워크가 해당 뷰의 `sc-if` 콘텐츠를 `<main class="scroll-y">` **안이 아니라 `.sc-host`의 형제(sibling) `<div>`로** 렌더링하는 버그가 있음(템플릿 소스는 정상 중첩인데 런타임 DOM이 다름 — 프레임워크 자체 결함, 우리 코드로 원인 수정 불가).
+- **우회 수정**: `componentDidUpdate`/`componentDidMount`의 `this._fixStrayView()` — `.sc-host`의 직계 자식 중 `<header>`를 포함하지 않는 `<div>`(= 엉뚱하게 렌더링된 콘텐츠)를 찾아 `position:absolute; top:<header 높이>px; left:0; right:0; bottom:0; overflow-y:auto;`로 강제 배치. header 아래 공간을 정확히 채움. `MutationObserver`로 `.sc-host` childList 변화도 이중 감시.
+- **주의**: flex(`flex:0 0 auto` 등)로 공간을 나누려는 시도는 실패함 — `.sc-host > div { flex-shrink:0 !important }` 같은 기존 CSS와 충돌. **반드시 absolute 위치 방식 유지**. 다른 탭에서도 같은 증상 재발하면 `_fixStrayView()`의 stray-div 감지 로직이 해당 케이스를 못 잡는지부터 확인(예: header가 없는 다른 정상 sibling div가 있으면 오탐 가능).
+- **진단 시 사용한 방법**: 콘솔에서 `.sc-host` 자식 중 `main.scroll-y`를 포함 안 하고 `header`도 없는 div를 찾아 `getBoundingClientRect()`로 좌표 실측 → top 값이 `.sc-host` 높이와 같으면(=화면 바로 아래에서 시작) 이 버그로 확정.
+
 ## 7. 남은 일 / 아이디어
 - [x] **학원 일지 탭**(수강료+데이터 병합, 한눈에 대시보드, 선생님 현황) 구현·배포. (라이브 검증 필요)
 - [ ] **Supabase Confirm email OFF** 확인(블로커). ← 선생님 현황에 선생님이 뜨려면 이게 꺼져 있어야 자체 회원가입/로그인이 됨.
