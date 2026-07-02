@@ -32,6 +32,7 @@
 - **데스크톱 Claude Code**: `index.html`을 직접 열어 편집·커밋(로컬 파일).
 - **원격/웹 환경**(이 저장소가 클론된 샌드박스): 페이로드가 JSON 인코딩이라 파이썬으로 디코드(json.loads)→편집→재인코딩(json.dumps 후 `/`→`/`, `</script` 없는지 assert) 필요. node --check로 컴포넌트 JS 문법 검증.
 - 클라우드 로그인 UI는 페이로드 `<body>` 직후 오버레이(#cloud-gate) + `</body>` 직전 supabase-js(CDN)+로직 주입돼 있음.
+- ⚠️ **학생 id 중복 가능성(중요)**: 일부 학생들이 같은 내부 id를 공유하는 데이터가 존재함(원인 미상 — 파일 합치기/명단붙여넣기 추정). 이러면 `document.getElementById('cap-'+id)`가 DOM에서 먼저 나온 다른 학생 카드를 반환해 **엉뚱한 학생이 복사됨**(v32.359에서 지윤→보경 버그). 근본 우회: 캡처 카드에 `data-sname`(학생 이름) 부여 + `_capEl(capId, sname)` 헬퍼로 이름 일치 카드를 선택(id 대신 이름으로 식별). copyRow/previewCard/previewTitle/큐 모두 이름 기반. id로 학생을 찾는 다른 로직(records/mileage recordFor 등)도 같은 중복 위험이 있으니, 학생 관련 신규 기능은 id 유일성을 가정하지 말 것. (근본 해결은 로드 시 중복 id 재배정이지만 records 분리 불가로 데이터 손상 위험 → 원장 확인 없이 자동 수정 금지.)
 - ⚠️ **DC 템플릿 이벤트 바인딩 규칙(중요)**: `onclick="{{ ... }}"`에는 **인라인 화살표함수를 쓰면 안 됨** — `{{ () => this.setState({...}) }}`, `{{ () => this.openBulk() }}` 같은 인라인 표현식은 프레임워크가 핸들러로 **바인딩하지 못해 버튼이 완전히 먹통**이 됨(`button.onclick`이 null, scp 클래스 미부여). **반드시 핸들러 "참조"**를 써야 함: rv(렌더값) 객체에 `navGoFee: (() => this.setState({...}))` 처럼 함수 프로퍼티를 만들고 `onclick="{{ navGoFee }}"`로 참조. (v32.349에서 홈 빠른이동 3개+모바일 하단바 5개 버튼이 이 문제로 전부 먹통이던 것을 root rv에 `navGoHome/navGoBulk/navGoCheckin/navGoSchedule/navGoAdmin/navGoFee` 핸들러 추가해 수정. 새 네비 버튼 만들 때 이 패턴 준수.)
 
 ## 4. Supabase
