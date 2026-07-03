@@ -65,3 +65,10 @@ data.examSets = [ {
 - **JS/Canvas 이식**(앱=서버없음, 브라우저 처리) + 업로드 UI + 검토화면(애매 빨강·1탭 확인) + 채점엔진(1~3단계) 연결.
 - **튜닝 샘플**: 연필 진하기·다른 학생 카드 2~3장 더 확보해 임계값 안정화.
 - 프로토타입 산출물: `scratchpad`의 read_block 로직(Python, OpenCV) — 이식 시 참조.
+
+### OMR 진행 (2026-07-04) — 카드 제작·판독·앱연결 완료
+- ✅ **HIS 전용 OMR 카드**: `HIS-OMR카드-가로형.pdf`(바탕화면) — 실물 수능형 가로 카드(타이밍마크·4정렬마크·생년월일 6열·45문항 3열, "내 판독 로직에 맞춰 제작" → 캘리브레이션 불필요). 생성기 `scratchpad/make_omr2.py`, 좌표 `omr_coords.json`.
+- ✅ **판독 알고리즘**(검증됨, 스캔 기울기 내성): 4정렬마크 검출(코너 슬라이딩윈도우 최소평균) → bilinear 매핑 → **행별 상대농도**(mean−min>18, min<210). 원장 실제 마킹본 100%, 닫힌루프(회전+블러) 100%, 배치 5명 100%.
+- ✅ **브라우저 판독기**: `HIS-OMR판독기.html`(바탕화면, 자기완결). 배치 데모 `scratchpad/omr_batch.html`(pdf.js). ⚠️ 자동화 브라우저에서 pdf.js `page.render` 대기(워커) — 실기기/정상환경은 정상. 이미지 업로드 경로는 정상.
+- ✅ **앱 연결(v32.406)**: 정답키 시험 모달 2단계에 "OMR 스캔 · 카드 이미지 불러오기" 버튼. `onOmrPick`(버튼 DC onclick→지속 `#__omrInput` 생성, vanilla onchange — **DC가 file input onchange 바인딩 안 함 우회**)→`onOmrFiles`(여러 이미지 루프)→`_omrReadCanvas`(좌표 임베드, 판독)→생년월일을 `student.intake.birth`(YYMMDD 정규화)와 대조해 학생 식별(없으면 선택 학생)→`applyOmr`(submissions 채움+채점+`data.exams` upsert). **앱 실검증**: 김민서 카드→자동식별·45/45·84/90·1등급·성적일지 레코드 생성. 콘솔 에러 0.
+- [ ] **남은 것**: (a) "**PDF 한 개(여러 학생)**" 지원 = 앱에 pdf.js 추가 + onOmrFiles에 PDF 분기(페이지별 렌더→readCanvas). 현재는 카드 **이미지 여러 장** 업로드로 배치 됨. (b) 전 학생 `intake.birth` 확보(기존생). (c) 애매/미매칭 검토 UI. (d) 실물 인쇄→마킹→스캔 최종검증.
