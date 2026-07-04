@@ -25,7 +25,7 @@
 4. `exams` 성적 성장일지
 5. `manage` 종합일지·신규등록(진단/상담)
 6. `checkin` 등하원(체크인 자동 출결연동, 반별×요일별 시간표 기반)
-7. `schedule` 선생님 일지(주간/월력 시간표+보강+상담기록)
+7. `schedule` 선생님 일지 — **애플식 세그먼트 4개**(`S.scheduleSeg`, 기본 'stu'): 내 학생(반별 보드·본인 담당 반만)·시간표(주간+월력+보강+상담)·등하원(체크인)·보고(원장님께 보고·건의). 세그먼트 바는 뷰 최상단, 색만 바뀌고 내용만 교체. rv `isSchedStu/isSchedJournal('cal')/isCheckin/isSchedTalk`. (v32.408)
 8. `admin` **학원 일지**(**관리자 전용**) — 수강료 장부 + 데이터를 합친 단일 탭. 상단 세그먼트(한눈에/수강료 장부/데이터). `S.adminSeg`('overview'|'fee'|'data')로 전환. 「한눈에」=대시보드: KPI 4개(총 학생·운영 반·오늘 미입력·수강료 미납) + **선생님 현황**(로그인/가입 상태) + 이번 달 수강료 요약 + 데이터·백업. 「수강료 장부」=기존 `isFee` 블록, 「데이터」=기존 `isData` 블록 재사용.
 - 비관리자(선생님)는 `admin`(학원 일지) 숨김. 본인 담당 반만 보임(잠금).
 - **선생님 현황 데이터**: 로그인 시 cloud gate `recordStaff(id)`가 `data.staff[이름]={name,role,admin,signupAt,lastLogin}`를 기록→app_state로 동기화. `persist()`는 staff 보존(덮어쓰기 방지). 대시보드는 `adminData` IIFE(view==='admin'일 때만 계산)로 렌더.
