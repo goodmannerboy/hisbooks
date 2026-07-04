@@ -63,10 +63,13 @@ async function sendAlimtalk(to: string, studentName: string) {
   const salt = crypto.randomUUID();
   const signature = await hmac(date + salt, SOLAPI_SECRET);
   const auth = `HMAC-SHA256 apiKey=${SOLAPI_KEY}, date=${date}, salt=${salt}, signature=${signature}`;
+  // 카톡 실패 시 문자로 대체발송될 내용 (알림톡과 동일)
+  const smsText = `[히즈어학원] ${studentName} 학생이 수업 시간이 지났는데 아직 등원하지 않았습니다. 확인 부탁드립니다.`;
   const body = {
     message: {
       to,
       from: SENDER,
+      text: smsText, // 대체발송(문자) 내용
       kakaoOptions: {
         pfId: PFID,
         templateId: TEMPLATE_ID,
