@@ -43,6 +43,7 @@
 - URL: `https://vcfhttzbzgtszpuahibe.supabase.co`
 - Publishable key(공개·클라이언트용): `sb_publishable_d-X3ubJw6n4P1zumfRZgrQ_rWDfhmWj`
 - 테이블 `public.app_state`(id PK='main', data jsonb, updated_at, client_id) + RLS(authenticated) + realtime. 단일 blob에 전체 학원 데이터 저장, localStorage['his-sys-v4'] 미러+0.7s 디바운스 업서트.
+- ⚠️ **동기화 = «합치기»(merge, v32.435~).** 예전엔 «마지막 저장이 통째로 이기는» 방식이라, 다른 기기가 옛 데이터로 올리면 그 사이 추가된 상담·성장일지·성적·출결 등이 통째로 유실됐음(원장 «상담 저장했는데 사라짐» 사고). **수정: 클라우드 게이트 IIFE의 `mergeAppData(base=클라우드, over=로컬)`가 모든 컬렉션을 합침** — 배열은 고유키 합집합(counsels/cash/reports=id, records=`classId|studentId|date`, exams=`examSetId|studentId`또는id, classes·students·makeups=id, teacherCalendar=이벤트id), 객체맵은 키 합집합(checkins=in/out병합, sent/capSent/noShowExcused=OR, fees=월, monthly/profile/notices/testNames, scholarshipPayments=내용중복제거, staff=최소가입·최신로그인), counselQ=질문합집합, 스칼라=최신값(단 adminPin/kioskPin은 빈값 덮어쓰기 방지). **`flushPush`=올리기 전 클라우드 읽어 합쳐 올림(read-merge-write), 부팅=클라우드로 로컬 덮기 대신 로컬+클라우드 합치기.** 병합 실패 시 전부 기존 동작으로 안전 폴백. ⚠️ **트레이드오프**: «누적기록 절대 안 지움» 최우선이라, 한 기기에서 **삭제**한 항목이 다른 기기의 옛 사본이 올라오면 **되살아날 수 있음**(삭제는 모든 기기 새로고침 후 진행 권장). 별도 함수 `this.mergeData`(컴포넌트 내)는 «수동 가져오기»용(동기화와 별개, 일부 컬렉션만).
 - 로그인 아이디 = `아이디 + @his.kr`(예 benjamin→benjamin@his.kr). `.local`은 Supabase가 거부함.
 - 가입코드: **`his`**. 신분: 베이크된 ACCOUNTS(benjamin=관리자) + 자체가입 선생님은 user_metadata{name,role:'teacher'}.
 - ⚠️ **미해결 블로커**: Supabase 대시보드 **Authentication→Email→"Confirm email" OFF** 해야 자체 회원가입/로그인 됨. (대시보드에서만 가능, 원장이 직접)
