@@ -13,14 +13,16 @@ create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
 -- 3) 10분마다 함수 호출 (운영시간대만: KST 13:00~22:59 = UTC 04~13시)
---    ⚠️ <PROJECT_REF> 와 <SERVICE_ROLE_KEY> 를 실제 값으로 바꿔서 실행하세요.
---    (이 SQL은 Supabase 대시보드 SQL Editor에서 실행 — 실제 키는 저장소에 올리지 마세요)
+--    ⚠️ 아래 <SERVICE_ROLE_KEY> 만 실제 값으로 바꿔서 실행하세요.
+--    (service_role 키 = Supabase 대시보드 → Project Settings → API → service_role.
+--     이 SQL은 대시보드 SQL Editor에서만 실행하고, 실제 키는 저장소/채팅에 올리지 마세요.)
+--    프로젝트 주소(vcfhttzbzgtszpuahibe)는 이미 채워져 있습니다.
 select cron.schedule(
   'his-noshow-alert',
   '*/10 4-13 * * *',
   $$
   select net.http_post(
-    url     := 'https://<PROJECT_REF>.supabase.co/functions/v1/noshow-alert',
+    url     := 'https://vcfhttzbzgtszpuahibe.supabase.co/functions/v1/noshow-alert',
     headers := jsonb_build_object(
                  'Authorization', 'Bearer <SERVICE_ROLE_KEY>',
                  'Content-Type',  'application/json'),
