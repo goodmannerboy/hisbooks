@@ -31,6 +31,7 @@
 - 비관리자(선생님)는 `admin`(학원 일지) 숨김. 본인 담당 반만 보임(잠금).
 - **선생님 현황 데이터**: 로그인 시 cloud gate `recordStaff(id)`가 `data.staff[이름]={name,role,admin,signupAt,lastLogin}`를 기록→app_state로 동기화. `persist()`는 staff 보존(덮어쓰기 방지). 대시보드는 `adminData` IIFE(view==='admin'일 때만 계산)로 렌더.
 - 주요 기능: 마일리지(출결0.2·과제차등·시험통과0.5, 결석=0)·티어·장학금, 리포트 4종 통일("A Note for You"+손글씨 서명 '— from {담당쌤}'), 학생 반이동, og:image(카톡 미리보기).
+- ⚠️ **신규생 «등록 확정» 게이팅**(v32.460): 신규 상담 접수(`startNewIntake`)한 학생은 `pending:true`로 생성되어 «등록 확정»(`confirmEnrollIntake`) 전까지 **아무 집계·장부·보드에 안 뜸**. 구현=`visibleClasses(data,user)`가 반환 직전 각 반의 `students`에서 `st.pending` 학생을 제외(pending 없는 반은 원본 참조 그대로, 있는 반만 얕은 복사). 이 관문을 쓰는 모든 표시 지점(수강료 장부 feeData, KPI board=전체원생·이번달신규, 학생관리/반별 보드 schedClasses 등)이 자동으로 확정 학생만 표시. **확정 시** `delete stu.pending` + `enrollDate`·`registeredAt`=today 설정 → 전 화면에 신규로 반영(신규 KPI/배지는 `registeredAt` 기준). pending 학생은 **접수 워크스페이스(종합일지›신규등록 `unassignedNew` «반배정 대기»)에는 계속 보임**(원본 dd.classes 직접 읽어 visibleClasses 안 거침) → 거기서 상담·레벨테스트·반배정·확정 진행. 소급 적용 안 됨(플래그 없는 기존 학생은 계속 표시). 수강료 장부 행엔 신규/퇴원 배지(v32.459), 학생 삭제=`removeStudent(cid,sid)`(v32.458).
 
 ## 3. 아키텍처 / 코드 수정법
 - `index.html` = **번들러 아티팩트**. 앱 페이로드는 파일에서 `"<!DOCTYPE html>...`로 시작하는 **JSON 인코딩된 한 줄**(현재 약 170번째 줄). 컴포넌트 로직은 그 안 `<script ... data-dc-script>`(class Component extends DCLogic).
