@@ -103,6 +103,7 @@ Deno.serve(async () => {
     const startM = toMin(start);
     if (startM == null || nowMin <= startM) continue; // 정시 안 지남
     for (const stu of (c.students || [])) {
+      if (stu && (stu.withdrawn || stu.pending)) continue; // 퇴원생·미확정 신규생 제외
       const key = stu.id + "|" + dateStr;
       const r = ck[key];
       if (r && r.in) continue;                  // 이미 등원
