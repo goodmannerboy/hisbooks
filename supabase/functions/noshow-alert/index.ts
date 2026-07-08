@@ -26,14 +26,34 @@ const KDAY = ["일", "월", "화", "수", "목", "금", "토"];
 const digits = (s: string) => String(s || "").replace(/[^0-9]/g, "");
 
 // 앱의 _classStart 와 동일: 시간표(times[요일].start) 우선 → 숫자키 → startTime
+// ⚠️ 오늘 요일에 실제 수업이 있을 때만 시작시각 반환(앱 _classStart 와 동일).
+//    schedule.days 있으면 오늘 요일 포함시만, 없으면 레거시 숫자키 있을 때만.
+//    (startTime/stale times 폴백이 요일 무시하고 매일 뜨던 버그 방지)
 function classStart(c: any, w: number): string {
   if (!c) return "";
   const day = KDAY[w];
-  if (c.schedule) {
-    if (c.schedule.times && c.schedule.times[day] && c.schedule.times[day].start) return c.schedule.times[day].start;
-    if (c.schedule[w]) return c.schedule[w];
-  }
+  const sc = c.schedule || {};
+  const days = (sc.days && sc.days.length) ? sc.days : null;
+  const hasNum = (sc[w] != null && sc[w] !== "");
+  if (days) { if (days.indexOf(day) < 0) return ""; }
+  else if (!hasNum) { return ""; }
+  if (sc.times && sc.times[day] && sc.times[day].start) return sc.times[day].start;
+  if (sc[w]) return sc[w];
   if (c.startTime) return c.startTime;
+  return "";
+}
+// 종료시각(앱 _classEnd 와 동일) — 수업 종료 후에는 미등원 발송 안 함.
+function classEnd(c: any, w: number): string {
+  if (!c) return "";
+  const day = KDAY[w];
+  const sc = c.schedule || {};
+  const days = (sc.days && sc.days.length) ? sc.days : null;
+  const hasNum = (sc[w] != null && sc[w] !== "");
+  if (days) { if (days.indexOf(day) < 0) return ""; }
+  else if (!hasNum) { return ""; }
+  if (sc.times && sc.times[day] && sc.times[day].end) return sc.times[day].end;
+  if (sc.end) return sc.end;
+  if (c.endTime) return c.endTime;
   return "";
 }
 const toMin = (hm: string) => {
@@ -102,6 +122,9 @@ Deno.serve(async () => {
     if (!start) continue;                       // 오늘 수업 없는 반
     const startM = toMin(start);
     if (startM == null || nowMin <= startM) continue; // 정시 안 지남
+    let endM = toMin(classEnd(c, w));
+    if (endM == null || endM <= startM) endM = startM + 120; // 종료 없으면 시작+2시간
+    if (nowMin > endM) continue;                // 수업 종료 후에는 발송 안 함
     for (const stu of (c.students || [])) {
       if (stu && (stu.withdrawn || stu.pending)) continue; // 퇴원생·미확정 신규생 제외
       const key = stu.id + "|" + dateStr;
