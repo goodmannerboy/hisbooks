@@ -106,7 +106,21 @@ async function sendAlimtalk(to: string, studentName: string) {
   return { ok: res.ok, status: res.status, text: await res.text() };
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // ── 테스트 발송: /noshow-alert?test=01012345678 → 그 번호로 «미등원» 알림톡 1건 발송.
+  //    (실제 미등원 여부와 무관 — 솔라피 키/발신번호/템플릿 승인이 맞는지 즉시 검증용) ──
+  try {
+    const _u = new URL(req.url);
+    const _t = _u.searchParams.get("test");
+    if (_t) {
+      const _p = digits(_t);
+      if (!_p) return new Response(JSON.stringify({ error: "test 전화번호를 못 읽음" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      if (!SOLAPI_KEY) return new Response(JSON.stringify({ error: "솔라피 키 미설정(secrets) — SOLAPI_API_KEY/SECRET/SENDER/PFID/TEMPLATE_ID 5개를 Supabase에 넣으세요" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      const _r = await sendAlimtalk(_p, "테스트");
+      return new Response(JSON.stringify({ test: true, to: _p, solapi_ok: _r.ok, solapi_status: _r.status, solapi_response: _r.text }), { headers: { "Content-Type": "application/json" } });
+    }
+  } catch (_e) { /* 테스트 파라미터 아니면 정상 로직으로 통과 */ }
+
   const sb = createClient(SB_URL, SB_KEY);
   const { data: row, error } = await sb.from("app_state").select("data").eq("id", "main").single();
   if (error || !row) return new Response(JSON.stringify({ error: "no app_state" }), { status: 500 });
