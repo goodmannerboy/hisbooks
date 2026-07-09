@@ -78,7 +78,11 @@ Deno.serve(async (req) => {
   if (error || !row) return new Response(JSON.stringify({ error: "app_state read fail", detail: (error && error.message) || "no row", hint: SB_KEY ? "check service_role key" : "set SB_SERVICE_KEY secret" }), { status: 500 });
   const data = row.data || {};
   const { dateStr, w, nowMin } = kstNow();
-  if (Array.isArray(data.closedDays) && data.closedDays.indexOf(dateStr) >= 0) {
+  const cd = data.closedDays;
+  let closedToday = false;
+  if (Array.isArray(cd)) closedToday = cd.indexOf(dateStr) >= 0;
+  else if (cd && typeof cd === "object") { const e = cd[dateStr]; closedToday = !!(e && e.v === 1); }
+  if (closedToday) {
     return new Response(JSON.stringify({ date: dateStr, closed: true, checked: 0, sent: [], skipped: [] }), { headers: { "Content-Type": "application/json" } });
   }
   const ck = data.checkins || {};
