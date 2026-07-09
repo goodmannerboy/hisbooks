@@ -15,7 +15,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// service_role 키: 자동주입(SUPABASE_SERVICE_ROLE_KEY)이 비어있는 프로젝트(신규 키형식 등)를
+// 대비해, 직접 넣은 시크릿(SB_SERVICE_KEY)을 우선 사용. 둘 다 없으면 빈 문자열.
+const SB_KEY = Deno.env.get("SB_SERVICE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const SOLAPI_KEY = Deno.env.get("SOLAPI_API_KEY") ?? "";
 const SOLAPI_SECRET = Deno.env.get("SOLAPI_API_SECRET") ?? "";
 const SENDER = Deno.env.get("SOLAPI_SENDER") ?? "";
@@ -123,7 +125,11 @@ Deno.serve(async (req) => {
 
   const sb = createClient(SB_URL, SB_KEY);
   const { data: row, error } = await sb.from("app_state").select("data").eq("id", "main").single();
-  if (error || !row) return new Response(JSON.stringify({ error: "no app_state" }), { status: 500 });
+  if (error || !row) return new Response(JSON.stringify({
+    error: "app_state 읽기 실패",
+    detail: (error && error.message) || "row 없음",
+    hint: SB_KEY ? "service_role 키가 유효한지 확인 (권한 부족일 수 있음)" : "SB_SERVICE_KEY 시크릿 미설정 — Supabase의 service_role 키를 SB_SERVICE_KEY로 넣으세요",
+  }), { status: 500 });
   const data = row.data || {};
   const { dateStr, w, nowMin } = kstNow();
   const ck = data.checkins || {};
