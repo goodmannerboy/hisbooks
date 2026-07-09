@@ -43,6 +43,7 @@
 - ⚠️ **DC 템플릿 이벤트 바인딩 규칙(중요)**: `onclick="{{ ... }}"`에는 **인라인 화살표함수를 쓰면 안 됨** — `{{ () => this.setState({...}) }}`, `{{ () => this.openBulk() }}` 같은 인라인 표현식은 프레임워크가 핸들러로 **바인딩하지 못해 버튼이 완전히 먹통**이 됨(`button.onclick`이 null, scp 클래스 미부여). **반드시 핸들러 "참조"**를 써야 함: rv(렌더값) 객체에 `navGoFee: (() => this.setState({...}))` 처럼 함수 프로퍼티를 만들고 `onclick="{{ navGoFee }}"`로 참조. (v32.349에서 홈 빠른이동 3개+모바일 하단바 5개 버튼이 이 문제로 전부 먹통이던 것을 root rv에 `navGoHome/navGoBulk/navGoCheckin/navGoSchedule/navGoAdmin/navGoFee` 핸들러 추가해 수정. 새 네비 버튼 만들 때 이 패턴 준수.)
 
 ## 4. Supabase
+- ⚠️ **supabase-js는 반드시 버전 고정 `@2.49.4`**(jsdelivr+unpkg 두 로더 모두, v32.527). 절대 `@2`(자동 최신)로 되돌리지 말 것 — 최신 릴리스가 옵셔널체이닝(`?.`)·널병합(`??`)·논리대입(`||=`) 포함 번들로 배포되면서 **스탠바이미(LG webOS) 등 구형 브라우저에서 파싱 자체가 깨져** «[bundle] Script error.»+클라우드 연결 실패(0 학생)를 유발했음. 버전 올릴 땐 UMD 번들을 받아 위 3개 문법이 0개인지 grep 확인 후 교체. CDN 로더 3종(supabase/pdf/xlsx)엔 `crossOrigin='anonymous'` 유지(교차출처 에러 가림 해제). 바깥 head의 전역 진단배너(`__hisBoom`, v32.525~527)는 앱(.sc-host) 미렌더 시에만 2.5s 지연 후 표시+앱 살아나면 자동 해제.
 - URL: `https://vcfhttzbzgtszpuahibe.supabase.co`
 - Publishable key(공개·클라이언트용): `sb_publishable_d-X3ubJw6n4P1zumfRZgrQ_rWDfhmWj`
 - 테이블 `public.app_state`(id PK='main', data jsonb, updated_at, client_id) + RLS(authenticated) + realtime. 단일 blob에 전체 학원 데이터 저장, localStorage['his-sys-v4'] 미러+0.7s 디바운스 업서트.
