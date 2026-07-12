@@ -134,6 +134,8 @@
     <span><i class="dot" style="background:rgba(120,123,134,.7)"></i>구간별 개별 경로</span>
     <span><i class="dot" style="background:var(--purple)"></i>파동 라벨(①~⑤/ⓐⓑⓒ 추정)</span>
     <span><i class="dot" style="background:var(--gold)"></i>다이버전스 연결선 · 2-4파 채널(금색 점선)</span>
+    <span><i class="dot" style="background:var(--purple)"></i>엔딩 다이애고널 쐐기(보라 점선)</span>
+    <span>가로 점선 = 피보나치 레벨(금색 = 61.8%·161.8%)</span>
     <span><i class="dot" style="background:var(--up)"></i>상승 추세선(저점 연결) <i class="dot" style="background:var(--down)"></i>하락 추세선(고점 연결)</span>
     <span>점선 밴드 = 신뢰구간(상·하위 25%)</span>
     <span>아래 창 = RSI(14)</span>
@@ -149,6 +151,8 @@
   데이터: Binance BTC/USDT(실패 시 업비트 자동 전환) · 유사도 = 봉모양 60% + RSI·다이버전스 상태 15% + 거래량 흐름 10% + 상위프레임 추세 일치 15% + 레짐(추세·변동성 국면) 필터 ·
   예상봉 = 상황 일치 상위 30곳의 유사도 가중 중앙값, 점선 밴드 = 상·하위 25% 분위수 ·
   파동 검증 = 엘리어트 3규칙(2파 미침범·3파 최단 아님·4파 미중첩) + 닐리(NeoWave) 되돌림 비율 3검사, 금색 점선 = 2-4파 추세채널 ·
+  엔딩 다이애고널 = 4파의 1파 침범(중첩)+파동 축소(1&gt;3&gt;5)+수렴 쐐기 충족 시 별도 판정(소진→급반전 경계) ·
+  피보나치 = 직전 주요 스윙 기준 되돌림(38.2/50/61.8/78.6%)·확장(127.2/161.8%) 가로 점선, 예상 경로의 도달 레벨을 판독문에 표기 ·
   백테스트 = 워크포워드(각 과거 시점에서 그 시점까지의 데이터만으로 신호 생성 → 실제와 대조, 약한 신호는 관망 처리).
 </div>
 
@@ -375,6 +379,40 @@ function waveGuess(cs, endIdx){
     return mk2;
   }
   function abcBase(a){ return '근거: C≈A ×'+a.ca.toFixed(2)+' · B 되돌림 '+(a.br*100).toFixed(0)+'%'; }
+
+  // ── 엔딩 다이애고널(수렴 쐐기): 4파가 1파 영역 «침범»(중첩 허용) + 파동 축소(1>3>5) + 고/저점은 순행 ──
+  var diag=null;
+  for(st=0; st+6<=last.length; st++){
+    w=last.slice(st,st+6);
+    // 하락 엔딩 다이애고널(하락 소진 → 급반등 경계)
+    if(w[0].t==='H'&&w[1].t==='L'&&w[2].t==='H'&&w[3].t==='L'&&w[4].t==='H'&&w[5].t==='L'){
+      var dd1=w[0].p-w[1].p, dd3=w[2].p-w[3].p, dd5=w[4].p-w[5].p;
+      if(dd1>0&&dd3>0&&dd5>0 && w[4].p>w[1].p && dd3<dd1 && dd5<dd3 && w[3].p<w[1].p && w[5].p<w[3].p){
+        if(!diag || w[5].i>diag.endI) diag={dir:-1, w:w, endI:w[5].i};
+      }
+    }
+    // 상승 엔딩 다이애고널(상승 소진 → 급락 경계)
+    if(w[0].t==='L'&&w[1].t==='H'&&w[2].t==='L'&&w[3].t==='H'&&w[4].t==='L'&&w[5].t==='H'){
+      var uu1=w[1].p-w[0].p, uu3=w[3].p-w[2].p, uu5=w[5].p-w[4].p;
+      if(uu1>0&&uu3>0&&uu5>0 && w[4].p<w[1].p && uu3<uu1 && uu5<uu3 && w[3].p>w[1].p && w[5].p>w[3].p){
+        if(!diag || w[5].i>diag.endI) diag={dir:1, w:w, endI:w[5].i};
+      }
+    }
+  }
+  if(diag && (!best || diag.endI>=best.endI) && (!abc || diag.endI>=abc.endI)){
+    var dlab=['①','②','③','④','⑤'], dmk=[];
+    for(var dm=1;dm<6;dm++) dmk.push({i:diag.w[dm].i, t:diag.w[dm].t, label:dlab[dm-1]});
+    var wedge = diag.dir===-1
+      ? {top:[{i:diag.w[2].i,p:diag.w[2].p},{i:diag.w[4].i,p:diag.w[4].p}], bot:[{i:diag.w[1].i,p:diag.w[1].p},{i:diag.w[3].i,p:diag.w[3].p}]}
+      : {top:[{i:diag.w[1].i,p:diag.w[1].p},{i:diag.w[3].i,p:diag.w[3].p}], bot:[{i:diag.w[2].i,p:diag.w[2].p},{i:diag.w[4].i,p:diag.w[4].p}]};
+    return {
+      text: diag.dir===-1 ? '하락 엔딩 다이애고널(수렴 쐐기) 추정 — 5파 소진, 급반등 경계 구간'
+                          : '상승 엔딩 다이애고널(수렴 쐐기) 추정 — 상승 소진, 급락 경계 구간',
+      q:'근거: 4파가 1파 영역 침범(다이애고널 고유 중첩) · 파동 축소 1>3>5 · 수렴 쐐기선',
+      markers:dmk, dir:0, diag:diag.dir, wedge:wedge,
+      bias: diag.dir===-1 ? 0.4 : -0.4
+    };
+  }
 
   if(best){ // 3규칙 전부+순행 통과한 «진짜» 임펄스만 도달
     var lab=['①','②','③','④','⑤'];
@@ -774,7 +812,8 @@ async function run(){
     if(dvSel.bear && dvSel.bear.i1>=showFrom)
       divLine(realS,{time:mainCs[dvSel.bear.i1].time,value:mainCs[dvSel.bear.i1].high},{time:mainCs[dvSel.bear.i2].time,value:mainCs[dvSel.bear.i2].high},'rgba(240,185,11,0.9)');
 
-    // ── 추세선 + 파동 채널(2-4선) — 예상 구간까지 연장해서 그림 ──
+    // ── 추세선 + 파동 채널(2-4선) + 다이애고널 쐐기 — 예상 구간까지 연장해서 그림 ──
+    var pvBig=pivots(mainCs,5,showFrom,n-2);
     var tlInfo={sup:null,res:null,channel:null};
     (function(){
       function lineAt(a,b,x){ var sl=(b.p-a.p)/(b.i-a.i); return b.p+sl*(x-b.i); }
@@ -784,9 +823,8 @@ async function run(){
         s.setData([{time:mainCs[a.i].time,value:a.p},{time:lastTime+M*step,value:lineAt(a,b,n-1+M)}]);
         extraSeries.push(s);
       }
-      var pvT=pivots(mainCs,5,showFrom,n-2);
-      var lows=pvT.filter(function(p){return p.t==='L';});
-      var highs=pvT.filter(function(p){return p.t==='H';});
+      var lows=pvBig.filter(function(p){return p.t==='L';});
+      var highs=pvBig.filter(function(p){return p.t==='H';});
       if(lows.length>=2){
         var a=lows[lows.length-2], b=lows[lows.length-1];
         tlInfo.sup={at:function(x){return lineAt(a,b,x);}};
@@ -796,6 +834,11 @@ async function run(){
         var c=highs[highs.length-2], d=highs[highs.length-1];
         tlInfo.res={at:function(x){return lineAt(c,d,x);}};
         drawL(c,d,'rgba(239,83,80,0.7)',false);
+      }
+      if(wgSel.wedge){ // 엔딩 다이애고널 수렴 쐐기선(보라 점선)
+        var wt=wgSel.wedge;
+        drawL({i:wt.top[0].i,p:wt.top[0].p},{i:wt.top[1].i,p:wt.top[1].p},'rgba(171,71,188,0.85)',true);
+        drawL({i:wt.bot[0].i,p:wt.bot[0].p},{i:wt.bot[1].i,p:wt.bot[1].p},'rgba(171,71,188,0.85)',true);
       }
       if(wgSel.dir===1 && wgSel.markers.length>=5){
         var w2=wgSel.markers[1], w4=wgSel.markers[3], w3=wgSel.markers[2];
@@ -815,6 +858,46 @@ async function run(){
           var off2=lineAt(C2,D2,l3.i)-mainCs[l3.i].low;
           drawL({i:C2.i,p:C2.p-off2},{i:D2.i,p:D2.p-off2},'rgba(240,185,11,0.45)',true);
         }
+      }
+    })();
+
+    // ── 피보나치 되돌림/확장 (직전 주요 스윙 기준, 가로 점선) ──
+    var fibTxt='';
+    (function(){
+      var highs=pvBig.filter(function(p){return p.t==='H';});
+      var lows=pvBig.filter(function(p){return p.t==='L';});
+      if(!highs.length||!lows.length) return;
+      var lastH=highs[highs.length-1], lastL=lows[lows.length-1];
+      function pl(price,label,strong){
+        realS.createPriceLine({price:price, color: strong?'rgba(240,185,11,0.85)':'rgba(120,123,134,0.5)', lineWidth:1, lineStyle:2, axisLabelVisible:true, title:label});
+      }
+      function money(x){ return Math.round(x).toLocaleString('ko-KR'); }
+      if(lastL.i>lastH.i){
+        // 최근 흐름 = 하락 스윙(H→L) → 반등 목표 = 상방 되돌림 레벨
+        var Hp=lastH.p, Lp=lastL.p, R=Hp-Lp;
+        if(R<=0) return;
+        pl(Lp+R*0.382,'반등 38.2%');
+        pl(Lp+R*0.5,'50%');
+        pl(Lp+R*0.618,'61.8%',true);
+        pl(Lp+R*0.786,'78.6%');
+        pl(Hp,'전고 100%');
+        var maxP=0, j2;
+        for(j2=0;j2<projCandles.length;j2++) maxP=Math.max(maxP,projCandles[j2].high);
+        var reach = maxP>=Lp+R*0.786?'78.6%':(maxP>=Lp+R*0.618?'61.8%':(maxP>=Lp+R*0.5?'50%':(maxP>=Lp+R*0.382?'38.2%':'38.2% 미만')));
+        fibTxt=' <b>피보나치(직전 하락 스윙 '+money(Hp)+'→'+money(Lp)+'):</b> 반등 목표 38.2%='+money(Lp+R*0.382)+' · <b>61.8%='+money(Lp+R*0.618)+'</b> · 78.6%='+money(Lp+R*0.786)+' — 예상 경로 고가는 <b>'+reach+'</b> 레벨권입니다.';
+      } else {
+        // 최근 흐름 = 상승 스윙(L→H) → 눌림 지지 되돌림 + 상방 확장 목표
+        var Hp2=lastH.p, Lp2=lastL.p, R2=Hp2-Lp2;
+        if(R2<=0) return;
+        pl(Hp2-R2*0.382,'눌림 38.2%');
+        pl(Hp2-R2*0.5,'50%');
+        pl(Hp2-R2*0.618,'61.8%',true);
+        pl(Lp2+R2*1.272,'확장 127.2%');
+        pl(Lp2+R2*1.618,'확장 161.8%',true);
+        var minP=Infinity, j3;
+        for(j3=0;j3<projCandles.length;j3++) minP=Math.min(minP,projCandles[j3].low);
+        var sup = minP<=Hp2-R2*0.618?'61.8% 이하(깊은 눌림)':(minP<=Hp2-R2*0.5?'50%':(minP<=Hp2-R2*0.382?'38.2%':'38.2% 이내(얕은 눌림)'));
+        fibTxt=' <b>피보나치(직전 상승 스윙 '+money(Lp2)+'→'+money(Hp2)+'):</b> 눌림 지지 38.2%='+money(Hp2-R2*0.382)+' · <b>61.8%='+money(Hp2-R2*0.618)+'</b>, 상방 확장 127.2%='+money(Lp2+R2*1.272)+' · <b>161.8%='+money(Lp2+R2*1.618)+'</b> — 예상 경로 저가는 <b>'+sup+'</b> 수준입니다.';
       }
     })();
     setTimeout(function(){ chart.timeScale().setVisibleLogicalRange({from:shown.length-P*2.2, to:shown.length+M+3}); }, 80);
@@ -874,7 +957,7 @@ async function run(){
     var q25End=q25Pts[q25Pts.length-1].value/lastClose-1, q75End=q75Pts[q75Pts.length-1].value/lastClose-1;
     $('v-text').innerHTML = '<span class="badge" style="background:rgba(255,255,255,0.06);color:'+confCol+';">신뢰도 '+confLv+' · 표본 '+matches.length+'곳 · 평균 모양유사 '+(meanShape*100).toFixed(0)+'%'+gateTxt+'</span><br>'
       +'<b>'+htfTxt+'</b> 속에서, '+selTf.label+' 기준 지금과 상황(모양+RSI+거래량+상위추세+국면)이 일치했던 과거 '+matches.length+'곳(유사도 가중)은 이후 '+M+'봉 동안 <b style="color:'+(mret>=0?'var(--up)':'var(--down)')+'">중앙값 '+pct(mret)+'</b> ('+ups+'/'+matches.length+' 상승), 신뢰밴드(25~75%)는 <b>'+pct(q25End)+' ~ '+pct(q75End)+'</b>이며 <b>«'+shapeTxt+'»</b> 형태가 가장 흔했습니다.'
-      +dvTxt+' 파동 위치: '+wgSel.text+'.'+chTxt+tlTxt+confWarn;
+      +dvTxt+' 파동 위치: '+wgSel.text+'.'+chTxt+tlTxt+fibTxt+confWarn;
 
     // 8) 매치 카드(상위 K개만 표시 — 통계는 30곳 전체 사용)
     var box=$('matches'); box.innerHTML=''; $('mh').style.display='block';
