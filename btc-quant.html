@@ -95,7 +95,7 @@
     <select id="flen"><option value="10">10봉</option><option value="20" selected>20봉</option><option value="30">30봉</option></select></div>
   <div class="ctl"><label>유사 구간 수</label>
     <select id="topk"><option value="5" selected>5개</option><option value="10">10개</option></select></div>
-  <button id="run">종합 분석 시작</button>
+  <button id="run">🔄 최신 시세로 재분석</button>
   <div id="status"></div>
 </div>
 
@@ -142,7 +142,7 @@
 
 <h2 id="mh" style="display:none;">🔍 상황까지 일치한 과거 구간 (당시 맥락 표시)</h2>
 <div class="matches" id="matches"></div>
-<div id="empty">「종합 분석 시작」을 누르면 7개 타임프레임 데이터를 내려받아 분석합니다(수 초 소요).</div>
+<div id="empty">접속하면 자동으로 7개 타임프레임 데이터를 내려받아 분석합니다(수 초 소요). 봉 주기·설정을 바꾸면 즉시 반영되고, 「🔄 최신 시세로 재분석」을 누르면 데이터를 새로 받습니다.</div>
 
 <div class="note">
   ⚠️ <b>과거 통계·기술적 참고용</b>입니다. 파동 카운트는 규칙 기반 «추정»이며 해석자마다 다를 수 있고, 어떤 지표 조합도 미래를 보장하지 않습니다. 투자 조언이 아니며 매매 판단과 책임은 본인에게 있습니다.<br>
@@ -167,6 +167,7 @@ var TFS=[
 var HTF={ '1w':null, '1d':'1w', '4h':'1d', '1h':'1d', '30m':'4h', '15m':'4h', '5m':'1h' };
 var TFW={ '1w':0.18, '1d':0.18, '4h':0.16, '1h':0.14, '30m':0.12, '15m':0.11, '5m':0.11 };
 var cache={};        // key -> candles
+var running=false, pendingRun=false; // 중복 실행 방지(설정 연타 시 마지막 것만 재실행)
 var chart=null, rsiChart=null, realS=null, projS=null, volS=null, rsiS=null, extraSeries=[];
 
 function setStatus(t,err){ var s=$('status'); s.textContent=t; s.className=err?'err':''; }
@@ -619,6 +620,8 @@ function drawSpark(canvas,cs,start,P,M){
 
 // ───────────────── 메인 ─────────────────
 async function run(){
+  if(running){ pendingRun=true; return; }
+  running=true;
   var tfKey=$('tf').value, P=+$('plen').value, M=+$('flen').value, K=+$('topk').value;
   $('run').disabled=true; $('empty').style.display='none';
   try{
@@ -884,9 +887,17 @@ async function run(){
     $('empty').textContent='분석 실패: '+err.message;
   }finally{
     $('run').disabled=false;
+    running=false;
+    if(pendingRun){ pendingRun=false; run(); } // 실행 중 설정이 바뀌었으면 최신 설정으로 한 번 더
   }
 }
-$('run').addEventListener('click',run);
+// 설정(봉 주기·패턴·예상·구간 수)을 바꾸면 즉시 자동 재분석(받아둔 데이터 재사용 → 1~2초)
+['tf','plen','flen','topk'].forEach(function(id){ $(id).addEventListener('change',run); });
+// 버튼 = 최신 시세를 새로 내려받아 전체 재분석
+$('run').addEventListener('click',function(){
+  Object.keys(cache).forEach(function(k){ delete cache[k]; });
+  run();
+});
 // 검수(감사)용 내부 노출 — 합성 데이터 단위검증에 사용
 window.__q={rsiArr:rsiArr,pearson:pearson,wQuant:wQuant,median:median,pivots:pivots,detectDiv:detectDiv,waveGuess:waveGuess,buildTFCtx:buildTFCtx,backtest:backtest,emaArr:emaArr};
 window.__q_cache=cache;
