@@ -333,44 +333,64 @@ function waveGuess(cs, endIdx){
   }
   for(st=0; st+6<=last.length; st++){
     w=last.slice(st,st+6);
-    // 상승 임펄스 L H L H L H
+    // 상승 임펄스 L H L H L H — 엘리어트 3규칙 «전부»(하드컷) + 고점 순행(3>1, 5>3: 플랫·레인지 배제)
     if(w[0].t==='L'&&w[1].t==='H'&&w[2].t==='L'&&w[3].t==='H'&&w[4].t==='L'&&w[5].t==='H'){
       var w1=w[1].p-w[0].p, w3=w[3].p-w[2].p, w5=w[5].p-w[4].p;
-      if(w1>0&&w3>0&&w5>0){
-        var rules=0;
-        if(w[2].p>w[0].p) rules++;
-        if(!(w3<w1&&w3<w5)) rules++;
-        if(w[4].p>w[1].p) rules++;
+      if(w1>0&&w3>0&&w5>0 && w[2].p>w[0].p && !(w3<w1&&w3<w5) && w[4].p>w[1].p && w[3].p>w[1].p && w[5].p>w[3].p){
         var neely=0, r2=(w[1].p-w[2].p)/w1, r4=(w[3].p-w[4].p)/w3;
         if(r2>=0.33&&r2<=0.99) neely++;
         if(r4>=0.2&&r4<=0.65) neely++;
         if(w3>=1.55*Math.min(w1,w5)) neely++;
-        consider({dir:1, rules:rules, neely:neely, w:w, endI:w[5].i});
+        consider({dir:1, rules:3, neely:neely, ext:(w3>=1.55*Math.max(w1,w5)), w:w, endI:w[5].i});
       }
     }
-    // 하락 임펄스 H L H L H L
+    // 하락 임펄스 H L H L H L — 동일 하드컷 + 저점 순행
     if(w[0].t==='H'&&w[1].t==='L'&&w[2].t==='H'&&w[3].t==='L'&&w[4].t==='H'&&w[5].t==='L'){
       var d1=w[0].p-w[1].p, d3=w[2].p-w[3].p, d5=w[4].p-w[5].p;
-      if(d1>0&&d3>0&&d5>0){
-        var rl=0;
-        if(w[2].p<w[0].p) rl++;
-        if(!(d3<d1&&d3<d5)) rl++;
-        if(w[4].p<w[1].p) rl++;
+      if(d1>0&&d3>0&&d5>0 && w[2].p<w[0].p && !(d3<d1&&d3<d5) && w[4].p<w[1].p && w[3].p<w[1].p && w[5].p<w[3].p){
         var ne=0, rr2=(w[2].p-w[1].p)/d1, rr4=(w[4].p-w[3].p)/d3;
         if(rr2>=0.33&&rr2<=0.99) ne++;
         if(rr4>=0.2&&rr4<=0.65) ne++;
         if(d3>=1.55*Math.min(d1,d5)) ne++;
-        consider({dir:-1, rules:rl, neely:ne, w:w, endI:w[5].i});
+        consider({dir:-1, rules:3, neely:ne, ext:(d3>=1.55*Math.max(d1,d5)), w:w, endI:w[5].i});
       }
     }
   }
   var lastC=cs[endIdx].close;
-  if(best && best.rules>=2){
+  // ── A-B-C(지그재그) 가설: 마지막 4피벗 = 3다리, 닐리 비율 검사(C≈A~1.618A, B 되돌림 25~95%) ──
+  var abc=null;
+  if(last.length>=4){
+    var l4=last.slice(-4);
+    var Al=Math.abs(l4[1].p-l4[0].p), Bl=Math.abs(l4[2].p-l4[1].p), Cl=Math.abs(l4[3].p-l4[2].p);
+    if(Al>0&&Cl>0){
+      var br=Bl/Al, ca=Cl/Al;
+      if(br>=0.25&&br<=0.95 && ca>=0.5&&ca<=2.2){
+        abc={l4:l4, br:br, ca:ca, endI:l4[3].i, down:l4[3].t==='L'};
+      }
+    }
+  }
+  function abcMarkers(l4){
+    var lab2=['ⓐ','ⓑ','ⓒ'], mk2=[];
+    for(var n2=1;n2<4;n2++) mk2.push({i:l4[n2].i, t:l4[n2].t, label:lab2[n2-1]});
+    return mk2;
+  }
+  function abcBase(a){ return '근거: C≈A ×'+a.ca.toFixed(2)+' · B 되돌림 '+(a.br*100).toFixed(0)+'%'; }
+
+  if(best){ // 3규칙 전부+순행 통과한 «진짜» 임펄스만 도달
     var lab=['①','②','③','④','⑤'];
     var mk=[];
     for(var m=1;m<6;m++) mk.push({i:best.w[m].i, t:best.w[m].t, label:lab[m-1]});
     var since=endIdx-best.endI;
     var endP=best.w[5].p;
+    // 임펄스 종료 뒤 새 피벗들이 반대방향 A-B-C를 이루면 → 조정 파동으로 통합 판독(ⓐⓑⓒ 라벨)
+    if(abc && abc.endI>best.endI && abc.down===(best.dir===1)){
+      var doneTxt = best.dir===1 ? '상승 임펄스 완료 → 조정 A-B-C 진행 중' : '하락 임펄스 완료 → 반등 A-B-C 진행 중';
+      var stage = abc.ca>=0.8 ? ' · C파 성숙(전환 관찰 구간)' : ' · C파 진행 여지';
+      return {text:doneTxt+stage, q:abcBase(abc)+' · 임펄스 3규칙 전부 통과',
+        markers:mk.concat(abcMarkers(abc.l4).filter(function(k){return k.i>best.endI;})),
+        dir:best.dir, abc:true,
+        bias: best.dir===1 ? (abc.ca>=0.8?0.2:-0.1) : (abc.ca>=0.8?-0.2:0.1)};
+    }
     var pos;
     if(best.dir===1){
       pos = since<=3 ? '5파 마무리 부근 — 이후 조정(A-B-C) 경계 구간'
@@ -381,20 +401,17 @@ function waveGuess(cs, endIdx){
     }
     return {
       text:(best.dir===1?'상승':'하락')+' 임펄스(1-2-3-4-5) 추정 · '+pos,
-      q:'엘리어트 '+best.rules+'/3 · 닐리 '+best.neely+'/3',
+      q:'엘리어트 3규칙 전부+고저점 순행 통과 · 닐리 '+best.neely+'/3'+(best.ext?' · 3파 연장':''),
       markers:mk, dir:best.dir, bias: best.dir===1 ? (since<=3? -0.3:0.3) : (since<=3? 0.3:-0.3)
     };
   }
-  // A-B-C 조정 추정: 마지막 4피벗
-  if(last.length>=4){
-    var l4=last.slice(-4);
-    var abLab=['ⓐ','ⓑ','ⓒ'];
-    var mk2=[], n2;
-    for(n2=1;n2<4;n2++) mk2.push({i:l4[n2].i, t:l4[n2].t, label:abLab[n2-1]});
-    var dirTxt = l4[3].t==='L' ? '하락형(매도 조정) A-B-C 추정 — C파 부근' : '상승형 A-B-C 추정 — C파 부근';
-    return {text:dirTxt, q:'임펄스 규칙 불충족 → 조정 구조로 해석', markers:mk2, dir:0, abc:true, bias: l4[3].t==='L'?0.15:-0.15};
+  if(abc){
+    var dirTxt = abc.down ? '하락형 조정 A-B-C 추정 — C파 부근' : '상승형 조정 A-B-C 추정 — C파 부근';
+    var stage2 = abc.ca>=0.8 ? ' (C 성숙 — 전환 관찰)' : ' (C 진행 여지)';
+    return {text:dirTxt+stage2, q:abcBase(abc)+' · 임펄스 요건(3규칙+순행) 불충족', markers:abcMarkers(abc.l4), dir:0, abc:true,
+      bias: abc.down? (abc.ca>=0.8?0.2:0.1) : (abc.ca>=0.8?-0.2:-0.1)};
   }
-  return {text:'복합 조정/횡보 추정', q:'', markers:[], dir:0, bias:0};
+  return {text:'복합 조정/횡보 추정', q:'뚜렷한 임펄스·지그재그 요건 모두 불충족', markers:[], dir:0, bias:0};
 }
 
 // ───────────────── 매칭(상황 가중) ─────────────────
@@ -780,7 +797,7 @@ async function run(){
         tlInfo.res={at:function(x){return lineAt(c,d,x);}};
         drawL(c,d,'rgba(239,83,80,0.7)',false);
       }
-      if(wgSel.dir===1 && wgSel.markers.length===5){
+      if(wgSel.dir===1 && wgSel.markers.length>=5){
         var w2=wgSel.markers[1], w4=wgSel.markers[3], w3=wgSel.markers[2];
         if(w2.t==='L'&&w4.t==='L'&&w3.t==='H'){
           var A={i:w2.i,p:mainCs[w2.i].low}, B={i:w4.i,p:mainCs[w4.i].low};
@@ -789,7 +806,7 @@ async function run(){
           var off=mainCs[w3.i].high - lineAt(A,B,w3.i);
           drawL({i:A.i,p:A.p+off},{i:B.i,p:B.p+off},'rgba(240,185,11,0.45)',true);
         }
-      } else if(wgSel.dir===-1 && wgSel.markers.length===5){
+      } else if(wgSel.dir===-1 && wgSel.markers.length>=5){
         var h2=wgSel.markers[1], h4=wgSel.markers[3], l3=wgSel.markers[2];
         if(h2.t==='H'&&h4.t==='H'&&l3.t==='L'){
           var C2={i:h2.i,p:mainCs[h2.i].high}, D2={i:h4.i,p:mainCs[h4.i].high};
