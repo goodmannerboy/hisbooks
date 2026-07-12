@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 멀티프레임 퀀트 분석 — 파동·다이버전스·거래량 종합 예상봉</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  :root{
+    --bg:#131722; --panel:#1e222d; --panel2:#252a38; --border:#2a2e39;
+    --text:#d1d4dc; --muted:#787b86; --up:#26a69a; --down:#ef5350;
+    --accent:#2962ff; --gold:#f0b90b; --purple:#ab47bc;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe UI','Malgun Gothic',sans-serif; padding:16px;}
+  h1{font-size:20px; font-weight:800; letter-spacing:-0.3px;}
+  h1 .btc{color:var(--gold);}
+  .sub{color:var(--muted); font-size:12.5px; margin-top:4px; line-height:1.5;}
+  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin:14px 0;
+    background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px;}
+  .ctl{display:flex; flex-direction:column; gap:4px;}
+  .ctl label{font-size:11px; color:var(--muted); font-weight:600;}
+  select{background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:7px;
+    padding:7px 10px; font-size:13px; outline:none; cursor:pointer;}
+  button#run{background:var(--accent); color:#fff; border:none; border-radius:8px; padding:9px 22px;
+    font-size:14px; font-weight:700; cursor:pointer;}
+  button#run:disabled{opacity:0.5; cursor:default;}
+  #status{font-size:12.5px; color:var(--muted); align-self:center; padding-bottom:2px;}
+  #status.err{color:var(--down);}
+
+  /* 종합 판독 */
+  .verdict{display:flex; gap:14px; align-items:stretch; margin:14px 0; flex-wrap:wrap;}
+  .gaugebox{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 18px; min-width:230px;}
+  .gaugebox .k{font-size:11px; color:var(--muted); font-weight:700;}
+  .score{font-size:34px; font-weight:900; margin:2px 0;}
+  .gbar{height:10px; border-radius:5px; background:linear-gradient(90deg,#ef5350,#787b86 50%,#26a69a); position:relative; margin-top:6px;}
+  .gbar .pin{position:absolute; top:-4px; width:4px; height:18px; background:#fff; border-radius:2px;}
+  .scenario{flex:1; min-width:280px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 18px;}
+  .scenario .k{font-size:11px; color:var(--muted); font-weight:700;}
+  .scenario .t{font-size:14px; line-height:1.7; margin-top:6px;}
+
+  /* 멀티TF 표 */
+  table.tf{width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--border); border-radius:10px; overflow:hidden; font-size:12.5px;}
+  table.tf th{background:var(--panel2); color:var(--muted); font-size:11px; padding:8px 10px; text-align:left; font-weight:700;}
+  table.tf td{padding:8px 10px; border-top:1px solid var(--border); vertical-align:middle;}
+  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700;}
+  .b-up{background:rgba(38,166,154,.15); color:var(--up);}
+  .b-down{background:rgba(239,83,80,.15); color:var(--down);}
+  .b-flat{background:rgba(120,123,134,.15); color:var(--muted);}
+  .b-bull{background:rgba(38,166,154,.2); color:var(--up);}
+  .b-bear{background:rgba(239,83,80,.2); color:var(--down);}
+  .b-none{color:var(--muted); font-size:11px;}
+  .wavetxt{font-size:11.5px; line-height:1.4;}
+  .wavetxt .q{color:var(--muted); font-size:10.5px;}
+
+  .chartwrap{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px; margin-top:14px;}
+  #chart{width:100%; height:430px;}
+  #rsichart{width:100%; height:110px; border-top:1px solid var(--border);}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); padding:8px 4px 2px;}
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+  .dot{width:9px; height:9px; border-radius:3px; display:inline-block;}
+
+  h2{font-size:15px; margin:18px 0 10px; font-weight:700;}
+  .matches{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px;}
+  .match{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px;}
+  .match .rank{font-size:11px; color:var(--muted); font-weight:700;}
+  .match .dates{font-size:12.5px; font-weight:600; margin:3px 0 6px;}
+  .match .row{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:3px;}
+  .match .row b{color:var(--text);}
+  .match .ctx{margin-top:6px; display:flex; gap:4px; flex-wrap:wrap;}
+  .match canvas{width:100%; height:64px; margin-top:8px; background:var(--panel2); border-radius:6px;}
+  .note{margin-top:18px; font-size:11.5px; color:var(--muted); line-height:1.7; border-top:1px solid var(--border); padding-top:12px;}
+  #empty{color:var(--muted); font-size:13px; padding:30px 0; text-align:center;}
+</style>
+</head>
+<body>
+<h1><span class="btc">₿</span> BTC 멀티프레임 퀀트 분석 <span style="font-weight:400;color:var(--muted);font-size:13px;">주봉→5분봉 · 파동 구조 · RSI 다이버전스 · 거래량 종합</span></h1>
+<div class="sub">7개 타임프레임의 추세·파동 구조(엘리어트 규칙+닐리 검증)·RSI 다이버전스·거래량을 판정해 종합 점수를 내고,
+기준 프레임에서는 <b>봉 모양 + 당시 RSI·다이버전스·거래량·상위추세 상황까지 지금과 일치하는 과거 구간</b>만 골라 예상봉을 그립니다.</div>
+
+<div class="controls">
+  <div class="ctl"><label>기준 봉 주기(예상봉 프레임)</label>
+    <select id="tf">
+      <option value="1w">주봉</option>
+      <option value="1d">일봉</option>
+      <option value="4h">4시간봉</option>
+      <option value="1h" selected>1시간봉</option>
+      <option value="30m">30분봉</option>
+      <option value="15m">15분봉</option>
+      <option value="5m">5분봉</option>
+    </select></div>
+  <div class="ctl"><label>패턴 길이</label>
+    <select id="plen"><option value="20">20봉</option><option value="30" selected>30봉</option><option value="45">45봉</option><option value="60">60봉</option></select></div>
+  <div class="ctl"><label>예상 길이</label>
+    <select id="flen"><option value="10">10봉</option><option value="20" selected>20봉</option><option value="30">30봉</option></select></div>
+  <div class="ctl"><label>유사 구간 수</label>
+    <select id="topk"><option value="5" selected>5개</option><option value="10">10개</option></select></div>
+  <button id="run">종합 분석 시작</button>
+  <div id="status"></div>
+</div>
+
+<div class="verdict" id="verdict" style="display:none;">
+  <div class="gaugebox">
+    <div class="k">종합 방향 점수 (-100 하락 ~ +100 상승)</div>
+    <div class="score" id="v-score">–</div>
+    <div class="gbar"><div class="pin" id="v-pin" style="left:50%"></div></div>
+    <div class="k" style="margin-top:8px;" id="v-verdict"></div>
+  </div>
+  <div class="gaugebox">
+    <div class="k">백테스트 — 이 설정의 과거 방향 적중률</div>
+    <div class="score" id="bt-hit" style="font-size:28px;">–</div>
+    <div class="k" id="bt-detail" style="margin-top:6px; line-height:1.5;"></div>
+  </div>
+  <div class="scenario">
+    <div class="k">시나리오 판독 (규칙 기반 자동 요약)</div>
+    <div class="t" id="v-text">–</div>
+  </div>
+</div>
+
+<div id="tfwrap" style="display:none;">
+  <h2 style="margin-top:4px;">📐 멀티 타임프레임 판독</h2>
+  <table class="tf">
+    <thead><tr><th>프레임</th><th>추세(EMA20/50)</th><th>파동 구조 추정</th><th>RSI · 다이버전스</th><th>거래량</th><th>패턴 예상(다음 10봉)</th></tr></thead>
+    <tbody id="tfbody"></tbody>
+  </table>
+</div>
+
+<div class="chartwrap" id="chartbox" style="display:none;">
+  <div id="chart"></div>
+  <div id="rsichart"></div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--up)"></i>실제 봉</span>
+    <span><i class="dot" style="background:rgba(41,98,255,.8)"></i>예상 봉(상황 일치 구간 중앙값)</span>
+    <span><i class="dot" style="background:rgba(120,123,134,.7)"></i>구간별 개별 경로</span>
+    <span><i class="dot" style="background:var(--purple)"></i>파동 라벨(①~⑤/ⓐⓑⓒ 추정)</span>
+    <span><i class="dot" style="background:var(--gold)"></i>다이버전스 연결선 · 2-4파 채널(금색 점선)</span>
+    <span><i class="dot" style="background:var(--up)"></i>상승 추세선(저점 연결) <i class="dot" style="background:var(--down)"></i>하락 추세선(고점 연결)</span>
+    <span>점선 밴드 = 신뢰구간(상·하위 25%)</span>
+    <span>아래 창 = RSI(14)</span>
+  </div>
+</div>
+
+<h2 id="mh" style="display:none;">🔍 상황까지 일치한 과거 구간 (당시 맥락 표시)</h2>
+<div class="matches" id="matches"></div>
+<div id="empty">「종합 분석 시작」을 누르면 7개 타임프레임 데이터를 내려받아 분석합니다(수 초 소요).</div>
+
+<div class="note">
+  ⚠️ <b>과거 통계·기술적 참고용</b>입니다. 파동 카운트는 규칙 기반 «추정»이며 해석자마다 다를 수 있고, 어떤 지표 조합도 미래를 보장하지 않습니다. 투자 조언이 아니며 매매 판단과 책임은 본인에게 있습니다.<br>
+  데이터: Binance BTC/USDT(실패 시 업비트 자동 전환) · 유사도 = 봉모양 60% + RSI·다이버전스 상태 15% + 거래량 흐름 10% + 상위프레임 추세 일치 15% + 레짐(추세·변동성 국면) 필터 ·
+  예상봉 = 상황 일치 상위 30곳의 유사도 가중 중앙값, 점선 밴드 = 상·하위 25% 분위수 ·
+  파동 검증 = 엘리어트 3규칙(2파 미침범·3파 최단 아님·4파 미중첩) + 닐리(NeoWave) 되돌림 비율 3검사, 금색 점선 = 2-4파 추세채널 ·
+  백테스트 = 워크포워드(각 과거 시점에서 그 시점까지의 데이터만으로 신호 생성 → 실제와 대조, 약한 신호는 관망 처리).
+</div>
+
+<script>
+(function(){
+var $=function(id){return document.getElementById(id);};
+var TFS=[
+  {key:'1w', label:'주봉',   sec:604800, total:600,  upKey:'weeks'},
+  {key:'1d', label:'일봉',   sec:86400,  total:3000, upKey:'days'},
+  {key:'4h', label:'4시간',  sec:14400,  total:3000, upKey:'minutes/240'},
+  {key:'1h', label:'1시간',  sec:3600,   total:3000, upKey:'minutes/60'},
+  {key:'30m',label:'30분',   sec:1800,   total:3000, upKey:'minutes/30'},
+  {key:'15m',label:'15분',   sec:900,    total:3000, upKey:'minutes/15'},
+  {key:'5m', label:'5분',    sec:300,    total:3000, upKey:'minutes/5'}
+];
+var HTF={ '1w':null, '1d':'1w', '4h':'1d', '1h':'1d', '30m':'4h', '15m':'4h', '5m':'1h' };
+var TFW={ '1w':0.18, '1d':0.18, '4h':0.16, '1h':0.14, '30m':0.12, '15m':0.11, '5m':0.11 };
+var cache={};        // key -> candles
+var chart=null, rsiChart=null, realS=null, projS=null, volS=null, rsiS=null, extraSeries=[];
+
+function setStatus(t,err){ var s=$('status'); s.textContent=t; s.className=err?'err':''; }
+function pct(x){ return (x>=0?'+':'')+(x*100).toFixed(2)+'%'; }
+function fmtDate(ts,tf){
+  var d=new Date(ts*1000);
+  var y=d.getFullYear(), mo=('0'+(d.getMonth()+1)).slice(-2), da=('0'+d.getDate()).slice(-2);
+  if(tf==='1w'||tf==='1d') return y+'.'+mo+'.'+da;
+  var h=('0'+d.getHours()).slice(-2), mi=('0'+d.getMinutes()).slice(-2);
+  return mo+'.'+da+' '+h+':'+mi;
+}
+
+// ───────────────── 데이터 ─────────────────
+async function fetchBinance(tf,total){
+  var out=[], endTime=Date.now();
+  while(out.length<total){
+    var lim=Math.min(1000,total-out.length);
+    var url='https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval='+tf+'&limit='+lim+'&endTime='+endTime;
+    var r=await fetch(url);
+    if(!r.ok) throw new Error('Binance HTTP '+r.status);
+    var j=await r.json();
+    if(!j.length) break;
+    out=j.concat(out);
+    endTime=j[0][0]-1;
+    if(j.length<lim) break;
+  }
+  return out.map(function(k){return {time:Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4], vol:+k[5]};});
+}
+async function fetchUpbit(upKey,total){
+  var out=[], to='';
+  total=Math.min(total,1200);
+  while(out.length<total){
+    var cnt=Math.min(200,total-out.length);
+    var url='https://api.upbit.com/v1/candles/'+upKey+'?market=KRW-BTC&count='+cnt+(to?'&to='+encodeURIComponent(to):'');
+    var r=await fetch(url);
+    if(!r.ok) throw new Error('Upbit HTTP '+r.status);
+    var j=await r.json();
+    if(!j.length) break;
+    out=out.concat(j);
+    to=j[j.length-1].candle_date_time_utc+'Z';
+    await new Promise(function(res){setTimeout(res,130);});
+  }
+  out.reverse();
+  return out.map(function(c){return {time:Math.floor(new Date(c.candle_date_time_utc+'Z').getTime()/1000),
+    open:c.opening_price, high:c.high_price, low:c.low_price, close:c.trade_price, vol:c.candle_acc_trade_volume};});
+}
+async function getCandles(tfDef){
+  if(cache[tfDef.key]) return cache[tfDef.key];
+  var cs;
+  try{ cs=await fetchBinance(tfDef.key, tfDef.total); }
+  catch(e){ cs=await fetchUpbit(tfDef.upKey, tfDef.total); }
+  // 페이지 경계 중복·역순 봉 방어(시간 순증만 유지)
+  var ded=[], i;
+  for(i=0;i<cs.length;i++){ if(!ded.length || cs[i].time>ded[ded.length-1].time) ded.push(cs[i]); }
+  cache[tfDef.key]=ded;
+  return ded;
+}
+
+// ───────────────── 지표 ─────────────────
+function emaArr(vals,n){
+  var out=new Array(vals.length), k=2/(n+1), prev=vals[0];
+  for(var i=0;i<vals.length;i++){ prev = i===0? vals[0] : vals[i]*k+prev*(1-k); out[i]=prev; }
+  return out;
+}
+function rsiArr(cs,n){
+  n=n||14;
+  var out=new Array(cs.length); out[0]=50;
+  var g=0,l=0,i;
+  for(i=1;i<cs.length;i++){
+    var d=cs[i].close-cs[i-1].close;
+    var up=d>0?d:0, dn=d<0?-d:0;
+    if(i<=n){ g+=up; l+=dn; out[i]=50; if(i===n){ g/=n; l/=n; out[i]= l===0?100: 100-100/(1+g/l);} }
+    else{ g=(g*(n-1)+up)/n; l=(l*(n-1)+dn)/n; out[i]= l===0?100: 100-100/(1+g/l); }
+  }
+  return out;
+}
+function atrPct(cs,n){
+  n=n||14;
+  var s=0,c=0;
+  for(var i=Math.max(1,cs.length-n); i<cs.length; i++){
+    var tr=Math.max(cs[i].high-cs[i].low, Math.abs(cs[i].high-cs[i-1].close), Math.abs(cs[i].low-cs[i-1].close));
+    s+=tr/cs[i].close; c++;
+  }
+  return c? s/c : 0.01;
+}
+// 피벗(좌우 span봉 대비 극값)
+function pivots(cs, span, from, to){
+  var out=[];
+  for(var i=Math.max(from,span); i<=to-span; i++){
+    var isH=true, isL=true;
+    for(var k=1;k<=span;k++){
+      if(cs[i].high < cs[i-k].high || cs[i].high < cs[i+k].high) isH=false;
+      if(cs[i].low  > cs[i-k].low  || cs[i].low  > cs[i+k].low ) isL=false;
+      if(!isH&&!isL) break;
+    }
+    if(isH) out.push({i:i, p:cs[i].high, t:'H'});
+    else if(isL) out.push({i:i, p:cs[i].low, t:'L'});
+  }
+  // 같은 타입 연속이면 더 극단만 유지
+  var f=[];
+  for(var j=0;j<out.length;j++){
+    var pv=out[j];
+    if(f.length && f[f.length-1].t===pv.t){
+      var last=f[f.length-1];
+      if((pv.t==='H'&&pv.p>=last.p)||(pv.t==='L'&&pv.p<=last.p)) f[f.length-1]=pv;
+    } else f.push(pv);
+  }
+  return f;
+}
+// RSI 다이버전스: 최근 lookback봉에서 가격/RSI 피벗 비교
+function detectDiv(cs, rsi, endIdx, lookback){
+  var from=Math.max(1,endIdx-lookback);
+  var pv=pivots(cs,3,from,endIdx-1);
+  var lows=pv.filter(function(p){return p.t==='L';});
+  var highs=pv.filter(function(p){return p.t==='H';});
+  var res={bull:null, bear:null};
+  var i;
+  for(i=lows.length-1;i>=1;i--){
+    var a=lows[i-1], b=lows[i];
+    if(b.i>endIdx-Math.min(40,lookback) && cs[b.i].low<cs[a.i].low && rsi[b.i]>rsi[a.i]+1){
+      res.bull={i1:a.i,i2:b.i,ago:endIdx-b.i}; break;
+    }
+  }
+  for(i=highs.length-1;i>=1;i--){
+    var a2=highs[i-1], b2=highs[i];
+    if(b2.i>endIdx-Math.min(40,lookback) && cs[b2.i].high>cs[a2.i].high && rsi[b2.i]<rsi[a2.i]-1){
+      res.bear={i1:a2.i,i2:b2.i,ago:endIdx-b2.i}; break;
+    }
+  }
+  return res;
+}
+// 거래량 흐름: 최근 10봉 평균 vs 30봉 평균
+function volState(cs,endIdx){
+  var s10=0,s30=0,i;
+  for(i=endIdx-9;i<=endIdx;i++) s10+=cs[i].vol;
+  for(i=endIdx-29;i<=endIdx;i++) s30+=cs[i].vol;
+  var r=(s10/10)/((s30/30)||1);
+  return {ratio:r, state: r>1.25?'증가':(r<0.8?'감소':'보통')};
+}
+// 추세: EMA20 vs EMA50
+function trendState(cs,endIdx){
+  var closes=cs.map(function(c){return c.close;});
+  var e20=emaArr(closes,20), e50=emaArr(closes,50);
+  var d=(e20[endIdx]-e50[endIdx])/e50[endIdx];
+  var ap=atrPct(cs.slice(0,endIdx+1));
+  if(d> ap*0.35) return {dir:1, txt:'상승'};
+  if(d<-ap*0.35) return {dir:-1, txt:'하락'};
+  return {dir:0, txt:'횡보'};
+}
+
+// ───────────────── 파동 구조 추정(엘리어트+닐리 휴리스틱) ─────────────────
+function waveGuess(cs, endIdx){
+  var ap=atrPct(cs.slice(0,endIdx+1));
+  var span=Math.max(3,Math.round(2/ (ap*100) )); // 변동성 클수록 촘촘히
+  span=Math.min(span,6);
+  var pv=pivots(cs,span,Math.max(0,endIdx-260),endIdx-1);
+  if(pv.length<4) return {text:'구조 불명확(변동 부족)', q:'', markers:[], dir:0, bias:0};
+  var last=pv.slice(-9);
+  var best=null, st, w;
+  function consider(cand){
+    if(!best || (cand.rules+cand.neely)>(best.rules+best.neely) ||
+       ((cand.rules+cand.neely)===(best.rules+best.neely)&&cand.endI>best.endI)) best=cand;
+  }
+  for(st=0; st+6<=last.length; st++){
+    w=last.slice(st,st+6);
+    // 상승 임펄스 L H L H L H
+    if(w[0].t==='L'&&w[1].t==='H'&&w[2].t==='L'&&w[3].t==='H'&&w[4].t==='L'&&w[5].t==='H'){
+      var w1=w[1].p-w[0].p, w3=w[3].p-w[2].p, w5=w[5].p-w[4].p;
+      if(w1>0&&w3>0&&w5>0){
+        var rules=0;
+        if(w[2].p>w[0].p) rules++;
+        if(!(w3<w1&&w3<w5)) rules++;
+        if(w[4].p>w[1].p) rules++;
+        var neely=0, r2=(w[1].p-w[2].p)/w1, r4=(w[3].p-w[4].p)/w3;
+        if(r2>=0.33&&r2<=0.99) neely++;
+        if(r4>=0.2&&r4<=0.65) neely++;
+        if(w3>=1.55*Math.min(w1,w5)) neely++;
+        consider({dir:1, rules:rules, neely:neely, w:w, endI:w[5].i});
+      }
+    }
+    // 하락 임펄스 H L H L H L
+    if(w[0].t==='H'&&w[1].t==='L'&&w[2].t==='H'&&w[3].t==='L'&&w[4].t==='H'&&w[5].t==='L'){
+      var d1=w[0].p-w[1].p, d3=w[2].p-w[3].p, d5=w[4].p-w[5].p;
+      if(d1>0&&d3>0&&d5>0){
+        var rl=0;
+        if(w[2].p<w[0].p) rl++;
+        if(!(d3<d1&&d3<d5)) rl++;
+        if(w[4].p<w[1].p) rl++;
+        var ne=0, rr2=(w[2].p-w[1].p)/d1, rr4=(w[4].p-w[3].p)/d3;
+        if(rr2>=0.33&&rr2<=0.99) ne++;
+        if(rr4>=0.2&&rr4<=0.65) ne++;
+        if(d3>=1.55*Math.min(d1,d5)) ne++;
+        consider({dir:-1, rules:rl, neely:ne, w:w, endI:w[5].i});
+      }
+    }
+  }
+  var lastC=cs[endIdx].close;
+  if(best && best.rules>=2){
+    var lab=['①','②','③','④','⑤'];
+    var mk=[];
+    for(var m=1;m<6;m++) mk.push({i:best.w[m].i, t:best.w[m].t, label:lab[m-1]});
+    var since=endIdx-best.endI;
+    var endP=best.w[5].p;
+    var pos;
+    if(best.dir===1){
+      pos = since<=3 ? '5파 마무리 부근 — 이후 조정(A-B-C) 경계 구간'
+          : (lastC<endP ? '임펄스 완료 후 조정 진행 중 추정' : '임펄스 연장 or 새 파동 시작 추정');
+    } else {
+      pos = since<=3 ? '하락 5파 마무리 부근 — 반등 경계 구간'
+          : (lastC>endP ? '하락 임펄스 완료 후 반등/조정 진행 중 추정' : '하락 연장 or 새 하락 파동 추정');
+    }
+    return {
+      text:(best.dir===1?'상승':'하락')+' 임펄스(1-2-3-4-5) 추정 · '+pos,
+      q:'엘리어트 '+best.rules+'/3 · 닐리 '+best.neely+'/3',
+      markers:mk, dir:best.dir, bias: best.dir===1 ? (since<=3? -0.3:0.3) : (since<=3? 0.3:-0.3)
+    };
+  }
+  // A-B-C 조정 추정: 마지막 4피벗
+  if(last.length>=4){
+    var l4=last.slice(-4);
+    var abLab=['ⓐ','ⓑ','ⓒ'];
+    var mk2=[], n2;
+    for(n2=1;n2<4;n2++) mk2.push({i:l4[n2].i, t:l4[n2].t, label:abLab[n2-1]});
+    var dirTxt = l4[3].t==='L' ? '하락형(매도 조정) A-B-C 추정 — C파 부근' : '상승형 A-B-C 추정 — C파 부근';
+    return {text:dirTxt, q:'임펄스 규칙 불충족 → 조정 구조로 해석', markers:mk2, dir:0, abc:true, bias: l4[3].t==='L'?0.15:-0.15};
+  }
+  return {text:'복합 조정/횡보 추정', q:'', markers:[], dir:0, bias:0};
+}
+
+// ───────────────── 매칭(상황 가중) ─────────────────
+function pearson(a,b){
+  var n=a.length, sa=0,sb=0,i;
+  for(i=0;i<n;i++){sa+=a[i]; sb+=b[i];}
+  var ma=sa/n, mb=sb/n, num=0, da=0, db=0;
+  for(i=0;i<n;i++){var x=a[i]-ma, y=b[i]-mb; num+=x*y; da+=x*x; db+=y*y;}
+  if(da===0||db===0) return 0;
+  return num/Math.sqrt(da*db);
+}
+function median(arr){
+  var s=arr.slice().sort(function(a,b){return a-b;});
+  var m=s.length>>1;
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2;
+}
+// 가중 분위수(유사도 점수를 가중치로)
+function wQuant(vals, ws, q){
+  var idx=[], i, tot=0;
+  for(i=0;i<vals.length;i++){ idx.push(i); tot+=ws[i]; }
+  idx.sort(function(a,b){return vals[a]-vals[b];});
+  var acc=0;
+  for(i=0;i<idx.length;i++){ acc+=ws[idx[i]]; if(acc>=q*tot) return vals[idx[i]]; }
+  return vals[idx[idx.length-1]];
+}
+// 레짐(국면) 컨텍스트: 추세 방향 + 변동성 수준 — 모두 과거 데이터만 사용(선견 편향 없음)
+function buildTFCtx(cs){
+  var n=cs.length, closes=cs.map(function(c){return c.close;});
+  var e20=emaArr(closes,20), e50=emaArr(closes,50);
+  var atr=new Array(n); atr[0]=0.01;
+  var prev=null;
+  for(var i=1;i<n;i++){
+    var tr=Math.max(cs[i].high-cs[i].low, Math.abs(cs[i].high-cs[i-1].close), Math.abs(cs[i].low-cs[i-1].close))/cs[i].close;
+    prev = prev===null? tr : (prev*13+tr)/14;
+    atr[i]=prev;
+  }
+  var atrBase=emaArr(atr,200);
+  return {
+    atr:atr,
+    trendAt:function(i){ var d=(e20[i]-e50[i])/e50[i]; var th=(atr[i]||0.01)*0.35; return d>th?1:(d<-th?-1:0); },
+    volRegAt:function(i){ var r=(atr[i]||0.01)/((atrBase[i])||atr[i]||0.01); return r>1.3?2:(r<0.75?0:1); }
+  };
+}
+// 워크포워드 백테스트: 과거 각 시점에서 «그 시점까지의 데이터만으로» 같은 방식의 예상을 만들어 실제와 대조
+function backtest(cs, ctx, P, M){
+  var n=cs.length;
+  var start=Math.max(320, 2*P+M+100);
+  var lastT=n-2-M;
+  if(lastT-start<60) return null;
+  var step=Math.max(2, Math.floor((lastT-start)/140));
+  var signals=0,hits=0,sN=0,sH=0,sampled=0;
+  for(var t=start;t<=lastT;t+=step){
+    sampled++;
+    var base=cs[t-P+1].close, cur=[], i;
+    for(i=0;i<P;i++) cur.push(cs[t-P+1+i].close/base-1);
+    var trC=ctx.trendAt(t), vrC=ctx.volRegAt(t);
+    var cand=[];
+    var sEnd=Math.min(t-P-M, t-2*P);
+    for(var s=60;s<=sEnd;s++){
+      var e=s+P-1;
+      if(Math.abs(ctx.volRegAt(e)-vrC)>1) continue;
+      var td=ctx.trendAt(e);
+      if(td!==trC && td!==0 && trC!==0) continue;
+      var w=[], b2=cs[s].close;
+      for(i=0;i<P;i++) w.push(cs[s+i].close/b2-1);
+      var c=pearson(cur,w);
+      if(c>=0.55) cand.push({c:c, ret: cs[e+M].close/cs[e].close-1});
+    }
+    if(cand.length<5) continue;
+    cand.sort(function(a,b){return b.c-a.c;});
+    var take=cand.slice(0,20).map(function(x){return x.ret;});
+    var pred=median(take);
+    var thr=0.25*(ctx.atr[t]||0.01)*Math.sqrt(M);
+    if(Math.abs(pred)<thr) continue;
+    var act=cs[t+M].close/cs[t].close-1;
+    signals++;
+    var hit=(pred>0&&act>0)||(pred<0&&act<0);
+    if(hit) hits++;
+    if(Math.abs(pred)>=2*thr){ sN++; if(hit) sH++; }
+  }
+  return {signals:signals,hits:hits,sN:sN,sH:sH,sampled:sampled};
+}
+function volTrendVal(cs,endIdx,P){
+  var h=Math.floor(P/2), s1=0,s2=0,i;
+  for(i=endIdx-P+1;i<=endIdx-h;i++) s1+=cs[i].vol;
+  for(i=endIdx-h+1;i<=endIdx;i++) s2+=cs[i].vol;
+  var r=(s2/h)/((s1/(P-h))||1);
+  return Math.max(-1,Math.min(1,Math.log(r||1)));
+}
+// 상위TF 추세 방향(특정 시각 기준)
+function htfDirAt(htfCs, htfCtx, ts){
+  if(!htfCs||!htfCtx) return 0;
+  var lo=0, hi=htfCs.length-1, idx=-1;
+  while(lo<=hi){ var mid=(lo+hi)>>1; if(htfCs[mid].time<=ts){idx=mid; lo=mid+1;} else hi=mid-1; }
+  if(idx<60) return 0;
+  return htfCtx.trendAt(idx); // 미리 계산한 컨텍스트 재사용(후보마다 EMA 재계산 방지 + 레짐 판정과 수식 일치)
+}
+function findMatchesCtx(cs, rsi, htfCs, htfCtx, P, M, N, ctx){
+  var n=cs.length;
+  var cur=[], base=cs[n-P].close, i;
+  for(i=0;i<P;i++) cur.push(cs[n-P+i].close/base-1);
+  var curRsi=rsi[n-1];
+  var curDivObj=detectDiv(cs,rsi,n-1,90);
+  var curDiv = curDivObj.bull?1:(curDivObj.bear?-1:0);
+  var curVt=volTrendVal(cs,n-1,P);
+  var curHtf=htfDirAt(htfCs, htfCtx, cs[n-1].time);
+  var curTrend=ctx.trendAt(n-1), curVolReg=ctx.volRegAt(n-1);
+  var sEnd=Math.min(n-P-M, n-2*P);
+  function collect(useGate){
+    var out=[];
+    for(var s=60; s<=sEnd; s++){
+      var e=s+P-1;
+      var td=ctx.trendAt(e);
+      if(useGate){
+        if(Math.abs(ctx.volRegAt(e)-curVolReg)>1) continue;          // 변동성 국면 격차 큼 → 제외
+        if(td!==curTrend && td!==0 && curTrend!==0) continue;        // 추세 국면 정반대 → 제외
+      }
+      var w=[], b2=cs[s].close;
+      for(i=0;i<P;i++) w.push(cs[s+i].close/b2-1);
+      var shape=pearson(cur,w);
+      if(shape<0.5) continue;
+      var rsiSim=1-Math.abs(curRsi-rsi[e])/100;
+      var dObj=detectDiv(cs,rsi,e,90);
+      var d=dObj.bull?1:(dObj.bear?-1:0);
+      var divSim = d===curDiv ? 1 : (d===0||curDiv===0 ? 0.5 : 0);
+      var vt=volTrendVal(cs,e,P);
+      var volSim=1-Math.min(1,Math.abs(curVt-vt));
+      var hd=htfDirAt(htfCs, htfCtx, cs[e].time);
+      var htfSim = hd===curHtf ? 1 : (hd===0||curHtf===0 ? 0.5 : 0);
+      var score=0.6*shape + 0.15*(0.7*rsiSim+0.3*divSim) + 0.1*volSim + 0.15*htfSim
+              + (td===curTrend?0.02:0) - (useGate?0:0.03);
+      out.push({i:s, shape:shape, score:score, rsi:rsi[e], div:d, vt:vt, htf:hd, regime:useGate});
+    }
+    return out;
+  }
+  var scored=collect(true);
+  var gated=true;
+  if(scored.length<10){ scored=scored.concat(collect(false)); gated=false; } // 표본 부족 시 레짐 필터 완화
+  scored.sort(function(a,b){return b.score-a.score;});
+  var picked=[], gap=Math.max(3,Math.floor(P/2));
+  for(var j=0;j<scored.length && picked.length<N;j++){
+    var ok=true;
+    for(var p=0;p<picked.length;p++){ if(Math.abs(scored[j].i-picked[p].i)<gap){ok=false;break;} }
+    if(ok) picked.push(scored[j]);
+  }
+  return {picked:picked, curDiv:curDivObj, curRsi:curRsi, curHtf:curHtf, gated:gated};
+}
+// 간단 모양 매칭(대시보드용): 다음 10봉 중앙값 수익률
+function quickPatternRet(cs){
+  var P=30, M=10, K=5, n=cs.length;
+  if(n<2*P+M+20) return null;
+  var cur=[], base=cs[n-P].close, i;
+  for(i=0;i<P;i++) cur.push(cs[n-P+i].close/base-1);
+  var scored=[];
+  for(var s=0;s<=Math.min(n-P-M,n-2*P);s+=2){
+    var w=[], b2=cs[s].close;
+    for(i=0;i<P;i++) w.push(cs[s+i].close/b2-1);
+    scored.push({i:s,c:pearson(cur,w)});
+  }
+  scored.sort(function(a,b){return b.c-a.c;});
+  var rets=[], used=[];
+  for(var j=0;j<scored.length&&rets.length<K;j++){
+    var ok=true;
+    for(var u=0;u<used.length;u++){ if(Math.abs(scored[j].i-used[u])<15){ok=false;break;} }
+    if(!ok) continue;
+    used.push(scored[j].i);
+    var e=scored[j].i+P-1;
+    rets.push(cs[e+M].close/cs[e].close-1);
+  }
+  return rets.length? median(rets) : null;
+}
+
+// ───────────────── 차트 ─────────────────
+function initCharts(){
+  if(chart){ try{chart.remove();}catch(e){} chart=null; }
+  if(rsiChart){ try{rsiChart.remove();}catch(e){} rsiChart=null; }
+  $('chart').innerHTML=''; $('rsichart').innerHTML='';
+  extraSeries=[];
+  chart=LightweightCharts.createChart($('chart'),{
+    layout:{background:{color:'#131722'}, textColor:'#d1d4dc'},
+    grid:{vertLines:{color:'#1e222d'}, horzLines:{color:'#1e222d'}},
+    rightPriceScale:{borderColor:'#2a2e39'},
+    timeScale:{borderColor:'#2a2e39', timeVisible:true},
+    crosshair:{mode:0}, autoSize:true
+  });
+  realS=chart.addCandlestickSeries({upColor:'#26a69a',downColor:'#ef5350',wickUpColor:'#26a69a',wickDownColor:'#ef5350',borderVisible:false});
+  projS=chart.addCandlestickSeries({upColor:'rgba(41,98,255,0.55)',downColor:'rgba(41,98,255,0.30)',wickUpColor:'rgba(41,98,255,0.55)',wickDownColor:'rgba(41,98,255,0.45)',borderVisible:true,borderColor:'rgba(41,98,255,0.9)'});
+  volS=chart.addHistogramSeries({priceScaleId:'', priceFormat:{type:'volume'}});
+  volS.priceScale().applyOptions({scaleMargins:{top:0.82,bottom:0}});
+  rsiChart=LightweightCharts.createChart($('rsichart'),{
+    layout:{background:{color:'#131722'}, textColor:'#787b86'},
+    grid:{vertLines:{visible:false}, horzLines:{color:'#1e222d'}},
+    rightPriceScale:{borderColor:'#2a2e39'},
+    timeScale:{borderColor:'#2a2e39', visible:false},
+    handleScroll:false, handleScale:false, autoSize:true
+  });
+  rsiS=rsiChart.addLineSeries({color:'#ab47bc', lineWidth:1.5, priceLineVisible:false, lastValueVisible:true});
+  rsiS.createPriceLine({price:70, color:'#3a3f4d', lineWidth:1, lineStyle:2, title:'70'});
+  rsiS.createPriceLine({price:30, color:'#3a3f4d', lineWidth:1, lineStyle:2, title:'30'});
+  chart.timeScale().subscribeVisibleLogicalRangeChange(function(r){ if(r) rsiChart.timeScale().setVisibleLogicalRange(r); });
+}
+
+function drawSpark(canvas,cs,start,P,M){
+  var dpr=window.devicePixelRatio||1;
+  var W=canvas.clientWidth*dpr, H=canvas.clientHeight*dpr;
+  canvas.width=W; canvas.height=H;
+  var ctx=canvas.getContext('2d');
+  var total=P+M, vals=[], i;
+  for(i=0;i<total;i++) vals.push(cs[start+i].close);
+  var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals);
+  var pad=4*dpr, sx=(W-2*pad)/(total-1), sy=(H-2*pad)/((mx-mn)||1);
+  function X(i){return pad+i*sx;} function Y(v){return H-pad-(v-mn)*sy;}
+  ctx.strokeStyle='rgba(240,185,11,0.5)'; ctx.lineWidth=1*dpr;
+  ctx.setLineDash([3*dpr,3*dpr]); ctx.beginPath(); ctx.moveTo(X(P-1),0); ctx.lineTo(X(P-1),H); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='#2962ff'; ctx.lineWidth=1.6*dpr; ctx.beginPath();
+  for(i=0;i<P;i++){ if(i===0)ctx.moveTo(X(i),Y(vals[i])); else ctx.lineTo(X(i),Y(vals[i])); }
+  ctx.stroke();
+  var up=vals[total-1]>=vals[P-1];
+  ctx.strokeStyle=up?'#26a69a':'#ef5350'; ctx.beginPath();
+  for(i=P-1;i<total;i++){ if(i===P-1)ctx.moveTo(X(i),Y(vals[i])); else ctx.lineTo(X(i),Y(vals[i])); }
+  ctx.stroke();
+}
+
+// ───────────────── 메인 ─────────────────
+async function run(){
+  var tfKey=$('tf').value, P=+$('plen').value, M=+$('flen').value, K=+$('topk').value;
+  $('run').disabled=true; $('empty').style.display='none';
+  try{
+    // 1) 7개 TF 데이터
+    var i, tfd;
+    for(i=0;i<TFS.length;i++){
+      tfd=TFS[i];
+      setStatus('데이터 수신 중… ['+tfd.label+'] ('+(i+1)+'/7)');
+      await getCandles(tfd);
+    }
+    // 2) 대시보드
+    setStatus('7개 프레임 판독 중…');
+    await new Promise(function(r){setTimeout(r,20);});
+    var rows=[], compo=0;
+    var tfInfo={};
+    for(i=0;i<TFS.length;i++){
+      tfd=TFS[i];
+      var cs=cache[tfd.key];
+      var end=cs.length-1;
+      var rsi=rsiArr(cs,14);
+      var tr=trendState(cs,end);
+      var dv=detectDiv(cs,rsi,end,90);
+      var vs=volState(cs,end);
+      var wg=waveGuess(cs,end);
+      var qr=quickPatternRet(cs);
+      var sub = 0.4*tr.dir
+              + 0.2*(dv.bull&&dv.bull.ago<=25?1:(dv.bear&&dv.bear.ago<=25?-1:0))
+              + 0.1*(vs.ratio>1.25? (tr.dir>=0?0.7:-0.7) : 0)
+              + 0.2*(qr===null?0:Math.max(-1,Math.min(1,qr*100/2)))
+              + 0.1*wg.bias;
+      compo += TFW[tfd.key]*sub*100;
+      tfInfo[tfd.key]={cs:cs,rsi:rsi,tr:tr,dv:dv,vs:vs,wg:wg,qr:qr};
+      rows.push({tfd:tfd,tr:tr,dv:dv,vs:vs,wg:wg,qr:qr,rsiV:rsi[end]});
+    }
+    // 표 렌더
+    var tb=$('tfbody'); tb.innerHTML='';
+    rows.forEach(function(r){
+      var trB = r.tr.dir>0?'<span class="badge b-up">상승</span>':(r.tr.dir<0?'<span class="badge b-down">하락</span>':'<span class="badge b-flat">횡보</span>');
+      var dvB = r.dv.bull&&r.dv.bull.ago<=25? '<span class="badge b-bull">상승 다이버전스('+r.dv.bull.ago+'봉 전)</span>'
+              : (r.dv.bear&&r.dv.bear.ago<=25? '<span class="badge b-bear">하락 다이버전스('+r.dv.bear.ago+'봉 전)</span>' : '<span class="b-none">없음</span>');
+      var volB = r.vs.state==='증가'?'<span class="badge b-up">증가 ×'+r.vs.ratio.toFixed(2)+'</span>':(r.vs.state==='감소'?'<span class="badge b-flat">감소 ×'+r.vs.ratio.toFixed(2)+'</span>':'<span class="b-none">보통</span>');
+      var qrB = r.qr===null? '<span class="b-none">–</span>' : '<b style="color:'+(r.qr>=0?'var(--up)':'var(--down)')+'">'+pct(r.qr)+'</b>';
+      tb.insertAdjacentHTML('beforeend','<tr><td><b>'+r.tfd.label+'</b></td><td>'+trB+'</td>'+
+        '<td class="wavetxt">'+r.wg.text+(r.wg.q?'<br><span class="q">'+r.wg.q+'</span>':'')+'</td>'+
+        '<td>RSI '+r.rsiV.toFixed(1)+' · '+dvB+'</td><td>'+volB+'</td><td>'+qrB+'</td></tr>');
+    });
+    $('tfwrap').style.display='block';
+
+    // 3) 종합 점수 + 시나리오
+    var sc=Math.max(-100,Math.min(100,Math.round(compo)));
+    $('v-score').textContent=(sc>0?'+':'')+sc;
+    $('v-score').style.color= sc>10?'var(--up)':(sc<-10?'var(--down)':'var(--text)');
+    $('v-pin').style.left=(50+sc/2)+'%';
+    $('v-verdict').textContent= sc>30?'상승 우위(강)':sc>10?'상승 우위':sc>-10?'중립 — 방향 대기':sc>-30?'하락 우위':'하락 우위(강)';
+    $('verdict').style.display='flex';
+
+    // 4) 기준 TF 상황가중 매칭 + 예상봉
+    var selTf=null;
+    for(i=0;i<TFS.length;i++) if(TFS[i].key===tfKey) selTf=TFS[i];
+    setStatus('['+selTf.label+'] 상황 일치 과거 구간 검색 중…');
+    await new Promise(function(r){setTimeout(r,20);});
+    var mainCs=cache[tfKey];
+    var mainRsi=tfInfo[tfKey].rsi;
+    var htfKey=HTF[tfKey];
+    var ctxMain=buildTFCtx(mainCs);
+    var htfCtxM=htfKey? buildTFCtx(cache[htfKey]) : null;
+    var N=30; // 통계용 표본(가중) — 카드에는 상위 K개만 표시
+    var mres=findMatchesCtx(mainCs, mainRsi, htfKey?cache[htfKey]:null, htfCtxM, P, M, N, ctxMain);
+    var matches=mres.picked;
+    var dispMatches=matches.slice(0,K);
+    if(!matches.length) throw new Error('충분히 비슷한 과거 구간을 찾지 못했습니다(패턴 길이를 줄여보세요)');
+
+    var n=mainCs.length, lastClose=mainCs[n-1].close, lastTime=mainCs[n-1].time, step=selTf.sec;
+    var wts=matches.map(function(mm){return mm.score;});
+    var projCandles=[], paths=[], j, m;
+    var q25Pts=[{time:lastTime,value:lastClose}], q75Pts=[{time:lastTime,value:lastClose}];
+    for(j=1;j<=M;j++){
+      var ro=[],rh=[],rl=[],rc=[];
+      for(m=0;m<matches.length;m++){
+        var e=matches[m].i+P-1, bC=mainCs[e].close, k=mainCs[e+j];
+        ro.push(k.open/bC); rh.push(k.high/bC); rl.push(k.low/bC); rc.push(k.close/bC);
+      }
+      var tt=lastTime+j*step;
+      var o5=lastClose*wQuant(ro,wts,0.5), h5=lastClose*wQuant(rh,wts,0.5), l5=lastClose*wQuant(rl,wts,0.5), c5=lastClose*wQuant(rc,wts,0.5);
+      h5=Math.max(h5,o5,c5); l5=Math.min(l5,o5,c5); // 분위수 독립 계산으로 생길 수 있는 모순 봉(고가<시가 등) 보정
+      projCandles.push({time:tt, open:o5, high:h5, low:l5, close:c5});
+      q25Pts.push({time:tt, value:lastClose*wQuant(rc,wts,0.25)});
+      q75Pts.push({time:tt, value:lastClose*wQuant(rc,wts,0.75)});
+    }
+    for(m=0;m<dispMatches.length;m++){
+      var e2=dispMatches[m].i+P-1, b3=mainCs[e2].close, pts=[{time:lastTime,value:lastClose}];
+      for(j=1;j<=M;j++) pts.push({time:lastTime+j*step, value:lastClose*mainCs[e2+j].close/b3});
+      paths.push(pts);
+    }
+    window.__q_last={proj:projCandles, q25:q25Pts, q75:q75Pts, nMatches:matches.length}; // 검수용
+
+    // 5) 차트 렌더 (컨테이너를 먼저 보이게 한 뒤 생성해야 크기 계산이 맞음)
+    $('chartbox').style.display='block';
+    initCharts();
+    var showFrom=Math.max(0,n-Math.max(140,P*3));
+    var shown=mainCs.slice(showFrom);
+    realS.setData(shown);
+    projS.setData(projCandles);
+    // 신뢰 밴드(상·하위 25% 가중 분위수) — 점선
+    var bU=chart.addLineSeries({color:'rgba(38,166,154,0.6)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
+    bU.setData(q75Pts); extraSeries.push(bU);
+    var bD=chart.addLineSeries({color:'rgba(239,83,80,0.6)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
+    bD.setData(q25Pts); extraSeries.push(bD);
+    volS.setData(shown.map(function(c){return {time:c.time, value:c.vol, color: c.close>=c.open?'rgba(38,166,154,0.35)':'rgba(239,83,80,0.35)'};}));
+    var rsiData=shown.map(function(c,idx){return {time:c.time, value:mainRsi[showFrom+idx]};});
+    for(j=1;j<=M;j++) rsiData.push({time:lastTime+j*step});
+    rsiS.setData(rsiData);
+    for(m=0;m<paths.length;m++){
+      var ls=chart.addLineSeries({color:'rgba(120,123,134,0.45)', lineWidth:1, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
+      ls.setData(paths[m]); extraSeries.push(ls);
+    }
+    // 파동 라벨 + 다이버전스 마커
+    var wgSel=tfInfo[tfKey].wg;
+    var markers=[];
+    wgSel.markers.forEach(function(mk){
+      if(mk.i>=showFrom) markers.push({time:mainCs[mk.i].time, position: mk.t==='H'?'aboveBar':'belowBar', color:'#ab47bc', shape:'circle', text:mk.label});
+    });
+    markers.sort(function(a,b){return a.time-b.time;});
+    realS.setMarkers(markers);
+    // 다이버전스 연결선(가격/RSI)
+    var dvSel=tfInfo[tfKey].dv;
+    function divLine(sr, p1, p2, col){
+      var s=chart.addLineSeries({color:col, lineWidth:2, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
+      s.setData([p1,p2]); extraSeries.push(s);
+    }
+    if(dvSel.bull && dvSel.bull.i1>=showFrom)
+      divLine(realS,{time:mainCs[dvSel.bull.i1].time,value:mainCs[dvSel.bull.i1].low},{time:mainCs[dvSel.bull.i2].time,value:mainCs[dvSel.bull.i2].low},'rgba(240,185,11,0.9)');
+    if(dvSel.bear && dvSel.bear.i1>=showFrom)
+      divLine(realS,{time:mainCs[dvSel.bear.i1].time,value:mainCs[dvSel.bear.i1].high},{time:mainCs[dvSel.bear.i2].time,value:mainCs[dvSel.bear.i2].high},'rgba(240,185,11,0.9)');
+
+    // ── 추세선 + 파동 채널(2-4선) — 예상 구간까지 연장해서 그림 ──
+    var tlInfo={sup:null,res:null,channel:null};
+    (function(){
+      function lineAt(a,b,x){ var sl=(b.p-a.p)/(b.i-a.i); return b.p+sl*(x-b.i); }
+      function drawL(a,b,col,dash){
+        var s=chart.addLineSeries({color:col,lineWidth:1.5,lineStyle:dash?2:0,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,
+          autoscaleInfoProvider:function(){return null;}}); // 추세선은 가격축 눈금 계산에서 제외(봉 납작해짐 방지)
+        s.setData([{time:mainCs[a.i].time,value:a.p},{time:lastTime+M*step,value:lineAt(a,b,n-1+M)}]);
+        extraSeries.push(s);
+      }
+      var pvT=pivots(mainCs,5,showFrom,n-2);
+      var lows=pvT.filter(function(p){return p.t==='L';});
+      var highs=pvT.filter(function(p){return p.t==='H';});
+      if(lows.length>=2){
+        var a=lows[lows.length-2], b=lows[lows.length-1];
+        tlInfo.sup={at:function(x){return lineAt(a,b,x);}};
+        drawL(a,b,'rgba(38,166,154,0.7)',false);
+      }
+      if(highs.length>=2){
+        var c=highs[highs.length-2], d=highs[highs.length-1];
+        tlInfo.res={at:function(x){return lineAt(c,d,x);}};
+        drawL(c,d,'rgba(239,83,80,0.7)',false);
+      }
+      if(wgSel.dir===1 && wgSel.markers.length===5){
+        var w2=wgSel.markers[1], w4=wgSel.markers[3], w3=wgSel.markers[2];
+        if(w2.t==='L'&&w4.t==='L'&&w3.t==='H'){
+          var A={i:w2.i,p:mainCs[w2.i].low}, B={i:w4.i,p:mainCs[w4.i].low};
+          tlInfo.channel={at:function(x){return lineAt(A,B,x);}, dir:1};
+          drawL(A,B,'rgba(240,185,11,0.9)',true);
+          var off=mainCs[w3.i].high - lineAt(A,B,w3.i);
+          drawL({i:A.i,p:A.p+off},{i:B.i,p:B.p+off},'rgba(240,185,11,0.45)',true);
+        }
+      } else if(wgSel.dir===-1 && wgSel.markers.length===5){
+        var h2=wgSel.markers[1], h4=wgSel.markers[3], l3=wgSel.markers[2];
+        if(h2.t==='H'&&h4.t==='H'&&l3.t==='L'){
+          var C2={i:h2.i,p:mainCs[h2.i].high}, D2={i:h4.i,p:mainCs[h4.i].high};
+          tlInfo.channel={at:function(x){return lineAt(C2,D2,x);}, dir:-1};
+          drawL(C2,D2,'rgba(240,185,11,0.9)',true);
+          var off2=lineAt(C2,D2,l3.i)-mainCs[l3.i].low;
+          drawL({i:C2.i,p:C2.p-off2},{i:D2.i,p:D2.p-off2},'rgba(240,185,11,0.45)',true);
+        }
+      }
+    })();
+    setTimeout(function(){ chart.timeScale().setVisibleLogicalRange({from:shown.length-P*2.2, to:shown.length+M+3}); }, 80);
+
+    // 6) 백테스트(워크포워드) — 이 설정이 과거에 실제로 맞았는지
+    setStatus('워크포워드 백테스트 검증 중…');
+    await new Promise(function(r){setTimeout(r,30);});
+    var bt=backtest(mainCs, ctxMain, P, M);
+    if(bt && bt.signals>=20){
+      var hr=bt.hits/bt.signals;
+      $('bt-hit').textContent=Math.round(hr*100)+'%';
+      $('bt-hit').style.color= hr>=0.55?'var(--up)':(hr<0.48?'var(--down)':'var(--text)');
+      $('bt-detail').textContent='과거 '+bt.signals+'회 신호 중 방향 적중 · 강한 신호만은 '+(bt.sN>=8? Math.round(100*bt.sH/bt.sN)+'% ('+bt.sN+'회)':'표본 부족');
+    } else {
+      $('bt-hit').textContent='표본 부족';
+      $('bt-hit').style.color='var(--muted)';
+      $('bt-detail').textContent='이 설정에선 과거 신호가 '+(bt?bt.signals:0)+'회뿐 — 통계적 판단 불가(패턴·예상 길이를 바꿔보세요)';
+    }
+
+    // 7) 시나리오 문장(신뢰도·추세선·채널 통합)
+    var rets=matches.map(function(mm){var e3=mm.i+P-1; return mainCs[e3+M].close/mainCs[e3].close-1;});
+    var ups=rets.filter(function(r){return r>0;}).length;
+    var mret=median(rets);
+    var minIdx=0, minV=Infinity;
+    for(j=0;j<projCandles.length;j++){ if(projCandles[j].low<minV){minV=projCandles[j].low; minIdx=j;} }
+    var shapeTxt = (mret>=0 ? (minIdx<M/3 ? '초반 눌림 후 상승' : '완만한 상승 흐름') : (minIdx>M*2/3 ? '반등 시도 후 하락 마감' : '하락 우세 흐름'));
+    var wTop=tfInfo['1d'].tr.dir, wWeek=tfInfo['1w'].tr.dir;
+    var htfTxt = (wWeek>0&&wTop>0)?'주봉·일봉 모두 상승 추세':(wWeek<0&&wTop<0)?'주봉·일봉 모두 하락 추세':'상위 프레임 방향 엇갈림(횡보성)';
+    var dvTxt='';
+    if(mres.curDiv.bull&&mres.curDiv.bull.ago<=25) dvTxt=' 현재 '+selTf.label+' RSI 상승 다이버전스가 살아 있어 반등 압력이 있습니다.';
+    else if(mres.curDiv.bear&&mres.curDiv.bear.ago<=25) dvTxt=' 현재 '+selTf.label+' RSI 하락 다이버전스가 있어 상승 탄력이 둔화될 수 있습니다.';
+    // 신뢰도
+    var meanShape=0; matches.forEach(function(mm){meanShape+=mm.shape;}); meanShape/=matches.length;
+    var confLv=(matches.length>=15&&meanShape>=0.7)?'높음':((matches.length>=8&&meanShape>=0.58)?'보통':'낮음');
+    var confCol=confLv==='높음'?'var(--up)':(confLv==='보통'?'var(--gold)':'var(--down)');
+    var confWarn=confLv==='낮음'?' ⚠️ 오늘은 과거에 충분히 닮은 상황이 적습니다 — 예상봉을 참고 최소로 두세요.':'';
+    var gateTxt=mres.gated?'':' (레짐 표본 부족으로 국면 필터 완화 적용)';
+    // 채널/추세선 판정
+    var chTxt='';
+    if(tlInfo.channel){
+      var cv=tlInfo.channel.at(n-1);
+      if(tlInfo.channel.dir===1) chTxt = lastClose>=cv ? ' <b>2-4파 상승 채널(금색 점선) 지지 유지 중</b> — 이탈 시 임펄스 종료 신호로 봅니다.' : ' <b>2-4파 상승 채널을 하향 이탈</b> — 임펄스 종료·조정 전환 가능성이 커진 상태입니다.';
+      else chTxt = lastClose<=cv ? ' <b>2-4파 하락 채널(금색 점선) 저항 유지 중</b> — 상향 돌파 시 하락 종료 신호로 봅니다.' : ' <b>2-4파 하락 채널을 상향 돌파</b> — 반등 전환 가능성이 커진 상태입니다.';
+    }
+    var tlTxt='';
+    if(tlInfo.sup){
+      var crossedS=false;
+      for(j=0;j<projCandles.length;j++){ if(projCandles[j].close < tlInfo.sup.at(n+j)){crossedS=true;break;} }
+      if(crossedS && mret<0) tlTxt=' 예상 경로가 <b>상승 추세선(초록 실선) 아래로 미끄러지는 형태</b> — 이 선의 공방이 관건입니다.';
+      else if(!crossedS && mret<0) tlTxt=' 하락 예상이지만 상승 추세선(초록 실선) 위에서 버티는 형태 — 추세선 지지 시 낙폭 제한 가능.';
+    }
+    if(!tlTxt && tlInfo.res){
+      var crossedR=false;
+      for(j=0;j<projCandles.length;j++){ if(projCandles[j].close > tlInfo.res.at(n+j)){crossedR=true;break;} }
+      if(crossedR && mret>0) tlTxt=' 예상 경로가 <b>하락 추세선(빨강 실선)을 상향 돌파하는 형태</b> — 실제 돌파 확인 시 신뢰가 올라갑니다.';
+    }
+    var q25End=q25Pts[q25Pts.length-1].value/lastClose-1, q75End=q75Pts[q75Pts.length-1].value/lastClose-1;
+    $('v-text').innerHTML = '<span class="badge" style="background:rgba(255,255,255,0.06);color:'+confCol+';">신뢰도 '+confLv+' · 표본 '+matches.length+'곳 · 평균 모양유사 '+(meanShape*100).toFixed(0)+'%'+gateTxt+'</span><br>'
+      +'<b>'+htfTxt+'</b> 속에서, '+selTf.label+' 기준 지금과 상황(모양+RSI+거래량+상위추세+국면)이 일치했던 과거 '+matches.length+'곳(유사도 가중)은 이후 '+M+'봉 동안 <b style="color:'+(mret>=0?'var(--up)':'var(--down)')+'">중앙값 '+pct(mret)+'</b> ('+ups+'/'+matches.length+' 상승), 신뢰밴드(25~75%)는 <b>'+pct(q25End)+' ~ '+pct(q75End)+'</b>이며 <b>«'+shapeTxt+'»</b> 형태가 가장 흔했습니다.'
+      +dvTxt+' 파동 위치: '+wgSel.text+'.'+chTxt+tlTxt+confWarn;
+
+    // 8) 매치 카드(상위 K개만 표시 — 통계는 30곳 전체 사용)
+    var box=$('matches'); box.innerHTML=''; $('mh').style.display='block';
+    dispMatches.forEach(function(mm,idx){
+      var s=mm.i, e4=mm.i+P-1;
+      var ret=mainCs[e4+M].close/mainCs[e4].close-1;
+      var ctxB='';
+      ctxB+='<span class="badge '+(mm.htf>0?'b-up':(mm.htf<0?'b-down':'b-flat'))+'">당시 상위추세 '+(mm.htf>0?'상승':(mm.htf<0?'하락':'횡보'))+'</span>';
+      ctxB+='<span class="badge b-flat">RSI '+mm.rsi.toFixed(0)+'</span>';
+      if(mm.div===1) ctxB+='<span class="badge b-bull">상승 Div</span>';
+      if(mm.div===-1) ctxB+='<span class="badge b-bear">하락 Div</span>';
+      ctxB+='<span class="badge b-flat">거래량 '+(mm.vt>0.1?'증가':(mm.vt<-0.1?'감소':'보통'))+'</span>';
+      var div=document.createElement('div'); div.className='match';
+      div.innerHTML='<div class="rank">#'+(idx+1)+' 상황 일치 구간 · 종합점수 '+(mm.score*100).toFixed(1)+'</div>'+
+        '<div class="dates">'+fmtDate(mainCs[s].time,tfKey)+' ~ '+fmtDate(mainCs[e4].time,tfKey)+'</div>'+
+        '<div class="row"><span>모양 유사도</span><b>'+(mm.shape*100).toFixed(1)+'%</b></div>'+
+        '<div class="row"><span>이후 '+M+'봉 수익률</span><b style="color:'+(ret>=0?'var(--up)':'var(--down)')+'">'+pct(ret)+'</b></div>'+
+        '<div class="ctx">'+ctxB+'</div><canvas></canvas>';
+      box.appendChild(div);
+      drawSpark(div.querySelector('canvas'),mainCs,s,P,M);
+    });
+
+    setStatus('분석 완료 · '+selTf.label+' '+mainCs.length+'봉 ('+fmtDate(mainCs[n-1].time,tfKey)+' 기준) · 종합점수 '+(sc>0?'+':'')+sc);
+  }catch(err){
+    setStatus('오류: '+err.message, true);
+    $('empty').style.display='block';
+    $('empty').textContent='분석 실패: '+err.message;
+  }finally{
+    $('run').disabled=false;
+  }
+}
+$('run').addEventListener('click',run);
+// 검수(감사)용 내부 노출 — 합성 데이터 단위검증에 사용
+window.__q={rsiArr:rsiArr,pearson:pearson,wQuant:wQuant,median:median,pivots:pivots,detectDiv:detectDiv,waveGuess:waveGuess,buildTFCtx:buildTFCtx,backtest:backtest,emaArr:emaArr};
+window.__q_cache=cache;
+run();
+})();
+</script>
+</body>
+</html>
