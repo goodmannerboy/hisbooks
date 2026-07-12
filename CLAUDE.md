@@ -18,7 +18,7 @@
 - 목표: 본인 학원 사용 → 추후 **다른 학원에 유료 판매(SaaS)**.
 
 ## 2. 현재 상태 (버전 v32.66 기준, 60+ 커밋)
-**탭 8개** (`tabsDef`): 
+**상단 탭 4개**(v32.600, `tabsDef`): **오늘 · 학생일지 · 선생님 일지 · 학원 일지**. «학생일지»=일간·월간·성적 통합 탭(key는 여전히 'bulk'; 클릭=openBulk()로 일간 도착; 활성=view∈{bulk,monthly,exams}; 내부 [일간·월간·성적] 세그먼트 바 rv `isGrowthTab`/`growthSegBtns`, isBulk 첫 가드 직전 마크업). ⚠️ 내부 view id(bulk/monthly/exams)와 모든 가드·rv는 그대로 — 탭 껍데기만 바뀜. 모바일 하단바 bulk 라벨='학생일지'. 아래는 기존 view 8개 설명: 
 1. `home` 오늘(홈) — 인사+오늘수업+전달사항
 2. `bulk` 일간 성장일지
 3. `monthly` 월간 성장일지
