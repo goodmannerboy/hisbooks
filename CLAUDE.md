@@ -73,6 +73,12 @@
 - **제거된 임시 우회코드**: v32.326~347에서 시도했던 `_fixStrayView()` 메서드, `componentDidMount`의 MutationObserver 감시, 진단용 에러배너(`__his_err_banner`)를 **전부 삭제**함. 이제 코드가 깨끗함. (교훈: DOM을 사후에 JS로 옮기거나 스타일 패치하지 말고, **템플릿 구조에서 `.main-pad` 안/밖 여부부터 확인**할 것.)
 - **재발 시 진단법**: 새 탭 추가 시 그 뷰의 `<sc-if>` 블록이 `.main-pad`(약 254623~) 안에 있는지 확인. 콘솔 빠른 체크: `[...document.querySelector('.sc-host').children].filter(c=>c.tagName==='DIV'&&!c.contains(document.querySelector('main.scroll-y'))&&!c.querySelector('header')).length` 가 0보다 크면 그 뷰가 main 밖으로 샌 것 → 템플릿에서 `.main-pad` 밖에 있는지 확인.
 
+## 6-2. 히즈어학원 공식 홈페이지 (home.html, 2026-07-14 개설)
+- **주소**: https://goodmannerboy.github.io/hisbooks/home.html — 원장 제작 단일 번들(React, 24MB)을 그대로 호스팅. 주 타깃=학부모·학생(프랜차이즈 스토리는 추후).
+- 이 번들러는 **부팅 시 head를 재구성해 title·파비콘이 증발**(우리 앱과 다른 방식이지만 같은 증상) → 파일 끝 keeper 스크립트(setTimeout 5회+visibilitychange)가 title «히즈어학원»+파비콘 재주입. og 메타는 바깥 head로 충분(스크래퍼는 JS 안 돌림).
+- 원장이 새 버전 파일을 주면: home.html 교체 → title/og/keeper 다시 심기(위 패턴) → 렌더 검증 → push.
+- 남은 로드맵: ①24MB 다이어트(이미지 최적화, 학부모 공유 전 권장) ②커스텀 도메인(원장 구매 후 연결) ③네이버 서치어드바이저 등록.
+
 ## 7. 남은 일 / 아이디어
 - [x] **학원 일지 탭**(수강료+데이터 병합, 한눈에 대시보드, 선생님 현황) 구현·배포. (라이브 검증 필요)
 - [ ] **Supabase Confirm email OFF** 확인(블로커). ← 선생님 현황에 선생님이 뜨려면 이게 꺼져 있어야 자체 회원가입/로그인이 됨.
