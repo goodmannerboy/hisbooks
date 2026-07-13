@@ -101,8 +101,8 @@ Deno.serve(async (req) => {
       if (stu && (stu.withdrawn || stu.pending)) continue;
       const key = stu.id + "|" + dateStr;
       const r = ck[key];
-      if (r && r.in) continue;
-      if (excused[key]) continue;
+      if (r && r.in && !r.del) continue;
+      if (excused[key] && !excused[key].del) continue;
       const phone = digits((stu.intake || {}).parentContact || "");
       if (!phone) continue;
       targets.push({ sid: stu.id, name: stu.name, phone });
