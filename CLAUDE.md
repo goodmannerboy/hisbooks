@@ -34,6 +34,12 @@
 - 주요 기능: 마일리지(출결0.2·과제차등·시험통과0.5, 결석=0)·티어·장학금, 리포트 4종 통일("A Note for You"+손글씨 서명 '— from {담당쌤}'), 학생 반이동, og:image(카톡 미리보기).
 - ⚠️ **신규생 «등록 확정» 게이팅**(v32.460): 신규 상담 접수(`startNewIntake`)한 학생은 `pending:true`로 생성되어 «등록 확정»(`confirmEnrollIntake`) 전까지 **아무 집계·장부·보드에 안 뜸**. 구현=`visibleClasses(data,user)`가 반환 직전 각 반의 `students`에서 `st.pending` 학생을 제외(pending 없는 반은 원본 참조 그대로, 있는 반만 얕은 복사). 이 관문을 쓰는 모든 표시 지점(수강료 장부 feeData, KPI board=전체원생·이번달신규, 학생관리/반별 보드 schedClasses 등)이 자동으로 확정 학생만 표시. **확정 시** `delete stu.pending` + `enrollDate`·`registeredAt`=today 설정 → 전 화면에 신규로 반영(신규 KPI/배지는 `registeredAt` 기준). pending 학생은 **접수 워크스페이스(종합일지›신규등록 `unassignedNew` «반배정 대기»)에는 계속 보임**(원본 dd.classes 직접 읽어 visibleClasses 안 거침) → 거기서 상담·레벨테스트·반배정·확정 진행. 소급 적용 안 됨(플래그 없는 기존 학생은 계속 표시). 수강료 장부 행엔 신규/퇴원 배지(v32.459), 학생 삭제=`removeStudent(cid,sid)`(v32.458).
 
+## 2-1. 모바일/앱화 목표 (2026-07-14 원장 선언)
+- **궁극 목표: 폰·태블릿에서 선생님이 입력하고 고객(학부모)이 쓰는 앱 수준 경험.** PC 전용이라는 옛 전제 폐기 — 신규 UI는 폰 폭(390px)까지 고려할 것(키오스크는 v32.629 반응형 완료).
+- ⚠️ **iOS(WebKit) 검증 필수**: 원장·학부모 폰=아이폰/카톡 인앱(WKWebKit). Chrome만 검증하면 iOS에서 깨질 수 있음(v32.630 흰화면 사고). **로컬 재현법 = `py -3 -m playwright` + webkit** (`p.webkit.launch()`, viewport 390×844) — 실제 iOS 엔진으로 렌더·콘솔·좌표 실측 가능. 하니스에서 게이트는 CSS로만 숨기므로 **게이트 JS의 body 스크롤락이 남아 창스크롤 불가 = 하니스 아티팩트**(회귀 판정 시 git HEAD 하니스와 «전후 측정치 비교»로 판정).
+- ⚠️ **앱 루트 높이 규칙(v32.630)**: 페이로드 CSS `.sc-host > div{min-height:0 !important}`가 루트의 min-height:100vh를 죽임 → 루트는 인라인 `flex:1 0 auto`로 높이 확보(Chrome=내용 높이 유지, WebKit=sc-host 채움). 이 flex를 제거하면 iOS 전체가 흰화면 재발.
+- 로드맵(합의 전 초안): ①모바일 웹 다듬기(각 뷰 390px 점검) ②PWA(홈화면 설치+아이콘+전체화면) ③학부모용 화면 분리. 진행 시 원장과 단계 확정할 것.
+
 ## 3. 아키텍처 / 코드 수정법
 - `index.html` = **번들러 아티팩트**. 앱 페이로드는 파일에서 `"<!DOCTYPE html>...`로 시작하는 **JSON 인코딩된 한 줄**(현재 약 170번째 줄). 컴포넌트 로직은 그 안 `<script ... data-dc-script>`(class Component extends DCLogic).
 - **데스크톱 Claude Code**: `index.html`을 직접 열어 편집·커밋(로컬 파일).
