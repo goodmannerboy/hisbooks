@@ -38,7 +38,8 @@
 - **궁극 목표: 폰·태블릿에서 선생님이 입력하고 고객(학부모)이 쓰는 앱 수준 경험.** PC 전용이라는 옛 전제 폐기 — 신규 UI는 폰 폭(390px)까지 고려할 것(키오스크는 v32.629 반응형 완료).
 - ⚠️ **iOS(WebKit) 검증 필수**: 원장·학부모 폰=아이폰/카톡 인앱(WKWebKit). Chrome만 검증하면 iOS에서 깨질 수 있음(v32.630 흰화면 사고). **로컬 재현법 = `py -3 -m playwright` + webkit** (`p.webkit.launch()`, viewport 390×844) — 실제 iOS 엔진으로 렌더·콘솔·좌표 실측 가능. 하니스에서 게이트는 CSS로만 숨기므로 **게이트 JS의 body 스크롤락이 남아 창스크롤 불가 = 하니스 아티팩트**(회귀 판정 시 git HEAD 하니스와 «전후 측정치 비교»로 판정).
 - ⚠️ **앱 루트 높이 규칙(v32.630)**: 페이로드 CSS `.sc-host > div{min-height:0 !important}`가 루트의 min-height:100vh를 죽임 → 루트는 인라인 `flex:1 0 auto`로 높이 확보(Chrome=내용 높이 유지, WebKit=sc-host 채움). 이 flex를 제거하면 iOS 전체가 흰화면 재발.
-- 로드맵(합의 전 초안): ①모바일 웹 다듬기(각 뷰 390px 점검) ②PWA(홈화면 설치+아이콘+전체화면) ③학부모용 화면 분리. 진행 시 원장과 단계 확정할 것.
+- 로드맵: ①모바일 웹 다듬기(**진행중** — v32.631 1차: 폰 헤더 컴팩트(hdr-ms/hdr-div/hdr-role 숨김+hdr-user 컴팩트), 일간일지 bulk-actions 줄바꿈+시험그리드 m-test4 2열, 4개 뷰 390px 넘침 0 달성) ②PWA(홈화면 설치+아이콘+전체화면) ③학부모용 화면 분리.
+- **모바일 CSS는 페이로드 head `@media (max-width:760px)` 블록 한 곳에 집약**(`.main-pad { overflow-x:hidden }` 줄이 블록 끝 앵커). 인라인 스타일 요소는 class를 부여해 이 블록에서 !important로 다듬는 패턴. 검증 스크립트=scratchpad `wk_survey.py`(4개 뷰 하니스 생성→WebKit 390 렌더→가로넘침 요소 자동 검출).
 
 ## 3. 아키텍처 / 코드 수정법
 - `index.html` = **번들러 아티팩트**. 앱 페이로드는 파일에서 `"<!DOCTYPE html>...`로 시작하는 **JSON 인코딩된 한 줄**(현재 약 170번째 줄). 컴포넌트 로직은 그 안 `<script ... data-dc-script>`(class Component extends DCLogic).
