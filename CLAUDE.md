@@ -40,7 +40,7 @@
 - ⚠️ **앱 루트 높이 규칙(v32.630)**: 페이로드 CSS `.sc-host > div{min-height:0 !important}`가 루트의 min-height:100vh를 죽임 → 루트는 인라인 `flex:1 0 auto`로 높이 확보(Chrome=내용 높이 유지, WebKit=sc-host 채움). 이 flex를 제거하면 iOS 전체가 흰화면 재발.
 - 로드맵: ①모바일 웹 다듬기(**진행중** — v32.631 1차: 폰 헤더 컴팩트(hdr-ms/hdr-div/hdr-role 숨김+hdr-user 컴팩트), 일간일지 bulk-actions 줄바꿈+시험그리드 m-test4 2열, 4개 뷰 390px 넘침 0 달성) ②PWA(홈화면 설치+아이콘+전체화면) ③학부모용 화면 분리.
 - **모바일 CSS는 페이로드 head `@media (max-width:760px)` 블록 한 곳에 집약**(`.main-pad { overflow-x:hidden }` 줄이 블록 끝 앵커). 인라인 스타일 요소는 class를 부여해 이 블록에서 !important로 다듬는 패턴. 검증 스크립트=scratchpad `wk_survey.py`(4개 뷰 하니스 생성→WebKit 390 렌더→가로넘침 요소 자동 검출).
-- **키오스크 가로화면(PC·태블릿 landscape) 압축 레이아웃**(v32.632): 클래스 kio-hero/kio-note/kio-col/kio-pad + 페이로드 head `@media (orientation:landscape) and (max-height:1200px)` — 키패드 vh 기반으로 줄여 1920×966에서 12키 전부 표시. 세로(스탠바이미)는 미적용·불변. 키오스크 진입 시 body overflow hidden(시작/부팅복원 2곳), 종료 시 복원(배경 스크롤바 제거). PC 자동로그인→키오스크로 부팅되는 건 정상 동작(__his_kiosk 기기 플래그) — 나가기 PIN으로 해제하면 그 기기는 이후 일반 부팅.
+- **키오스크 가로화면(PC·태블릿 landscape) 압축 레이아웃**(v32.632): 클래스 kio-hero/kio-note/kio-col/kio-pad + 페이로드 head `@media (orientation:landscape) and (max-height:1200px)` — 키패드 vh 기반으로 줄여 1920×966에서 12키 전부 표시. 세로(스탠바이미)는 미적용·불변. 키오스크 진입 시 body overflow hidden(시작/부팅복원 2곳), 종료 시 복원(배경 스크롤바 제거). **키오스크 자동복원 = 세로 화면 전용**(v32.633 원장 확정 «PC는 오늘로»): 부팅복원·visibilitychange 복원 2곳에 `innerHeight>=innerWidth` 조건 — PC(가로)는 __his_kiosk 플래그가 있어도 항상 홈 부팅, 스탠바이미(세로)만 잠금 복원. 수동 학생모드는 어디서든 가능(가로 기기는 새로고침 시 해제).
 - ⚠️ **페이로드에 삽입하는 모든 조각(CSS 포함)의 쌍따옴표는 반드시 `\"` 이스케이프**(v32.632 사고: CSS selector의 비이스케이프 `"`가 JSON 문자열을 끊어 전체 앱 빈화면). CSS attribute selector는 `[data-kk=clear]`처럼 무따옴표 권장. 편집 후 검증: 페이로드 라인에서 `"<!DOCTYPE`부터 `json.raw_decode`로 문자열 파스 성공 확인.
 
 ## 3. 아키텍처 / 코드 수정법
