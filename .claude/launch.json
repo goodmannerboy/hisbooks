@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "scratchpad-static",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3", "-m", "http.server", "8801", "--directory", "C:\\Users\\User\\AppData\\Local\\Temp\\claude\\C--Users-User-Desktop-hisbooks\\6b9a2bac-8d93-46db-b667-0cffcc99b0d2\\scratchpad"],
+      "port": 8801
+    }
+  ]
+}
