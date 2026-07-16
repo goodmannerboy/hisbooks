@@ -56,6 +56,7 @@
 
 ## 4. Supabase
 - ⚠️ **supabase-js는 반드시 버전 고정 `@2.49.4`**(jsdelivr+unpkg 두 로더 모두, v32.527). 절대 `@2`(자동 최신)로 되돌리지 말 것 — 최신 릴리스가 옵셔널체이닝(`?.`)·널병합(`??`)·논리대입(`||=`) 포함 번들로 배포되면서 **스탠바이미(LG webOS) 등 구형 브라우저에서 파싱 자체가 깨져** «[bundle] Script error.»+클라우드 연결 실패(0 학생)를 유발했음. 버전 올릴 땐 UMD 번들을 받아 위 3개 문법이 0개인지 grep 확인 후 교체. CDN 로더 3종(supabase/pdf/xlsx)엔 `crossOrigin='anonymous'` 유지(교차출처 에러 가림 해제). 바깥 head의 전역 진단배너(`__hisBoom`, v32.525~527)는 앱(.sc-host) 미렌더 시에만 2.5s 지연 후 표시+앱 살아나면 자동 해제.
+- ⚠️ **무료 egress(월 5GB) 초과로 프로젝트 잠김 사건**(2026-07-16, «exceed_egress_quota»): 복구는 **원장만**(Supabase 대시보드: 월 결제주기 초기화 대기 or Pro 업그레이드 $25/mo·250GB). **egress 주범=①realtime postgres_changes 구독**(저장1회→전체 data 행을 접속 전기기에 브로드캐스트, 상시 키오스크+폰들이 곱셈) **②flushPush 저장마다 전체 data 재읽기 병합**. **수정(v32.641)**: realtime 구독 호출 제거(45초 게이트 폴링이 동기화 담당) + flushPush 병합읽기를 updated_at 게이팅(클라우드 미변경 시 full read 생략) + push 후 `window.__hisLastPullTs=at`. ⚠️ 새 동기화 코드 넣을 때 **realtime 재도입 금지**(전체 blob 브로드캐스트=egress 폭탄), full data read는 반드시 updated_at 게이팅. 근본적으로 단일 blob 설계가 egress 비용원 — 향후 SaaS화 시 테이블 분리/델타 업데이트 검토.
 - URL: `https://vcfhttzbzgtszpuahibe.supabase.co`
 - Publishable key(공개·클라이언트용): `sb_publishable_d-X3ubJw6n4P1zumfRZgrQ_rWDfhmWj`
 - 테이블 `public.app_state`(id PK='main', data jsonb, updated_at, client_id) + RLS(authenticated) + realtime. 단일 blob에 전체 학원 데이터 저장, localStorage['his-sys-v4'] 미러+0.7s 디바운스 업서트.
