@@ -88,6 +88,10 @@
 - **제거된 임시 우회코드**: v32.326~347에서 시도했던 `_fixStrayView()` 메서드, `componentDidMount`의 MutationObserver 감시, 진단용 에러배너(`__his_err_banner`)를 **전부 삭제**함. 이제 코드가 깨끗함. (교훈: DOM을 사후에 JS로 옮기거나 스타일 패치하지 말고, **템플릿 구조에서 `.main-pad` 안/밖 여부부터 확인**할 것.)
 - **재발 시 진단법**: 새 탭 추가 시 그 뷰의 `<sc-if>` 블록이 `.main-pad`(약 254623~) 안에 있는지 확인. 콘솔 빠른 체크: `[...document.querySelector('.sc-host').children].filter(c=>c.tagName==='DIV'&&!c.contains(document.querySelector('main.scroll-y'))&&!c.querySelector('header')).length` 가 0보다 크면 그 뷰가 main 밖으로 샌 것 → 템플릿에서 `.main-pad` 밖에 있는지 확인.
 
+## 6-1b. OT 자료 (ot-orientation.html + 히즈 오리엔테이션 (오프라인).html)
+- 원장 제작 DC 슬라이드 덱(24장, 페이로드 JSON 청크들). 앱 안 «🎓 오리엔테이션(OT)» 링크로 열림. 두 파일의 슬라이드 내용 동일 — **수정 시 반드시 둘 다**.
+- **v2026-07-18 갱신**: Check-in 슬라이드(18/24, data-label=Check-in) 우측을 폐기된 «학부모 카톡 미등원 자동 알림» 목업 → **실제 화면**(키오스크 체크인 성공+리포트 TODAY 스트립 스크린샷, base64 JPEG/PNG)+현행 3원칙(셀프 체크인 자동 등하원 구분/미등원=선생님 즉시 표시·연락/사전연락 결석=«결석 · 사유» 구분)으로 교체, 스피커노트·아이브로우(Smart Check-in & Care)도 갱신. 스크린샷 생성=하니스(가짜 학생 «이체크», intake.studentContact 뒷4자리 — findByLast4는 parentContact/studentContact만 봄). 원본 섹션은 숨김 템플릿이라 element.screenshot 불가 — 검증은 ArrowRight 내비로 실슬라이드 스크린샷.
+
 ## 6-2. 히즈어학원 공식 홈페이지 (home.html, 2026-07-14 개설)
 - **주소**: https://goodmannerboy.github.io/hisbooks/home.html — 원장 제작 단일 번들(React, 24MB)을 그대로 호스팅. 주 타깃=학부모·학생(프랜차이즈 스토리는 추후).
 - 이 번들러는 **부팅 시 head를 재구성해 title·파비콘이 증발**(우리 앱과 다른 방식이지만 같은 증상) → 파일 끝 keeper 스크립트(setTimeout 5회+visibilitychange)가 title «히즈어학원»+파비콘 재주입. og 메타는 바깥 head로 충분(스크래퍼는 JS 안 돌림).
