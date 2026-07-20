@@ -93,7 +93,7 @@
 
 ## 6-1b. OT 자료 (ot-orientation.html + 히즈 오리엔테이션 (오프라인).html)
 - 원장 제작 DC 슬라이드 덱(24장, 페이로드 JSON 청크들). 앱 안 «🎓 오리엔테이션(OT)» 링크로 열림. 두 파일의 슬라이드 내용 동일 — **수정 시 반드시 둘 다**.
-- **v2026-07-20 갱신(v32.715)**: ①«히즈 리딩 리마스터» 슬라이드 신설(25장 됨, 17번째 — «시험지 역설계»와 «Ch.06 Management» 사이, data-label=리딩 리마스터): 확정 문구만 사용(안내문 1줄 «시간은 절반, 효과는 두 배…25분», 동형 재출제·두 점수 판독·인출 훈련 카드 3+수업 흐름 4단계 딥그린 밴드+회차 RM {YYMM}-{학년}, 캐치프레이즈 금지 — 메모리 [[project-mirror-reading]]) ②첫 장·끝 장 SINCE 2014 세리프(EB Garamond 이탤릭 금색): 온라인 Title=상단 우측(+POHANG · KOREA), 오프라인 Title=H1 위 아이브로(두 파일 Title 디자인이 서로 다름 주의!), Thank You=전화번호 아래 레터스페이스. ⚠️ 페이로드 JSON에 `\'` 무효 이스케이프 주의(단일따옴표는 이스케이프 불필요 — font-family:'Pretendard' 그대로).
+- **v2026-07-20 갱신(v32.715)**: ①«히즈 리딩 리마스터» 슬라이드 신설(25장 됨, 9번째 — 독해 챕터 끝 «Reading Practice»와 «Ch.04 Grammar» 디바이더 사이(원장 지시로 시험대비 챕터→독해 챕터 이동), data-label=리딩 리마스터, 주석 08b): 확정 문구만 사용(안내문 1줄 «시간은 절반, 효과는 두 배…25분», 동형 재출제·두 점수 판독·인출 훈련 카드 3+수업 흐름 4단계 딥그린 밴드+회차 RM {YYMM}-{학년}, 캐치프레이즈 금지 — 메모리 [[project-mirror-reading]]) ②첫 장·끝 장 SINCE 2014 세리프(EB Garamond 이탤릭 금색): 온라인 Title=상단 우측(+POHANG · KOREA), 오프라인 Title=H1 위 아이브로(두 파일 Title 디자인이 서로 다름 주의!), Thank You=전화번호 아래 레터스페이스. ⚠️ 페이로드 JSON에 `\'` 무효 이스케이프 주의(단일따옴표는 이스케이프 불필요 — font-family:'Pretendard' 그대로).
 - **v2026-07-18 갱신**: Check-in 슬라이드(18/24, data-label=Check-in) 우측을 폐기된 «학부모 카톡 미등원 자동 알림» 목업 → **실제 화면**(키오스크 체크인 성공+리포트 TODAY 스트립 스크린샷, base64 JPEG/PNG)+현행 3원칙(셀프 체크인 자동 등하원 구분/미등원=선생님 즉시 표시·연락/사전연락 결석=«결석 · 사유» 구분)으로 교체, 스피커노트·아이브로우(Smart Check-in & Care)도 갱신. 스크린샷 생성=하니스(가짜 학생 «이체크», intake.studentContact 뒷4자리 — findByLast4는 parentContact/studentContact만 봄). 원본 섹션은 숨김 템플릿이라 element.screenshot 불가 — 검증은 ArrowRight 내비로 실슬라이드 스크린샷.
 
 ## 6-2. 히즈어학원 공식 홈페이지 (home.html, 2026-07-14 개설)
