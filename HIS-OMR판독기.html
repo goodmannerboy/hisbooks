@@ -1,0 +1,209 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HIS OMR 자동판독</title>
+<style>
+body{font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;background:#F4ECD7;color:#0C4631;margin:0;padding:18px;}
+.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+button,label.btn{background:#0C4631;color:#F4ECD7;border:none;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:700;cursor:pointer;}
+#summary{font-size:14px;font-weight:800;color:#8a6520;}
+#birthbox{font-size:15px;font-weight:800;}
+.card{background:#fff;border:1px solid rgba(12,70,49,.15);border-radius:14px;padding:14px;margin-bottom:14px;}
+#view{max-width:100%;border:1px solid #ccc;border-radius:8px;}
+h1{font-size:18px;margin:0 0 12px;}
+</style></head><body>
+<h1>HIS OMR 자동판독 <span style="font-size:12px;font-weight:500;color:#8a8578;">(스캔 이미지 업로드 → 정렬마크 자동정렬 → 생년월일·정답 판독)</span></h1>
+<div class="bar">
+  <label class="btn">이미지 업로드 (여러 장 가능)<input id="file" type="file" accept="image/*" multiple style="display:none"></label>
+  <button id="rotbtn">90° 회전</button>
+  <span id="summary">이미지를 올리세요.</span>
+</div>
+<div class="card"><span id="birthbox">생년월일: <span id="birth" style="letter-spacing:3px;">------</span></span></div>
+<div class="card"><div style="font-size:12px;font-weight:700;color:#8a6520;margin-bottom:8px;">정답 (① =▨ 인식, ? =애매)</div><div id="ans"></div></div>
+<div class="card" id="batchcard" style="display:none">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+    <span style="font-size:12px;font-weight:700;color:#8a6520;">판독 결과 (레벨테스트 연계)</span>
+    <select id="formsel" style="border-radius:8px;padding:4px 8px;border:1px solid #ccc;font-weight:700;">
+      <option value="E">Form E · 초등</option><option value="M" selected>Form M · 중등</option><option value="H">Form H · 고등</option>
+    </select>
+    <button id="csvbtn">답안 CSV 다운로드</button>
+    <button id="copybtn">CSV 복사</button>
+    <button id="clearbtn" style="background:#8a6520;">비우기</button>
+    <span style="font-size:11px;color:#8a8578;">→ report.py 답안입력 형식 · 성명/form만 채우면 통지표·엑셀 자동 생성</span>
+  </div>
+  <table id="btab" style="width:100%;border-collapse:collapse;font-size:12px;"></table>
+</div>
+<div class="card"><div style="font-size:12px;font-weight:700;color:#8a6520;margin-bottom:8px;">인식 화면 (빨강=정렬마크 검출)</div><canvas id="view"></canvas></div>
+<script>
+const COORDS = {"page": [841.8897637795277, 595.2755905511812], "fiducials": [[24.0, 24.0], [817.8897637795277, 24.0], [24.0, 571.2755905511812], [817.8897637795277, 571.2755905511812]], "birth": [[[72.0, 313.27559055118115], [72.0, 293.27559055118115], [72.0, 273.27559055118115], [72.0, 253.27559055118115], [72.0, 233.27559055118115], [72.0, 213.27559055118115], [72.0, 193.27559055118115], [72.0, 173.27559055118115], [72.0, 153.27559055118115], [72.0, 133.27559055118115]], [[100.0, 313.27559055118115], [100.0, 293.27559055118115], [100.0, 273.27559055118115], [100.0, 253.27559055118115], [100.0, 233.27559055118115], [100.0, 213.27559055118115], [100.0, 193.27559055118115], [100.0, 173.27559055118115], [100.0, 153.27559055118115], [100.0, 133.27559055118115]], [[128.0, 313.27559055118115], [128.0, 293.27559055118115], [128.0, 273.27559055118115], [128.0, 253.27559055118115], [128.0, 233.27559055118115], [128.0, 213.27559055118115], [128.0, 193.27559055118115], [128.0, 173.27559055118115], [128.0, 153.27559055118115], [128.0, 133.27559055118115]], [[156.0, 313.27559055118115], [156.0, 293.27559055118115], [156.0, 273.27559055118115], [156.0, 253.27559055118115], [156.0, 233.27559055118115], [156.0, 213.27559055118115], [156.0, 193.27559055118115], [156.0, 173.27559055118115], [156.0, 153.27559055118115], [156.0, 133.27559055118115]], [[184.0, 313.27559055118115], [184.0, 293.27559055118115], [184.0, 273.27559055118115], [184.0, 253.27559055118115], [184.0, 233.27559055118115], [184.0, 213.27559055118115], [184.0, 193.27559055118115], [184.0, 173.27559055118115], [184.0, 153.27559055118115], [184.0, 133.27559055118115]], [[212.0, 313.27559055118115], [212.0, 293.27559055118115], [212.0, 273.27559055118115], [212.0, 253.27559055118115], [212.0, 233.27559055118115], [212.0, 213.27559055118115], [212.0, 193.27559055118115], [212.0, 173.27559055118115], [212.0, 153.27559055118115], [212.0, 133.27559055118115]]], "answers": {"1": [[396.0, 500.27559055118115], [412.5, 500.27559055118115], [429.0, 500.27559055118115], [445.5, 500.27559055118115], [462.0, 500.27559055118115]], "2": [[396.0, 477.27559055118115], [412.5, 477.27559055118115], [429.0, 477.27559055118115], [445.5, 477.27559055118115], [462.0, 477.27559055118115]], "3": [[396.0, 454.27559055118115], [412.5, 454.27559055118115], [429.0, 454.27559055118115], [445.5, 454.27559055118115], [462.0, 454.27559055118115]], "4": [[396.0, 431.27559055118115], [412.5, 431.27559055118115], [429.0, 431.27559055118115], [445.5, 431.27559055118115], [462.0, 431.27559055118115]], "5": [[396.0, 408.27559055118115], [412.5, 408.27559055118115], [429.0, 408.27559055118115], [445.5, 408.27559055118115], [462.0, 408.27559055118115]], "6": [[396.0, 385.27559055118115], [412.5, 385.27559055118115], [429.0, 385.27559055118115], [445.5, 385.27559055118115], [462.0, 385.27559055118115]], "7": [[396.0, 362.27559055118115], [412.5, 362.27559055118115], [429.0, 362.27559055118115], [445.5, 362.27559055118115], [462.0, 362.27559055118115]], "8": [[396.0, 339.27559055118115], [412.5, 339.27559055118115], [429.0, 339.27559055118115], [445.5, 339.27559055118115], [462.0, 339.27559055118115]], "9": [[396.0, 316.27559055118115], [412.5, 316.27559055118115], [429.0, 316.27559055118115], [445.5, 316.27559055118115], [462.0, 316.27559055118115]], "10": [[396.0, 293.27559055118115], [412.5, 293.27559055118115], [429.0, 293.27559055118115], [445.5, 293.27559055118115], [462.0, 293.27559055118115]], "11": [[396.0, 270.27559055118115], [412.5, 270.27559055118115], [429.0, 270.27559055118115], [445.5, 270.27559055118115], [462.0, 270.27559055118115]], "12": [[396.0, 247.27559055118115], [412.5, 247.27559055118115], [429.0, 247.27559055118115], [445.5, 247.27559055118115], [462.0, 247.27559055118115]], "13": [[396.0, 224.27559055118115], [412.5, 224.27559055118115], [429.0, 224.27559055118115], [445.5, 224.27559055118115], [462.0, 224.27559055118115]], "14": [[396.0, 201.27559055118115], [412.5, 201.27559055118115], [429.0, 201.27559055118115], [445.5, 201.27559055118115], [462.0, 201.27559055118115]], "15": [[396.0, 178.27559055118115], [412.5, 178.27559055118115], [429.0, 178.27559055118115], [445.5, 178.27559055118115], [462.0, 178.27559055118115]], "16": [[396.0, 155.27559055118115], [412.5, 155.27559055118115], [429.0, 155.27559055118115], [445.5, 155.27559055118115], [462.0, 155.27559055118115]], "17": [[396.0, 132.27559055118115], [412.5, 132.27559055118115], [429.0, 132.27559055118115], [445.5, 132.27559055118115], [462.0, 132.27559055118115]], "18": [[396.0, 109.27559055118115], [412.5, 109.27559055118115], [429.0, 109.27559055118115], [445.5, 109.27559055118115], [462.0, 109.27559055118115]], "19": [[396.0, 86.27559055118115], [412.5, 86.27559055118115], [429.0, 86.27559055118115], [445.5, 86.27559055118115], [462.0, 86.27559055118115]], "20": [[396.0, 63.27559055118115], [412.5, 63.27559055118115], [429.0, 63.27559055118115], [445.5, 63.27559055118115], [462.0, 63.27559055118115]], "21": [[548.0, 500.27559055118115], [564.5, 500.27559055118115], [581.0, 500.27559055118115], [597.5, 500.27559055118115], [614.0, 500.27559055118115]], "22": [[548.0, 477.27559055118115], [564.5, 477.27559055118115], [581.0, 477.27559055118115], [597.5, 477.27559055118115], [614.0, 477.27559055118115]], "23": [[548.0, 454.27559055118115], [564.5, 454.27559055118115], [581.0, 454.27559055118115], [597.5, 454.27559055118115], [614.0, 454.27559055118115]], "24": [[548.0, 431.27559055118115], [564.5, 431.27559055118115], [581.0, 431.27559055118115], [597.5, 431.27559055118115], [614.0, 431.27559055118115]], "25": [[548.0, 408.27559055118115], [564.5, 408.27559055118115], [581.0, 408.27559055118115], [597.5, 408.27559055118115], [614.0, 408.27559055118115]], "26": [[548.0, 385.27559055118115], [564.5, 385.27559055118115], [581.0, 385.27559055118115], [597.5, 385.27559055118115], [614.0, 385.27559055118115]], "27": [[548.0, 362.27559055118115], [564.5, 362.27559055118115], [581.0, 362.27559055118115], [597.5, 362.27559055118115], [614.0, 362.27559055118115]], "28": [[548.0, 339.27559055118115], [564.5, 339.27559055118115], [581.0, 339.27559055118115], [597.5, 339.27559055118115], [614.0, 339.27559055118115]], "29": [[548.0, 316.27559055118115], [564.5, 316.27559055118115], [581.0, 316.27559055118115], [597.5, 316.27559055118115], [614.0, 316.27559055118115]], "30": [[548.0, 293.27559055118115], [564.5, 293.27559055118115], [581.0, 293.27559055118115], [597.5, 293.27559055118115], [614.0, 293.27559055118115]], "31": [[548.0, 270.27559055118115], [564.5, 270.27559055118115], [581.0, 270.27559055118115], [597.5, 270.27559055118115], [614.0, 270.27559055118115]], "32": [[548.0, 247.27559055118115], [564.5, 247.27559055118115], [581.0, 247.27559055118115], [597.5, 247.27559055118115], [614.0, 247.27559055118115]], "33": [[548.0, 224.27559055118115], [564.5, 224.27559055118115], [581.0, 224.27559055118115], [597.5, 224.27559055118115], [614.0, 224.27559055118115]], "34": [[548.0, 201.27559055118115], [564.5, 201.27559055118115], [581.0, 201.27559055118115], [597.5, 201.27559055118115], [614.0, 201.27559055118115]], "35": [[548.0, 178.27559055118115], [564.5, 178.27559055118115], [581.0, 178.27559055118115], [597.5, 178.27559055118115], [614.0, 178.27559055118115]], "36": [[548.0, 155.27559055118115], [564.5, 155.27559055118115], [581.0, 155.27559055118115], [597.5, 155.27559055118115], [614.0, 155.27559055118115]], "37": [[548.0, 132.27559055118115], [564.5, 132.27559055118115], [581.0, 132.27559055118115], [597.5, 132.27559055118115], [614.0, 132.27559055118115]], "38": [[548.0, 109.27559055118115], [564.5, 109.27559055118115], [581.0, 109.27559055118115], [597.5, 109.27559055118115], [614.0, 109.27559055118115]], "39": [[548.0, 86.27559055118115], [564.5, 86.27559055118115], [581.0, 86.27559055118115], [597.5, 86.27559055118115], [614.0, 86.27559055118115]], "40": [[548.0, 63.27559055118115], [564.5, 63.27559055118115], [581.0, 63.27559055118115], [597.5, 63.27559055118115], [614.0, 63.27559055118115]], "41": [[700.0, 500.27559055118115], [716.5, 500.27559055118115], [733.0, 500.27559055118115], [749.5, 500.27559055118115], [766.0, 500.27559055118115]], "42": [[700.0, 477.27559055118115], [716.5, 477.27559055118115], [733.0, 477.27559055118115], [749.5, 477.27559055118115], [766.0, 477.27559055118115]], "43": [[700.0, 454.27559055118115], [716.5, 454.27559055118115], [733.0, 454.27559055118115], [749.5, 454.27559055118115], [766.0, 454.27559055118115]], "44": [[700.0, 431.27559055118115], [716.5, 431.27559055118115], [733.0, 431.27559055118115], [749.5, 431.27559055118115], [766.0, 431.27559055118115]], "45": [[700.0, 408.27559055118115], [716.5, 408.27559055118115], [733.0, 408.27559055118115], [749.5, 408.27559055118115], [766.0, 408.27559055118115]]}};
+const F = COORDS.fiducials; // [BL,BR,TL,TR] in PDF pts
+const fidL = Math.min(F[0][0],F[2][0]), fidR = Math.max(F[1][0],F[3][0]);
+const fidB = Math.min(F[0][1],F[1][1]), fidT = Math.max(F[2][1],F[3][1]);
+
+let curImg=null, rot=0;
+
+function toGray(id){
+  const {data,width:w,height:h}=id; const g=new Float32Array(w*h);
+  for(let i=0,j=0;i<data.length;i+=4,j++){ g[j]=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2]; }
+  return {g,w,h};
+}
+function winMean(g,w,h,cx,cy,r){
+  let s=0,n=0; const x0=Math.max(0,cx-r),x1=Math.min(w-1,cx+r),y0=Math.max(0,cy-r),y1=Math.min(h-1,cy+r);
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){s+=g[y*w+x];n++;} return n?s/n:255;
+}
+function findFiducial(g,w,h, qx, qy){
+  // search a corner region (qx,qy in {0,1}); slide window, return darkest-solid center
+  const rw=Math.round(w*0.17), rh=Math.round(h*0.19);
+  const bx = qx? w-rw : 0, by = qy? h-rh : 0;
+  const win=Math.max(6,Math.round(Math.min(w,h)*0.011));
+  let best=1e9, bx0=0, by0=0;
+  for(let y=by+win;y<by+rh-win;y+=Math.max(2,win>>1)){
+    for(let x=bx+win;x<bx+rw-win;x+=Math.max(2,win>>1)){
+      const m=winMean(g,w,h,x,y,win);
+      if(m<best){best=m;bx0=x;by0=y;}
+    }
+  }
+  return {x:bx0,y:by0,dark:best};
+}
+function detectFids(g,w,h){
+  return {
+    TL: findFiducial(g,w,h,0,0), TR: findFiducial(g,w,h,1,0),
+    BL: findFiducial(g,w,h,0,1), BR: findFiducial(g,w,h,1,1)
+  };
+}
+function cardToImg(xpt,ypt,fd){
+  const u=(xpt-fidL)/(fidR-fidL);
+  const v=(fidT-ypt)/(fidT-fidB); // 0 top .. 1 bottom
+  const top={x:fd.TL.x*(1-u)+fd.TR.x*u, y:fd.TL.y*(1-u)+fd.TR.y*u};
+  const bot={x:fd.BL.x*(1-u)+fd.BR.x*u, y:fd.BL.y*(1-u)+fd.BR.y*u};
+  return {x:top.x*(1-v)+bot.x*v, y:top.y*(1-v)+bot.y*v};
+}
+function readCard(gray){
+  const {g,w,h}=gray; const fd=detectFids(g,w,h);
+  const rad=Math.max(4,Math.round(Math.min(w,h)*0.009));
+  const samp=(pt)=>{const p=cardToImg(pt[0],pt[1],fd);return winMean(g,w,h,Math.round(p.x),Math.round(p.y),rad);};
+  // answers
+  const ans={}, amb=[];
+  for(let q=1;q<=45;q++){
+    const cs=COORDS.answers[q]; const vals=cs.map(samp);
+    const mn=Math.min(...vals), mo=vals.indexOf(mn), mean=vals.reduce((a,b)=>a+b,0)/5;
+    const s=[...vals].sort((a,b)=>a-b);
+    if(mean-mn>18 && mn<210){ ans[q]=mo+1; if(s[1]-s[0]<12) amb.push(q); }
+  }
+  // birthdate
+  const birth=[];
+  for(let c=0;c<6;c++){
+    const vals=COORDS.birth[c].map(samp);
+    const mn=Math.min(...vals),md=vals.indexOf(mn),mean=vals.reduce((a,b)=>a+b,0)/10;
+    birth.push((mean-mn>18&&mn<210)?md:null);
+  }
+  return {fd,ans,amb,birth};
+}
+function rotImage(img,deg){
+  const c=document.createElement('canvas'); const ct=c.getContext('2d');
+  if(deg%180===0){c.width=img.width;c.height=img.height;} else {c.width=img.height;c.height=img.width;}
+  ct.translate(c.width/2,c.height/2); ct.rotate(deg*Math.PI/180); ct.drawImage(img,-img.width/2,-img.height/2);
+  return c;
+}
+function process(){
+  if(!curImg) return;
+  const cv=rotImage(curImg,rot);
+  const MAXW=1600; let sc=Math.min(1,MAXW/cv.width);
+  const w=Math.round(cv.width*sc), h=Math.round(cv.height*sc);
+  const c=document.createElement('canvas'); c.width=w;c.height=h;
+  c.getContext('2d').drawImage(cv,0,0,w,h);
+  const id=c.getContext('2d').getImageData(0,0,w,h);
+  const gray=toGray(id);
+  const r=readCard(gray);
+  render(r,c);
+}
+function render(r,c){
+  const bstr=r.birth.map(x=>x==null?'·':x).join('');
+  document.getElementById('birth').textContent=bstr;
+  const dcv=document.getElementById('view'); dcv.width=c.width;dcv.height=c.height;
+  const dt=dcv.getContext('2d'); dt.drawImage(c,0,0);
+  // mark fiducials
+  dt.strokeStyle='#e24b4a'; dt.lineWidth=3;
+  for(const k of ['TL','TR','BL','BR']){const f=r.fd[k];dt.strokeRect(f.x-14,f.y-14,28,28);}
+  // answers table
+  let html='';
+  for(let q=1;q<=45;q++){
+    const a=r.ans[q]; const bad=r.amb.includes(q);
+    html+=`<span style="display:inline-block;width:56px;margin:2px;padding:3px 4px;border-radius:6px;font-size:12px;`
+      +`background:${a?(bad?'#fde9e7':'#eaf3ee'):'#f3f1ea'};color:${a?(bad?'#B0453A':'#1d6b4a'):'#9a9482'};">`
+      +`${q}. <b>${a?('①②③④⑤'[a-1]):'–'}</b>${bad?'?':''}</span>`;
+  }
+  document.getElementById('ans').innerHTML=html;
+  document.getElementById('summary').textContent=
+    `정답 인식 ${Object.keys(r.ans).length}/45 · 애매 ${r.amb.length} · 생년월일 ${bstr}`;
+}
+// ── 배치 판독 → 레벨테스트 채점 파이프라인(report.py) CSV ──
+let BATCH=[];   // {file,birth,ans,amb}
+function renderBatch(){
+  const card=document.getElementById('batchcard');
+  if(!BATCH.length){card.style.display='none';return;}
+  card.style.display='block';
+  let h='<tr style="background:#f3f1ea;font-weight:700;"><td style="padding:4px 6px;">#</td><td>파일</td><td>생년월일</td><td>인식</td><td>애매</td><td style="width:45%">답안</td></tr>';
+  BATCH.forEach((r,i)=>{
+    const line=Array.from({length:45},(_,q)=>r.ans[q+1]||0).join(',');
+    h+=`<tr style="border-top:1px solid #eee;"><td style="padding:4px 6px;">${i+1}</td><td>${r.file}</td>`
+      +`<td style="letter-spacing:2px;font-weight:700;">${r.birth.map(x=>x==null?'·':x).join('')}</td>`
+      +`<td>${Object.keys(r.ans).length}/45</td>`
+      +`<td style="color:${r.amb.length?'#B0453A':'#1d6b4a'};font-weight:700;">${r.amb.length?r.amb.join(' '):'-'}</td>`
+      +`<td style="font-size:10px;color:#666;">${line}</td></tr>`;
+  });
+  document.getElementById('btab').innerHTML=h;
+}
+function batchCSV(){
+  const form=document.getElementById('formsel').value;
+  const today=new Date().toISOString().slice(0,10);
+  const head=['수험번호','성명','생년월일','성별','출신교','form','응시일']
+    .concat(Array.from({length:45},(_,i)=>'답'+(i+1))).concat(['검토']).join(',');
+  const rows=BATCH.map(r=>{
+    const b=r.birth.every(x=>x!=null)?r.birth.join(''):'';
+    return ['','',b,'','',form,today]
+      .concat(Array.from({length:45},(_,q)=>r.ans[q+1]||0))
+      .concat([r.amb.length?('문항 '+r.amb.join(' ')):'']).join(',');
+  });
+  return String.fromCharCode(0xFEFF)+head+String.fromCharCode(10)+rows.join(String.fromCharCode(10));
+}
+document.getElementById('csvbtn').addEventListener('click',()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([batchCSV()],{type:'text/csv'}));
+  a.download='OMR답안_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+});
+document.getElementById('copybtn').addEventListener('click',async()=>{
+  await navigator.clipboard.writeText(batchCSV());
+  document.getElementById('summary').textContent='CSV '+BATCH.length+'명 복사됨 — 성명/form 확인 후 report.py 에 넣으세요.';
+});
+document.getElementById('clearbtn').addEventListener('click',()=>{BATCH=[];renderBatch();});
+
+function processToResult(){
+  if(!curImg) return null;
+  const cv=rotImage(curImg,rot);
+  const MAXW=1600; let sc=Math.min(1,MAXW/cv.width);
+  const w=Math.round(cv.width*sc), h=Math.round(cv.height*sc);
+  const c=document.createElement('canvas'); c.width=w;c.height=h;
+  c.getContext('2d').drawImage(cv,0,0,w,h);
+  const gray=toGray(c.getContext('2d').getImageData(0,0,w,h));
+  const r=readCard(gray); render(r,c); return r;
+}
+function loadImage(f){return new Promise(res=>{const img=new Image();
+  img.onload=()=>res(img); img.src=URL.createObjectURL(f);});}
+
+document.getElementById('file').addEventListener('change',async e=>{
+  const files=[...e.target.files]; if(!files.length)return;
+  for(const f of files){
+    curImg=await loadImage(f); rot=0;
+    const r=processToResult();
+    if(r) BATCH.push({file:f.name,birth:r.birth,ans:r.ans,amb:r.amb});
+  }
+  renderBatch(); e.target.value='';
+});
+document.getElementById('rotbtn').addEventListener('click',()=>{
+  rot=(rot+90)%360;
+  const r=processToResult();
+  if(r&&BATCH.length){const last=BATCH[BATCH.length-1];
+    last.birth=r.birth;last.ans=r.ans;last.amb=r.amb;renderBatch();}
+});
+</script>
+</body></html>
