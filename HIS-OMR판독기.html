@@ -170,7 +170,7 @@ function gradeCard(ans, F){
     if(total>=nx[1]-2 && nx[5]!=null && d>=nx[5]+2 && meets(nx)){ level=nx[0]; note='경계 구간 D지수 충족 → 상위 확정'; } }
   let retake=null;
   (K.retake||[]).forEach(x=>{ if((x[0]==='hi'&&total>=x[1])||(x[0]==='lo'&&total<=x[1])) retake=x[2]; });
-  const g9 = total>=96?1: total>=89?2: total>=77?3: total>=60?4: total>=40?5: total>=23?6: total>=11?7: total>=4?8: 9;
+  const LG={'H-AD':1,'H-H':1,'H-M':2,'H-L':3,'M-AD':4,'M-H':5,'M-M':6,'GI':6,'M-L':7,'GB':7,'E-A':8,'JA':8,'HI':9,'JI':9,'HB':9,'JB':9,'LD':9};let g9 = LG[(level||'').replace(' 이상','').replace(' 이하','').split('~')[0].trim()] || 9;if((level||'').indexOf('이하')>=0) g9=Math.min(9,g9+1);
   return {total, d, areas, cnt, marks, level, note, retake, g9};
 }
 
