@@ -11,26 +11,31 @@ button,label.btn{background:#0C4631;color:#F4ECD7;border:none;border-radius:10px
 #view{max-width:100%;border:1px solid #ccc;border-radius:8px;}
 h1{font-size:18px;margin:0 0 12px;}
 </style></head><body>
-<h1>HIS OMR 자동판독 <span style="font-size:12px;font-weight:500;color:#8a8578;">(스캔 이미지 업로드 → 정렬마크 자동정렬 → 생년월일·정답 판독)</span></h1>
+<h1>HIS 레벨테스트 채점 스테이션 <span style="font-size:12px;font-weight:500;color:#8a8578;">(스캔을 붙여넣거나 올리면 → 판독 → 채점 → 판정 → 성적통지표까지 자동)</span></h1>
 <div class="bar">
-  <label class="btn">이미지 업로드 (여러 장 가능)<input id="file" type="file" accept="image/*" multiple style="display:none"></label>
+  <label class="btn">스캔 이미지 올리기 (여러 장)<input id="file" type="file" accept="image/*" multiple style="display:none"></label><span style="font-size:12px;color:#8a8578;font-weight:700;">또는 캡처해서 이 화면에 Ctrl+V 붙여넣기</span>
   <button id="rotbtn">90° 회전</button>
   <span id="summary">이미지를 올리세요.</span>
 </div>
 <div class="card"><span id="birthbox">생년월일: <span id="birth" style="letter-spacing:3px;">------</span></span></div>
 <div class="card"><div style="font-size:12px;font-weight:700;color:#8a6520;margin-bottom:8px;">정답 (① =▨ 인식, ? =애매)</div><div id="ans"></div></div>
 <div class="card" id="batchcard" style="display:none">
-  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
-    <span style="font-size:12px;font-weight:700;color:#8a6520;">판독 결과 (레벨테스트 연계)</span>
-    <select id="formsel" style="border-radius:8px;padding:4px 8px;border:1px solid #ccc;font-weight:700;">
-      <option value="E">Form E · 초등</option><option value="M" selected>Form M · 중등</option><option value="H">Form H · 고등</option>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+    <span style="font-size:13px;font-weight:800;color:#8a6520;">응시 시험지</span>
+    <select id="formsel" style="border-radius:8px;padding:5px 10px;border:1.4px solid #0C4631;font-weight:800;">
+      <option value="E">Form E · 초등 5–6</option><option value="M" selected>Form M · 중등 1–3</option><option value="H">Form H · 고등 1–3</option>
     </select>
-    <button id="csvbtn">답안 CSV 다운로드</button>
-    <button id="copybtn">CSV 복사</button>
+    <span style="font-size:13px;font-weight:800;color:#8a6520;">응시일</span>
+    <input id="examdate" type="date" style="border-radius:8px;padding:4px 8px;border:1px solid #ccc;font-weight:700;">
+    <button id="printall">성적통지표 전체 인쇄</button>
+    <button id="csvbtn" style="background:#fff;color:#0C4631;border:1.4px solid #0C4631;">엑셀용 CSV</button>
     <button id="clearbtn" style="background:#8a6520;">비우기</button>
-    <span style="font-size:11px;color:#8a8578;">→ report.py 답안입력 형식 · 성명/form만 채우면 통지표·엑셀 자동 생성</span>
   </div>
   <table id="btab" style="width:100%;border-collapse:collapse;font-size:12px;"></table>
+  <div style="font-size:11px;color:#8a8578;margin-top:8px;">
+    성명만 입력하면 끝 — 총점·판정·신규생 레벨테스트 입력값이 자동 계산되고, [통지표]로 학생별 인쇄, [입력값]으로 앱 신규진단 값 복사.
+    애매(<b style="color:#B0453A">?</b>) 문항은 카드 원본을 확인해 아래 인식 화면에서 대조하세요.
+  </div>
 </div>
 <div class="card"><div style="font-size:12px;font-weight:700;color:#8a6520;margin-bottom:8px;">인식 화면 (빨강=정렬마크 검출)</div><canvas id="view"></canvas></div>
 <script>
@@ -136,44 +141,164 @@ function render(r,c){
   document.getElementById('summary').textContent=
     `정답 인식 ${Object.keys(r.ans).length}/45 · 애매 ${r.amb.length} · 생년월일 ${bstr}`;
 }
-// ── 배치 판독 → 레벨테스트 채점 파이프라인(report.py) CSV ──
-let BATCH=[];   // {file,birth,ans,amb}
+const KEYS={"E":{"key":[1,2,5,4,3,2,3,5,4,2,1,4,1,3,4,2,3,5,2,1,2,3,4,2,3,5,2,5,1,3,4,1,2,3,4,5,2,3,5,1,3,4,2,1,5],"p3":[10,12,20,28,31,35,39,40,43,44],"anchor":[12,20,28,31,35,43],"cuts":[["LD ~ DA",0,34,null,null,null],["JB",35,44,null,null,null],["JI",45,54,10,13,1],["JA",55,64,13,18,3],["GB",65,74,16,23,5],["GI 이상",75,100,18,26,7]],"retake":[["hi",75,"총점 75점 이상 — 이 시험지의 측정 범위를 넘었습니다. Form M(중등용) 재응시 후 판정하십시오."]],"label":"초등 5–6"},"M":{"key":[4,5,2,2,4,1,3,5,1,1,2,3,3,5,2,5,4,1,1,2,3,2,3,5,1,1,5,3,4,4,2,3,1,5,4,5,2,3,3,2,2,5,2,1,4],"p3":[11,12,15,26,29,37,41,42,43,44],"anchor":[1,12,15,19,26,27,29,30,35,37,40,41],"cuts":[["HB",0,25,null,null,null],["HI",26,33,null,null,null],["E-A",34,41,8,10,null],["M-L",42,50,11,14,1],["M-M",51,59,14,18,3],["M-H",60,68,16,22,5],["M-AD",69,77,18,25,7],["H-L 이상",78,100,20,28,8]],"retake":[["lo",25,"총점 25점 이하 — 이 시험지로는 변별되지 않습니다. Form E(초등용) 재응시 후 판정하십시오."],["hi",85,"총점 85점 이상 — 이 시험지의 측정 범위를 넘었습니다. Form H(고등용) 재응시 후 판정하십시오."]],"label":"중등 1–3"},"H":{"key":[4,4,3,2,5,2,3,4,5,2,1,5,2,5,1,4,3,1,2,3,2,5,4,5,1,2,3,1,4,3,4,1,2,2,4,4,1,4,3,3,5,5,2,1,3],"p3":[10,12,19,26,31,40,41,42,43,44],"anchor":[7,13,25,29,33,34],"cuts":[["M-M 이하",0,30,null,null,null],["M-H",31,40,null,10,null],["M-AD",41,50,11,14,1],["H-L",51,60,14,19,3],["H-M",61,70,16,23,5],["H-H",71,82,19,27,7],["H-AD",83,100,21,30,9]],"retake":[["lo",30,"총점 30점 이하 — 이 시험지의 측정 범위 아래입니다. Form M(중등용) 재응시 후 판정하십시오."]],"label":"고등 1–3"}};
+// ── 채점 스테이션: 판독 → 채점 → 판정 → 통지표 ──
+let BATCH=[];
+const AREA_OF = n => n<=12 ? '듣기' : n<=20 ? '어휘' : n<=31 ? '문법' : '독해';
+const AREA_CNT = {'듣기':12,'어휘':8,'문법':11,'독해':14};
+const C5 = ['–','①','②','③','④','⑤'];
+
+function gradeCard(ans, F){
+  const K = KEYS[F];
+  let total=0, d=0;
+  const areas={'듣기':[0,0],'어휘':[0,0],'문법':[0,0],'독해':[0,0]};   // [득점,만점]
+  const cnt={'듣기':0,'어휘':0,'문법':0,'독해':0};                     // 정답 문항수
+  const marks=[];
+  for(let n=1;n<=45;n++){
+    const pt = K.p3.includes(n)?3:2, a=AREA_OF(n), ok = ans[n]===K.key[n-1];
+    areas[a][1]+=pt;
+    if(ok){ total+=pt; areas[a][0]+=pt; cnt[a]++; if(pt===3)d++; }
+    marks.push({n, ok, given:ans[n]||0, pt});
+  }
+  const rows=K.cuts;
+  let idx=rows.findIndex(r=> total>=r[1] && total<=r[2]);
+  if(idx<0) idx=0;
+  const meets=r=> (r[3]==null||areas['문법'][0]>=r[3]) && (r[4]==null||areas['독해'][0]>=r[4]) && (r[5]==null||d>=r[5]);
+  let level=rows[idx][0], note='';
+  if(!meets(rows[idx])){ level=rows[Math.max(idx-1,0)][0]; note='영역 최소요건 미달 → 한 단계 하향'; }
+  else if(idx+1<rows.length){ const nx=rows[idx+1];
+    if(total>=nx[1]-2 && nx[5]!=null && d>=nx[5]+2 && meets(nx)){ level=nx[0]; note='경계 구간 D지수 충족 → 상위 확정'; } }
+  let retake=null;
+  (K.retake||[]).forEach(x=>{ if((x[0]==='hi'&&total>=x[1])||(x[0]==='lo'&&total<=x[1])) retake=x[2]; });
+  const g9 = total>=96?1: total>=89?2: total>=77?3: total>=60?4: total>=40?5: total>=23?6: total>=11?7: total>=4?8: 9;
+  return {total, d, areas, cnt, marks, level, note, retake, g9};
+}
+
+function regrade(){
+  const F=document.getElementById('formsel').value;
+  BATCH.forEach(r=>{ r.g = gradeCard(r.ans, F); r.form=F; });
+}
+
+function ltLine(r){
+  return '듣기 '+r.g.cnt['듣기']+'/12 · 어휘 '+r.g.cnt['어휘']+'/8 · 문법 '+r.g.cnt['문법']+'/11 · 독해 '+r.g.cnt['독해']+'/14';
+}
+
 function renderBatch(){
   const card=document.getElementById('batchcard');
-  if(!BATCH.length){card.style.display='none';return;}
+  if(!BATCH.length){ card.style.display='none'; return; }
+  regrade();
   card.style.display='block';
-  let h='<tr style="background:#f3f1ea;font-weight:700;"><td style="padding:4px 6px;">#</td><td>파일</td><td>생년월일</td><td>인식</td><td>애매</td><td style="width:45%">답안</td></tr>';
+  let h='<tr style="background:#f3f1ea;font-weight:800;"><td style="padding:5px 6px;">#</td><td>성명</td>'
+    +'<td>생년월일</td><td>총점</td><td>판정</td><td>D지수</td><td>신규생 레벨테스트 입력값</td><td>인식</td><td></td></tr>';
   BATCH.forEach((r,i)=>{
-    const line=Array.from({length:45},(_,q)=>r.ans[q+1]||0).join(',');
-    h+=`<tr style="border-top:1px solid #eee;"><td style="padding:4px 6px;">${i+1}</td><td>${r.file}</td>`
-      +`<td style="letter-spacing:2px;font-weight:700;">${r.birth.map(x=>x==null?'·':x).join('')}</td>`
-      +`<td>${Object.keys(r.ans).length}/45</td>`
-      +`<td style="color:${r.amb.length?'#B0453A':'#1d6b4a'};font-weight:700;">${r.amb.length?r.amb.join(' '):'-'}</td>`
-      +`<td style="font-size:10px;color:#666;">${line}</td></tr>`;
+    const warn = r.g.retake ? ' <span title="'+r.g.retake+'" style="color:#B0453A;font-weight:800;">재응시</span>' : '';
+    const amb = r.amb.length ? '<span style="color:#B0453A;font-weight:800;">'+Object.keys(r.ans).length+'/45 · ?'+r.amb.join(',')+'</span>'
+                             : Object.keys(r.ans).length+'/45';
+    h+='<tr style="border-top:1px solid #eee;vertical-align:middle;">'
+      +'<td style="padding:5px 6px;">'+(i+1)+'</td>'
+      +'<td><input data-i="'+i+'" class="nm" value="'+(r.name||'')+'" placeholder="이름 입력" '
+        +'style="width:90px;border:1.2px solid #ccc;border-radius:7px;padding:4px 7px;font-weight:700;"></td>'
+      +'<td style="letter-spacing:2px;font-weight:700;">'+r.birth.map(x=>x==null?'·':x).join('')+'</td>'
+      +'<td style="font-weight:800;font-size:14px;">'+r.g.total+'</td>'
+      +'<td style="font-weight:800;color:#0C4631;">'+r.g.level+warn+'</td>'
+      +'<td>'+r.g.d+'/10</td>'
+      +'<td style="font-size:11px;">'+ltLine(r)
+        +' <button data-i="'+i+'" class="cpbtn" style="padding:2px 8px;font-size:10px;border-radius:6px;">입력값 복사</button></td>'
+      +'<td>'+amb+'</td>'
+      +'<td><button data-i="'+i+'" class="rpbtn" style="padding:4px 10px;font-size:11px;border-radius:7px;">통지표</button></td>'
+      +'</tr>';
   });
   document.getElementById('btab').innerHTML=h;
+  document.querySelectorAll('.nm').forEach(el=>el.addEventListener('input',e=>{BATCH[+e.target.dataset.i].name=e.target.value;}));
+  document.querySelectorAll('.rpbtn').forEach(el=>el.addEventListener('click',e=>printNotices([BATCH[+e.target.dataset.i]])));
+  document.querySelectorAll('.cpbtn').forEach(el=>el.addEventListener('click',async e=>{
+    const r=BATCH[+e.target.dataset.i];
+    await navigator.clipboard.writeText(ltLine(r)+' · 총점 '+r.g.total+' · 판정 '+r.g.level+' · D지수 '+r.g.d+'/10');
+    document.getElementById('summary').textContent=(r.name||'학생')+' 입력값 복사됨 — 앱 신규진단에 붙여넣으세요.';
+  }));
+  const n=BATCH.length, amb=BATCH.filter(r=>r.amb.length).length;
+  document.getElementById('summary').textContent='판독 '+n+'명 완료 · 검토 필요 '+amb+'명 · 성명 입력 후 [통지표]를 누르세요.';
 }
+
+function noticeHTML(r){
+  const F=r.form, K=KEYS[F];
+  const date=document.getElementById('examdate').value || new Date().toISOString().slice(0,10);
+  const yr=date.slice(0,4);
+  const A=['듣기','어휘','문법','독해'];
+  const areaLines=A.map(a=>'<div>- '+a+'영역: '+r.g.areas[a][0]+'/'+r.g.areas[a][1]+'만점</div>').join('');
+  const pct=[['1등급','0 ~ 4%','1등 ~ 4등','4명'],['2등급','4.01 ~ 11%','5등 ~ 11등','7명'],
+    ['3등급','11.01 ~ 23%','12등 ~ 23등','12명'],['4등급','23.01 ~ 40%','24등 ~ 40등','17명'],
+    ['5등급','40.01 ~ 60%','41등 ~ 60등','20명'],['6등급','60.01 ~ 77%','61등 ~ 77등','17명'],
+    ['7등급','77.01 ~ 89%','78등 ~ 89등','12명'],['8등급','89.01 ~ 96%','90등 ~ 96등','7명'],
+    ['9등급','96.01 ~ 100%','97등 ~ 100등','4명']]
+    .map(x=>'<tr><td>'+x.join('</td><td>')+'</td></tr>').join('');
+  const birth=r.birth.every(x=>x!=null)?r.birth.join(''):'';
+  return '<div class="page">'
+    +'<h1>'+yr+'학년도 히즈어학원 영어영역 능력시험 성적통지표</h1>'
+    +'<table class="info">'
+    +'<tr><td class="k">수험번호</td><td>성명</td><td>생년월일</td><td>성별</td><td>응시 시험지</td></tr>'
+    +'<tr><td></td><td><b>'+(r.name||'')+'</b></td><td>'+birth+'</td><td></td><td>Form '+F+' ('+K.label+')</td></tr>'
+    +'<tr><td class="k">과목</td><td>영어 영역</td><td class="areas" rowspan="3" colspan="3">'+areaLines
+    +'<div style="margin-top:4mm;color:#555;">판정 레벨: <b>'+r.g.level+'</b> · D지수 '+r.g.d+'/10'
+    +(r.g.note?'<br>'+r.g.note:'')+(r.g.retake?'<br><b style="color:#B0453A">'+r.g.retake+'</b>':'')+'</div></td></tr>'
+    +'<tr><td class="k">점수</td><td><b>'+r.g.total+'</b></td></tr>'
+    +'<tr><td class="k">등급</td><td><b>'+r.g.g9+'</b></td></tr>'
+    +'</table>'
+    +'<div class="date">'+date+'</div><div class="acad">히즈어학원</div>'
+    +'<div class="pctwrap"><div class="pcthead">등급 백분위 기준표</div>'
+    +'<table class="pct"><tr><th>등급</th><th>백분위</th><th>100명 중 등수</th><th>100명 중</th></tr>'+pct+'</table></div>'
+    +'</div>';
+}
+
+function printNotices(list){
+  const withName=list.filter(r=>true);
+  const css='*{box-sizing:border-box;-webkit-print-color-adjust:exact}'
+    +'@page{size:A4;margin:24mm 22mm}'
+    +'body{margin:0;font-family:Batang,바탕,\'Malgun Gothic\',serif;color:#111;font-size:11pt;line-height:1.6}'
+    +'.page{page-break-after:always}.page:last-child{page-break-after:auto}'
+    +'h1{text-align:center;font-size:15.5pt;letter-spacing:.06em;margin:8mm 0 12mm}'
+    +'table.info{width:100%;border-collapse:collapse;font-size:10.5pt}'
+    +'table.info td{border:.9px solid #444;padding:2.6mm 3.5mm;vertical-align:middle}'
+    +'table.info td.k{width:24mm}'
+    +'td.areas{font-size:10pt;line-height:1.9;padding-left:5mm}'
+    +'.date{text-align:center;margin-top:14mm}'
+    +'.acad{text-align:center;margin-top:4mm;font-size:13pt;letter-spacing:.25em;font-weight:700}'
+    +'.pctwrap{margin-top:14mm}.pcthead{font-size:10.5pt;font-weight:700;margin-bottom:2mm}'
+    +'table.pct{width:100%;border-collapse:collapse;font-size:9.5pt;text-align:center}'
+    +'table.pct th{background:#d9e2f3;border:.8px solid #8496b0;padding:1.8mm}'
+    +'table.pct td{border:.8px solid #8496b0;padding:1.7mm}';
+  const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>성적통지표</title>'
+    +'<style>'+css+'</style></head><body>'+withName.map(noticeHTML).join('')+'</body></html>';
+  let fr=document.getElementById('__pf');
+  if(fr) fr.remove();
+  fr=document.createElement('iframe'); fr.id='__pf'; fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+  document.body.appendChild(fr);
+  fr.srcdoc=html;
+  fr.onload=()=>{ fr.contentWindow.focus(); fr.contentWindow.print(); };
+}
+
 function batchCSV(){
-  const form=document.getElementById('formsel').value;
-  const today=new Date().toISOString().slice(0,10);
+  const F=document.getElementById('formsel').value;
+  const date=document.getElementById('examdate').value || new Date().toISOString().slice(0,10);
+  const NL=String.fromCharCode(10);
   const head=['수험번호','성명','생년월일','성별','출신교','form','응시일']
     .concat(Array.from({length:45},(_,i)=>'답'+(i+1))).concat(['검토']).join(',');
   const rows=BATCH.map(r=>{
     const b=r.birth.every(x=>x!=null)?r.birth.join(''):'';
-    return ['','',b,'','',form,today]
+    return ['',(r.name||''),b,'','',F,date]
       .concat(Array.from({length:45},(_,q)=>r.ans[q+1]||0))
       .concat([r.amb.length?('문항 '+r.amb.join(' ')):'']).join(',');
   });
-  return String.fromCharCode(0xFEFF)+head+String.fromCharCode(10)+rows.join(String.fromCharCode(10));
+  return String.fromCharCode(0xFEFF)+head+NL+rows.join(NL);
 }
+
+document.getElementById('examdate').value=new Date().toISOString().slice(0,10);
+document.getElementById('formsel').addEventListener('change',renderBatch);
+document.getElementById('printall').addEventListener('click',()=>printNotices(BATCH));
 document.getElementById('csvbtn').addEventListener('click',()=>{
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([batchCSV()],{type:'text/csv'}));
   a.download='OMR답안_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-});
-document.getElementById('copybtn').addEventListener('click',async()=>{
-  await navigator.clipboard.writeText(batchCSV());
-  document.getElementById('summary').textContent='CSV '+BATCH.length+'명 복사됨 — 성명/form 확인 후 report.py 에 넣으세요.';
 });
 document.getElementById('clearbtn').addEventListener('click',()=>{BATCH=[];renderBatch();});
 
@@ -190,14 +315,21 @@ function processToResult(){
 function loadImage(f){return new Promise(res=>{const img=new Image();
   img.onload=()=>res(img); img.src=URL.createObjectURL(f);});}
 
-document.getElementById('file').addEventListener('change',async e=>{
-  const files=[...e.target.files]; if(!files.length)return;
+async function addFiles(files){
   for(const f of files){
     curImg=await loadImage(f); rot=0;
     const r=processToResult();
-    if(r) BATCH.push({file:f.name,birth:r.birth,ans:r.ans,amb:r.amb});
+    if(r) BATCH.push({file:f.name||'붙여넣기',birth:r.birth,ans:r.ans,amb:r.amb,name:''});
   }
-  renderBatch(); e.target.value='';
+  renderBatch();
+}
+document.getElementById('file').addEventListener('change',e=>{
+  addFiles([...e.target.files]); e.target.value='';
+});
+window.addEventListener('paste',e=>{
+  const imgs=[...(e.clipboardData||{}).items||[]].filter(it=>it.type&&it.type.startsWith('image'))
+    .map(it=>it.getAsFile()).filter(Boolean);
+  if(imgs.length) addFiles(imgs);
 });
 document.getElementById('rotbtn').addEventListener('click',()=>{
   rot=(rot+90)%360;
