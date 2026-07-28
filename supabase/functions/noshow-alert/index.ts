@@ -13,13 +13,22 @@ const digits = (s: string) => String(s || "").replace(/[^0-9]/g, "");
 
 // 등원 시작 전 학생(접수대기 / 시작일이 아직 안 온 신규 등록생)은 알림 대상이 아님.
 // 앱의 _notStarted(st)와 동일 규칙 — 날짜 구분자(. - /)를 정규화해 비교한다.
-const normDate = (s: string) => String(s || "").replace(/[-/]/g, ".").trim();
+// 구분자(. - /) 통일 + 월·일 0 채움 -> "2026.8.3" 같은 표기도 정확히 비교된다.
+function normDate(s: string): string {
+  const p = String(s || "").replace(/[-/]/g, ".").trim().split(".");
+  if (p.length < 3) return "";
+  const y = parseInt(p[0], 10), m = parseInt(p[1], 10), d = parseInt(p[2], 10);
+  if (!(y > 0) || !(m > 0) || !(d > 0)) return "";
+  return y + "." + String(m).padStart(2, "0") + "." + String(d).padStart(2, "0");
+}
 function notStarted(stu: any, todayStr: string): boolean {
   if (!stu) return false;
   if (stu.pending) return true;
   const sd = normDate(stu.startPlan || stu.registeredAt || "");
   if (!sd) return false;
-  return sd > normDate(todayStr);
+  const td = normDate(todayStr);
+  if (!td) return false;
+  return sd > td;
 }
 
 function classStart(c: any, w: number): string {
