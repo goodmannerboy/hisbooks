@@ -109,17 +109,35 @@ function rotImage(img,deg){
   ct.translate(c.width/2,c.height/2); ct.rotate(deg*Math.PI/180); ct.drawImage(img,-img.width/2,-img.height/2);
   return c;
 }
-function process(){
-  if(!curImg) return;
-  const cv=rotImage(curImg,rot);
+function readAt(deg){
+  const cv=rotImage(curImg,deg);
   const MAXW=1600; let sc=Math.min(1,MAXW/cv.width);
   const w=Math.round(cv.width*sc), h=Math.round(cv.height*sc);
   const c=document.createElement('canvas'); c.width=w;c.height=h;
   c.getContext('2d').drawImage(cv,0,0,w,h);
-  const id=c.getContext('2d').getImageData(0,0,w,h);
-  const gray=toGray(id);
-  const r=readCard(gray);
-  render(r,c);
+  const gray=toGray(c.getContext('2d').getImageData(0,0,w,h));
+  return {r:readCard(gray), c:c, deg:deg};
+}
+function scoreOf(r){
+  const n=(r.answers||r.ans||[]).filter(x=>x!=null).length||Object.keys(r.ans||{}).length;
+  const b=(r.birth||[]).filter(x=>x!=null).length;
+  return n*10+b;
+}
+function readAuto(){
+  let best=readAt(rot);
+  if(scoreOf(best.r)<100){
+    [90,180,270].map(d=>(rot+d)%360).forEach(d=>{
+      const t=readAt(d);
+      if(scoreOf(t.r)>scoreOf(best.r)) best=t;
+    });
+    if(best.deg!==rot){ rot=best.deg; }
+  }
+  return best;
+}
+function process(){
+  if(!curImg) return;
+  const b=readAuto();
+  render(b.r,b.c);
 }
 function render(r,c){
   const bstr=r.birth.map(x=>x==null?'·':x).join('');
@@ -304,13 +322,8 @@ document.getElementById('clearbtn').addEventListener('click',()=>{BATCH=[];rende
 
 function processToResult(){
   if(!curImg) return null;
-  const cv=rotImage(curImg,rot);
-  const MAXW=1600; let sc=Math.min(1,MAXW/cv.width);
-  const w=Math.round(cv.width*sc), h=Math.round(cv.height*sc);
-  const c=document.createElement('canvas'); c.width=w;c.height=h;
-  c.getContext('2d').drawImage(cv,0,0,w,h);
-  const gray=toGray(c.getContext('2d').getImageData(0,0,w,h));
-  const r=readCard(gray); render(r,c); return r;
+  const b=readAuto();
+  render(b.r,b.c); return b.r;
 }
 function loadImage(f){return new Promise(res=>{const img=new Image();
   img.onload=()=>res(img); img.src=URL.createObjectURL(f);});}
