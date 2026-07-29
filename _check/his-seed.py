@@ -74,7 +74,9 @@ SEED = """(closed)=>{
       S('s8','개인보강')
     ]},
     {id:'C2',name:'경계 B반(휴강)',owner:'관리자',schedule:sch(NOW_S,NOW_E),students:[ S('s9','휴강반학생') ]},
-    {id:'C3',name:'경계 C반(보강이동)',owner:'관리자',schedule:sch(LATER_S,LATER_E),students:[ S('s10','보강반학생') ]}
+    {id:'C3',name:'경계 C반(보강이동)',owner:'관리자',schedule:sch(LATER_S,LATER_E),students:[ S('s10','보강반학생') ]},
+    {id:'C4',name:'경계 D반(남의반)',owner:'다른쌤',schedule:sch(NOW_S,NOW_E),students:[
+      S('s12','남의반생일', {intake:{parentContact:'010-0000-0012', birth: ('2012.'+td.split('.')[1]+'.'+td.split('.')[2])}}) ]}
   ];
 
   d.checkins['s1|'+td]={in:NOW_S, t:Date.now()};
@@ -117,16 +119,16 @@ SCREENS = [
 RULES = [
     ('학생관리(학원)', '접수대기 학생은 반 명단에 없음 (접수 대기 패널에만)',
      "()=>{const t=document.body.innerText; const i=t.indexOf('반별 일정'); return i>=0 && t.slice(i).indexOf('접수대기')<0;}"),
-    ('학생관리(학원)', '전체 원생 8명 (접수대기·퇴원 제외 / 시작 전·퇴원 예정은 포함)',
-     "()=>/전체 원생\s*8명/.test(document.body.innerText)"),
+    ('학생관리(학원)', '전체 원생 9명 (접수대기·퇴원 제외 / 시작 전·퇴원 예정은 포함)',
+     "()=>/전체 원생\s*9명/.test(document.body.innerText)"),
     ('학생관리(학원)', '이번 달 퇴원 2명 (반 안 1 + 반 삭제 보관함 1)',
      "()=>/이번 달 퇴원\s*2명/.test(document.body.innerText)"),
     ('학생관리(학원)', '퇴원 예정 1명',
      "()=>/퇴원 예정\s*1명/.test(document.body.innerText)"),
     ('학생관리(학원)', '퇴원 예정 배지가 명단에 보임',
      "()=>/퇴원 예정 [0-9]+\/[0-9]+/.test(document.body.innerText)"),
-    ('학생관리(학원)', '8주+ 미상담 7명 (상담 있는 1명만 제외)',
-     "()=>/8주\+ 미상담\s*7명/.test(document.body.innerText)"),
+    ('학생관리(학원)', '8주+ 미상담 8명 (상담 있는 1명만 제외)',
+     "()=>/8주\+ 미상담\s*8명/.test(document.body.innerText)"),
 
     ('등하원 관제', '관제판에 휴강 반이 없음',
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
@@ -140,9 +142,9 @@ RULES = [
     ('등하원 관제', '개인 보강 학생은 «보강 예정»으로 표시 (미등원 아님)',
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
      " return i>=0 && t.slice(i,j).indexOf('보강 예정')>=0;}"),
-    ('등하원 관제', '미등원 2명 (결석 예정·개인 보강·시작 전·퇴원 제외)',
+    ('등하원 관제', '미등원 3명 (결석 예정·개인 보강·시작 전·퇴원 제외)',
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 수업 대상');"
-     " return i>=0 && /미등원\s*2/.test(t.slice(i,i+120));}"),
+     " return i>=0 && /미등원\s*3/.test(t.slice(i,i+120));}"),
     ('등하원 관제', '안전망 목록에 개인 보강 학생이 없음',
      "()=>{const t=document.body.innerText; const i=t.indexOf('미등원 확인');"
      " return i<0 || t.slice(i,i+500).indexOf('개인보강')<0;}"),
@@ -150,6 +152,14 @@ RULES = [
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
      " return i>=0 && t.slice(i,j).indexOf('결석 · 병원')>=0;}"),
 
+    ('일정(선생님)', '주간 일정 명단에 등원 시작 전 학생이 없음',
+     "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
+     " return i>=0 && j>i && t.slice(i,j).indexOf('시작전')<0;}"),
+    ('일정(선생님)', '주간 일정 명단에 퇴원생이 없음',
+     "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
+     " return i>=0 && j>i && t.slice(i,j).split('퇴원예정').join('').indexOf('퇴원')<0;}"),
+    ('오늘', '원장은 남의 반 학생 생일도 보임',
+     "()=>document.body.innerText.indexOf('남의반생일')>=0"),
     ('오늘', '휴강 반이 «휴강»으로 표시됨',
      "()=>{const t=document.body.innerText; return t.indexOf('경계 B반')<0 || t.indexOf('휴강')>=0;}"),
 ]
@@ -248,6 +258,25 @@ def run():
                     else:
                         fails.append('%s · %s' % (name, desc))
                         print('       실패 ' + desc)
+
+        # 담임 스코프 — 선생님은 자기 반만 보여야
+        pg.evaluate(SEED, False)
+        pg.wait_for_timeout(2000)
+        pg.evaluate("()=>window.__L.setState({currentUser:'다른쌤', view:'home'})")
+        pg.wait_for_timeout(1800)
+        t2 = pg.evaluate(TXT)
+        print()
+        print('── 담임 스코프 (다른쌤으로 로그인) ──')
+        for desc, ok in [
+            ('자기 반 학생 생일은 보임', t2.find('남의반생일') >= 0),
+            ('다른 반 학생(정상재원)은 안 보임', t2.find('정상재원') < 0),
+        ]:
+            checked += 1
+            if ok:
+                print('  OK  ' + desc)
+            else:
+                fails.append('담임 스코프 · ' + desc)
+                print('  실패 ' + desc)
 
         checked += 1
         if errs:
