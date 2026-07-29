@@ -158,6 +158,17 @@ RULES = [
     ('일정(선생님)', '주간 일정 명단에 등원 시작 전 학생이 없음',
      "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
      " return i>=0 && j>i && t.slice(i,j).indexOf('시작전')<0;}"),
+    ('일정(선생님)', '휴강한 반이 «휴강»으로 표시되고 이동 날짜가 보임',
+     "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
+     " const g=t.slice(i,j); return i>=0 && g.indexOf('휴강')>=0 && /[0-9]+\/[0-9]+로 이동/.test(g);}"),
+    ('일정(선생님)', '보강으로 옮겨간 수업이 «보강»으로 표시됨',
+     "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
+     " return i>=0 && t.slice(i,j).indexOf('보강')>=0;}"),
+    ('일정(선생님)', '개인 보강 학생 칩이 보임',
+     "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
+     " return i>=0 && t.slice(i,j).indexOf('개인보강 보강')>=0;}"),
+    ('일정(선생님)', '주간 헤더에 «휴강 N · 보강 N» 요약',
+     "()=>/이번 주 휴강 [0-9]+ · 보강 [0-9]+/.test(document.body.innerText)"),
     ('일정(선생님)', '주간 일정 명단에 퇴원생이 없음',
      "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
      " return i>=0 && j>i && t.slice(i,j).split('퇴원예정').join('').indexOf('퇴원')<0;}"),
