@@ -1,0 +1,150 @@
+# -*- coding: utf-8 -*-
+"""
+히즈북스 동기화 전수 검사 (his-sync)
+------------------------------------
+이번 사고들(등록 확정 되돌아감·퇴원 예정 증발·공지 중복)의 뿌리는 전부 하나 —
+«기기 간 합치기»였습니다. 이 검사는 index.html 에서 실제 병합 코드 두 벌
+(mergeAppData = 올릴 때 / _absorbFresh = 받을 때)을 그대로 꺼내 실행하며,
+등록·퇴원의 전체 수명주기를 다기기 시나리오로 확인합니다.
+
+    py _check/his-sync.py
+
+하나라도 실패하면 배포하지 마세요.
+"""
+import io, os, re, sys, json
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+HERE = os.path.dirname(os.path.abspath(__file__))
+APP = os.path.join(os.path.dirname(HERE), 'index.html')
+
+from playwright.sync_api import sync_playwright
+
+
+def payload():
+    h = open(APP, encoding='utf-8').read()
+    mark = '<script type="__bundler/template">'
+    j = h.find(mark) + len(mark)
+    while h[j] in ' \n\r\t':
+        j += 1
+    v, _ = json.JSONDecoder().raw_decode(h, j)
+    return v
+
+
+def balanced(v, start_kw):
+    i = v.find(start_kw)
+    assert i >= 0, start_kw
+    p = v.find('{', i + len(start_kw) - 1)
+    d, q = 0, p
+    while q < len(v):
+        if v[q] == '{':
+            d += 1
+        elif v[q] == '}':
+            d -= 1
+            if d == 0:
+                break
+        q += 1
+    return i, p, q
+
+
+def build_js(v):
+    a, _, b = balanced(v, 'function mergeAppData')
+    i0 = v.find('function _hisClone')
+    merge = v[i0:b + 1]
+    i, p, q = balanced(v, '_absorbFresh(fresh){')
+    body = v[p + 1:q]
+    absorb = ('const __T={ state:{data:null}, setState:function(f,cb){ const r=f(this.state);'
+              ' if(r&&r.data) this.state.data=r.data; } };'
+              ' __T._absorbFresh=function(fresh){' + body + '}; window.__T=__T;')
+    return merge + ';' + absorb
+
+
+SC = """
+const cls=(s)=>({classes:[{id:'C1',name:'A반',students:[JSON.parse(JSON.stringify(s))]}]});
+const stu=(m)=>m.classes[0].students[0];
+const pull=(cloud, local)=>{ __T.state.data=JSON.parse(JSON.stringify(local));
+  __T._absorbFresh(JSON.parse(JSON.stringify(cloud))); return __T.state.data; };
+const Y={id:'y1',name:'최윤영',intake:{date:'2026.07.28',classPick:'CX'}};
+const mk=(ex)=>Object.assign(JSON.parse(JSON.stringify(Y)), ex);
+const R=[];
+const T=(name, ok)=>R.push([name, !!ok]);
+
+// ① 확정(도장 있음) vs 옛 대기(도장 없음) — 양방향
+{ const c=cls(mk({pending:true})), m=cls(mk({registeredAt:'2026.08.04',startPlan:'2026.08.04',enrT:5000}));
+  T('확정이 옛 대기를 이김 (올릴 때)', !stu(mergeAppData(c,m)).pending);
+  T('확정이 옛 대기를 이김 (반대 방향)', !stu(mergeAppData(m,c)).pending); }
+
+// ② 실제 사고: 대기 사본의 상담 도장이 더 최신이어도 확정 유지
+{ const c=cls(mk({pending:true,intakeT:9999})), m=cls(mk({registeredAt:'2026.08.04',startPlan:'2026.08.04',intakeT:1000,enrT:5000}));
+  T('상담 도장이 더 최신인 대기 사본에도 확정 유지', !stu(mergeAppData(c,m)).pending && stu(mergeAppData(c,m)).startPlan==='2026.08.04'); }
+
+// ③ 시작일 수정(새 도장) vs 깨진 옛 날짜
+{ const c=cls(mk({registeredAt:'2026.08.29',startPlan:'2026.08.29',enrT:5000})),
+        m=cls(mk({registeredAt:'2026.08.04',startPlan:'2026.08.04',enrT:7000}));
+  T('시작일 수정이 옛 날짜(8/29)를 이김', stu(mergeAppData(c,m)).startPlan==='2026.08.04');
+  T('반대 방향도 동일', stu(mergeAppData(m,c)).startPlan==='2026.08.04'); }
+
+// ④ 정당한 «접수대기로 되돌리기»(더 새 도장)는 이겨야 함
+{ const c=cls(mk({registeredAt:'2026.08.04',enrT:5000})), m=cls(mk({pending:true,enrT:9000}));
+  T('되돌리기(새 도장)는 확정을 이김', !!stu(mergeAppData(c,m)).pending); }
+
+// ⑤ 퇴원 예정 왕복 생존
+{ const c=cls(mk({})), m=cls(mk({withdrawPlanned:{date:'2026.08.20',reason:'전학'},wdT:5000}));
+  T('퇴원 예정 생존 (올릴 때)', !!stu(mergeAppData(c,m)).withdrawPlanned);
+  T('퇴원 예정 생존 (반대 방향)', !!stu(mergeAppData(m,c)).withdrawPlanned); }
+
+// ⑥ 되살리기(새 도장)가 옛 퇴원을 이김
+{ const c=cls(mk({withdrawn:true,withdrawnAt:'2026.07.01',wdT:5000})), m=cls(mk({withdrawn:false,wdT:9000}));
+  T('되살리기가 옛 퇴원 기록을 이김', stu(mergeAppData(c,m)).withdrawn===false);
+  T('반대 방향도 동일', stu(mergeAppData(m,c)).withdrawn===false); }
+
+// ⑦ 구버전 기기 오염: 도장까지 복사된 대기 사본(동률) — 확정 유지
+{ const c=cls(mk({pending:true,enrT:5000})), m=cls(mk({registeredAt:'2026.08.04',enrT:5000}));
+  T('도장 동률 오염 사본에도 확정 유지 (올릴 때)', !stu(mergeAppData(c,m)).pending);
+  T('받을 때도 이 기기 상태 유지', !stu(pull(c,m)).pending); }
+
+// ⑧ 받을 때: 옛 대기 클라우드가 확정을 못 덮음
+{ const got=pull(cls(mk({pending:true})), cls(mk({registeredAt:'2026.08.04',startPlan:'2026.08.04',enrT:5000})));
+  T('받을 때 확정 유지 + 시작일 보존', !stu(got).pending && stu(got).startPlan==='2026.08.04'); }
+
+// ⑨ 받을 때: 다른 기기의 정당한 되돌리기(새 도장)는 받아들임
+{ const got=pull(cls(mk({pending:true,enrT:9000})), cls(mk({registeredAt:'2026.08.04',enrT:5000})));
+  T('다른 기기의 최신 되돌리기는 수용', !!stu(got).pending); }
+
+// ⑩ 전체 왕복: A 확정 → 올림 → B 받음
+{ const cloud0=cls(mk({pending:true}));
+  const afterPush=mergeAppData(cloud0, cls(mk({registeredAt:'2026.08.04',startPlan:'2026.08.04',enrT:5000})));
+  const b=pull(afterPush, cls(mk({pending:true})));
+  T('왕복: B 기기에서도 확정으로 보임', !stu(b).pending && stu(b).startPlan==='2026.08.04'); }
+
+return R;
+"""
+
+
+def main():
+    v = payload()
+    js = build_js(v)
+    print('=' * 62)
+    print(' 히즈북스 동기화 전수 검사 (실제 병합 코드로 실행)')
+    print('=' * 62)
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page()
+        pg.set_content('<html><body></body></html>')
+        pg.add_script_tag(content=js)
+        rows = pg.evaluate('()=>{' + SC + '}')
+        b.close()
+    fails = 0
+    for name, ok in rows:
+        print(('  OK  ' if ok else '  실패 ') + name)
+        if not ok:
+            fails += 1
+    print('-' * 62)
+    if fails:
+        print('  실패 %d건 — 배포 금지' % fails)
+        return 1
+    print('  %d항목 전부 통과' % len(rows))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
