@@ -193,9 +193,12 @@ def rule_server(v):
         return
     ts = open(FN, encoding='utf-8').read()
     checks = [('notStarted', '등원 시작 전 학생 제외'),
-              ('closedToday', '휴원일 제외'),
+              ('closedOn', '휴원일 제외'),
               ('noShowExcused', '결석 예정 제외'),
-              ('withdrawn', '퇴원생 제외')]
+              ('withdrawn', '퇴원생 제외'),
+              ('sessOv', '휴강·보강 반영'),
+              ('hasMakeup', '개인 보강 제외'),
+              ('alertBlock', '앱이 미리 뺀 명부 반영')]
     for tok, lab in checks:
         if tok not in ts:
             add('R6', '높음', 'server:' + tok,
