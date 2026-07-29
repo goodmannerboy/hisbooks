@@ -71,7 +71,8 @@ SEED = """(closed)=>{
       S('s5','결석예정'),
       S('s6','퇴원', {withdrawn:true, withdrawnAt: td, withdrawReason:'이사'}),
       S('s7','퇴원예정', {withdrawPlanned:{date: shift(9), reason:'전학'}}),
-      S('s8','개인보강')
+      S('s8','개인보강'),
+      S('s13','원장반생일', {intake:{parentContact:'010-0000-0013', birth: ('2011.'+td.split('.')[1]+'.'+td.split('.')[2])}})
     ]},
     {id:'C2',name:'경계 B반(휴강)',owner:'관리자',schedule:sch(NOW_S,NOW_E),students:[ S('s9','휴강반학생') ]},
     {id:'C3',name:'경계 C반(보강이동)',owner:'관리자',schedule:sch(LATER_S,LATER_E),students:[ S('s10','보강반학생') ]},
@@ -80,6 +81,7 @@ SEED = """(closed)=>{
   ];
 
   d.checkins['s1|'+td]={in:NOW_S, t:Date.now()};
+  d.checkins['s13|'+td]={in:NOW_S, t:Date.now()};
   d.noShowExcused['s5|'+td]={reason:'병원', t:Date.now()};
   d.sessions['C2|'+td]={off:1, to: shift(3), t:Date.now()};
   d.sessions['C3|'+td]={start:LATER_S, end:LATER_E, from: shift(-7), t:Date.now()};
@@ -88,7 +90,8 @@ SEED = """(closed)=>{
   d.leftStudents=[{id:'s11', name:'반삭제퇴원', cls:'사라진 반', owner:'관리자',
     registeredAt:'2025.03.02', withdrawnAt: td, reason:'반 해체', leftAt: td}];
 
-  d.counsels=[{id:'k1', studentId:'s1', date: shift(-3), note:'정상 상담', who:'student', by:'관리자'}];
+  d.counsels=[{id:'k1', studentId:'s1', date: shift(-3), note:'정상 상담', who:'student', by:'관리자'},
+              {id:'k2', studentId:'s13', date: shift(-3), note:'정상 상담', who:'student', by:'관리자'}];
 
   if(closed) d.closedDays[td]={v:1, t:Date.now()};
 
@@ -119,8 +122,8 @@ SCREENS = [
 RULES = [
     ('학생관리(학원)', '접수대기 학생은 반 명단에 없음 (접수 대기 패널에만)',
      "()=>{const t=document.body.innerText; const i=t.indexOf('반별 일정'); return i>=0 && t.slice(i).indexOf('접수대기')<0;}"),
-    ('학생관리(학원)', '전체 원생 9명 (접수대기·퇴원 제외 / 시작 전·퇴원 예정은 포함)',
-     "()=>/전체 원생\s*9명/.test(document.body.innerText)"),
+    ('학생관리(학원)', '전체 원생 10명 (접수대기·퇴원 제외 / 시작 전·퇴원 예정은 포함)',
+     "()=>/전체 원생\s*10명/.test(document.body.innerText)"),
     ('학생관리(학원)', '이번 달 퇴원 2명 (반 안 1 + 반 삭제 보관함 1)',
      "()=>/이번 달 퇴원\s*2명/.test(document.body.innerText)"),
     ('학생관리(학원)', '퇴원 예정 1명',
@@ -268,8 +271,9 @@ def run():
         print()
         print('── 담임 스코프 (다른쌤으로 로그인) ──')
         for desc, ok in [
-            ('자기 반 학생 생일은 보임', t2.find('남의반생일') >= 0),
-            ('다른 반 학생(정상재원)은 안 보임', t2.find('정상재원') < 0),
+            ('생일 카드는 학원 전체 공유 — 원장 반 학생 생일도 보임', t2.find('원장반생일') >= 0),
+            ('자기 반 학생 생일도 보임', t2.find('남의반생일') >= 0),
+            ('남의 반 수업 목록은 안 보임 (정상재원)', t2.find('정상재원') < 0),
         ]:
             checked += 1
             if ok:
