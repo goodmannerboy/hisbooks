@@ -158,15 +158,16 @@ RULES = [
     ('일정(선생님)', '주간 일정 명단에 등원 시작 전 학생이 없음',
      "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
      " return i>=0 && j>i && t.slice(i,j).indexOf('시작전')<0;}"),
-    ('일정(선생님)', '휴강한 반이 «휴강»으로 표시되고 이동 날짜가 보임',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
-     " const g=t.slice(i,j); return i>=0 && g.indexOf('휴강')>=0 && /[0-9]+\/[0-9]+로 이동/.test(g);}"),
+    ('일정(선생님)', '휴강 블록은 취소선 · 설명 글자는 그리드에 안 넣음',
+     "()=>{const sp=[...document.querySelectorAll('span')].filter(e=>getComputedStyle(e).textDecorationLine==='line-through');"
+     " const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
+     " return sp.length>0 && i>=0 && t.slice(i,j).indexOf('로 이동')<0;}"),
     ('일정(선생님)', '보강으로 옮겨간 수업이 «보강»으로 표시됨',
      "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
      " return i>=0 && t.slice(i,j).indexOf('보강')>=0;}"),
     ('일정(선생님)', '개인 보강 학생 칩이 보임',
      "()=>{const t=document.body.innerText; const i=t.indexOf('주간 일정'); const j=t.indexOf('월간 일정');"
-     " return i>=0 && t.slice(i,j).indexOf('개인보강 보강')>=0;}"),
+     " return i>=0 && t.slice(i,j).indexOf('개인보강')>=0;}"),
     ('일정(선생님)', '주간 헤더에 «휴강 N · 보강 N» 요약',
      "()=>/이번 주 휴강 [0-9]+ · 보강 [0-9]+/.test(document.body.innerText)"),
     ('일정(선생님)', '주간 일정 명단에 퇴원생이 없음',
@@ -272,6 +273,28 @@ def run():
                     else:
                         fails.append('%s · %s' % (name, desc))
                         print('       실패 ' + desc)
+
+        # 휴강 말풍선 — 눌러야 상세가 뜨는지
+        pg.evaluate("(s)=>window.__L.setState(s)", {'view': 'schedule', 'scheduleSeg': 'stu', 'schedTop': 'cal'})
+        pg.wait_for_timeout(1500)
+        clicked = pg.evaluate("""()=>{const sp=[...document.querySelectorAll('span')].filter(e=>getComputedStyle(e).textDecorationLine==='line-through')[0];
+          if(!sp) return false; let n=sp; while(n && !(n.getAttribute&&(n.getAttribute('style')||'').indexOf('border-left')>=0)) n=n.parentElement;
+          if(!n) return false; n.click(); return true;}""")
+        pg.wait_for_timeout(1400)
+        t3 = pg.evaluate(TXT)
+        print()
+        print('── 휴강 말풍선 ──')
+        for desc, ok in [
+            ('휴강 블록을 누를 수 있음', clicked),
+            ('말풍선에 원래 수업·보강 일자가 뜸', ('원래 수업' in t3) and ('보강' in t3)),
+            ('말풍선에 되돌리기 버튼이 있음', '원래대로 되돌리기' in t3),
+        ]:
+            checked += 1
+            if ok:
+                print('  OK  ' + desc)
+            else:
+                fails.append('휴강 말풍선 · ' + desc)
+                print('  실패 ' + desc)
 
         # 담임 스코프 — 선생님은 자기 반만 보여야
         pg.evaluate(SEED, False)
