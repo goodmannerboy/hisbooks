@@ -137,6 +137,15 @@ RULES = [
     ('등하원 관제', '관제판에 퇴원생이 없음',
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
      " return i>=0 && j>i && !/(^|[^예])퇴원(?!예정)/.test(t.slice(i,j).split('퇴원예정').join(''));}"),
+    ('등하원 관제', '개인 보강 학생은 «보강 예정»으로 표시 (미등원 아님)',
+     "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
+     " return i>=0 && t.slice(i,j).indexOf('보강 예정')>=0;}"),
+    ('등하원 관제', '미등원 2명 (결석 예정·개인 보강·시작 전·퇴원 제외)',
+     "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 수업 대상');"
+     " return i>=0 && /미등원\s*2/.test(t.slice(i,i+120));}"),
+    ('등하원 관제', '안전망 목록에 개인 보강 학생이 없음',
+     "()=>{const t=document.body.innerText; const i=t.indexOf('미등원 확인');"
+     " return i<0 || t.slice(i,i+500).indexOf('개인보강')<0;}"),
     ('등하원 관제', '결석 예정 학생은 미등원으로 안 셈 (수업 시작 후엔 «결석 · 사유»)',
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
      " return i>=0 && t.slice(i,j).indexOf('결석 · 병원')>=0;}"),
@@ -154,11 +163,7 @@ CLOSED_RULES = [
 ]
 
 # 아직 안 고친 것 — 실패로 세지 않고 «알려진 문제»로만 알립니다.
-KNOWN = [
-    ('등하원 관제', '개인 보강 학생이 원래 반 미등원으로 잡힘 (알림 서버는 이미 제외)',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 수업 대상');"
-     " return i>=0 && /미등원\s*2/.test(t.slice(i,i+120));}"),
-]
+KNOWN = []
 
 BLOCK_EXPECT = ['s3', 's4', 's6', 's8', 's9']   # 시작전·접수대기·퇴원·개인보강·휴강반
 
