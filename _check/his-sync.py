@@ -116,6 +116,44 @@ const T=(name, ok)=>R.push([name, !!ok]);
   const b=pull(afterPush, cls(mk({pending:true})));
   T('왕복: B 기기에서도 확정으로 보임', !stu(b).pending && stu(b).startPlan==='2026.08.04'); }
 
+
+// ⑪ 반 이동 유령 — 실제 최윤영 사고 재현
+{ const cloud={classes:[
+    {id:'CW',name:'미배정',students:[mk({pending:true})]},
+    {id:'CX',name:'히즈 M2C',students:[]}]};
+  const mine={classes:[
+    {id:'CW',name:'미배정',students:[]},
+    {id:'CX',name:'히즈 M2C',students:[mk({registeredAt:'2026.08.04',startPlan:'2026.08.04',enrT:5000})]}]};
+  mine.stuClass={y1:{cid:'CX',t:5000}};
+  const m=mergeAppData(JSON.parse(JSON.stringify(cloud)), JSON.parse(JSON.stringify(mine)));
+  const ghost=(m.classes[0].students||[]).filter(s=>s.id==='y1');
+  const real=(m.classes[1].students||[]).filter(s=>s.id==='y1');
+  T('반 이동 후 옛 반에 유령이 안 남음 (올릴 때)', ghost.length===0 && real.length===1 && !real[0].pending);
+  const m2=mergeAppData(JSON.parse(JSON.stringify(mine)), JSON.parse(JSON.stringify(cloud)));
+  T('반대 방향도 유령 없음', (m2.classes[0].students||[]).filter(s=>s.id==='y1').length===0);
+  __T.state.data=JSON.parse(JSON.stringify(mine));
+  __T._absorbFresh(JSON.parse(JSON.stringify(cloud)));
+  const g3=__T.state.data;
+  T('받을 때도 유령 없음 + 확정 유지',
+    (g3.classes[0].students||[]).filter(s=>s.id==='y1').length===0 &&
+    (g3.classes[1].students||[]).filter(s=>s.id==='y1').length===1 &&
+    !((g3.classes[1].students||[]).filter(s=>s.id==='y1')[0].pending)); }
+
+// ⑫ 정당한 반 이동(더 새 도장)은 반영
+{ const a={classes:[{id:'CX',name:'X',students:[mk({registeredAt:'2026.08.04',enrT:1})]},{id:'CY',name:'Y',students:[]}],stuClass:{y1:{cid:'CX',t:1000}}};
+  const b={classes:[{id:'CX',name:'X',students:[]},{id:'CY',name:'Y',students:[mk({registeredAt:'2026.08.04',enrT:1})]}],stuClass:{y1:{cid:'CY',t:9000}}};
+  const m=mergeAppData(a,b);
+  T('나중에 옮긴 반이 이김', (m.classes[1].students||[]).filter(s=>s.id==='y1').length===1 && (m.classes[0].students||[]).filter(s=>s.id==='y1').length===0); }
+
+// ⑬ 도장 없는 옛 데이터: 유령(대기 사본)이 확정 사본과 공존 → 확정만 남아야
+{ const cloud={classes:[
+    {id:'CW',name:'미배정',students:[mk({pending:true})]},
+    {id:'CX',name:'히즈 M2C',students:[mk({registeredAt:'2026.08.04'})]}]};
+  const m=mergeAppData(JSON.parse(JSON.stringify(cloud)), JSON.parse(JSON.stringify(cloud)));
+  const g=(m.classes[0].students||[]).filter(s=>s.id==='y1');
+  const r=(m.classes[1].students||[]).filter(s=>s.id==='y1');
+  T('도장 없어도 유령 자동 정리', g.length===0 && r.length===1 && !r[0].pending); }
+
 return R;
 """
 
