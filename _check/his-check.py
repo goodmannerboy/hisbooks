@@ -51,7 +51,23 @@ def fingerprint(prefix, s, pos, span=110):
     return prefix + ':' + hashlib.sha1(txt.encode('utf-8')).hexdigest()[:10]
 
 
+# 일부러 전체를 읽는 곳 — 검사에서 제외합니다. 새로 넣을 땐 «왜»를 꼭 적으세요.
+ALLOW = {
+    'homeBdays': '홈 «오늘 생일» 카드는 학원 전체 공유 (원장 지침 2026-07-29) — 담임 스코프 적용 안 함',
+    'findByLast4': '키오스크 뒷4자리 매칭은 학원 전체가 대상 (퇴원·접수대기는 자체 제외)',
+    'exportAllStudentsCSV': '전체 학생 백업 내보내기 — 전부 포함이 목적',
+}
+
+
+def allowed(ctx):
+    for k in ALLOW:
+        if k in ctx:
+            return k
+    return None
+
+
 findings = []   # (rule, severity, key, desc, sample)
+exempt = []
 
 
 def add(rule, sev, key, desc, sample):
@@ -79,9 +95,15 @@ def rule_classes(v):
         # 학생을 실제로 훑는 경우만 (단순 반 목록 조회는 제외)
         if not re.search(r'students\s*\|\|\s*\[\]', seg):
             continue
-        ctx = snippet(v, m.start())
+        ctx = snippet(v, m.start(), back=260, fwd=80)
         if 'visibleClasses' in ctx or '_schedClasses' in ctx:
             continue
+        why = allowed(ctx)
+        if why:
+            if why not in [e[0] for e in exempt]:
+                exempt.append((why, ALLOW[why]))
+            continue
+        ctx = snippet(v, m.start())
         add('R1', '중', fingerprint('classes', v, m.start()),
             '학생 명단을 직접 읽음 — 보관함(퇴원생)·담임 스코프·접수대기 제외가 자동 적용되지 않습니다',
             ctx)
@@ -275,6 +297,10 @@ def main():
                 print('         ' + f['sample'][:130])
         if len(show) > 12:
             print('       … 외 %d건 (--all 로 전체 보기)' % (len(show) - 12))
+    if exempt:
+        print('  [예외] 일부러 전체를 읽는 곳 %d곳' % len(exempt))
+        for k, why in exempt:
+            print('       · %s — %s' % (k, why))
     print('-' * 62)
     if old:
         print('  기준선 대비 새로 생긴 위반: %d건' % total_new)
