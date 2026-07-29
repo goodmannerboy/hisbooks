@@ -297,7 +297,7 @@ def run():
         if errs:
             fails.append('자바스크립트 오류 %d건: %s' % (len(errs), errs[0][:90]))
         checked += 1
-        real_bad = [u for u in bad if 'favicon' not in u]
+        real_bad = [u for u in bad if ('favicon' not in u and 'supabase.co' not in u)]  # 클라우드는 테스트에서 로그인이 없어 정상적으로 거부됨
         if real_bad:
             fails.append('불러오기 실패 %d건: %s' % (len(real_bad), real_bad[0][:90]))
         b.close()
