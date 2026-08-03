@@ -154,6 +154,21 @@ const T=(name, ok)=>R.push([name, !!ok]);
   const r=(m.classes[1].students||[]).filter(s=>s.id==='y1');
   T('도장 없어도 유령 자동 정리', g.length===0 && r.length===1 && !r[0].pending); }
 
+// ⑭ [실제 8/3 사고] 같은 내부번호를 «다른 학생»이 공유 — 필드가 섞이면 안 됨
+{ const cloud={classes:[{id:'CA',name:'동지반',students:[{id:'dup1',name:'민혜원',registeredAt:'2025.03.02'}]}]};
+  const mine ={classes:[{id:'CA',name:'동지반',students:[{id:'dup1',name:'민혜원',registeredAt:'2025.03.02'}]},
+    {id:'CX',name:'히즈 M2C',students:[{id:'dup1',name:'최영서',registeredAt:'2026.08.04',startPlan:'2026.08.04',enrT:9000}]}]};
+  mine.stuClass={dup1:{cid:'CX',t:9000,nm:'최영서'}};
+  const m=mergeAppData(JSON.parse(JSON.stringify(cloud)), JSON.parse(JSON.stringify(mine)));
+  const old1=(m.classes[0].students||[]).filter(s=>s.id==='dup1')[0];
+  const new1=((m.classes[1]||{}).students||[]).filter(s=>s.id==='dup1')[0];
+  T('기존 학생에게 남의 시작일이 안 옮겨붙음', old1 && old1.name==='민혜원' && !old1.startPlan);
+  T('신규 학생(다른 이름)은 지워지지 않음', !!new1 && new1.name==='최영서' && new1.startPlan==='2026.08.04');
+  __T.state.data=JSON.parse(JSON.stringify(mine));
+  __T._absorbFresh(JSON.parse(JSON.stringify(cloud)));
+  const g=__T.state.data; const o2=(g.classes[0].students||[]).filter(s=>s.id==='dup1')[0];
+  T('받을 때도 기존 학생이 오염 안 됨', o2 && o2.name==='민혜원' && !o2.startPlan); }
+
 return R;
 """
 

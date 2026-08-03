@@ -56,6 +56,7 @@ ALLOW = {
     'homeBdays': '홈 «오늘 생일» 카드는 학원 전체 공유 (원장 지침 2026-07-29) — 담임 스코프 적용 안 함',
     'findByLast4': '키오스크 뒷4자리 매칭은 학원 전체가 대상 (퇴원·접수대기는 자체 제외)',
     'exportAllStudentsCSV': '전체 학생 백업 내보내기 — 전부 포함이 목적',
+    '_fixStartGhost': '데이터 수리 규칙 — 전 학생을 훑어야 정확함 (기록과 어긋난 시작일 교정)',
 }
 
 
@@ -84,6 +85,20 @@ def rule_integrity(raw, v, rawpay):
     vers = set(re.findall(r'v3[0-9]\.[0-9]{3}', raw))
     if len(vers) > 1:
         bad.append('버전 도장이 섞여 있음 ' + ' / '.join(sorted(vers)))
+    try:
+        m = re.search(r'<script[^>]*data-dc-script[^>]*>([\s\S]*?)</script>', v)
+        if m:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                br = p.chromium.launch()
+                pg = br.new_page()
+                r = pg.evaluate("(s)=>{try{new Function(s); return 'OK';}catch(e){return String(e);}}",
+                                'class DCLogic{}; ' + m.group(1))
+                br.close()
+            if r != 'OK':
+                bad.append('앱 로직 문법 오류 — 화면이 통째로 안 뜹니다: ' + r[:90])
+    except Exception:
+        pass
     for b in bad:
         add('R0', '높음', 'integrity:' + b[:24], b, '')
 
