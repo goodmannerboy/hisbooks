@@ -52,8 +52,10 @@ SEED = """(closed)=>{
   const sch=(s,e)=>({days:[KD[w]], times:{[KD[w]]:{start:s,end:e}}, start:s, end:e});
   const nowM=(new Date()).getHours()*60+(new Date()).getMinutes();
   const hm=(m)=>{m=((m%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
-  const NOW_S=hm(nowM-60), NOW_E=hm(nowM+60);        // 지금이 수업 중 = 미등원 판정이 살아 있음
-  const LATER_S=hm(nowM+180), LATER_E=hm(nowM+270);  // 아직 시작 전
+  const NOW_S=hm(nowM-60), NOW_E=hm(Math.min(nowM+60,1438));        // 지금이 수업 중 = 미등원 판정이 살아 있음
+  let _ls=nowM+180, _le=nowM+270;                    // 아직 시작 전 — 자정을 넘기면 안 됨(넘기면 «새벽=이미 지남»으로 오판)
+  if(_le>1435){ _ls=Math.min(nowM+10,1420); _le=Math.min(nowM+30,1435); }
+  const LATER_S=hm(_ls), LATER_E=hm(_le);
   const d=JSON.parse(JSON.stringify(L.state.data));
   d.staff={}; d.notices={}; d.reports=[]; d.records=[]; d.exams=[]; d.monthlyComments={};
   d.checkins={}; d.noShowExcused={}; d.sessions={}; d.mkup={}; d.closedDays={};
