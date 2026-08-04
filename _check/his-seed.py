@@ -103,7 +103,7 @@ SEED = """(closed)=>{
   try{ L._writeAlertBlock(d, td); L.persist(d); }catch(e){}
   const g=document.getElementById('cloud-gate'); if(g)g.remove();
   try{localStorage.setItem('his-fix932','1');}catch(e){}
-  return {today:td, block:((d.alertBlock||{})[td]||{})};
+  return {today:td, block:((d.alertBlock||{})[td]||{}), nearMid:(nowM>1400)};
 }"""
 
 TXT = "()=>document.body.innerText"
@@ -261,8 +261,14 @@ def run():
                         warns.append('%s · %s' % (name, desc))
                         print('       주의 ' + desc)
 
+                _skipMid = {'개인 보강 학생은 «보강 예정»으로 표시 (미등원 아님)',
+                            '미등원 3명 (결석 예정·개인 보강·시작 전·퇴원 제외)',
+                            '안전망 목록에 개인 보강 학생이 없음'}
                 for rn, desc, expr in rules:
                     if rn != name:
+                        continue
+                    if info.get('nearMid') and desc in _skipMid:
+                        print('       주의 ' + desc + ' — 자정 인접이라 «오늘 미래 수업» 시드 불가, 검사 생략')
                         continue
                     checked += 1
                     try:
