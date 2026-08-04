@@ -175,8 +175,9 @@ def rule_merge(v):
     i = v.find('function mergeAppData')
     if i < 0:
         return
-    k = v.find('catch-all', i)
-    mg = v[i:i + 16000]
+    # 병합 함수 전체를 본다 (v33.047: 16000자 창이 함수 꼬리를 잃어 stuClass 오탐)
+    k = v.find('_absorbFresh', i)
+    mg = v[i:(k if k > i else i + 60000)]
     keys = set()
     for m in re.finditer(r'\bdd\.([A-Za-z][A-Za-z0-9]{2,})\s*(?:\[|=\s*(?!=)|\.push)', v):
         keys.add(m.group(1))
