@@ -169,6 +169,29 @@ const T=(name, ok)=>R.push([name, !!ok]);
   const g=__T.state.data; const o2=(g.classes[0].students||[]).filter(s=>s.id==='dup1')[0];
   T('받을 때도 기존 학생이 오염 안 됨', o2 && o2.name==='민혜원' && !o2.startPlan); }
 
+// ⑮ 유령 반 — 삭제한 반이 «학생을 담은 옛 사본»으로 되살아나면 안 된다 (v33.059)
+{ const gone={classes:[{id:'GH',name:'포항동지여고 2학년',students:[
+      {id:'g1',name:'민혜원',registeredAt:'2025.03.02'},{id:'g2',name:'최민경',registeredAt:'2025.03.02'}]},
+    {id:'OK1',name:'현재반',students:[{id:'k1',name:'홍길동',registeredAt:'2025.03.02'}]}]};
+  const mine={classes:[{id:'OK1',name:'현재반',students:[{id:'k1',name:'홍길동',registeredAt:'2025.03.02'}]}],
+    deletedClasses:['GH'], leftStudents:[]};
+  const m=mergeAppData(JSON.parse(JSON.stringify(gone)), JSON.parse(JSON.stringify(mine)));
+  const ids=(m.classes||[]).map(c=>c.id);
+  T('올릴 때 — 삭제한 반이 학생을 담고 있어도 되살아나지 않음', ids.indexOf('GH')<0);
+  T('올릴 때 — 다른 반은 그대로', ids.indexOf('OK1')>=0);
+  T('올릴 때 — 안에 있던 학생은 보관함에 보존(되살리기 가능)',
+    ((m.leftStudents||[]).filter(x=>x&&(x.id==='g1'||x.id==='g2')).length)===2);
+  // 반대 방향(내가 옛 사본, 클라우드가 삭제 표식) 도 동일해야
+  const m2=mergeAppData(JSON.parse(JSON.stringify(mine)), JSON.parse(JSON.stringify(gone)));
+  T('순서 무관 — 반대로 합쳐도 되살아나지 않음', (m2.classes||[]).map(c=>c.id).indexOf('GH')<0);
+  // 받을 때(12초 폴링)도 표식이 지켜져야
+  __T.state.data=JSON.parse(JSON.stringify(mine));
+  __T._absorbFresh(JSON.parse(JSON.stringify(gone)));
+  const g3=__T.state.data;
+  T('받을 때 — 삭제한 반이 되살아나지 않음', (g3.classes||[]).map(c=>c.id).indexOf('GH')<0);
+  T('받을 때 — 안에 있던 학생은 보관함에 보존',
+    ((g3.leftStudents||[]).filter(x=>x&&(x.id==='g1'||x.id==='g2')).length)===2); }
+
 return R;
 """
 
