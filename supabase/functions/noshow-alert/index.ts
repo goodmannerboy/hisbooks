@@ -201,6 +201,10 @@ Deno.serve(async (req) => {
   const skipped: string[] = [];
   for (const t of targets) {
     const alertKey = t.sid + "|" + dateStr;
+    // 재발송 방지 — DB 제약 유무와 무관하게 «이미 보냈으면 건너뜀» (몇 분마다 돌 때마다 같은 학생에게 또 가던 문제)
+    const ex = await sb.from("noshow_alerts").select("alert_key").eq("alert_key", alertKey).limit(1);
+    if (ex.error) { skipped.push(alertKey + " check-fail"); continue; }
+    if (ex.data && ex.data.length > 0) { skipped.push(alertKey + " already-sent"); continue; }
     const ins = await sb.from("noshow_alerts").insert({ alert_key: alertKey }).select();
     if (ins.error) { skipped.push(alertKey); continue; }
     if (SOLAPI_KEY) {
