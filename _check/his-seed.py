@@ -103,7 +103,7 @@ SEED = """(closed)=>{
   try{ L._writeAlertBlock(d, td); L.persist(d); }catch(e){}
   const g=document.getElementById('cloud-gate'); if(g)g.remove();
   try{localStorage.setItem('his-fix932','1');}catch(e){}
-  return {today:td, block:((d.alertBlock||{})[td]||{}), nearMid:(nowM>1400)};
+  return {today:td, block:((d.alertBlock||{})[td]||{}), nearMid:(nowM>1400||nowM<90)};
 }"""
 
 TXT = "()=>document.body.innerText"
@@ -263,7 +263,11 @@ def run():
 
                 _skipMid = {'개인 보강 학생은 «보강 예정»으로 표시 (미등원 아님)',
                             '미등원 3명 (결석 예정·개인 보강·시작 전·퇴원 제외)',
-                            '안전망 목록에 개인 보강 학생이 없음'}
+                            '안전망 목록에 개인 보강 학생이 없음',
+                            '결석 예정 학생은 미등원으로 안 셈 (수업 시작 후엔 «결석 · 사유»)',
+                            '관제판에 휴강 반이 없음',
+                            '관제판에 등원 시작 전 학생이 없음',
+                            '관제판에 퇴원생이 없음'}
                 for rn, desc, expr in rules:
                     if rn != name:
                         continue
