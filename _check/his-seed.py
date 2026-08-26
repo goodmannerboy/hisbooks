@@ -103,7 +103,7 @@ SEED = """(closed)=>{
   try{ L._writeAlertBlock(d, td); L.persist(d); }catch(e){}
   const g=document.getElementById('cloud-gate'); if(g)g.remove();
   try{localStorage.setItem('his-fix932','1');}catch(e){}
-  return {today:td, block:((d.alertBlock||{})[td]||{}), nearMid:(nowM>1400||nowM<90)};
+  return {today:td, block:((d.alertBlock||{})[td]||{}), nearMid:(nowM>1400||nowM<300)};
 }"""
 
 TXT = "()=>document.body.innerText"

@@ -192,6 +192,19 @@ const T=(name, ok)=>R.push([name, !!ok]);
   T('받을 때 — 안에 있던 학생은 보관함에 보존',
     ((g3.leftStudents||[]).filter(x=>x&&(x.id==='g1'||x.id==='g2')).length)===2); }
 
+// ⑯ 학교 시험(examSchool) — 키별 LWW · 삭제 표식 · 순서 무관 (v33.069)
+{ const A={examSchool:{'한울고':{label:'중간',date:'2026.10.06',t:100}}};
+  const B={examSchool:{'한울고':{label:'중간고사',date:'2026.10.07',t:200},
+                       '포항고':{label:'기말',date:'2026.12.01',t:150}}};
+  const m=mergeAppData(JSON.parse(JSON.stringify(A)), JSON.parse(JSON.stringify(B)));
+  T('학교 시험 — 최신 편집 승(키별 LWW)', m.examSchool['한울고'].date==='2026.10.07');
+  T('학교 시험 — 키 합집합', !!m.examSchool['포항고']);
+  const m2=mergeAppData(JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(A)));
+  T('학교 시험 — 순서 무관', m2.examSchool['한울고'].date==='2026.10.07');
+  const C={examSchool:{'한울고':{del:1,t:300}}};
+  const m3=mergeAppData(JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(C)));
+  T('학교 시험 — 삭제 표식이 이김(더 최신)', !!(m3.examSchool['한울고']||{}).del); }
+
 return R;
 """
 
