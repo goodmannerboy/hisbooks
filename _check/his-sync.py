@@ -205,6 +205,14 @@ const T=(name, ok)=>R.push([name, !!ok]);
   const m3=mergeAppData(JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(C)));
   T('학교 시험 — 삭제 표식이 이김(더 최신)', !!(m3.examSchool['한울고']||{}).del); }
 
+// ⑰ 학년 예외(examSchoolG) — 키별 LWW (v33.070)
+{ const A={examSchoolG:{'한울고|2':{label:'2학년',date:'2026.10.12',t:100}}};
+  const B={examSchoolG:{'한울고|2':{label:'2학년 중간',date:'2026.10.13',t:200}}};
+  const m=mergeAppData(JSON.parse(JSON.stringify(A)), JSON.parse(JSON.stringify(B)));
+  T('학년 예외 — 최신 편집 승', m.examSchoolG['한울고|2'].date==='2026.10.13');
+  const m2=mergeAppData(JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(A)));
+  T('학년 예외 — 순서 무관', m2.examSchoolG['한울고|2'].date==='2026.10.13'); }
+
 return R;
 """
 
