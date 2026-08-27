@@ -213,6 +213,20 @@ const T=(name, ok)=>R.push([name, !!ok]);
   const m2=mergeAppData(JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(A)));
   T('학년 예외 — 순서 무관', m2.examSchoolG['한울고|2'].date==='2026.10.13'); }
 
+// ⑧ 시험일 3종 — 받을 때도 보존 (v33.075, 입력이 12초 뒤 사라지던 구먍)
+{ __T.state.data={examSchool:{'한울고':{label:'방금',date:'2026.10.06',t:900}},
+    examSchoolG:{'한울고|2':{label:'학년',date:'2026.10.08',t:900}},
+    examDday:{'C1':{label:'반',date:'2026.10.10',t:900}}, classes:[]};
+  __T._absorbFresh({examSchool:{}, examSchoolG:{}, examDday:{}, classes:[]});
+  const g=__T.state.data;
+  T('받을 때 — 학교 시험 보존', !!((g.examSchool||{})['한울고']||{}).date);
+  T('받을 때 — 학년 예외 보존', !!((g.examSchoolG||{})['한울고|2']||{}).date);
+  T('받을 때 — 반 공통 보존', !!((g.examDday||{})['C1']||{}).date);
+  // 클라우드가 더 최신이면 클라우드가 이긴다
+  __T.state.data={examSchool:{'한울고':{label:'옵',date:'2026.10.06',t:100}}, classes:[]};
+  __T._absorbFresh({examSchool:{'한울고':{label:'새',date:'2026.11.11',t:500}}, classes:[]});
+  T('받을 때 — 최신이 이김', ((__T.state.data.examSchool||{})['한울고']||{}).date==='2026.11.11'); }
+
 return R;
 """
 
