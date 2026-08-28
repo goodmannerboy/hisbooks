@@ -227,6 +227,28 @@ const T=(name, ok)=>R.push([name, !!ok]);
   __T._absorbFresh({examSchool:{'한울고':{label:'새',date:'2026.11.11',t:500}}, classes:[]});
   T('받을 때 — 최신이 이김', ((__T.state.data.examSchool||{})['한울고']||{}).date==='2026.11.11'); }
 
+
+// ⑲ 지운 것이 되살아나지 않는가 (공통 삭제 표식 delT/addT)
+{ const base={ cash:[{id:'CA1'}], payStaff:[{name:'Joey'}],
+    teacherCalendar:{'관리자':[{id:'EV1',title:'x'}]},
+    classes:[{id:'C1',name:'A반',students:[],makeups:[{id:'MK1'}]}] };
+  const del={ cash:[], payStaff:[], teacherCalendar:{'관리자':[]},
+    classes:[{id:'C1',name:'A반',students:[],makeups:[]}],
+    delT:{'cash:CA1':9000,'payStaff:Joey':9000,'cal:EV1':9000,'mkup:MK1':9000} };
+  const up=mergeAppData(base, del);
+  T('현금 장부 — 지운 줄이 안 되살아남', (up.cash||[]).length===0);
+  T('급여 대상 — 지운 선생님이 안 되살아남', (up.payStaff||[]).length===0);
+  T('달력 일정 — 지운 일정이 안 되살아남', ((up.teacherCalendar||{})['관리자']||[]).length===0);
+  T('반 보강 — 지운 보강이 안 되살아남', (((up.classes||[])[0]||{}).makeups||[]).length===0);
+  const pl=pull(base, del);
+  T('받을 때 — 현금 지운 줄 유지', (pl.cash||[]).length===0);
+  T('받을 때 — 달력 지운 일정 유지', ((pl.teacherCalendar||{})['관리자']||[]).length===0);
+  const re={ payStaff:[{name:'Joey'}], delT:{'payStaff:Joey':9000}, addT:{'payStaff:Joey':9500} };
+  T('다시 넣으면 살아남 (영구 차단 아님)', (mergeAppData(base, re).payStaff||[]).length===1);
+  const nw={ cash:[{id:'CA2'}], delT:{'cash:CA1':9000} };
+  T('새로 만든 것은 안 지워짐', (mergeAppData(base, nw).cash||[]).length===1);
+}
+
 return R;
 """
 
