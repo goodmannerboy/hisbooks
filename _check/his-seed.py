@@ -198,7 +198,19 @@ BLOCK_EXPECT = ['s3', 's4', 's6', 's8', 's9']   # 시작전·접수대기·퇴�
 def run():
     Handler = functools.partial(Quiet, directory=ROOT)
     socketserver.TCPServer.allow_reuse_address = True
-    srv = socketserver.TCPServer(('127.0.0.1', PORT), Handler)
+    # 윈도우가 특정 포트를 예약해 막는 경우가 있어, 막히면 빈 포트를 자동으로 잡는다
+    srv = None
+    port = PORT
+    for cand in [PORT, 0]:
+        try:
+            srv = socketserver.TCPServer(('127.0.0.1', cand), Handler)
+            port = srv.server_address[1]
+            break
+        except OSError:
+            srv = None
+    if srv is None:
+        print('  검사용 서버를 열 수 없습니다 (포트가 모두 막힘)')
+        return 1
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     if WANT_SHOTS and not os.path.isdir(SHOTS):
         os.makedirs(SHOTS)
@@ -210,7 +222,7 @@ def run():
         errs, bad = [], []
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.on('response', lambda r: bad.append(r.url) if r.status >= 400 else None)
-        pg.goto('http://127.0.0.1:%d/index.html' % PORT, wait_until='networkidle')
+        pg.goto('http://127.0.0.1:%d/index.html' % port, wait_until='networkidle')
         pg.wait_for_timeout(2400)
         for _ in range(10):
             if pg.evaluate(FIBER) and pg.evaluate("()=>!!(window.__L.state&&window.__L.state.data)"):
