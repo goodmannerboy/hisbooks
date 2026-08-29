@@ -98,6 +98,84 @@ CHECKS = [
                    for k in ['s1', 's2', 's3', 's4'])),
 ]
 
+# ─────────────────────────────────────────────────────────────
+# 2부 : 성적은 «반에 상관없이 · 생년월일 · 등록된 모든 학생» 기준 (원장 지시 v33.107)
+#  네 반: 원장 두 반(A·B) + 조이 선생님 두 반. 라학생은 가학생과 생년월일이 같다(겹침).
+#  퇴원생은 후보에서 빠져야 하고, 겹치면 조용히 아무에게나 넣지 말고 이름을 알려야 한다.
+# ─────────────────────────────────────────────────────────────
+SEED2 = """()=>{const L=window.__L; const td=L.today();
+  const d=JSON.parse(JSON.stringify(L.state.data)); d.staff={};
+  const S=(id,nm,b,ex)=>Object.assign({id:id,name:nm,registeredAt:'2025.03.02',
+    school:'한울고 2학년', intake:{birth:b}}, ex||{});
+  d.classes=[
+   {id:'C1',name:'고2 A반',owner:'관리자',schedule:{days:[],times:{}},students:[
+      S('s1','가학생','2009-03-14'), S('s2','나학생','2009-07-22')]},
+   {id:'C2',name:'고2 B반',owner:'관리자',schedule:{days:[],times:{}},students:[
+      S('s3','다학생','2009-11-02'), S('s4','라학생','2009-03-14')]},
+   {id:'C3',name:'조이반1',owner:'조이',schedule:{days:[],times:{}},students:[
+      S('s5','마학생','2010-01-05'), S('s6','퇴원생','2008-05-05',{withdrawn:true})]},
+   {id:'C4',name:'조이반2',owner:'조이',schedule:{days:[],times:{}},students:[
+      S('s7','바학생','2010-02-06')]}];
+  const TY=['듣기','목적파악','주제파악','빈칸추론','어법','어휘','순서배열','삽입','함축의미','내용일치'];
+  const qs=[]; for(let i=1;i<=10;i++){ qs.push({no:i,key:String((i%5)+1),pt:10,group:TY[i-1],type:TY[i-1]}); }
+  d.examSets=[{id:'X1',name:'9월 모의고사',date:td,grade:'고2',questions:qs,submissions:{}}];
+  d.exams=[]; d.records=[]; d.checkins={}; d.counsels=[]; d.reports=[];
+  d.examSchool={}; d.examSchoolG={}; d.suneung={};
+  L.setState({data:d,currentUser:'관리자',activeClassId:'C1',activeExamSetId:'X1',
+    view:'exams',examStudentId:'s1'});
+  const g=document.getElementById('cloud-gate'); if(g)g.remove();
+  try{localStorage.setItem('his-fix932','1');}catch(e){}
+  return 'ok';}"""
+
+# 활성 반은 C1 인데, 다른 반(C2)·다른 선생님 반(C3) 학생을 채점한다
+RUN2 = """()=>{const L=window.__L;
+  const key=(i)=>String((i%5)+1); const bad=(i)=>String((((i%5)+1)%5)+1);
+  const plan={s3:[5,6], s5:[1,4,9], s7:[]};
+  Object.keys(plan).forEach((sid)=>{ const ans={};
+    for(let i=1;i<=10;i++){ ans[i]=(plan[sid].indexOf(i)>=0)?bad(i):key(i); }
+    L.applyOmr(sid, ans); });
+  return 'ok';}"""
+
+READ2 = """()=>{const L=window.__L; const d=L.state.data; const f=(b)=>L._omrMatch(d,b);
+  const out={ m:{ same:f('090722'), other:f('091102'), joey:f('100105'),
+                  dup:f('090314'), wd:f('080505'), none:f('991231'), eight:f('20091102') }, r:{} };
+  ['s3','s5','s7'].forEach((sid)=>{ const rec=(d.exams||[]).find(e=>e.studentId===sid)||{};
+    const a=L.examAgg(d,'C1',sid);
+    out.r[sid]={ score:rec.score, grade:rec.grade, wrong:(rec.wrongTypes||[]),
+      name:a.studentName, since:a.sinceDate, weak:(a.weakTypes||[]).map(w=>w.name), n:a.examCount }; });
+  return out;}"""
+
+OPTS = """()=>{ const sels=[...document.querySelectorAll('select')]; const out=[];
+  sels.forEach(s=>{ const o=[...s.options].map(x=>x.textContent.trim());
+    if(o.length && o.some(t=>t.indexOf('학생')>=0)) out.push(o); });
+  return out.length?out[0]:[];}"""
+
+CHECKS2 = [
+    ('같은 반 학생을 생년월일로 찾음', lambda r: r['m']['same']['sid'] == 's2'),
+    ('다른 반 학생도 찾음 (반 무관)', lambda r: r['m']['other']['sid'] == 's3'),
+    ('다른 선생님 반 학생도 찾음', lambda r: r['m']['joey']['sid'] == 's5'),
+    ('8자리 생년월일도 인식', lambda r: r['m']['eight']['sid'] == 's3'),
+    ('생년월일이 겹치면 채점 안 함',
+     lambda r: r['m']['dup']['sid'] is None and r['m']['dup']['amb'] == 'dup'),
+    ('겹친 학생 이름을 알려줌',
+     lambda r: sorted(r['m']['dup']['names']) == sorted(['가학생', '라학생'])),
+    ('퇴원생은 후보에서 제외',
+     lambda r: r['m']['wd']['sid'] is None and r['m']['wd']['amb'] == 'out'),
+    ('없는 생년월일은 조용히 미매칭',
+     lambda r: r['m']['none']['sid'] is None and not r['m']['none']['amb']),
+    ('다른 반 학생 채점 정확 (80점 2등급)',
+     lambda r: r['r']['s3']['score'] == '80' and r['r']['s3']['grade'] == '2'),
+    ('다른 선생님 반 학생 채점 정확 (70점 3등급)',
+     lambda r: r['r']['s5']['score'] == '70' and r['r']['s5']['grade'] == '3'),
+    ('다른 반 학생도 틀린 유형이 나옴',
+     lambda r: sorted(r['r']['s3']['wrong']) == sorted(['어법', '어휘'])),
+    ('다른 반 학생 성적표에 이름·등록일이 채워짐',
+     lambda r: r['r']['s5']['name'] == '마학생' and r['r']['s5']['since'] == '2025.03.02'),
+    ('다른 반 학생 약점 집계도 이어짐',
+     lambda r: sorted(r['r']['s5']['weak']) == sorted(['듣기', '빈칸추론', '함축의미'])
+               and r['r']['s5']['n'] == 1),
+]
+
 
 def main():
     socketserver.TCPServer.allow_reuse_address = True
@@ -142,6 +220,44 @@ def main():
             print(('  OK  ' if ok else '  실패 ') + name)
             if not ok:
                 fails.append(name)
+
+        # ── 2부: 반 무관 · 생년월일 기준 ──
+        print()
+        print(' 성적은 반에 상관없이 생년월일 기준 (등록된 모든 학생)')
+        print('-' * 62)
+        pg.evaluate(SEED2)
+        pg.wait_for_timeout(1500)
+        pg.evaluate(RUN2)
+        pg.wait_for_timeout(1700)
+        r2 = pg.evaluate(READ2)
+        for name, fn in CHECKS2:
+            try:
+                ok = bool(fn(r2))
+            except Exception:
+                ok = False
+            print(('  OK  ' if ok else '  실패 ') + name)
+            if not ok:
+                fails.append(name)
+
+        # 담임 스코프: 선생님 화면에 남의 반 학생이 새면 안 된다
+        pg.wait_for_timeout(600)
+        adminOpts = pg.evaluate(OPTS)
+        okA = ('다학생 · 고2 B반' in adminOpts) and ('마학생 · 조이반1' in adminOpts)
+        print(('  OK  ' if okA else '  실패 ') + '원장 성적 탭에 다른 반 학생이 반 이름과 함께 보임')
+        if not okA:
+            fails.append('원장 성적 탭 목록')
+            print('       실제: %s' % adminOpts)
+        pg.evaluate("()=>window.__L.setState({currentUser:'조이',activeClassId:'C3',"
+                    "examStudentId:'s5',view:'exams'})")
+        pg.wait_for_timeout(1700)
+        tOpts = pg.evaluate(OPTS)
+        okT = ('마학생' in tOpts) and ('바학생 · 조이반2' in tOpts) \
+            and not any('가학생' in x or '다학생' in x for x in tOpts)
+        print(('  OK  ' if okT else '  실패 ') + '선생님에게는 자기 반 학생만 보임 (담임 스코프)')
+        if not okT:
+            fails.append('담임 스코프 누출')
+            print('       실제: %s' % tOpts)
+
         if errs:
             fails.append('JS 오류 %d건' % len(errs))
             print('  실패 JS 오류: %s' % errs[:2])
@@ -152,7 +268,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  %d항목 전부 통과' % len(CHECKS))
+    print('  %d항목 전부 통과' % (len(CHECKS) + len(CHECKS2) + 2))
     return 0
 
 
