@@ -2,12 +2,14 @@
 """
 히즈북스 일간일지 코멘트(감성 한 줄) 검사 (his-comment)
 --------------------------------------------------------
-코멘트는 학부모가 매일 받는 성장일지의 «A Note for You» 자리에 그대로 실립니다.
+코멘트는 성장일지의 «A Note for You» 자리에 그대로 실려 매일 나갑니다.
 원장 지시(2026-08-30): 학습평가는 하지 않고, 인생을 통찰하는 감성 한 줄을 매번 다르게.
+원장 정정: 이 말은 **스승이 학생에게 건네는 말**이지 부모에게 하는 말이 아니다.
 
 이 검사는 index.html 의 실제 문구 엔진(_cmtDraft)을 그대로 돌려서 확인합니다.
   · 한 줄인가
   · 출결·과제·점수에 따라 달라지지 않는가 (학습평가를 하지 않는가)
+  · 학생에게 건네는 말인가 (부모를 향한 표현·존댓말 종결이 없는가)
   · 매번 다른가 (다시 누를 때, 학생마다, 수업이 쌓일수록)
   · 책 문장을 그대로 담지 않았는가 (저작권)
 
@@ -83,6 +85,10 @@ RUN = """()=>{const L=window.__L; const D=L.state.data; const dt='2026.08.30';
            withCite:pool.filter(function(x){return x.indexOf(' — ')>=0;}),
            evalWords:pool.filter(function(x){
              return /(점수|등급|성적표|출결|정답률|평균)/.test(x); }),
+           toParent:pool.filter(function(x){
+             return /(아이|부모|학부모|주세요|주시면)/.test(x); }),
+           polite:pool.filter(function(x){
+             return /(습니다|입니다|해요|세요|십시오|랍니다)/.test(x); }),
            split1:L._cmtSplit(mk('s1','김민준',{})) };}"""
 
 NL = chr(10)
@@ -136,6 +142,10 @@ def main():
         ck('학습평가를 하지 않음 — 출결·과제·점수가 달라도 같은 문장',
            len(set(r['same'])) == 1, r['same'][:2])
         ck('점수·등급 같은 평가 낱말이 없음', not r['evalWords'], r['evalWords'][:2])
+        ck('학생에게 건네는 말임 — 부모를 향한 표현이 없음',
+           not r['toParent'], r['toParent'][:2])
+        ck('학생에게 건네는 말투 — 존댓말 종결이 없음',
+           not r['polite'], r['polite'][:2])
         ck('같은 날 다시 누르면 매번 다름 (10회 전부)',
            len(set(r['again'])) == 10, len(set(r['again'])))
         ck('같은 날이어도 학생마다 다름', len(set(r['three'])) == 3, r['three'])
@@ -162,7 +172,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  11항목 전부 통과')
+    print('  13항목 전부 통과')
     return 0
 
 
