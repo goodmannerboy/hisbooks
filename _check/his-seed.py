@@ -35,6 +35,25 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+DEAD = """() => {
+  const vis=(e)=>{const q=e.getBoundingClientRect();
+    return q.width>2 && q.height>2 && getComputedStyle(e).visibility!=='hidden';};
+  const out=[];
+  document.querySelectorAll('button,[onclick]').forEach((e)=>{
+    if(!vis(e)) return;
+    const k=Object.keys(e).find(x=>x.startsWith('__reactProps'));
+    if(!k) return;
+    const p=e[k]||{};
+    const has=(typeof p.onClick==='function')||(typeof p.onChange==='function')||
+              (typeof p.onInput==='function')||(typeof p.onMouseDown==='function');
+    if(has) return;
+    if(e.tagName==='A' && e.getAttribute('href')) return;
+    const t=((e.innerText||'').trim().replace(/\\s+/g,' ')).slice(0,20);
+    out.push(t || ('(' + e.tagName.toLowerCase() + ')'));
+  });
+  return out;
+}"""
+
 FIBER = '''() => { const seen=new Set();
   const walk=(n,d)=>{ if(!n||d>500||seen.has(n))return null; seen.add(n);
     const s=n.stateNode; if(s&&s.constructor&&s.constructor.name==="StreamableComponent"&&s.logic)return s.logic;
@@ -117,6 +136,9 @@ SCREENS = [
     ('학생관리(학원)',    {'view': 'admin', 'adminSeg': 'student'}),
     ('한눈에',          {'view': 'admin', 'adminSeg': 'overview'}),
     ('데이터·퇴원생',    {'view': 'admin', 'adminSeg': 'data'}),
+    ('일간 성장일지',     {'view': 'bulk'}),
+    ('월간 일지',        {'view': 'monthly'}),
+    ('수강료',          {'view': 'admin', 'adminSeg': 'fee'}),
 ]
 
 # ── 반드시 지켜져야 하는 것 ────────────────────────────────────────────
@@ -258,6 +280,20 @@ def run():
                     print('  실패 %-14s 화면이 비어 있음' % name)
                 else:
                     print('  OK  %-14s (%d자)' % (name, len(txt)))
+                if not closed:
+                    try:
+                        dead = pg.evaluate(DEAD)
+                    except Exception:
+                        dead = []
+                    checked += 1
+                    if dead:
+                        fails.append('%s 화면에 눌러도 아무 일 없는 버튼 %d개: %s'
+                                     % (name, len(dead), ', '.join(sorted(set(dead))[:6])))
+                        print('  실패 %-14s 죽은 버튼 %d개 — %s'
+                              % (name, len(dead), ', '.join(sorted(set(dead))[:6])))
+                    else:
+                        print('       OK  눌러도 반응 없는 버튼 없음')
+
                 if WANT_SHOTS:
                     fn = ('closed_' if closed else '') + name.replace('·', '_').replace('(', '_').replace(')', '')
                     pg.screenshot(path=os.path.join(SHOTS, fn + '.png'))
