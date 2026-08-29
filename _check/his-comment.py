@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-히즈북스 일간일지 코멘트 문구 검사 (his-comment)
---------------------------------------------------
-코멘트는 학부모가 매일 받는 성장일지에 그대로 실립니다.
-조사가 틀리거나(문법는), 매일 같은 문장이 나오거나, 상황과 어긋난 말이 나가면
-리포트 전체의 값이 떨어집니다. 이 검사는 index.html 의 실제 문구 엔진(_cmtDraft)을
-그대로 돌려서 그 세 가지를 확인합니다.
+히즈북스 일간일지 코멘트(감성 한 줄) 검사 (his-comment)
+--------------------------------------------------------
+코멘트는 학부모가 매일 받는 성장일지의 «A Note for You» 자리에 그대로 실립니다.
+원장 지시(2026-08-30): 학습평가는 하지 않고, 인생을 통찰하는 감성 한 줄을 매번 다르게.
+
+이 검사는 index.html 의 실제 문구 엔진(_cmtDraft)을 그대로 돌려서 확인합니다.
+  · 한 줄인가
+  · 출결·과제·점수에 따라 달라지지 않는가 (학습평가를 하지 않는가)
+  · 매번 다른가 (다시 누를 때, 학생마다, 수업이 쌓일수록)
+  · 책 문장을 그대로 담지 않았는가 (저작권)
 
     py _check/his-comment.py
 
@@ -36,15 +40,13 @@ FIBER = '''() => { const seen=new Set();
   for(const el of document.querySelectorAll("*")){ const k=Object.keys(el).find(x=>x.startsWith("__reactFiber")); if(!k)continue;
     let f=el[k]; while(f.return)f=f.return; const L=walk(f,0); if(L){window.__L=L;return true;} } return false; }'''
 
-# 김민준(받침 있음) · 이지혜(받침 없음). 직전 기록은 둘 다 70점.
 SEED = """()=>{const L=window.__L;
   const d=JSON.parse(JSON.stringify(L.state.data)); d.staff={};
   d.classes=[{id:'C1',name:'고2 A반',owner:'관리자',schedule:{days:[],times:{}},students:[
     {id:'s1',name:'김민준',registeredAt:'2025.03.02',school:'한울고',intake:{birth:'2009-03-14'}},
-    {id:'s2',name:'이지혜',registeredAt:'2025.03.02',school:'한울고',intake:{birth:'2009-07-22'}}]}];
-  d.records=[
-    {id:'r1',classId:'C1',studentId:'s1',date:'2026.08.20',attendance:'출석',homework:'완료',gS:'70',gT:'100'},
-    {id:'r2',classId:'C1',studentId:'s2',date:'2026.08.20',attendance:'출석',homework:'완료',gS:'70',gT:'100'}];
+    {id:'s2',name:'이지혜',registeredAt:'2025.03.02',school:'한울고',intake:{birth:'2009-07-22'}},
+    {id:'s3',name:'박서준',registeredAt:'2025.03.02',school:'한울고',intake:{birth:'2009-09-09'}}]}];
+  d.records=[{id:'r1',classId:'C1',studentId:'s1',date:'2026.08.20',attendance:'출석',homework:'완료',gS:'70',gT:'100'}];
   d.exams=[]; d.checkins={}; d.counsels=[]; d.reports=[];
   d.examSchool={}; d.examSchoolG={}; d.suneung={};
   L.setState({data:d,currentUser:'관리자',activeClassId:'C1'});
@@ -52,78 +54,38 @@ SEED = """()=>{const L=window.__L;
   try{localStorage.setItem('his-fix932','1');}catch(e){}
   return 'ok';}"""
 
-RUN = """()=>{const L=window.__L; const D=L.state.data; const dt='2026.08.29';
+RUN = """()=>{const L=window.__L; const D=L.state.data; const dt='2026.08.30';
   const base=()=>({attendance:'출석',homework:'완료',gOn:true,stOn:true,rOn:true,hOn:true});
   const mk=(sid,nm,patch,n)=>L._cmtDraft(nm, Object.assign(base(),patch||{}), D, sid, dt, n||1);
-  const D0=JSON.parse(JSON.stringify(D)); D0.records=[];
+  const pool=L._cmtLines();
+  const NLc=String.fromCharCode(10);
 
-  // 조사 전수: 4과목 × 우수/저조 × 8변주
-  const josa=[];
-  ['g','st','r','h'].forEach((k)=>{ for(let n=1;n<=8;n++){
-    const a={}; a[k+'S']='95'; a[k+'T']='100'; josa.push(mk('s1','김민준',a,n));
-    const b={}; b[k+'S']='40'; b[k+'T']='100'; josa.push(mk('s1','김민준',b,n)); } });
-  const badJosa=josa.filter(t=>t.indexOf('문법는')>=0||t.indexOf('구문는')>=0
-    ||t.indexOf('어휘은')>=0||t.indexOf('이는는')>=0);
+  const same=[ mk('s1','김민준',{}), mk('s1','김민준',{attendance:'결석'}),
+               mk('s1','김민준',{attendance:'지각'}), mk('s1','김민준',{homework:'미완료'}),
+               mk('s1','김민준',{gS:'10',gT:'100'}), mk('s1','김민준',{gS:'100',gT:'100'}) ];
+  const again=[]; for(let n=1;n<=10;n++) again.push(mk('s1','김민준',{},n));
+  const three=[ mk('s1','김민준',{}), mk('s2','이지혜',{}), mk('s3','박서준',{}) ];
 
-  // 60일 반복
-  const seen={}; for(let i=1;i<=60;i++){ seen[mk('s1','김민준',{},1)+''.repeat(0)]=1; }
-  const seen2={}; for(let i=1;i<=60;i++){
-    const t=L._cmtDraft('김민준', base(), D, 's1', '2026.09.'+i, 1); seen2[t]=1; }
+  const cyc={}; let dup=0; const D2=JSON.parse(JSON.stringify(D));
+  for(let i=0;i<pool.length;i++){
+    D2.records=[]; for(let k=0;k<i;k++) D2.records.push({id:'x'+k,classId:'C1',studentId:'s1',date:'2026.01.01',attendance:'출석'});
+    const t=L._cmtDraft('김민준', base(), D2, 's1', dt, 1);
+    if(cyc[t]) dup++; cyc[t]=1; }
 
-  // 다시 누르기
-  const again={}; for(let n=1;n<=6;n++) again[mk('s1','김민준',{},n)]=1;
+  const uniqPool={}; let poolDup=0;
+  pool.forEach(function(x){ if(uniqPool[x]) poolDup++; uniqPool[x]=1; });
 
-  return {
-    badJosaN: badJosa.length, badJosa: badJosa.slice(0,2),
-    uniq60: Object.keys(seen2).length,
-    againN: Object.keys(again).length,
-    steady:  mk('s1','김민준',{}),
-    absent:  mk('s1','김민준',{attendance:'결석'}),
-    late:    mk('s1','김민준',{attendance:'지각',gS:'80',gT:'100'}),
-    miss:    mk('s1','김민준',{homework:'미완료',gS:'80',gT:'100'}),
-    down:    mk('s1','김민준',{gS:'40',gT:'100'}),
-    up:      mk('s1','김민준',{gS:'95',gT:'100'}),
-    first:   L._cmtDraft('김민준', base(), D0, 's1', dt, 1),
-    noBatchim: mk('s2','이지혜',{}),
-    split1: L._cmtSplit(mk('s1','김민준',{})),
-    split2: L._cmtSplit('오늘 수업에서 모르는 것을 먼저 물어봤습니다.')
-  };}"""
+  return { n:pool.length, pool:pool, same:same, again:again, three:three,
+           cycUniq:Object.keys(cyc).length, cycDup:dup, poolDup:poolDup,
+           maxLen:Math.max.apply(null,pool.map(function(x){return x.length;})),
+           minLen:Math.min.apply(null,pool.map(function(x){return x.length;})),
+           withNL:pool.filter(function(x){return x.indexOf(NLc)>=0;}).length,
+           withCite:pool.filter(function(x){return x.indexOf(' — ')>=0;}),
+           evalWords:pool.filter(function(x){
+             return /(점수|등급|성적표|출결|정답률|평균)/.test(x); }),
+           split1:L._cmtSplit(mk('s1','김민준',{})) };}"""
 
 NL = chr(10)
-
-
-def has_any(txt, words):
-    return any(w in txt for w in words)
-
-
-CHECKS = [
-    ('조사가 틀린 문장 없음 (4과목 × 우수·저조 × 8변주)', lambda r: r['badJosaN'] == 0),
-    ('받침 있는 이름은 이 를 붙여 부름 (민준이는)', lambda r: '민준이' in r['steady']),
-    ('받침 없는 이름은 그대로 부름 (지혜는)',
-     lambda r: ('지혜' in r['noBatchim']) and ('지혜이' not in r['noBatchim'])),
-    ('결석이면 결석에 맞는 말',
-     lambda r: has_any(r['absent'], ['결석', '만나지 못했', '자리가 비었', '못 봤'])),
-    ('지각이면 늦은 것을 다룸', lambda r: has_any(r['late'], ['늦', '조금 늦'])),
-    ('과제 미완이면 과제를 다룸', lambda r: has_any(r['miss'], ['과제'])),
-    ('점수가 내려가면 그 사실을 다룸',
-     lambda r: has_any(r['down'], ['내려갔', '아쉽', '잘 풀리지', '어려운 구간'])),
-    ('점수가 오르면 그 사실을 다룸',
-     lambda r: has_any(r['up'], ['올랐', '넘어갔', '뒤늦게 도착'])),
-    ('첫 수업이면 첫날로 말함', lambda r: has_any(r['first'], ['첫', '처음'])),
-    ('모든 초안에 출처 붙은 한 줄 문구가 붙음',
-     lambda r: all((NL in r[k]) and ('—' in r[k].split(NL)[-1])
-                   for k in ['steady', 'absent', 'late', 'miss', 'down', 'up', 'first'])),
-    ('같은 날 다시 누르면 매번 다른 문장 (6회 전부)', lambda r: r['againN'] == 6),
-    ('60일 연속에서 서로 다른 문장 50개 이상', lambda r: r['uniq60'] >= 50),
-    ('카드가 문구를 인용문으로 갈라냄',
-     lambda r: r['split1']['quote'].endswith(('속담', '노자', '공자', '괴테', '루소', '에디슨',
-                                              '유클리드', '안중근', '맹자', '피카소', '아인슈타인',
-                                              '헬렌 켈러', '헨리 포드', '마리 퀴리', '존 셰드',
-                                              '제임스 볼드윈', '마틴 루서 킹', '아리스토텔레스'))
-               and (r['split1']['quote'] not in r['split1']['main'])),
-    ('손으로 쓴 한 줄 코멘트는 가르지 않음',
-     lambda r: r['split2']['quote'] == '' and r['split2']['main'] != ''),
-]
 
 
 def main():
@@ -142,9 +104,15 @@ def main():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
 
     print('=' * 62)
-    print(' 히즈북스 일간일지 코멘트 문구 검사 (실제 문구 엔진으로 실행)')
+    print(' 히즈북스 일간일지 코멘트(감성 한 줄) 검사')
     print('=' * 62)
     fails = []
+
+    def ck(name, ok, extra=''):
+        print(('  OK  ' if ok else '  실패 ') + name + (('   ' + str(extra)) if (extra and not ok) else ''))
+        if not ok:
+            fails.append(name)
+
     with sync_playwright() as p:
         b = p.chromium.launch()
         pg = b.new_page(viewport={'width': 1300, 'height': 900})
@@ -159,18 +127,31 @@ def main():
         pg.evaluate(SEED)
         pg.wait_for_timeout(1500)
         r = pg.evaluate(RUN)
-        for name, fn in CHECKS:
-            try:
-                ok = bool(fn(r))
-            except Exception:
-                ok = False
-            print(('  OK  ' if ok else '  실패 ') + name)
-            if not ok:
-                fails.append(name)
+
+        ck('문장이 넉넉히 준비되어 있음 (120편 이상)', r['n'] >= 120, r['n'])
+        ck('문장 풀에 중복이 없음', r['poolDup'] == 0, r['poolDup'])
+        ck('모든 코멘트가 한 줄임', r['withNL'] == 0, r['withNL'])
+        ck('길이가 카드에 맞음 (10~60자)',
+           r['minLen'] >= 10 and r['maxLen'] <= 60, '%d~%d' % (r['minLen'], r['maxLen']))
+        ck('학습평가를 하지 않음 — 출결·과제·점수가 달라도 같은 문장',
+           len(set(r['same'])) == 1, r['same'][:2])
+        ck('점수·등급 같은 평가 낱말이 없음', not r['evalWords'], r['evalWords'][:2])
+        ck('같은 날 다시 누르면 매번 다름 (10회 전부)',
+           len(set(r['again'])) == 10, len(set(r['again'])))
+        ck('같은 날이어도 학생마다 다름', len(set(r['three'])) == 3, r['three'])
+        ck('수업이 쌓이는 한 바퀴 동안 한 번도 겹치지 않음',
+           r['cycDup'] == 0 and r['cycUniq'] == r['n'], '중복 %d' % r['cycDup'])
+        # 저작권: 책 문장을 출처와 함께 그대로 담지 않는다 (원장 설명 원칙)
+        ck('출처를 붙인 인용문이 섞이지 않음 (책 문장 그대로 담기 금지)',
+           not r['withCite'], r['withCite'][:2])
+        ck('한 줄 코멘트는 인용문으로 갈라지지 않음',
+           r['split1']['quote'] == '' and r['split1']['main'] != '', r['split1'])
+
         print()
-        print('  [참고] 60일 중 서로 다른 문장 %d개 · 조사 오류 %d건 %s'
-              % (r['uniq60'], r['badJosaN'], (r['badJosa'] or '')))
-        print('  [본보기] ' + r['steady'].replace(NL, '  //  '))
+        print('  [참고] 문장 %d편 · 길이 %d~%d자 · 한 바퀴 %d회 무중복'
+              % (r['n'], r['minLen'], r['maxLen'], r['cycUniq']))
+        for x in r['again'][:3]:
+            print('  [본보기] ' + x)
         if errs:
             fails.append('JS 오류 %d건' % len(errs))
             print('  실패 JS 오류: %s' % errs[:2])
@@ -181,7 +162,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  %d항목 전부 통과' % len(CHECKS))
+    print('  11항목 전부 통과')
     return 0
 
 
