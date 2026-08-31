@@ -1,0 +1,104 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Malgun Gothic',sans-serif;background:#DFD9C8;padding:24px;width:780px}
+h1{font-size:16px;color:#0C4631;margin-bottom:3px}
+.sub{font-size:11.5px;color:#6b675c;margin-bottom:14px}
+.report{background:#F4EED8;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.white{background:#fff;border-radius:14px;padding:16px 18px;position:relative}
+.sechead{font-size:12.5px;font-weight:800;color:#222;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.chipG{font-size:10px;font-weight:700;color:#0F6E56;background:#E1F5EE;border-radius:999px;padding:2px 9px}
+.chipR{font-size:10px;font-weight:700;color:#993C1D;background:#FAECE7;border-radius:999px;padding:2px 9px}
+.avg{margin-left:auto;font-size:11px;color:#999}
+.merge{display:flex;gap:20px;align-items:flex-end}
+.bars{flex:1.25;display:flex;align-items:flex-end;gap:26px;height:170px;padding:0 6px;border-bottom:1px solid #eee;position:relative}
+.avgline{position:absolute;left:0;right:0;top:31%;border-top:1.5px dashed #C9A227;opacity:.6}
+.b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.b .pct{font-size:12.5px;font-weight:800;color:#0C4631;margin-bottom:4px}
+.b .bar{width:44px;border-radius:6px 6px 0 0}
+.b .nm{font-size:11.5px;font-weight:800;color:#333;margin-top:6px}
+.b .gr{font-size:10px;color:#999}
+.radwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.radwrap .rcap{font-size:10px;font-weight:700;color:#8a6520;margin-top:2px}
+.duo{display:flex;gap:18px;align-items:center}
+.donutbox{flex:none;text-align:center}
+.donut{width:158px;height:158px;border-radius:50%;background:conic-gradient(#0C4631 0 70%, #E3DCC6 70% 100%);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.donut .in{width:112px;height:112px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.donut .v{font-size:29px;font-weight:800;color:#222;line-height:1}
+.donut .v small{font-size:11px;color:#999;font-weight:600}
+.gradepill{font-size:11px;font-weight:800;color:#8a6520;background:#F4ECD7;border:1px solid #C9A227;border-radius:999px;padding:2px 10px}
+.dcap{font-size:11.5px;font-weight:800;color:#8a6520;margin-top:7px}
+.map{flex:1}
+.mcap{font-size:11px;font-weight:800;color:#0C4631;margin-bottom:6px}
+.mcap span{color:#8a6520;font-weight:600;font-size:9.5px}
+.glab{display:flex;align-items:baseline;gap:6px;font-size:10px;font-weight:800;color:#0C4631;margin:5px 0 3px}
+.glab .mini{color:#777;font-weight:600}
+.g{display:flex;gap:2.5px;flex-wrap:wrap}
+.c{width:23px;height:26px;border-radius:5px;background:#F0EDE1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.c i{font-style:normal;font-size:7.5px;color:#b3ad97;line-height:1.1}
+.c s{text-decoration:none;font-size:8.5px;color:#9CC2A8;line-height:1.1}
+.c.x{background:#F9E3D8;border:1px solid #EDC0A9}
+.c.x i{color:#993C1D;font-weight:800}
+.c.x s{color:#B23A2C;font-weight:800;font-size:10px}
+.c.t3{box-shadow:inset 0 0 0 1.5px #C9A227}
+.leg{display:flex;gap:10px;font-size:8.5px;color:#888;margin-top:6px}
+.leg em{font-style:normal;display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px;vertical-align:-1px}
+.diag{display:flex;gap:12px;background:#E7F1E8;border-radius:12px;padding:13px 15px;align-items:flex-start}
+.badge{flex:none;background:#0C4631;color:#F4ECD7;font-size:10.5px;font-weight:800;border-radius:999px;padding:4px 11px}
+.dtext{font-size:11.5px;color:#333;line-height:1.65}
+.dtext .add{background:#FFF3D6;border-bottom:2px solid #C9A227;font-weight:700}
+.tag{position:absolute;right:12px;top:-9px;font-size:10px;font-weight:800;color:#fff;background:#0C4631;border-radius:7px;padding:2px 9px}
+</style></head><body>
+<h1>최종 확정 레이아웃 시안 — 김서인 샘플 (70점 · 3등급 · 오답 13개)</h1>
+<div class="sub">① 레이더 → 영역별 성취도 섹션에 통합 (막대 오른쪽) &nbsp; ② 도넛 = 점수 + 등급 동시 표기 &nbsp; ③ 비워진 자리에 답안 지도 &nbsp; ④ 진단 박스에 약점 문장 — 리포트 총 길이는 지금과 동일</div>
+<div class="report">
+
+<div class="white">
+<div class="tag">섹션 통합</div>
+<div class="sechead">영역별 성취도 <span class="chipG">강점 듣기</span> <span class="chipR">보완 문법</span> <span class="avg">평균 72%</span></div>
+<div class="merge">
+<div class="bars">
+  <div class="avgline"></div>
+  <div class="b"><span class="pct">100%</span><div class="bar" style="height:82%;background:#0C4631"></div><span class="nm">듣기</span><span class="gr">1등급</span></div>
+  <div class="b"><span class="pct">75%</span><div class="bar" style="height:60%;background:#1F8A5B"></div><span class="nm">어휘</span><span class="gr">3등급</span></div>
+  <div class="b"><span class="pct">55%</span><div class="bar" style="height:44%;background:#5DCAA5"></div><span class="nm">문법</span><span class="gr">5등급</span></div>
+  <div class="b"><span class="pct">57%</span><div class="bar" style="height:46%;background:#C9A227"></div><span class="nm">독해</span><span class="gr">5등급</span></div>
+</div>
+<div class="radwrap">
+  <svg width="180" height="168" viewBox="0 0 190 176">
+    <g stroke="#DDD5BC" fill="none"><polygon points="95,16 172,88 95,160 18,88"/><polygon points="95,40 148,88 95,136 42,88"/><polygon points="95,64 124,88 95,112 66,88"/></g>
+    <polygon points="95,16 153,88 96,127 51,88" fill="rgba(31,122,77,.16)" stroke="#0C4631" stroke-width="2.2"/>
+    <g font-size="10.5" font-weight="700" fill="#0C4631" text-anchor="middle">
+      <text x="95" y="10">듣기</text><text x="181" y="92" text-anchor="start">어휘</text>
+      <text x="95" y="172">문법</text><text x="9" y="92" text-anchor="end">독해</text>
+    </g>
+  </svg>
+  <div class="rcap">능력 균형</div>
+</div>
+</div>
+</div>
+
+<div class="white">
+<div class="tag">레이더 있던 자리</div>
+<div class="duo">
+<div class="donutbox">
+  <div class="donut"><div class="in"><div class="v">70<small> /100</small></div><span class="gradepill">3등급</span></div></div>
+  <div class="dcap">종합 점수 · 등급</div>
+</div>
+<div class="map">
+  <div class="mcap">답안 지도 <span>· 붉은 칸 숫자 = 정답 · 반환된 시험지와 대조해 복습하세요</span></div>
+  <div class="glab">듣기 <span class="mini">12/12</span></div>
+  <div class="g"><div class="c"><i>1</i><s>✓</s></div><div class="c"><i>2</i><s>✓</s></div><div class="c"><i>3</i><s>✓</s></div><div class="c"><i>4</i><s>✓</s></div><div class="c"><i>5</i><s>✓</s></div><div class="c"><i>6</i><s>✓</s></div><div class="c"><i>7</i><s>✓</s></div><div class="c"><i>8</i><s>✓</s></div><div class="c"><i>9</i><s>✓</s></div><div class="c"><i>10</i><s>✓</s></div><div class="c t3"><i>11</i><s>✓</s></div><div class="c t3"><i>12</i><s>✓</s></div></div>
+  <div class="glab">어휘 <span class="mini">6/8</span></div>
+  <div class="g"><div class="c"><i>13</i><s>✓</s></div><div class="c"><i>14</i><s>✓</s></div><div class="c x t3"><i>15</i><s>②</s></div><div class="c"><i>16</i><s>✓</s></div><div class="c"><i>17</i><s>✓</s></div><div class="c"><i>18</i><s>✓</s></div><div class="c"><i>19</i><s>✓</s></div><div class="c x"><i>20</i><s>②</s></div></div>
+  <div class="glab">문법 <span class="mini">6/11</span></div>
+  <div class="g"><div class="c"><i>21</i><s>✓</s></div><div class="c"><i>22</i><s>✓</s></div><div class="c x"><i>23</i><s>③</s></div><div class="c"><i>24</i><s>✓</s></div><div class="c"><i>25</i><s>✓</s></div><div class="c x t3"><i>26</i><s>①</s></div><div class="c"><i>27</i><s>✓</s></div><div class="c x"><i>28</i><s>③</s></div><div class="c t3"><i>29</i><s>✓</s></div><div class="c x"><i>30</i><s>④</s></div><div class="c x"><i>31</i><s>②</s></div></div>
+  <div class="glab">독해 <span class="mini">8/14</span></div>
+  <div class="g"><div class="c"><i>32</i><s>✓</s></div><div class="c"><i>33</i><s>✓</s></div><div class="c x"><i>34</i><s>⑤</s></div><div class="c"><i>35</i><s>✓</s></div><div class="c x"><i>36</i><s>⑤</s></div><div class="c x t3"><i>37</i><s>②</s></div><div class="c"><i>38</i><s>✓</s></div><div class="c"><i>39</i><s>✓</s></div><div class="c x"><i>40</i><s>②</s></div><div class="c x t3"><i>41</i><s>②</s></div><div class="c t3"><i>42</i><s>✓</s></div><div class="c t3"><i>43</i><s>✓</s></div><div class="c t3"><i>44</i><s>✓</s></div><div class="c x"><i>45</i><s>④</s></div></div>
+  <div class="leg"><span><em style="background:#F0EDE1"></em>정답</span><span><em style="background:#F9E3D8;border:1px solid #EDC0A9"></em>오답 (숫자 = 정답)</span><span><em style="background:#fff;box-shadow:inset 0 0 0 1.5px #C9A227"></em>3점 변별 문항</span></div>
+</div>
+</div>
+</div>
+
+<div class="diag"><span class="badge">진단</span><div class="dtext">레벨테스트 결과, 100점 만점에 70점입니다. 영역별로는 듣기 12/12, 어휘 6/8, 문법 6/11, 독해 8/14문항을 맞혔습니다. 배점이 높은 어려운 문항은 10개 중 6개를 맞혔습니다. 듣기 어휘 능력에 비해 문법과 독해력이 상대적으로 약합니다. <span class="add">특히 문법은 규칙 적용 문항(23·26·28·30·31), 독해는 빈칸·순서 등 논리 연결 유형(37·40·41)에서 감점되어, 반환된 시험지의 붉은 칸 번호를 우선 복습하기를 권합니다.</span></div></div>
+
+</div></body></html>
