@@ -249,6 +249,55 @@ const T=(name, ok)=>R.push([name, !!ok]);
   T('새로 만든 것은 안 지워짐', (mergeAppData(base, nw).cash||[]).length===1);
 }
 
+// ⑳ 수강료(fees) — 빈 스캐폴드가 채워진 기록을 못 덮는가 (v33.116, 7월 납입 소실 사고)
+{ const FULL={paid:'7.5',method:'카드',amount:'360,000',status:'완납'};
+  const EMPTY={paid:'',method:'',amount:'',status:'미납'};
+  const wrap=(fees)=>({classes:[{id:'C1',name:'A반',students:[{id:'s1',name:'민혜원',
+    fees:JSON.parse(JSON.stringify(fees))}]}]});
+  const g=(r)=>(((r.classes[0].students[0].fees)||{})['2026.07']||{});
+  T('수강료 — 빈 칸이 채워진 기록을 못 덮음 (올릴 때)',
+    g(mergeAppData(wrap({'2026.07':FULL}), wrap({'2026.07':EMPTY}))).status==='완납');
+  T('수강료 — 반대 방향도 채워진 기록이 남음',
+    g(mergeAppData(wrap({'2026.07':EMPTY}), wrap({'2026.07':FULL}))).status==='완납');
+  const FULL_T=Object.assign({},FULL,{t:100}), EMPTY_T=Object.assign({},EMPTY,{t:200});
+  T('수강료 — 도장이 최신인 취소(미납)는 반영됨',
+    g(mergeAppData(wrap({'2026.07':FULL_T}), wrap({'2026.07':EMPTY_T}))).status==='미납');
+  T('수강료 — 도장이 최신인 완납이 이김',
+    g(mergeAppData(wrap({'2026.07':Object.assign({},EMPTY,{t:100})}),
+      wrap({'2026.07':Object.assign({},FULL,{t:900})}))).status==='완납');
+  T('수강료 — 달은 합집합',
+    Object.keys(mergeAppData(wrap({'2026.06':FULL}), wrap({'2026.07':FULL}))
+      .classes[0].students[0].fees).sort().join(',')==='2026.06,2026.07');
+  // 받을 때 — 클라우드의 빈 스캐폴드가 로컬 기록을 못 지움
+  __T.state.data=wrap({'2026.07':FULL});
+  __T._absorbFresh(wrap({'2026.07':EMPTY}));
+  T('받을 때 — 빈 스캐폴드가 로컬 납입 기록을 못 지움',
+    ((__T.state.data.classes[0].students[0].fees||{})['2026.07']||{}).status==='완납');
+  __T.state.data=wrap({'2026.07':Object.assign({},FULL,{t:100})});
+  __T._absorbFresh(wrap({'2026.07':Object.assign({},EMPTY,{t:900})}));
+  T('받을 때 — 도장이 최신인 취소는 반영됨',
+    ((__T.state.data.classes[0].students[0].fees||{})['2026.07']||{}).status==='미납');
+}
+
+// ㉑ 받을 때 — 같은 학생이 두 반에 온 신선본은 한 반만 남음 (v33.116 패리티)
+{ const s={id:'s1',name:'민혜원',school:'동지여고'};
+  const fresh={classes:[
+    {id:'C1',name:'A반',students:[JSON.parse(JSON.stringify(s))]},
+    {id:'C2',name:'유령반',students:[JSON.parse(JSON.stringify(s))]}]};
+  __T.state.data={classes:[{id:'C1',name:'A반',students:[JSON.parse(JSON.stringify(s))]}]};
+  __T._absorbFresh(fresh);
+  let cnt=0; (__T.state.data.classes||[]).forEach(c=>(c.students||[]).forEach(x=>{ if(x.id==='s1') cnt++; }));
+  T('받을 때 — 같은 학생 두 반 신선본은 한 반만 남음', cnt===1);
+  // 이름이 다르면(같은 번호 다른 학생) 불간섭
+  const fresh2={classes:[
+    {id:'C1',name:'A반',students:[{id:'x1',name:'김하늘'}]},
+    {id:'C2',name:'B반',students:[{id:'x1',name:'박지우'}]}]};
+  __T.state.data={classes:[]};
+  __T._absorbFresh(fresh2);
+  let cnt2=0; (__T.state.data.classes||[]).forEach(c=>(c.students||[]).forEach(x=>{ if(x.id==='x1') cnt2++; }));
+  T('받을 때 — 같은 번호 다른 이름은 건드리지 않음', cnt2===2);
+}
+
 return R;
 """
 
