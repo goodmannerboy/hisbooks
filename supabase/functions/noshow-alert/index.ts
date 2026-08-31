@@ -1,3 +1,4 @@
+// [감사 2026-09-01] v33.126 시점 대조: 앱의 발송 판정 코드(_writeAlertBlock·alertBlock 기록부)가 이 서버 코드 커밋(4d82e4a) 시점과 바이트 단위 동일 — 규칙 변경 없음, 재배포 불필요.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
