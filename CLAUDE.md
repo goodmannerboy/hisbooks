@@ -302,6 +302,35 @@ renderVals 가 예외로 조기 종료해 **가짜 절감**이 나오니 쓰지 
 하니스: `scratchpad/kio_perf.py`(tSync/tDom/tFrame/tPaint+rvMs, `--cpu 6` 이 TV 근사), `kiosk_e2e.py`(20항목),
 `ab_profile.py`(before/after 동일 세션 A/B). 진단 도장 **V765 → V33150**.
 
+### 8-9c. 앱 전체 속도 검수 (2026-09-05, v33.151~152) — 화면별 실측 기준선과 4개 구조 수리
+**측정법**: `scratchpad/app_perf.py` — 821KB(학생 64·기록 2,560·시험 708·상담 192) 시드, 6배 CPU 스로틀, 화면별
+`renderVals()` 1회 + «setState 1회→DOM 반영» 중앙값. 수리 전→후(ms): 월간 입력 **5,138→1,140**(DOM 6,269→1,726노드),
+선생님일지 **6,473→2,926**(rv 1,126→445), 일간 974→411(rv 334→105), 홈 473→355(rv 490→176), 성적 360→244,
+학생관리 rv 795→403. (TV 근사값이며 PC 실측은 약 1/6.)
+**수리 4개** (비키오스크 경로 코드 동일성 원칙 유지 — 가드는 전부 `조건 ? 기본값 : 원식`):
+1. **기록·시험 인덱스 `_ri(data)`** — WeakMap<data,{n,ne,cs,ss,es}>(반|학생·학생·시험(학생)), `_recsCS/_recsS/_exsS`.
+   monthAgg·studentMileage(미스 경로)·getSinceDate·_stuOwnRecs·examsFor 의 전수 `.filter` 를 인덱스 조회로.
+   ⚠ 인덱스 배열은 **공유 객체** — 반드시 `.filter()`/`.slice()` 로 새 배열을 만든 뒤 `sort` 할 것(examsFor 가 그 예).
+2. **`monthAgg` 결과 캐시** — data 신원+records 길이+(반|학생|월) 키. 본체는 `_monthAggRaw` 로 이름 변경.
+   호출부(monthlyItems)가 결과 객체에 속성을 덧붙이므로 **얕은 복사로 반환**. 인덱스만으로는 안 줄던 이유:
+   비용의 본체가 필터가 아니라 기록당 `mileageDetail`×20회 `num`(렌더 1회 83,736회 호출)이었다 — 포함시간 계측으로 확인.
+3. **화면별 계산 가드** — classReport(일간만)·dashAgg(종합일지만: dash* 소비처가 isManage)·monthSet/compMonthList(월간만)·
+   manageStudents/Classes(종합일지만)·bulkRows(일간만)·homeKpi(홈만). 소비처는 템플릿 sc-if 스택 스캔으로 확인했으나
+   **미닫힘 sc-if 3개(isAdminStudent·isAdminSchedule·isSchedule)** 때문에 그 이후 구간은 스택이 오염됨 — 스캔 결과를
+   맹신하지 말고 기존 rv 게이트와 교차 확인할 것.
+4. **월간 숨은 캡처카드 게이팅** — 반 전원 카드(학생당 ~650노드)를 늘 렌더하던 것을 `ms.capOn`(활성 학생·전송 큐 현재
+   학생·복사 대기 학생)만 렌더. 우측 패널은 카드 DOM 을 renderVals 중 읽으므로 **카드가 생긴 «다음» 렌더가 필요** —
+   componentDidUpdate 에서 `_mcapSeenA/_mcapSeenQ` 로 id 당 1회만 `_monthlyRenderKey` bump(무한루프 방지).
+   행 «복사»는 카드가 없으면 `_mcapRetry` 에 닫힘 저장 + 활성 전환 후 didUpdate 에서 재호출(onCopy 를 `const fn` 형태로).
+   ⚠ 기존 `_cduMain(_, prevState)` 의 prevState 는 런타임이 인자 1개만 넘겨 **undefined** — 그 안의 `_monthlyRenderKey`
+   갱신 로직은 죽어 있었다(전 카드 상시 렌더라 티가 안 났음). 새 재읽기 로직은 prevState 에 의존하지 않는다.
+**기타**: tierInfo 의 52KB 엠블럼 배열 리터럴 → `this._tierT` 캐시(호출마다 재할당하던 GC 압력 제거).
+componentDidUpdate 의 `[data-clipimg]` 스캔은 clipOpen 일 때만, `_resizeMonthlyComments` 는 월간·일간에서만.
+**남은 병목(미착수)**: 선생님일지·학생관리의 1,244 DOM 노드 템플릿 재조립(보드 타일 64개+달력 42칸) — 남은 2.9초(6배)의
+대부분. 일간일지 숨은 캡처카드(`#cap-{sid}` 전원)도 월간과 같은 방식으로 게이팅 가능하나 §3 캡처 함정(id 중복·_capEl
+이름 매칭)이 있어 별도 E2E 설계가 선행돼야 한다.
+검증: `monthly_e2e.py`(17항목: 활성 카드 1장·전환·비활성 행 복사·큐 5명 전환·복귀) + `kiosk_e2e.py`(20항목) + 게이트 6종.
+
 ### 8-10. 유령 반 재발 근절 (2026-08-06, v33.060)
 **증상**: 삭제한 반(«포항동지여고 2학년»)이 학생 6명을 담은 채 계속 되살아남 — 여러 번 지워도 재발.
 **근본 원인 = 삭제 표식 무력화 구멍 2개**:
