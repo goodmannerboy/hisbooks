@@ -81,10 +81,12 @@ AFTER = """()=>{const L=window.__L; const dt=L.state.bulk.date; const out={};
   out.reopened = L.loadDraft(L.state.data,'C1','s2',dt).hwCheck || null;
   const r=(L.state.data.records||[]).find(x=>x.date===dt&&x.studentId==='s2');
   out.saved = (r&&r.hwCheck) || null;
-  const e=document.getElementById('cap-s2');
-  out.card = e ? { p1:(e.innerText.indexOf('오답노트 정리')>=0),
-                   p2:(e.innerText.indexOf('교재 p.88~91 문제 풀기')>=0) } : null;
-  return out;}"""
+  // v33.154: 학부모 카드(#cap-)는 미리보기·복사·전송 때만 렌더되므로 미리보기를 연 뒤 읽는다
+  return new Promise((res)=>{ L.setState({ previewStudentId:'s2', previewStudentName:'' }); setTimeout(()=>{
+    const e=document.getElementById('cap-s2');
+    out.card = e ? { p1:(e.innerText.indexOf('오답노트 정리')>=0),
+                     p2:(e.innerText.indexOf('교재 p.88~91 문제 풀기')>=0) } : null;
+    L.setState({ previewStudentId:null }); res(out); }, 700); });}"""
 
 # 항목을 다 지우고 저장한 것은 뜻으로 존중해야 한다
 CLEARED = """()=>{const L=window.__L; const dt=L.state.bulk.date;
