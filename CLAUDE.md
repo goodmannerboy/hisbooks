@@ -398,6 +398,13 @@ componentDidUpdate 의 `[data-clipimg]` 스캔은 clipOpen 일 때만, `_resizeM
   다음 수업 = 카드 날짜 다음날부터 42일 스캔: 학생 보강(`data.mkup[sid|date]`) 우선 → `_classStart(c, getDay, ds, data)`(휴강 오버레이 자동 반영, 보강 이동은 `_sessOv.from`으로 «보강» 꼬리표). 기록 2회 미만이면 줄 숨김.
 - 검증 `scratchpad/cap_week.py`(화·목 반 3학생: 개근 7회 / 결석·지각 → 3회 / 보강 예약 → «월 9/7 16:00 보강», 점 색 DOM 검사) + daily_e2e 18 + 게이트 6종.
 
+### 8-9j. 일간 캡처카드 «시험 성적» PASS·RE·NOT YET 태그 + 통과 기준선 막대 (2026-09-06, v33.160, 원장 B안·기준 90%)
+- 과목 칸 = 과목명 → **점수(24px) 옆 작은 태그**(PASS 세이지 / RE 허니 / NOT YET 코랄, 9px 999px) → 4px 막대(채움 = 득점률, 1.5px 진회색 눈금 = 통과 기준). 제목 줄에 «통과 기준 N%» + 오른쪽 «오늘 PASS n/m»(판정된 과목이 있을 때만).
+  ⚠ **상자 높이는 106 → 104px(칸 49 → 55, 여백 14→12·10→6 축소)** — 원장이 «섹션 세로 폭이 기존보다 커지면 안 됨»이라 명시. 태그를 점수 아래에 두는 안(높이 +25px)은 반려됨. FAIL 용어 금지(교육학 용어 PASS·RE·NOT YET).
+- 판정 `_passJudge(sc, tot, crit)`: 점수·만점 숫자일 때만 `has`; 득점률 ≥ crit → PASS, ≥ crit−15 → RE, 그 외 NOT YET. 빈 점수(«–»)·미실시(`xOn:false`)는 태그 없음·빈 막대(칸 높이 동일).
+  기준 `_passCrit(data, classId)` = 반 `passPct`(1~100) 있으면 그 값, 없으면 **90**(원장 확정). 요약 `_passSum(r, data, classId)` → rv `s.exPass{crit,n,m,has}`; 셀 필드 `pjHas/pjLb/pjBg/pjFg/pjBd/pjBar/pjPct`.
+- 검증 `scratchpad/exam_box_measure.py`(4학생: PASS/NOT YET/RE 혼합·전원 PASS·전원 NOT YET·전부 미입력 → 상자 104·칸 55 동일, 태그·막대·눈금 DOM) + `exam_off_check.py`(bulk.skip → «미실시» 칸 55 유지, 반 passPct=80 → 눈금·태그·제목 연동, 폰 390px 2열 173px 줄바꿈 없음) + daily_e2e 18 + 게이트 6종.
+
 ### 8-10. 유령 반 재발 근절 (2026-08-06, v33.060)
 **증상**: 삭제한 반(«포항동지여고 2학년»)이 학생 6명을 담은 채 계속 되살아남 — 여러 번 지워도 재발.
 **근본 원인 = 삭제 표식 무력화 구멍 2개**:
