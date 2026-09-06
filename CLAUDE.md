@@ -405,6 +405,13 @@ componentDidUpdate 의 `[data-clipimg]` 스캔은 clipOpen 일 때만, `_resizeM
   기준 `_passCrit(data, classId)` = 반 `passPct`(1~100) 있으면 그 값, 없으면 **90**(원장 확정). 요약 `_passSum(r, data, classId)` → rv `s.exPass{crit,n,m,has}`; 셀 필드 `pjHas/pjLb/pjBg/pjFg/pjBd/pjBar/pjPct`.
 - 검증 `scratchpad/exam_box_measure.py`(4학생: PASS/NOT YET/RE 혼합·전원 PASS·전원 NOT YET·전부 미입력 → 상자 104·칸 55 동일, 태그·막대·눈금 DOM) + `exam_off_check.py`(bulk.skip → «미실시» 칸 55 유지, 반 passPct=80 → 눈금·태그·제목 연동, 폰 390px 2열 173px 줄바꿈 없음) + daily_e2e 18 + 게이트 6종.
 
+### 8-9k. «함께한 N번째 수업» 앱 이전 회차 합산 (2026-09-06, v33.161, 원장 지시)
+- 앱 만들기 전부터 다닌 학생은 기록이 앱 첫 기록부터만 있어 회차가 작게 나왔다. 이제 **`_stuSessN` = 앱 기록 회차(결석 제외 날짜 수) + `_preAppN`**(SINCE ~ 학생 첫 기록 전날, 현재 반 시간표 요일 기준 수업일 수).
+- `_preAppNRaw(data, sid, name, upto)`: 반 = 학생 id(+이름 일치)가 속한 첫 반, SINCE = `getSinceDate`(registeredAt → enrollDate → intake.date → 첫 기록) `_dnum` 정규화, 끝 = min(첫 기록 −1일, upto), 하루씩 스캔(최대 2600일)하며 **`_pubHolT()` 법정공휴일(2023~2027) · `closedDays` 휴원일 제외**, `_classStart(cls, getDay, null, data)`가 비면 수업일 아님. `_mz(data, 'pre|sid|name|upto')` 캐시.
+  ⚠ 앱 이전 결석·방학은 알 수 없으므로 시간표대로 다 온 것으로 계산(추정치). 반을 옮긴 학생은 **현재 반 요일**로 셈. SINCE가 첫 기록 이후이거나 없으면 0 → 기존과 동일.
+- `_pubHolT()`는 «올해 남은 공휴일 한 번에» 버튼(`addHolidaysThisYear`)과 같은 표를 공유(2026·2027 목록은 그대로, 2023·2024·2025 추가 — 설·추석·대체휴일·임시공휴일 포함).
+- 검증 `scratchpad/preapp_e2e.py`: 화·목 반, since 2025.03.04 학생 = 파이썬 독립 계산(공휴일·휴원일 2025.07.10 제외) 139 + 기록 10 = 149 일치, since가 첫 기록 이후/없음 → 기록 수 그대로, 휴원일 제거 시 +1, 카드 «since 2025.03.04» 유지 + daily_e2e 18 + cap_week + 게이트 6종.
+
 ### 8-10. 유령 반 재발 근절 (2026-08-06, v33.060)
 **증상**: 삭제한 반(«포항동지여고 2학년»)이 학생 6명을 담은 채 계속 되살아남 — 여러 번 지워도 재발.
 **근본 원인 = 삭제 표식 무력화 구멍 2개**:
