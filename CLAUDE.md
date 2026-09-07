@@ -428,6 +428,11 @@ componentDidUpdate 의 `[data-clipimg]` 스캔은 clipOpen 일 때만, `_resizeM
 - 원본 목록 `scratchpad/cmt_pool_v33167.py`, 사전 검사+삽입 `patch_cmtpool.py`(게이트와 같은 정규식: 평가 낱말·부모 대상·존댓말 종결·길이·중복·삽입 금지 문자 `'"\<>{}`). ⚠ 문장에 작은따옴표를 쓰면 JS 배열이 깨지므로 사전 검사가 막는다. 8-19 규칙(학생에게 반말·판단 없음·출처 인용 금지)은 그대로.
 - 한 학생은 300회 수업 동안 한 번도 안 겹침(his-comment «한 바퀴 무중복» 실측).
 
+### 8-9o. 레벨테스트 성적통지서 색감 리뉴얼 (2026-09-07, v33.168, 전/후 미리보기 → 원장 «그대로 적용»)
+- 절차: `scratchpad/patch_preview_lt.py SRC DST`로 `_preview_lt.html` 사본 생성 → `lt_render.py <file> <tag>`(홀딩반 학생 `openIntakeAt('H0','n1')` + 배정 반 C1) 전/후 캡처 → 합성본 승인 → 같은 스크립트를 SRC=DST로 실행(버전 bump 포함).
+- 변경 5종은 DESIGN.md «성적통지서 데이터 색» 항목 참조. 로직: `ltChartBars` isTop/isLow 판정 뒤 `color`/`lc` 재부여(강점 딥그린·보완 코랄·기본 세이지), `_ltAnswerMap`/`_ltManualMap` 칸 색, `gradeTableM` hbg/hfg/tbg. 템플릿: % 글자 `{{ cb.lc }}`, 칩, 레이더 fill 2곳, 범례.
+- 검증: 강점/보완 있음(딥그린·코랄·세이지 2) / 전 영역 동일(전부 세이지, 칩 없음) DOM 색 탐침 + 게이트 6종 + daily_e2e.
+
 ### 8-10. 유령 반 재발 근절 (2026-08-06, v33.060)
 **증상**: 삭제한 반(«포항동지여고 2학년»)이 학생 6명을 담은 채 계속 되살아남 — 여러 번 지워도 재발.
 **근본 원인 = 삭제 표식 무력화 구멍 2개**:
