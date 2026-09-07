@@ -405,7 +405,7 @@ componentDidUpdate 의 `[data-clipimg]` 스캔은 clipOpen 일 때만, `_resizeM
   기준 `_passCrit(data, classId)` = 반 `passPct`(1~100) 있으면 그 값, 없으면 **90**(원장 확정). 요약 `_passSum(r, data, classId)` → rv `s.exPass{crit,n,m,has}`; 셀 필드 `pjHas/pjLb/pjBg/pjFg/pjBd/pjBar/pjPct`.
 - 검증 `scratchpad/exam_box_measure.py`(4학생: PASS/NOT YET/RE 혼합·전원 PASS·전원 NOT YET·전부 미입력 → 상자 104·칸 55 동일, 태그·막대·눈금 DOM) + `exam_off_check.py`(bulk.skip → «미실시» 칸 55 유지, 반 passPct=80 → 눈금·태그·제목 연동, 폰 390px 2열 173px 줄바꿈 없음) + daily_e2e 18 + 게이트 6종.
 
-- **v33.164 확정형(원장)**: 태그 한글 **두 단계 «통과»(세이지) / «재시험»(코랄)** — 기준 미달은 정도와 상관없이 전부 재시험(RE/NOT YET 3단계·75% 경계 폐지, FAIL 논의 후 한글 채택). **막대·눈금 삭제**, 점수 26px 복원, 상자 여백 원복 → **상자 106px·칸 49px = v33.159 원형과 동일**(폰 2열 169px). 제목 줄 «통과 기준 N% · 오늘 통과 n/m». `_passJudge`는 k 'p'/'r'만 반환(pjBar/pjPct 필드는 남아 있으나 템플릿 미사용).
+- **v33.164 확정형(원장)**: 태그 한글 **두 단계 «통과»(세이지) / «재시험»(코랄)** — 기준 미달은 정도와 상관없이 전부 재시험(RE/NOT YET 3단계·75% 경계 폐지, FAIL 논의 후 한글 채택). **막대·눈금 삭제**, 점수 26px 복원, 상자 여백 원복 → **상자 106px·칸 49px = v33.159 원형과 동일**(폰 2열 169px). 제목 줄 «통과 기준 N% · 오늘 통과 n/m». `_passJudge`는 k 'p'/'r'만 반환(pjBar/pjPct 필드는 남아 있으나 템플릿 미사용). **v33.165**: 재시험 태그 색을 코랄 → 크림(#FBF6E7)/골드브라운(#8A6520)/골드 테두리(#DCBF73)로 낮춤(원장 제안·확정, DESIGN.md 참조).
 
 ### 8-9k. «함께한 N번째 수업» 앱 이전 회차 합산 (2026-09-06, v33.161, 원장 지시)
 - 앱 만들기 전부터 다닌 학생은 기록이 앱 첫 기록부터만 있어 회차가 작게 나왔다. 이제 **`_stuSessN` = 앱 기록 회차(결석 제외 날짜 수) + `_preAppN`**(SINCE ~ 학생 첫 기록 전날, 현재 반 시간표 요일 기준 수업일 수).
