@@ -433,6 +433,14 @@ componentDidUpdate 의 `[data-clipimg]` 스캔은 clipOpen 일 때만, `_resizeM
 - 변경 5종은 DESIGN.md «성적통지서 데이터 색» 항목 참조. 로직: `ltChartBars` isTop/isLow 판정 뒤 `color`/`lc` 재부여(강점 딥그린·보완 코랄·기본 세이지), `_ltAnswerMap`/`_ltManualMap` 칸 색, `gradeTableM` hbg/hfg/tbg. 템플릿: % 글자 `{{ cb.lc }}`, 칩, 레이더 fill 2곳, 범례.
 - 검증: 강점/보완 있음(딥그린·코랄·세이지 2) / 전 영역 동일(전부 세이지, 칩 없음) DOM 색 탐침 + 게이트 6종 + daily_e2e.
 
+### 8-9p. 홈 «곧 함께하는 학생» 카드 = 학원 전체 공개 (2026-09-07, v33.169, 원장 지시 «전체 선생님들에게 다 공개»)
+- `homeUpcoming` 반 선택 `visibleClasses(담임 반만)` → `data.classes` 전체 + 학생 id 중복 제거(`_seen9`, 한 학생이 두 반에 있을 때 두 줄로 뜨던 문제). 카드 한 줄에 이미 반 이름·담당 선생님이 찍히므로 남의 학생인지 바로 안다. «신규 정보 보기»(레벨테스트·상담 내용·연락처)도 전 교사 공개 — 원장 지시대로.
+- ⚠ **«자세히 · 수정 →»(onDetail)는 담당 선생님·관리자만**(`canEdit`). 이유는 실측: 비담임이 누르면 `openIntakeAt`이 `activeClassId`를 남의 반으로 **덮어쓰고 모달을 닫아도 복구되지 않는다**(`closeIntake`에 복구 없음, `_navRestore`도 소유자 재검증 없이 sessionStorage 값을 되살림). 그 상태로 일간일지에 가면 그 선생님 화면이 비고, 이후 학생 추가·삭제·일괄입력이 남의 반에 적용될 수 있다. 게다가 모달은 **열었다 닫기만 해도** intakeDraft를 그 학생에게 써 넣고 클라우드까지 동기화하며, «등록됨 ✓»(revertIntakePending)로 남의 반 재원생을 접수대기로 되돌릴 수도 있다. 공개(보기)와 편집을 분리한 것.
+- 성능: `homeUpcoming`만 화면 가드가 없어 **모든 화면의 매 렌더마다** 전 학생 × records/checkins를 훑고 있었다. `homeBdays`와 같이 `(S.view === 'home') ? … : {has:false,…}`로 감쌌다(빈 값에 count/list/cue/cueColor/cueHas 전부 포함 — 템플릿이 6개 키를 쓴다).
+- ⚠ **게이트 우회 교훈**: 처음 작성한 `((data.classes) || [])`는 his-check **R1 정규식(`data.classes\s*\|\|\s*\[\]`)에 괄호 하나 때문에 안 걸렸다.** 규칙을 조용히 피해 간 셈이라 `(data.classes || [])`로 고치고 `_check/his-check.py`의 `ALLOW`에 사유를 등록했다(homeBdays 선례). **전 학생을 일부러 훑을 때는 R1에 걸리는 형태로 쓰고 ALLOW에 «왜»를 남길 것.**
+- 검증 `scratchpad/upcoming_scope.py`(반 2개·선생님 2명 시드로 관리자/김선생/Joey 각각 누가 보이는지), `upcoming_canedit.py`(5경우 × 카드 인원·자세히 버튼·LT/상담/연락처 노출), `upcoming_detail_leak.py`(비담임 클릭 → activeClassId 유지 실측) + 게이트 6종 + daily_e2e + monthly_e2e.
+- 남은 이슈(원장 판단 대기): 대상이 **6명을 넘으면 `list: out.slice(0, 6)`으로 조용히 잘린다** — 머리글 «N명»과 어긋남. `homeWeek`의 «외 N건» 같은 줄을 붙이면 해결.
+
 ### 8-10. 유령 반 재발 근절 (2026-08-06, v33.060)
 **증상**: 삭제한 반(«포항동지여고 2학년»)이 학생 6명을 담은 채 계속 되살아남 — 여러 번 지워도 재발.
 **근본 원인 = 삭제 표식 무력화 구멍 2개**:
