@@ -451,6 +451,17 @@ componentDidUpdate 의 `[data-clipimg]` 스캔은 clipOpen 일 때만, `_resizeM
 - 검증 `scratchpad/mkmulti_e2e.py` **25항목**(진짜 클릭: 토글·해제·선택 해제·라벨·제목·이름줄·시간 자동채움·3명 동일 기록·안내문 3건·단일 회귀·보강 취소) + 게이트 6종 + daily/monthly E2E.
   ⚠ 하니스 교훈 2가지: ① 브라우저는 `style` 을 `border-radius: 9px`(공백 포함)로 돌려주므로 문자열 매칭 대신 `el.style.borderRadius` 로 비교할 것. ② 보강 날짜를 «오늘+4일»로 잡으면 주말에 걸려 시간 자동 채움이 안 된다(수업일이 아니므로 정상) — 월~금으로 보정해야 한다.
 
+### 8-9r. 반 학생 명단 가나다 순 정렬 (2026-09-09, v33.171, 원장 지시 «학생일지 반별 학생이름 가나다 순»)
+- 정본 헬퍼 **`_nmCmp(a,b)`** — `name.trim().localeCompare(bn, 'ko')`, 동점이면 `id` 로 안정 정렬. 기존 이름 정렬 4곳(`_clsSortKey`·수강료 장부 오름/내림·학교 목록)이 이미 `'ko'` 를 넘기므로 같은 기준으로 통일. 로케일을 빼먹은 2곳(학생 보드·전역 검색)은 이번 범위 밖.
+  **`_firstStuId(c)`** — 정렬 후 첫 «수업 가능» 학생 id.
+- 정렬을 붙인 곳: ① renderVals `students`(일간 roster·bulkRows·classReport·월간 monthlyItems·성적 studentOptions·학생관리 manageStudents·캡처 큐의 공통 원천) ② 성적 자동채점 오버레이 `_clsStu` 와 타 반 제출 `_extra` ③ 시험지 클립 오버레이 `_clipStudsShow`(DOM 직접 생성이라 renderVals 수정이 안 닿음) ④ 성적 드롭다운 꼬리(타 반 학생).
+- **순서 일관성까지 맞춘 것**(이게 없으면 화면만 정렬되고 동작이 어긋난다): ⑤ `saveBulk` 의 sendQueue(저장 후 전송 순서) ⑥ `commitRecord` 의 «저장 · 다음 학생»(원래 `cls.students` 등록순으로 튀었음, 이제 «수업 가능 + 가나다» 명단 기준) ⑦ 반 전환·로그인 기본 선택 학생(`const sid = this._firstStuId(c)` — onSelectClass·setUser 2곳) ⑧ 학생관리 반 카드 «선택»(onPick).
+  ⚠ 아직 등록순인 곳: 앱 시작 시 생성자 기본 선택(2354845)·데이터 복구/초기화(2941202·2941787), 선생님 일지/학원 일지 쪽 명단(schedClasses·schedWeek·상담 목록·출결 표) — 원장 요청 범위 밖이라 두었다.
+- ⚠ **`.sort()` 는 반드시 `.filter()` 결과에 붙일 것.** `cls.students` 는 `state.data` 안의 실제 배열이라 직접 정렬하면 저장 순서가 클라우드까지 영구히 바뀐다. `filter` 가 새 배열을 주므로 그 뒤에 붙이면 안전(E2E 로 원본 순서 불변 확인).
+- 한국어 정렬 실측: **한글이 먼저(가·나·다…), 영문 이름은 뒤**(Amy 는 맨 끝). 이름이 빈 학생은 맨 앞.
+- 검증 `scratchpad/namesort_e2e.py` **12항목**(등록순을 일부러 뒤섞어 시드: 한하윤·가온·나린·Amy·다온·김하린 → 기대 가온·김하린·나린·다온·한하윤·Amy) + 게이트 6종 + daily/monthly/exams E2E + mkmulti E2E.
+  ⚠ 하니스 교훈: `classReport` 의 이름 필드는 `studentName`, `monthlyItems` 는 이름 없이 `sid` 만 갖는다. `classReport` 는 그날 기록이 저장된 뒤에야 채워진다.
+
 ### 8-10. 유령 반 재발 근절 (2026-08-06, v33.060)
 **증상**: 삭제한 반(«포항동지여고 2학년»)이 학생 6명을 담은 채 계속 되살아남 — 여러 번 지워도 재발.
 **근본 원인 = 삭제 표식 무력화 구멍 2개**:
