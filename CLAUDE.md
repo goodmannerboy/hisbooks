@@ -776,3 +776,13 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 ⚠️ **백그라운드 Bash 는 앞의 `cd … &&` 를 떼고 실행한다** — 스크립트·출력 경로는 절대경로로.
 **미착수(2단계 제안)**: 로고 base64 9회 중복(435KB)·이미지 29장 분리, 런타임의 페이지 재다운로드·재컴파일, 부팅 합치기 후 새로고침 생략, 지난 학기 기록 보관함, 클라우드 «바뀐 부분만 전송». 홈 renderVals 49ms 중 감싼 메서드 밖(homeData 인라인 계산) 40ms 는 아직 남아 있음. 시험명 입력(b.onNameInput→setTestName)은 1타마다 persist.
 **하니스(scratchpad)**: `bench_perf.py [SCALE]`(로드·전환·타이핑·프로파일), `bench_lines.py`, `bench_methods.py`, `equiv_dump.py`+`equiv_cmp.py`(두 버전 렌더값 동치), `typing_e2e.py`(12), `perf3_e2e.py`(14), `clone_e2e.py`, 패치 `patch_perf1~5.py`.
+
+**2단계 (2026-09-14, 원장 지시 «2단계 순서대로»)**
+| 버전 | 내용 | 전후 |
+|---|---|---|
+| v33.186 2-1 | base64 이미지 29회(고유 21장) 중 26회를 `assets/*.png`(his-logo·his-logo-sm·his-logo-light·emblem-01~16)로 분리. 클라우드 게이트 2·스플래시 1 로고만 인라인 유지(즉시 표시). 머리 로고 2장 `<link rel=preload>` | index.html 3.17MB → 2.17MB · 로컬 앱 준비 1.45~1.67초 → 1.13~1.45초 · 캡처카드(html2canvas)에 로고 픽셀 그려짐·오염 없음 확인 |
+| v33.187 2-2 | ⓐ dc-runtime(매니페스트 gzip)의 `fetch(location.href)` 재다운로드 + 템플릿 2차 컴파일 제거 — x-dc 안에 table 계열이 없어 DOM 파싱본으로 충분(12개 화면 DOM 두 버전 동일 검증) ⓑ 부팅 병합 후 `location.reload()`(두 번 켜짐) 대신 `his-silent-refresh` 로 흡수 — 앱이 `window.__hisSilentReady` 를 세우고, 그 전에 오면 `__hisPendingFresh` 표식을 앱이 뜨면서 흡수. 신원 변경 시 새로고침은 그대로 ⓒ 새 버전 확인(9초 뒤·15분마다)이 전체 2.2MB 를 내려받던 것을 `Range: bytes=0-8191` 로 | index.html 전체 요청 3회 → 1회 |
+
+⚠️ **런타임 패치 방법**: 매니페스트 `05b00777…` 항목을 gzip 해제 → 문자열 치환 → `gzip.compress(mtime=0)` → base64 → JSON 재직렬화(`separators=(',',':')`). 손대기 전 `dc_runtime.js`(해제본)와 count assert 로 앵커 확인.
+⚠️ **부팅 병합 새로고침 생략(ⓑ)은 실계정 로그인 없이는 E2E 로 못 본다** — 앱 쪽 경로(표식·흡수)만 검증했다. 최악의 경우 다른 기기 변경분이 12초 폴링에서 흡수된다. 원장이 두 기기로 확인해 주면 좋다.
+**2-3(지난 학기 기록 보관함)은 데이터 배치·클라우드 병합 규칙이 바뀌는 일이라 설계안을 먼저 원장 확인 후 진행** — 마일리지·함께한 회차·since 는 전체 기록이 필요하므로 «일상 계산에서 제외»가 아니라 «저장·전송·부팅 파싱에서 분리」가 맞다.
