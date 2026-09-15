@@ -862,4 +862,8 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
   부르는 곳 없던 메서드 18개도 삭제(copyElAndAdvance·_scanPage·confirmStudentDirect·setStudentMakeup(→setStudentMakeupMany 가 대체)·_kioskNoSleep·mileageBadge·openMoveSchedule·_dropNewNotice·captureCapHtml·classCheckCfg·gotoStudent·_msgReadAt·_typPending·openPreview·pickExamStudent·setSchedMonth·setSchedMode·bulkKey).
   **남긴 것(계속 필요)**: `_guardNotStarted979`(시작 전 학생 결석 예정) · `_dedupPending`(중복 접수) · `_firstDayNotice` · `_restorePut`(백업에서 학생 되찾기). his-check ALLOW 의 `_fixStartGhost` 항목 삭제.
   ⚠️ 이 삭제로 his-check R2 의 기존 위반 1건(setSchedTime 의 `schedule.times` 쓰기) 지문이 바뀌어 «새로 1건 · 해결 1건»으로 보인다 — 같은 코드, 새 위반 아님.
+- **v33.204 S1**: «수업 이동(CLASS MOVE)» 창 5벌 → 1벌. 5벌이 바이트까지 같았고(각 7.4KB) 여는 값 `mvOn` 이 최상위 렌더값이라, «학생 보강» 창과 같은 최상위 자리(`isFee` 앞) 한 곳으로 옮김.
+  **덤으로 고쳐진 버그**: 옛 사본 하나가 학원 일지 › 학생관리의 숨은 달력 구역(`showStuCal`) 안에 갇혀, 그 화면에서 창을 열면 상태만 열리고 화면엔 안 보였다(v33.203 비교 실측 vis 0 → v33.204 vis 1).
+  검증 `rm204_e2e.py`(창 안 반 고르기 → 날짜 → 이번만 휴강 → 휴강 기록 저장 → 완료, 일간일지·선생님 일지·학원 일지에서 창 1개). 홈 «+ 보강 예약» 진짜 마우스 클릭은 v33.203·v33.204 모두 하니스 겹침 레이어(`data-dc-tpl`)가 가로채 측정 불가(같은 결과 — 회귀 아님).
+  **달력·내 메모 카드(3벌, 각 26KB)는 합치지 않음**: 세 사본이 학원 일지 학생관리 / 반별 일정 위 / 등하원 관제 위로 서로 다른 자리에 있어 1벌로 줄이면 화면 배치가 바뀐다. 세 사본은 지금 바이트 동일하고 his-check R4 가 어긋남을 막는다.
 - ⚠️ 복구 루틴을 새로 만들 때: 사고가 끝나면 **지우는 날짜를 함께 적을 것**. 매 부팅·10분마다 전체 데이터를 복제·훑는 루틴이 사고 뒤에도 몇 주씩 남아 있었다(키오스크 지연 §8-9b 의 1위 원인과 같은 뿌리).
