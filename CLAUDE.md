@@ -853,3 +853,13 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 **v33.195 배너(원장 지시 «시험 자동 채점으로 변경 · 더 눈에 띄게 · 안내 문구 수정»)**: 성적 화면의 옅은 크림 줄 «모의고사 자동 채점 / ＋ 정답키 시험 만들기 →»를 딥그린 배너(`data-exam-banner`)로 교체 — EXAM AUTO GRADING 눈썹글자 · «시험 자동 채점» 20px · 안내 «모의고사 · 학교 시험 대비 · 학원 시험을 OMR 카드로 한 번에 채점해요. 반 구분 없이 생년월일로 학생을 찾고, 100점 만점 통지서와 반 결과판까지» · 3단계 칩(① 정답해설·문제지 PDF → ② OMR 카드 스캔 → ③ 통지서·결과판) · 금색 버튼 «시험 채점 시작 →»(`onOpenExamGrade` 그대로). 채점 창 제목도 «시험 자동 채점» + «정답해설·문제지 PDF → OMR 카드 스캔 → 통지서까지 · 반 구분 없음 · 100점 만점». 검증 `banner_e2e.py` 8항목(390px 포함).
 검색칸: 목록에서 학생을 고르면 검색어를 비우고(`examStuQ:''`), «그 이름의 학생이 없어요»는 이미 채점된 학생까지 포함해 이름이 아예 없을 때만 뜬다(채점 직후 잘못 뜨던 것 보정).
 검증: `fix194_e2e.py` 18항목(27/53→54.7/100 재계산, 26번 정답 추가 시 문항 수 26, 다른 선생님 반 학생 목록, 이름 검색, 퇴원생 제외, 고르면 검색칸 비움, 채점된 이름 검색 시 안내 없음, 직접 입력 7.5/100, 답 줄 25줄) + `acad_e2e.py` 32항목(배점 합 99.3 → 만점자 100/100).
+
+### 8-29. 기능 정리 — «애초에 없어도 되는 것» 삭제 (2026-09-15, v33.201~v33.204, 원장 승인 D1·D2·D3·D5·S1)
+원장 원칙: «똑똑한 엔지니어가 빠지는 함정 = 존재하지 말아야 할 것을 최적화하기». 검수 제안 중 승인분만 한 버전씩.
+- **v33.201 D1·D2**: 클라우드 부분 전송(v33.191)·기록 보관함(v33.188) 삭제 — §8-23 해당 줄에 ⛔ 표기. 검사 도구용 `window.__hisMergeAppData` 는 유지(fix196·sets198 테스트가 사용).
+- **v33.202 D3**: 키오스크 소리 엔진·진단 기록 삭제 — §8-11 ⛔ 표기.
+- **v33.203 D5**: 끝난 사고 복구 루틴 삭제 — `_fixStartGhost`·`_fixDupRoster`·`_fixFakeNew`·`_fixSinceLocal`(8월 사고, 10분마다 돌던 것) · `_fixOnce931`(최영서·안연지 1회) · `_scrubMisCopied973` · `_dropOldNewNotices` · `markExistingStu`(콘솔 비상용).
+  부르는 곳 없던 메서드 18개도 삭제(copyElAndAdvance·_scanPage·confirmStudentDirect·setStudentMakeup(→setStudentMakeupMany 가 대체)·_kioskNoSleep·mileageBadge·openMoveSchedule·_dropNewNotice·captureCapHtml·classCheckCfg·gotoStudent·_msgReadAt·_typPending·openPreview·pickExamStudent·setSchedMonth·setSchedMode·bulkKey).
+  **남긴 것(계속 필요)**: `_guardNotStarted979`(시작 전 학생 결석 예정) · `_dedupPending`(중복 접수) · `_firstDayNotice` · `_restorePut`(백업에서 학생 되찾기). his-check ALLOW 의 `_fixStartGhost` 항목 삭제.
+  ⚠️ 이 삭제로 his-check R2 의 기존 위반 1건(setSchedTime 의 `schedule.times` 쓰기) 지문이 바뀌어 «새로 1건 · 해결 1건»으로 보인다 — 같은 코드, 새 위반 아님.
+- ⚠️ 복구 루틴을 새로 만들 때: 사고가 끝나면 **지우는 날짜를 함께 적을 것**. 매 부팅·10분마다 전체 데이터를 복제·훑는 루틴이 사고 뒤에도 몇 주씩 남아 있었다(키오스크 지연 §8-9b 의 1위 원인과 같은 뿌리).
