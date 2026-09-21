@@ -73,6 +73,34 @@ with sync_playwright() as p:
     print('   도장:', r3)
     ck('③ 삭제 도장이 (시계가 빠른 기기의) 되살리기 도장보다 큼', r3.get('gt') is True, r3)
     ck('③ 두 방향 합치기 모두에서 삭제가 유지됨(되살아나지 않음)', r3.get('aHas') is False and r3.get('bHas') is False, r3)
+    # ④ [뿌리] 저장 데이터가 빈 기기로 열어도 예시 반(포항동지여고 2학년 6명)이 생기지 않는다
+    ctx2 = br.new_context(); pg2 = ctx2.new_page(); errs2 = []
+    pg2.on('pageerror', lambda x: errs2.append(str(x)[:200]))
+    pg2.goto('http://127.0.0.1:%d/index.html' % srv.server_address[1], wait_until='networkidle'); pg2.wait_for_timeout(2500)
+    for _ in range(20):
+        if pg2.evaluate(W):
+            break
+        pg2.wait_for_timeout(500)
+    fresh = pg2.evaluate("()=>{ const d=window.__L.state.data; return { classes:(d.classes||[]).map(c=>c.name), names:[].concat.apply([], (d.classes||[]).map(c=>(c.students||[]).map(s=>s.name))) }; }")
+    print('   빈 기기 첫 실행:', fresh)
+    ck('④ 빈 기기로 열어도 예시 반·예시 학생이 만들어지지 않음', not any('포항동지여고' in c for c in fresh['classes']) and '최민경' not in fresh['names'] and '소승현' not in fresh['names'], fresh)
+    r4 = pg2.evaluate(r"""()=>{ const M=window.__hisMergeAppData; const SEED=[['민혜원',196],['최민경',29],['박지우',19],['강보경',20],['소승현',43],['김지윤',49]];
+      const seedCls=(tag)=>({ id:'seed'+tag, name:'포항동지여고 2학년', students:SEED.map((x,i)=>({ id:'g'+tag+i, name:x[0], school:'포항동지여고', startMileage:x[1] })) });
+      const cloud={ classes:[{ id:'R1', name:'히즈 동지여H2_B.T', owner:'Benjamin', students:[{ id:'m1', name:'민혜원', school:'포항동지여자고등학교 2학년', startMileage:194 }] }], records:[{ classId:'R1', studentId:'m1', date:'2026.09.01' }], exams:[] };
+      const oldDevice={ classes:[seedCls('A')], records:[], exams:[] };
+      const has=(o,nm)=>((o.classes||[]).some(c=>c.name===nm));
+      const a=M(cloud, oldDevice), b=M(oldDevice, cloud);
+      const realSame={ classes:[{ id:'R9', name:'포항동지여고 2학년', owner:'Joey', students:[{ id:'r1', name:'최민경', school:'포항동지여고', startMileage:29, registeredAt:'2026.09.01' }] }], records:[], exams:[] };
+      const c=M(cloud, realSame);
+      const usedSeed={ classes:[seedCls('B')], records:[{ classId:'seedB', studentId:'gB1', date:'2026.09.02' }], exams:[] };
+      const d2=M(cloud, usedSeed);
+      return { aGhost:has(a,'포항동지여고 2학년'), bGhost:has(b,'포항동지여고 2학년'), aReal:has(a,'히즈 동지여H2_B.T'), realKept:has(c,'포항동지여고 2학년'), usedKept:has(d2,'포항동지여고 2학년') }; }""")
+    print('   합치기:', r4)
+    ck('④ 옛 버전 기기가 예시 반을 올려도 합칠 때 걸러짐(양방향) · 진짜 반은 그대로', r4['aGhost'] is False and r4['bGhost'] is False and r4['aReal'] is True, r4)
+    ck('④ 이름만 같은 진짜 반(등록일 있는 학생)은 지우지 않음', r4['realKept'] is True, r4)
+    ck('④ 예시 학생에 기록이 연결돼 있으면 지우지 않음(자료 보호)', r4['usedKept'] is True, r4)
+    ck('④ 빈 기기 JS오류 없음', not errs2, errs2[:3])
+    ctx2.close()
     ck('JS오류 없음', not errs, errs[:3])
     br.close()
 srv.shutdown()
