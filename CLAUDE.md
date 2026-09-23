@@ -889,6 +889,7 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 - ⚠️ 치수 검증의 축소 비율은 **`getBoundingClientRect().width / offsetWidth`**(실제 transform 비율)로 잰다. `#schoolcap` 미리보기는 transform 0.76 이지만 `#intakecap` 은 축소 없이 패널 폭(약 531px)으로 그려져, «/680» 으로 나누면 틀린다(이번에 한 번 틀림).
 - ⚠️ **발견(제안 대기)**: 3점 변별 문항(신규생 통지서 `ltMapRows` 칸 `sh:'inset 0 0 0 1.5px #C9A227'` + 범례 칩)과 고배점 문항(examNotice `gold` 칸 + `maxLegend` 범례 칩)의 **금색 inset box-shadow 는 html2canvas 캡처에서 깨진다** — 화면은 얇은 금색 테두리로 정상인데, 학부모에게 가는 이미지에서는 금색 덩어리가 번호를 덮고 범례 칩이 꽃무늬처럼 나온다(원장 스크린샷 그대로 재현). 앱에서 `html2canvas(clone, {scale:2,...})` 로 시안 4종을 찍어 비교(`p3mark_probe.py` → `p3_capture.png`/`p3_dom.png`): A 금색 점 · B 금색 리본(윗변 탭) · C 금색 진짜 테두리(1.5px, 22×24 로 겉 크기 25×27 유지) · D 번호 금색 칩 — 넷 다 화면=캡처 동일. → 원장 C안 선택, §8-55(v33.257)에서 적용.
 - **규칙: 캡처되는 카드(`*cap`)에는 inset box-shadow 를 쓰지 않는다** — 테두리 효과는 진짜 `border` 로(필요하면 width/height 를 줄여 겉 크기 유지).
+- ⚠️ **남은 위반(원장 확인 대기)**: 급여명세서(`#paycap`) 원장 도장 «宋慶根印» 두 줄 테두리 = `border:2.5px` + `box-shadow:inset 0 0 0 2px #F3ECD7, inset 0 0 0 3.5px #C1272D` — 캡처하면 안쪽 선이 사라지고 모서리 조각만 남는다(`seal_probe.py` → `seal_capture.png`, 화면은 정상). 고친 시안: 도장 span 에 `position:relative`, 안에 `<span style="position:absolute;inset:2px;border:1px solid #C1272D;border-radius:2px">` — 캡처에서도 두 줄로 나옴. 요청 범위 밖이라 미적용.
 - 🧰 스크래치의 `chain_199.sh`·`sets198_e2e.py` 가 사라져(원인 불명) 대화 기록(jsonl)의 원문으로 복구 — 이후 수정 없음 확인.
 
 ### 8-53. 학원 시험 통지서 머리글 로고 (2026-09-22, v33.255, 원장 «제목 좌측에 히즈어학원 로고»)
