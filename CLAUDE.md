@@ -878,6 +878,13 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 ⚠️ 세부 유형(빈칸 추론·순서·삽입 등)은 여전히 추정하지 않는다 — 예전 실측 절반 오답(§8-27). 4영역까지만.
 ⚠️ **«같은 양식»이라도 PDF 내부 배치는 달라질 수 있다 — 새 PDF 가 안 읽히면 `yg_parse.py --dump` 로 줄 묶음부터 볼 것.**
 
+### 8-54. 신규생 레벨테스트 통지서 로고 36px · 금색 안쪽 그림자 캡처 깨짐 발견 (2026-09-23, v33.256, 원장 «성적통지서처럼 신규생 레벨테스트 통지서도 로고 약간 줄여»)
+- **v33.256**: `#intakecap` 머리글 로고 45 → **36px**(`data-intake-logo`, `flex:none`) — 성취도평가 통지서(§8-53)와 같게. 간격 12px · 좌 여백 20px · 로고↔제목 세로 중심 차 0px · 제목 한 줄(`intake256_e2e.py`). 모의고사·레벨테스트 **시험** 통지서(`#examcap`, examNotice)는 아직 45px — 요청 범위 밖이라 그대로(원장 확인 대기).
+- ⚠️ 치수 검증의 축소 비율은 **`getBoundingClientRect().width / offsetWidth`**(실제 transform 비율)로 잰다. `#schoolcap` 미리보기는 transform 0.76 이지만 `#intakecap` 은 축소 없이 패널 폭(약 531px)으로 그려져, «/680» 으로 나누면 틀린다(이번에 한 번 틀림).
+- ⚠️ **발견(제안 대기)**: 3점 변별 문항(신규생 통지서 `ltMapRows` 칸 `sh:'inset 0 0 0 1.5px #C9A227'` + 범례 칩)과 고배점 문항(examNotice `gold` 칸 + `maxLegend` 범례 칩)의 **금색 inset box-shadow 는 html2canvas 캡처에서 깨진다** — 화면은 얇은 금색 테두리로 정상인데, 학부모에게 가는 이미지에서는 금색 덩어리가 번호를 덮고 범례 칩이 꽃무늬처럼 나온다(원장 스크린샷 그대로 재현). 앱에서 `html2canvas(clone, {scale:2,...})` 로 시안 4종을 찍어 비교(`p3mark_probe.py` → `p3_capture.png`/`p3_dom.png`): A 금색 점 · B 금색 리본(윗변 탭) · C 금색 진짜 테두리(1.5px, 22×24 로 겉 크기 25×27 유지) · D 번호 금색 칩 — 넷 다 화면=캡처 동일. 원장 선택 대기(추천 C).
+- **규칙: 캡처되는 카드(`*cap`)에는 inset box-shadow 를 쓰지 않는다** — 테두리 효과는 진짜 `border` 로(필요하면 width/height 를 줄여 겉 크기 유지).
+- 🧰 스크래치의 `chain_199.sh`·`sets198_e2e.py` 가 사라져(원인 불명) 대화 기록(jsonl)의 원문으로 복구 — 이후 수정 없음 확인.
+
 ### 8-53. 학원 시험 통지서 머리글 로고 (2026-09-22, v33.255, 원장 «제목 좌측에 히즈어학원 로고»)
 - `#schoolcap` 머리글에 **레벨테스트·모의고사 통지서와 같은 규칙(v32.402)** 적용: 왼쪽 `assets/his-logo-light.png`(크림 투명본, 원본 그대로, `data-school-logo`, **36px** — 처음 45px 를 원장 «쫌 줄여»로 축소, `crossorigin=anonymous`) + 간격 12px + 제목 블록, 오른쪽 구석 `assets/his-logo.png` 흰 실루엣 워터마크(`brightness(0) invert(1)`, opacity .08, right:-26px). 로고를 그리지 않고 파일을 쓴다([[his-brand-logo]]).
 - 세로 정렬은 `align-items:center`(로고 36px ↔ 두 줄 글 40px): 로고·제목·시험명 세로 중심 차 0.01px. 오른쪽 시험명 블록 `max-width:56%` 로 로고가 들어간 뒤에도 22자 이름 한 줄. 제목·구호 `white-space:nowrap`.
