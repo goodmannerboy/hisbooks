@@ -119,7 +119,9 @@ function readAt(deg){
   return {r:readCard(gray), c:c, deg:deg};
 }
 function scoreOf(r){
-  const n=(r.answers||r.ans||[]).filter(x=>x!=null).length||Object.keys(r.ans||{}).length;
+  // readCard 는 ans 를 {문항:답} 객체로 돌려준다 — 배열 전용 .filter 를 부르면 판독이 통째로 멈춘다(v32.980~, 2026-09-24 수정)
+  const a=r.answers||r.ans||{};
+  const n=Array.isArray(a)?a.filter(x=>x!=null).length:Object.keys(a).length;
   const b=(r.birth||[]).filter(x=>x!=null).length;
   return n*10+b;
 }
