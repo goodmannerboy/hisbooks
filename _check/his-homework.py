@@ -142,8 +142,13 @@ CARRY_ROWS = """()=>{const L=window.__L; const dt=L.state.bulk.date; const out={
 
 CARRY_CARD = """()=>{const L=window.__L; const rep=(L.renderVals().classReport||[]).filter(Boolean).find(x=>x.studentId==='t1');
   const td=L.today(); const r=(L.state.data.records||[]).find(x=>x.classId==='C2'&&x.studentId==='t1'&&x.date===td);
-  return { card:(rep?rep.hwCheckList.map(x=>x.text):null), saved:((r&&r.hwCarry)||[]).map(x=>x.text+':'+x.status),
-    status:L.state.status };}"""
+  return { card:(rep?rep.hwCheckList.map(x=>x.text):null), late:(rep?(rep.hwLateList||[]).map(x=>x.text):null),
+    saved:((r&&r.hwCarry)||[]).map(x=>x.text+':'+x.status), status:L.state.status };}"""
+
+# v33.275: 학부모 카드(#cap-)에 «늦게 완료» 줄이 실제로 그려지는지 — 미리보기를 연 뒤 읽는다
+CARRY_CAPTXT = """()=>new Promise((res)=>{ const L=window.__L; L.setState({ previewStudentId:'t1', previewStudentName:'' });
+  setTimeout(()=>{ const e=document.getElementById('cap-t1'); const tx=e ? e.textContent : '';
+    L.setState({ previewStudentId:null }); res({ late:(tx.indexOf('워크북 p.34~36 · 늦게 완료')>=0), miss:(tx.indexOf('영작 10문장')>=0), has:!!e }); }, 800); })"""
 
 CARRY_NEXT = """()=>{const L=window.__L; const p=L.today().split('.').map(Number); const t=new Date(p[0],p[1]-1,p[2]+2);
   const D2=t.getFullYear()+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+String(t.getDate()).padStart(2,'0');
@@ -317,6 +322,9 @@ def main():
         ck('매긴 표시가 그날 기록에 저장됨', cc['saved'] == ['영작 10문장:미완', '워크북 p.34~36:완료'], str(cc['saved']))
         ck('저장할 때 확인 안 한 지난 과제 수를 한 줄로 알림', '확인 안 한 지난 과제 1개' in (cc['status'] or ''), str(cc['status']))
         ck('학부모 카드 과제 목록은 그대로', cc['card'] == ['워크북 p.37~39'], str(cc['card']))
+        ct = pg.evaluate(CARRY_CAPTXT)
+        ck('학부모 카드: 오늘 해 온 지난 과제만 «… · 늦게 완료» 한 줄 (또 미완은 안 나감)',
+           cc['late'] == ['워크북 p.34~36 · 늦게 완료'] and ct['has'] and ct['late'] and not ct['miss'], str((cc['late'], ct)))
 
         # 다음 수업
         pg.evaluate(CARRY_NEXT)
