@@ -878,6 +878,15 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 ⚠️ 세부 유형(빈칸 추론·순서·삽입 등)은 여전히 추정하지 않는다 — 예전 실측 절반 오답(§8-27). 4영역까지만.
 ⚠️ **«같은 양식»이라도 PDF 내부 배치는 달라질 수 있다 — 새 PDF 가 안 읽히면 `yg_parse.py --dump` 로 줄 묶음부터 볼 것.**
 
+### 8-71. 월간·성적 첫 화면 멈춤 · 반/학생 바꾸기 — 검수 제안 E1·E3 (2026-09-29, v33.272, 원장 선택)
+- **실측부터**: 검수 때의 «월간 4.9초 · 성적 1.1초 · 반 바꾸기 0.54초»는 **첫 방문 비용**(웹 글꼴 내려받기·처음 쓰는 기호의 대체 글꼴 찾기·처음 배치)이 섞인 값이었다. 같은 화면 두 번째는 PC 에서 0.03~0.2초. 원인을 CSS 로 한 구역씩 숨겨 가며 찾음(`perf_bisect.py`): 월간 첫 배치의 대부분이 **화면 밖에 숨겨 둔 캡처 카드**(-99999px) + 그 복사본(오른쪽 미리보기).
+- **① 숨은 캡처 칸**(일간·월간 2개)에 `class="cap-hold"` + `.cap-hold{content-visibility:auto}` — 안 보이는 카드의 배치·그리기를 건너뜀. 캡처는 `captureEl` 이 id 를 지운 복제본을 body 에 붙여 찍고 `_capFit` 은 `data-capw` 를 읽으므로 **캡처 이미지 픽셀까지 동일**(월간 1360×2940 · 일간 1360×1730 비교). 폰은 기존 규칙(`main.scroll-y *{content-visibility:visible!important}`)대로 그대로.
+- **② 글꼴·기호 미리 그리기**: 부팅 3초 뒤 쉬는 시간(requestIdleCallback)에 화면 밖 div 에 ①②③ ✓✕△ ▲▼ 한글·영문·숫자·자주 쓰는 이모지를 sans 400~900 · serif · Architects Daughter · Nanum Myeongjo · Cormorant · Gowun Batang · EB Garamond 로 한 번 그리고 8초 뒤 치움(키오스크에서는 안 함). 성적 화면 첫 진입의 긴 멈춤(한 번 3초)이 대부분 굵은 글꼴·원문자 대체 글꼴 찾기였음.
+- **③ dc 런타임 `cssToObj` 캐시**(매니페스트 05b00777 항목, gzip+base64 교체): 같은 style 글자면 같은 객체 — 매 그리기마다 요소 1천여 개의 style 을 다시 쪼개던 것 + React 가 같은 객체면 style 비교를 건너뜀. 2만 개 넘으면 비움. ⚠️ 런타임을 다시 고칠 때 이 캐시가 이미 있음(`__cssMemo`).
+- **결과**(바깥 글꼴 차단한 같은 조건, 중앙값): PC 월간 첫 진입 191 → 119ms · 성적 55 → 36ms / TV·폰 근사(CPU ×6) 월간 반 바꾸기 588 → 337ms · 학생 바꾸기 766 → 616ms. PC 의 반·학생 바꾸기는 이미 25~45ms(검수 때 0.5초는 첫 방문 값).
+- 검증 `v272_e2e.py`(첫 진입 전후 · 캡처 이미지 동일 · 미리보기 · 오류 0) · `perf_switch.py` · `kiosk_smoke.py`(학생 모드·키 입력·지우기, 이전 버전과 같은 결과) + 이전 검사 전부 + 기본 검사 7종.
+- 🧰 **도구 주의**: `git stash`/`pop` 으로 index.html 을 되돌리면 `core.autocrlf=true` 때문에 줄 끝이 CRLF 로 바뀌어 라이브 파일과 `cmp` 가 계속 다르다(내용은 같음) — 되돌린 뒤 LF 로 다시 쓸 것.
+
 ### 8-70. 받을 때 일지 통째 교체 막기 — 검수 제안 S1 (2026-09-29, v33.271, 원장 선택)
 - **구멍(재현 확인)**: 12초 폴링의 조용한 갱신은 게이트가 «클라우드 + 이 기기 저장소(localStorage)»를 `mergeAppData` 로 합친 결과를 앱에 넘기고, 앱 `_absorbFresh` 는 대부분의 키를 그 결과로 **통째 교체**했다. 그런데 앱은 많은 저장을 `_persistSoon`(0.7초 뒤 저장소 기록)으로 미룬다 — 그 짧은 창에 받기가 끼면 저장소에 아직 없는 «방금 쓴 것»이 화면에서 사라졌다(일지·휴원일·메모·휴강·시험 기록·상담 6종 모두 사라짐을 테스트로 재현).
 - **수리**: `_absorbFresh` 의 복원 도장(restoreT) 검사 바로 뒤에서 records·closedDays·sessions·mkup·memos·exams(+deletedExams)·counsels(+counselDelT)·smallNotes·notices·teacherCalendar·delT·addT·reports(+deletedReports)·msgReads·monthlyComments·testNames 를 **기기 합치기와 같은 규칙**(`window.__hisMergeAppData(받은 것, 이 화면)`: 기록별 editT/t 최신 · 삭제 표식 존중)으로 합침(v33.248 examSets 와 같은 방식). 평소(저장소 = 화면)에는 결과가 받은 것과 같고, 창 안에서만 이 화면의 새 것이 살아남는다. 다른 기기의 더 새 수정·삭제 표식·새 휴원일은 그대로 반영.
