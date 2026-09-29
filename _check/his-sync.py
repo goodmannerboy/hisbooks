@@ -54,7 +54,8 @@ def build_js(v):
     body = v[p + 1:q]
     absorb = ('const __T={ state:{data:null}, setState:function(f,cb){ const r=f(this.state);'
               ' if(r&&r.data) this.state.data=r.data; } };'
-              ' __T._absorbFresh=function(fresh){' + body + '}; window.__T=__T;')
+              ' __T._absorbFresh=function(fresh){' + body + '}; window.__T=__T;'
+              ' window.__hisMergeAppData=mergeAppData;')  # 실제 앱처럼 받을 때 합치기 경로(examSets·S1)도 돌게 (v33.271)
     return merge + ';' + absorb
 
 
@@ -296,6 +297,27 @@ const T=(name, ok)=>R.push([name, !!ok]);
   __T._absorbFresh(fresh2);
   let cnt2=0; (__T.state.data.classes||[]).forEach(c=>(c.students||[]).forEach(x=>{ if(x.id==='x1') cnt2++; }));
   T('받을 때 — 같은 번호 다른 이름은 건드리지 않음', cnt2===2);
+}
+
+// ㉒ 받을 때 — 저장이 늦게 반영되는 창(0.7초)에 받기가 끼어도 이 기기에서 방금 쓴 것은 남음 (v33.271 S1)
+{ const now=1000000;
+  const fresh={ classes:[], records:[{classId:'C1',studentId:'s1',date:'2026.09.28',comment:'다른 기기 새 수정',editT:now+50}],
+    closedDays:{'2026.11.11':{v:1,t:now+50}}, memos:{'관리자':[]}, sessions:{}, exams:[], counsels:[],
+    teacherCalendar:{'관리자':[{id:'ev1',date:'2026-10-01',title:'지울 일정'}]}, delT:{'cal:ev1':now+50} };
+  __T.state.data={ classes:[],
+    records:[{classId:'C1',studentId:'s1',date:'2026.09.28',comment:'이 기기 옛 수정',editT:now-50},
+             {classId:'C1',studentId:'s1',date:'2026.09.29',comment:'방금 쓴 일지',editT:now}],
+    closedDays:{'2026.12.24':{v:1,t:now}}, memos:{'관리자':[{id:'m1',text:'방금 쓴 메모',t:now,c:now}]},
+    sessions:{'C1|2026.10.08':{off:1,t:now}}, exams:[{id:'e1',studentId:'s1',score:'88',total:'100'}],
+    counsels:[{id:'k1',studentId:'s1',note:'방금 쓴 상담'}], teacherCalendar:{'관리자':[{id:'ev1',date:'2026-10-01',title:'지울 일정'}]} };
+  __T._absorbFresh(JSON.parse(JSON.stringify(fresh)));
+  const g=__T.state.data;
+  T('받을 때 — 방금 쓴 일지 유지', (g.records||[]).some(r=>r.date==='2026.09.29' && r.comment==='방금 쓴 일지'));
+  T('받을 때 — 다른 기기의 더 새 수정은 반영', ((g.records||[]).find(r=>r.date==='2026.09.28')||{}).comment==='다른 기기 새 수정');
+  T('받을 때 — 방금 넣은 휴원일·휴강·메모·시험·상담 유지', !!((g.closedDays||{})['2026.12.24']) && !!((g.sessions||{})['C1|2026.10.08']) &&
+     ((g.memos||{})['관리자']||[]).some(x=>x.id==='m1') && (g.exams||[]).some(x=>x.id==='e1') && (g.counsels||[]).some(x=>x.id==='k1'));
+  T('받을 때 — 다른 기기가 넣은 휴원일 반영', !!((g.closedDays||{})['2026.11.11']));
+  T('받을 때 — 다른 기기의 일정 삭제 표식 반영', !(((g.teacherCalendar||{})['관리자'])||[]).some(e=>e.id==='ev1'));
 }
 
 return R;

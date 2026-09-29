@@ -878,6 +878,12 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 ⚠️ 세부 유형(빈칸 추론·순서·삽입 등)은 여전히 추정하지 않는다 — 예전 실측 절반 오답(§8-27). 4영역까지만.
 ⚠️ **«같은 양식»이라도 PDF 내부 배치는 달라질 수 있다 — 새 PDF 가 안 읽히면 `yg_parse.py --dump` 로 줄 묶음부터 볼 것.**
 
+### 8-70. 받을 때 일지 통째 교체 막기 — 검수 제안 S1 (2026-09-29, v33.271, 원장 선택)
+- **구멍(재현 확인)**: 12초 폴링의 조용한 갱신은 게이트가 «클라우드 + 이 기기 저장소(localStorage)»를 `mergeAppData` 로 합친 결과를 앱에 넘기고, 앱 `_absorbFresh` 는 대부분의 키를 그 결과로 **통째 교체**했다. 그런데 앱은 많은 저장을 `_persistSoon`(0.7초 뒤 저장소 기록)으로 미룬다 — 그 짧은 창에 받기가 끼면 저장소에 아직 없는 «방금 쓴 것»이 화면에서 사라졌다(일지·휴원일·메모·휴강·시험 기록·상담 6종 모두 사라짐을 테스트로 재현).
+- **수리**: `_absorbFresh` 의 복원 도장(restoreT) 검사 바로 뒤에서 records·closedDays·sessions·mkup·memos·exams(+deletedExams)·counsels(+counselDelT)·smallNotes·notices·teacherCalendar·delT·addT·reports(+deletedReports)·msgReads·monthlyComments·testNames 를 **기기 합치기와 같은 규칙**(`window.__hisMergeAppData(받은 것, 이 화면)`: 기록별 editT/t 최신 · 삭제 표식 존중)으로 합침(v33.248 examSets 와 같은 방식). 평소(저장소 = 화면)에는 결과가 받은 것과 같고, 창 안에서만 이 화면의 새 것이 살아남는다. 다른 기기의 더 새 수정·삭제 표식·새 휴원일은 그대로 반영.
+- ⚠️ 삭제 표식 없이 지우는 컬렉션은 여전히 «이 기기에 남은 사본이 되살릴 수 있다»(게이트 합치기와 같은 기존 성질 — 더 나빠지지 않음). 새로 «지우기»를 만들면 표식(tombstone)부터.
+- 검증 `s1_e2e.py` 10항목(고치기 전 4/10 → 후 10/10) + `his-sync` 에 받을 때 시나리오 추가(하니스가 `window.__hisMergeAppData` 를 넣어 실제 앱과 같게 — 전에는 이 경로가 하니스에서 빠져 있었음) + 기본 검사 7종.
+
 ### 8-69. 11px 미만 글씨 없애기 — 검수 제안 V2 · 폰 가로 넘침 5곳 (2026-09-29, v33.270, 원장 선택)
 - **규칙 한 줄**(페이로드 head `<style>`): `.sc-host :is([style*='font-size: 8px'] … [style*='font-size: 10.5px']):not(:is([id^='cap-'],[id^='monthcap'],#examcap,#schoolcap,#intakecap,#profilecap,#counselcap,[id^='welcomecap'],#paycap,#mileageguide-cap,#__cap-preview-modal) *){font-size:11px !important}`. React 가 인라인 style 을 «font-size: 9px» 꼴로 적어 주는 것을 이용(템플릿 330곳을 하나하나 고치지 않음). 캡처는 `captureEl` 이 id 를 지운 복제본을 **body**(= `.sc-host` 밖)에 붙여 찍으므로 학부모 이미지 글씨는 그대로, 월간 오른쪽 미리보기(#monthcap- 복제)도 제외. ⚠️ 새 캡처 카드 id 를 만들면 이 제외 목록에도 넣을 것. ⚠️ `font:` 한 줄 표기(shorthand)는 규칙에 안 걸림.
 - **주간 시간표 학생 이름**(3벌): 11px 로 커지며 한 줄에 한 명씩 늘어져 시간표가 두 배로 길어지던 것 → 이름 칸 여백 3→2px · 글자 사이 −0.3px 로 두 명씩 한 줄 유지(«한눈에» 원칙).
