@@ -5,6 +5,8 @@
 과제 확인은 학부모 카드에 «○ △ ✕» 로 그대로 나갑니다.
 안 해온 과제가 «완료»로 나가거나, 선생님이 매긴 표시가 사라지면 바로 신뢰를 잃습니다.
 이 검사는 index.html 의 실제 코드로 그 두 가지를 확인합니다.
+v33.274 부터는 «지난 과제 다시 확인»도 봅니다 — 지난 시간에 «미완»·«일부»로 매긴 과제가
+다음 수업 카드에 다시 뜨는지, 확인하면 사라지는지, 결석은 건너뛰는지, 점수는 그대로인지.
 
     py _check/his-homework.py
 
@@ -105,6 +107,57 @@ PAIRS = """()=>{const out=[];
   });
   return out;}"""
 
+# ── 지난 과제 다시 확인(v33.274) — 지난 시간에 «미완»·«일부»로 매긴 과제가 다음 수업 카드 맨 위에 다시 떠야 한다 ──
+#   t1: 두 수업 전 «영작» 미완 → 지난 수업에 다시 확인했는데 또 미완(2번째) + 지난 수업 «워크북 p.34~36» 미완
+#   t2: 지난 과제 다 해 옴 · t3: 지난 수업 결석(그 전 수업 «듣기 3회» 미완) · t4: 지난 수업 미완인데 오늘 결석
+CARRY_SEED = """()=>{const L=window.__L; const td=L.today();
+  const sh=(n)=>{ const p=td.split('.').map(Number); const t=new Date(p[0],p[1]-1,p[2]+n);
+    return t.getFullYear()+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+String(t.getDate()).padStart(2,'0'); };
+  const A=sh(-7), B=sh(-5), NL=String.fromCharCode(10);
+  const d=JSON.parse(JSON.stringify(L.state.data));
+  d.classes.push({id:'C2',name:'중3 B반',owner:'관리자',schedule:{days:[],times:{}},students:[
+    {id:'t1',name:'이하은',registeredAt:'2025.03.02'},{id:'t2',name:'김민준',registeredAt:'2025.03.02'},
+    {id:'t3',name:'박서연',registeredAt:'2025.03.02'},{id:'t4',name:'최지우',registeredAt:'2025.03.02'}]});
+  const R=(sid,date,o)=>Object.assign({id:'q_'+sid+'_'+date,classId:'C2',studentId:sid,date:date,attendance:'출석',homework:'완료',lesson:'Unit 3'},o);
+  d.records.push(
+    R('t1',A,{homework:'미완료',hwCheck:[{text:'영작 10문장',status:'미완'}],nextPrep:'1. 워크북 p.34~36'+NL+'2. 본문 필기 정리'}),
+    R('t1',B,{homework:'일부 완료',hwCarry:[{text:'영작 10문장',from:A,n:1,status:'미완'}],
+      hwCheck:[{text:'워크북 p.34~36',status:'미완'},{text:'본문 필기 정리',status:'완료'}],nextPrep:'1. 워크북 p.37~39'}),
+    R('t2',A,{homework:'미완료',hwCheck:[{text:'단어 시험 재시험',status:'미완'}]}),
+    R('t2',B,{hwCheck:[{text:'워크북 p.37~39',status:'완료'}],nextPrep:'1. 워크북 p.40'}),
+    R('t3',A,{homework:'미완료',hwCheck:[{text:'듣기 3회',status:'미완'}]}),
+    R('t3',B,{attendance:'결석',homework:'미완료'}),
+    R('t4',B,{homework:'미완료',hwCheck:[{text:'문법 노트 정리',status:'미완'}]}),
+    R('t4',td,{attendance:'결석',homework:'미완료'}));
+  L.setState({data:d, activeClassId:'C2'}); L.openBulk(); return {A:A, B:B};}"""
+
+CARRY_ROWS = """()=>{const L=window.__L; const dt=L.state.bulk.date; const out={};
+  const rv=L.renderVals(); (rv.bulkRows||[]).forEach((r)=>{
+    const dr=((L.state.bulk.rows||{})[r.id+'|'+dt]) || L.loadDraft(L.state.data,'C2',r.id,dt);
+    const c=((dr.attendance||'')==='결석') ? [] : (dr.hwCarry||[]);
+    out[r.id]={ carry:c.map(x=>({text:x.text, status:(x.status||''), n:x.n})),
+      tags:(r.hwCarryItems||[]).map(x=>x.tag), homework:r.homework, mile:r.mileDelta,
+      dom:document.querySelectorAll('[data-hwc-row="'+r.id+'"]').length }; });
+  return out;}"""
+
+CARRY_CARD = """()=>{const L=window.__L; const rep=(L.renderVals().classReport||[]).filter(Boolean).find(x=>x.studentId==='t1');
+  const td=L.today(); const r=(L.state.data.records||[]).find(x=>x.classId==='C2'&&x.studentId==='t1'&&x.date===td);
+  return { card:(rep?rep.hwCheckList.map(x=>x.text):null), saved:((r&&r.hwCarry)||[]).map(x=>x.text+':'+x.status),
+    status:L.state.status };}"""
+
+CARRY_NEXT = """()=>{const L=window.__L; const p=L.today().split('.').map(Number); const t=new Date(p[0],p[1]-1,p[2]+2);
+  const D2=t.getFullYear()+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+String(t.getDate()).padStart(2,'0');
+  L.setState({bulk:Object.assign({}, L.state.bulk, {date:D2, rows:{}, skip:{}})}); return D2;}"""
+
+CARRY_APPLY = """()=>{const L=window.__L; L.setState({bulk:Object.assign({}, L.state.bulk, {date:L.today(), rows:{}, skip:{}})});
+  return 1;}"""
+CARRY_APPLY2 = """()=>{const L=window.__L; L.applyBulkRowToAll('t1'); return 1;}"""
+CARRY_APPLY3 = """()=>{const L=window.__L; const k=(s)=>s+'|'+L.state.bulk.date; const r=L.state.bulk.rows||{};
+  return { t2:((r[k('t2')]||{}).hwCarry||null), t3:((r[k('t3')]||{}).hwCarry||[]).map(x=>x.text) };}"""
+
+CARRY_PAST = """(B)=>{const L=window.__L; const a=L.loadDraft(L.state.data,'C2','t2',B), b=L.loadDraft(L.state.data,'C2','t1',B);
+  return { t2:(a.hwCarry===undefined), t1:(b.hwCarry||[]).map(x=>x.text+':'+x.status) };}"""
+
 
 def main():
     socketserver.TCPServer.allow_reuse_address = True
@@ -125,8 +178,10 @@ def main():
     print(' 히즈북스 일간일지 «이전 과제 확인» 검사')
     print('=' * 62)
     fails = []
+    total = [0]
 
     def ck(name, ok, extra=''):
+        total[0] += 1
         print(('  OK  ' if ok else '  실패 ') + name + (('   ' + extra) if (extra and not ok) else ''))
         if not ok:
             fails.append(name)
@@ -226,6 +281,66 @@ def main():
            (r2['saved'] == [] or r2['saved'] is None) and (r2['reopened'] == [] or r2['reopened'] is None),
            str(r2))
 
+        # ── 지난 과제 다시 확인 (v33.274) ──
+        print('  -- 지난 과제 다시 확인 --')
+        seed2 = pg.evaluate(CARRY_SEED)
+        pg.wait_for_timeout(1600)
+        c0 = pg.evaluate(CARRY_ROWS)
+        t1 = c0.get('t1') or {}
+        ck('지난 시간 «미완»·«일부» 과제가 다음 수업 카드 맨 위에 뜸 (두 번째인 것 먼저)',
+           [x['text'] for x in t1.get('carry', [])] == ['영작 10문장', '워크북 p.34~36'] and t1.get('dom') == 2, str(t1))
+        ck('처음엔 아무 버튼도 안 눌려 있음 — 저절로 «완료»가 되지 않음',
+           [x['status'] for x in t1.get('carry', [])] == ['', ''], str(t1.get('carry')))
+        ck('두 번째부터 빨간 «2번째» 표시', (t1.get('tags') or [''])[0] == '2번째', str(t1.get('tags')))
+        ck('다 해 온 학생에겐 안 뜸', (c0.get('t2') or {}).get('carry') == [], str(c0.get('t2')))
+        ck('지난 수업을 결석했으면 그 전 수업 과제를 띄움',
+           [x['text'] for x in (c0.get('t3') or {}).get('carry', [])] == ['듣기 3회'], str(c0.get('t3')))
+        ck('오늘 결석이면 띄우지 않음', (c0.get('t4') or {}).get('carry') == [], str(c0.get('t4')))
+
+        # 진짜 클릭: «워크북» 완료 · «영작»(2번째) 또 미완
+        rows = pg.locator('[data-hwc-row="t1"]')
+        rows.nth(1).scroll_into_view_if_needed()
+        rows.nth(1).locator('button', has_text='완료').click()
+        pg.wait_for_timeout(600)
+        rows.nth(0).locator('button', has_text='미완').click()
+        pg.wait_for_timeout(600)
+        c1 = pg.evaluate(CARRY_ROWS)
+        u1 = c1.get('t1') or {}
+        ck('지난 과제를 눌러도 과제 칩·마일리지는 그대로 (이중 감점 없음)',
+           u1.get('homework') == t1.get('homework') and u1.get('mile') == t1.get('mile'), str((t1.get('homework'), t1.get('mile'), u1.get('homework'), u1.get('mile'))))
+        ck('두 번째에도 미완이면 «3번째 미완 · 학부모 상담»',
+           (u1.get('tags') or [''])[0] == '3번째 미완 · 학부모 상담', str(u1.get('tags')))
+
+        pg.evaluate("()=>{window.__L.saveBulk && window.__L.saveBulk(false); return 1;}")
+        pg.wait_for_timeout(2400)
+        cc = pg.evaluate(CARRY_CARD)
+        ck('매긴 표시가 그날 기록에 저장됨', cc['saved'] == ['영작 10문장:미완', '워크북 p.34~36:완료'], str(cc['saved']))
+        ck('저장할 때 확인 안 한 지난 과제 수를 한 줄로 알림', '확인 안 한 지난 과제 1개' in (cc['status'] or ''), str(cc['status']))
+        ck('학부모 카드 과제 목록은 그대로', cc['card'] == ['워크북 p.37~39'], str(cc['card']))
+
+        # 다음 수업
+        pg.evaluate(CARRY_NEXT)
+        pg.wait_for_timeout(1200)
+        c2 = pg.evaluate(CARRY_ROWS)
+        ck('«완료»한 지난 과제는 다음 수업에 안 뜨고, 세 번째 미완은 거기서 멈춤',
+           (c2.get('t1') or {}).get('carry') == [], str(c2.get('t1')))
+        ck('확인 안 한 지난 과제는 다음 수업에도 뜸',
+           [x['text'] for x in (c2.get('t3') or {}).get('carry', [])] == ['듣기 3회'], str(c2.get('t3')))
+        ck('오늘 결석한 학생은 그다음 수업에 뜸',
+           [x['text'] for x in (c2.get('t4') or {}).get('carry', [])] == ['문법 노트 정리'], str(c2.get('t4')))
+
+        # «전체 적용» · 지난 날짜
+        pg.evaluate(CARRY_APPLY)
+        pg.wait_for_timeout(900)
+        pg.evaluate(CARRY_APPLY2)
+        pg.wait_for_timeout(700)
+        ap = pg.evaluate(CARRY_APPLY3)
+        ck('«전체 적용»을 눌러도 다른 학생에게 지난 과제가 옮겨 붙지 않음',
+           ap['t2'] is None and ap['t3'] == ['듣기 3회'], str(ap))
+        past = pg.evaluate(CARRY_PAST, seed2['B'])
+        ck('이미 저장된 지난 날짜 기록엔 새로 끼워 넣지 않음',
+           past['t2'] is True and past['t1'] == ['영작 10문장:미완'], str(past))
+
         if errs:
             fails.append('JS 오류 %d건' % len(errs))
             print('  실패 JS 오류: %s' % errs[:2])
@@ -236,7 +351,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  14항목 전부 통과')
+    print('  %d항목 전부 통과' % total[0])
     return 0
 
 
