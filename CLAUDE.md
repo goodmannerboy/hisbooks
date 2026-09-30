@@ -878,6 +878,13 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 ⚠️ 세부 유형(빈칸 추론·순서·삽입 등)은 여전히 추정하지 않는다 — 예전 실측 절반 오답(§8-27). 4영역까지만.
 ⚠️ **«같은 양식»이라도 PDF 내부 배치는 달라질 수 있다 — 새 PDF 가 안 읽히면 `yg_parse.py --dump` 로 줄 묶음부터 볼 것.**
 
+### 8-80. 반 공지 카드 머리 A안 — 로고 워터마크 모서리 걸침 (2026-09-30, v33.281, 원장 선택)
+- 원장 요청 «헤더 우측 모서리에 로고 워터마크 걸치게, 홈 머리 글자체·문구로» → 제안 위젯(A 제목이 머리로 · B 인사 머리 + 본문 제목 · C 얇은 띠 + 위 모서리) → **A안**, 로고 «더 작게» → «살짝 더 크게» = **240px**(제안 300 → 200 → 240).
+- 머리 `data-nc-head`(relative · overflow:hidden · #0C4631 · padding 16px 34px): ① `data-nc-kicker` = `nc.kicker` «NOTICE — YYYY.MM.DD WED» — 날짜 칸을 `_examNorm` 이 읽으면 정규화+요일, 못 읽으면(«10월 3일») 적은 그대로 ② `data-nc-title` 세리프 30px/500 `var(--font-serif)`(홈 인사말과 같음 — 이 PC엔 EB Garamond 가 없어 한글 바탕·영문 Times), 색 `nc.titleFg` = 크림 #F4ECD7 / 비면 자리 안내 크림 .45, max-width 430px ③ 금색 선 + EXCELLENCE IN ENGLISH, HIS SINCE 2014(flex-wrap · text-align:right — 폰 미리보기에서 줄바꿈돼도 오른쪽 정렬) ④ 워터마크 `data-nc-wm` = `his_fish_cream.png` 240px · opacity .09 · right:-51px · bottom:-43px(같은 비율로 모서리 밖).
+- 본문: 제목 줄 삭제 → 내용 → 표(내용이 비면 `nc.tblMt` 0) → 아래 줄 «히즈어학원»만(날짜는 머리 한 번). 입력 창·복사·저장(1200px)은 그대로.
+- ⚠️ **캡처 카드 워터마크에 CSS `filter` 쓰지 말 것** — html2canvas 가 filter 를 무시한다. 기존 `#schoolcap`·`#examcap`·`#intakecap` 머리 워터마크(`his-logo.png` + `brightness(0) invert(1)`)는 **화면엔 보이지만 복사 그림에선 사라진다**(c257 캡처로 확인, 원장님께 보고 · 결정 대기).
+- 검증 `v281_e2e.py` 24항목(+WebKit 폰 2): 머리 글자·요일 3형식·자리 안내 색·글꼴·워터마크 파일/크기/투명도/필터 없음/모서리 걸침·본문 30px 제목 없음·날짜 한 번·표 여백·긴 제목 두 줄(로고 위치 유지)·**복사 PNG 에 물고기·금색 줄이 실제 픽셀로 찍힘**·PNG 저장·PC 1536·폰.
+
 ### 8-79. 앱 설치 + 인터넷 끊겨도 열림(R1) — 2차 검수 제안 (2026-09-30, v33.280, 원장 선택)
 - **새 파일(저장소 뿌리)**: `sw.js`(서비스워커) · `manifest.webmanifest`(설치 정보) · `icon-192.png` · `icon-512.png` · `icon-maskable-512.png`(원본 로고 `HIS_Logo_Final_Under1000px.png` 의 물고기를 잘라 크림 바탕에 — 다시 그리지 않음, scratchpad `make_icons.py`). manifest 링크는 **앱 머리(부팅 뒤에도 남는 쪽) + 바깥 머리** 둘 다, 앱 머리에 theme-color·apple-mobile-web-app-title 도.
 - **sw.js 규칙**: ① 인터넷이 되면 늘 새로 받음(network-first) — 보관본은 끊겼을 때만 씀 → 새 버전이 늦게 보이는 일 없음(Ctrl+Shift+R 은 원래대로 서비스워커를 건너뜀). ② 보관 대상만 손댐: 앱 화면(`/hisbooks/`·`index.html` → 보관 열쇠 하나 `index.html`, `?u=`·`?hisreset` 등 주소 뒤는 무시) · `vendor-supabase-2.49.4.js` · manifest · favicon · 뿌리의 png · `assets/*.png`(로고·엠블럼 16) = 30개(약 3MB), 설치 때 미리 받음(`cache:'no-cache'` — 바뀐 게 없으면 304). ③ **다른 페이지(home.html·ot-orientation.html·OMR 판독기 등)·`ocr/`·`blog/`·바깥 주소(Supabase·글꼴 CDN)는 respondWith 하지 않음** — 평소와 똑같이 브라우저가 처리. ④ Range 요청(`hisCheckUpdate` 의 앞 8KB 새 버전 확인)도 손대지 않음. ⑤ 200·같은 출처·리다이렉트 아님만 보관. 등록 = componentDidMount 3초 뒤, https·localhost·127.0.0.1 에서만(`updateViaCache:'none'`).
@@ -893,7 +900,7 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 
 ### 8-78. 반 공지 카드(P2) — 2차 검수 제안 (2026-09-30, v33.279, 원장 선택)
 - 학생 일지 «⋯ 도구» 맨 아래 «반 공지 카드» → 전체 창(`ncOpen`, 장학마일리지 안내 창과 같은 틀): 왼쪽 입력(제목 · 내용 · 표 3줄[항목·내용] · 날짜), 오른쪽 카드 미리보기 `#noticecap`(`data-capw="600"` → 이미지 1200px), 위 «이미지 복사»(`captureEl` copy, cpKey `notice`, 3단 표시) · «PNG 저장»(HIS_공지_날짜.png) · «닫기».
-- 카드 = 원장님이 고른 시안 그대로: 딥그린 띠(Cormorant 이탤릭 «NOTICE» 금색 + «히즈어학원 안내») · 제목 30px/800 · 내용 17px · 금테 흰 표(내용이 빈 줄은 안 나옴) · 아래 날짜(금갈색) + «히즈어학원». 로고는 시안에 없어 넣지 않음(원하시면 원본 파일로 추가).
+- 카드 = 원장님이 고른 시안 그대로: 딥그린 띠(Cormorant 이탤릭 «NOTICE» 금색 + «히즈어학원 안내») · 제목 30px/800 · 내용 17px · 금테 흰 표(내용이 빈 줄은 안 나옴) · 아래 날짜(금갈색) + «히즈어학원». 로고는 시안에 없어 넣지 않음(원하시면 원본 파일로 추가). → **머리는 v33.281 에서 A안으로 바뀜(§8-80)**.
 - 입력은 타이핑 오버레이(`_typSet('nc|…')`) — 멈춘 뒤 한 번 그림, 캡처 전 `_typFlush` 후 90ms 뒤 캡처. 초안은 `S.nc`(앱을 켜 둔 동안만, 데이터·동기화에 안 남김), 처음엔 «대상 = 이 반 이름» + 오늘 날짜. 폰은 한 칸(`.nc-grid{grid-template-columns:minmax(0,1fr)}` — `1fr` 은 카드 600px 때문에 칸이 넓어져 화면 밖으로 나갔음).
 - ⚠️ `#noticecap` 은 **학부모에게 가는 캡처 카드(13번째)** — UI 정리 때 모양을 바꾸지 말 것.
 - 검증 `v279_e2e.py` 14항목(도구 메뉴로 열기 · 진짜 타이핑 → 미리보기 · 빈 줄 숨김 · 이미지 복사 1200px · 복사됨 표시 · PNG 내려받기 · 다시 열면 초안 유지 · PC 1280/1536 · 폰) · WebKit 2 · 게이트.
