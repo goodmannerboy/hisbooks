@@ -915,6 +915,10 @@ registeredAt=오늘)으로 생성 — 재붙여넣기마다 전원 복제, 사�
 | ⑪ D1 기준표 | | 대기 |
 | ⑫ OT O1 · O3 | (앱 버전 없음) | 대기 |
 묶음별 기록은 바로 아래에 새것부터(§8-103~).
+**이어서 할 때(④부터)** — 틀은 이미 있다: 패치 `patch_v306.py`(도우미 `rep` = 닫는 태그 두 꼴 처리 · `--dry` 로 먼저 자리 확인) · 검사 `v306_e2e.py` · 공용 `on_lib.py`(`boot`·`prepare(pg, srv, {}, clip=())`·`reset`·`until` — a3 가상 데이터) · 사본 `_tools\hisbooks-audit3\on\`. 순서는 늘 «bump.py → 패치 → 그림으로 확인 → Chromium → WebKit(도구의 백그라운드 실행으로) → 게이트 7종 → 문서 → 커밋·푸시 → 라이브 바이트 확인».
+- ④ D3 설계: «이전 과제 확인» 줄(hwCheck·hwCarry)의 완료·일부·미완 버튼을 출결·과제 칩과 같은 문법으로 — 고른 것만 연한 채움(완료 #EEF6F1/#1E5A3E/1.5px #8CC4A6 · 일부 #FBF4DC/#8a6a18/#DCBF73 · 미완 #FBE9E3/#9A3F33/#E9A192), 안 고른 것은 흰 바탕 #716c5b 1px #DDD6C3, 높이 28px 알약 12.5px. «전송 ✓»(`r.isSentOn`·`onToggleSent`)는 카드 머리에서 등원 줄(`r.ck` 스트립) 오른쪽으로 옮겨 머리를 늘 한 줄(65px)로 — 지금은 1536px 에서 102px. 약속한 모양 = 미리보기 페이지의 D3 그림(`pv_make.py` 의 D3).
+- ④ V4 설계: ⓐ 위 탭 안 고른 글자 `rgba(12,70,49,0.6)` → #1c4a38 ⓑ 기호뿐인 버튼(× ✕ ‹ › ◀ ▶ ⋯ +)에 title·aria-label — 템플릿에서 onclick 이름으로 뜻을 정해 넣기(onDel·onRemove·onDelete = 지우기 · …Close = 닫기 · onPrev/onNext = 이전/다음) ⓒ 이름표 없는 입력 칸은 placeholder 를 aria-label 로(그린 뒤 한가할 때 — `_hsRun` 과 같은 방식) ⓓ `@media (prefers-reduced-motion: reduce)` 로 애니메이션·전환 줄이기(키오스크 축하 화면이 끝 상태로 바로 가는지 확인할 것).
+- ⚠️ 이름·글자를 길게 바꾸면 좁은 칸에서 줄바꿈이 늘 수 있다(§8-106) — 1280px 그림을 반드시 볼 것.
 
 ### 8-106. 지금 누구·어디인지 표시(N1) · 보강 이름 하나로(N2) (2026-10-10, v33.306, 원장 선택)
 - **N1 ① 월간 목록**: 카드 테두리가 템플릿 안 삼항식(`{{ ms.isActive ? 'var(--green-500)' : … }}`)이라 **한 번도 계산된 적이 없었다**(템플릿은 렌더값만 읽는다 — 9장 모두 글자색 2px 테두리). → 렌더값 `ms.cardCss`(지금 미리보기 중 = `border:2px solid #C9A227;background:#FFFDF6;padding:16px 18px` / 나머지 = `1px solid #E0D9C4` + `padding:17px 19px` — 겉 크기 같음) · `ms.actOn` → 이름 옆 칩 «오른쪽에 미리보기 중»(`data-mon-now`, 허니). 카드 `data-mon-card="학생id"`. 폰(760px 이하)은 오른쪽 칸이 없으므로 칩만 숨김(`.m-pvchip`).
