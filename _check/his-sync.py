@@ -320,6 +320,24 @@ const T=(name, ok)=>R.push([name, !!ok]);
   T('받을 때 — 다른 기기의 일정 삭제 표식 반영', !(((g.teacherCalendar||{})['관리자'])||[]).some(e=>e.id==='ev1'));
 }
 
+// ㉓ 오답노트 요약(clipSum) · 다시 풀기 흐름(wrongFlow) — 학생마다·시험마다 나중에 쓴 쪽 (v33.309)
+{ const J9=(o)=>JSON.parse(JSON.stringify(o));
+  const A={ classes:[], clipSum:{ s1:{ t:100, x:{E1:[2,5,7]}, m:0 }, s2:{ t:300, x:{E1:[1]}, m:1 } },
+    wrongFlow:{ E1:{ c:50, p:200, b:{ s1:{ n:[2,5,7], a:'', s:{}, t:200, pt:200 }, s2:{ n:[1], a:'3', s:{}, t:400, pt:200, g:1 } } } } };
+  const B={ classes:[], clipSum:{ s1:{ t:250, x:{E1:[5]}, m:0 }, s2:{ t:200, x:{E1:[1,4]}, m:0 } },
+    wrongFlow:{ E1:{ c:80, p:150, b:{ s1:{ n:[2,5,7], a:'314', s:{}, t:260, pt:200, g:1 }, s2:{ n:[1,4], a:'', s:{}, t:150, pt:150 } } }, E2:{ p:10, b:{} } } };
+  const m1=mergeAppData(J9(A),J9(B)), m2=mergeAppData(J9(B),J9(A));
+  T('오답노트 요약 — 학생마다 나중에 쓴 쪽 (양방향)', [m1,m2].every(m=>m.clipSum.s1.t===250 && m.clipSum.s1.x.E1.length===1 && m.clipSum.s2.t===300 && m.clipSum.s2.m===1));
+  T('다시 풀기 흐름 — 담은·인쇄한 시각은 큰 값 (양방향)', [m1,m2].every(m=>m.wrongFlow.E1.c===80 && m.wrongFlow.E1.p===200));
+  T('다시 풀기 흐름 — 학생 묶음은 나중에 고친 쪽 (양방향)', [m1,m2].every(m=>m.wrongFlow.E1.b.s1.a==='314' && m.wrongFlow.E1.b.s1.g===1 && m.wrongFlow.E1.b.s2.a==='3' && m.wrongFlow.E1.b.s2.n.length===1));
+  T('다시 풀기 흐름 — 한쪽에만 있는 시험도 남음 (양방향)', [m1,m2].every(m=>!!m.wrongFlow.E2));
+  const D=J9(A); D.deletedExamSets=['E1'];
+  T('다시 풀기 흐름 — 지운 시험의 흐름은 되살아나지 않음 (양방향)', !mergeAppData(J9(D),J9(B)).wrongFlow.E1 && !mergeAppData(J9(B),J9(D)).wrongFlow.E1);
+  const g9=pull(A, B);
+  T('받을 때 — 이 기기에서 방금 채점한 묶음·요약 유지', g9.wrongFlow.E1.b.s1.a==='314' && g9.clipSum.s1.t===250);
+  T('받을 때 — 다른 기기의 더 새 묶음·요약 반영', g9.wrongFlow.E1.b.s2.a==='3' && g9.clipSum.s2.t===300);
+}
+
 return R;
 """
 
