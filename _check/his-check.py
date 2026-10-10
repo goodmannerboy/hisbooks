@@ -258,6 +258,87 @@ def rule_server(v):
         pass
 
 
+SCALE_CAPS = ['id="cap-{{', 'id="examcap"', 'id="schoolcap"', 'id="intakecap"', 'id="profilecap"', 'id="counselcap"',
+              'id="welcomecap"', 'id="welcomecap2"', 'id="paycap"', 'id="mileageguide-cap"', 'id="noticecap"', 'id="monthcap-{{']
+SCALE_FS = (11, 12, 13, 15, 18, 22)      # 글자 크기 기준(24px 초과 큰 숫자는 자유)
+SCALE_RAD = (6, 10, 14, 999)             # 둥글기 기준(5px 이하 작은 표식은 자유)
+
+
+def rule_scale(v):
+    """R7 · 디자인 기준표(글자 11·12·13·15·18·22 / 둥글기 6·10·14·999) 밖의 값
+    앱 화면 마크업만 본다 — 학부모 캡처 카드 13종 · 키오스크 · <style>/<script> 덩어리 · 로직은 제외."""
+    ls = v.find('data-dc-script')
+    ls = v.rfind('<script', 0, ls) if ls >= 0 else len(v)
+    hd = v.find('</head>')
+    skip = [(m.start(), m.end()) for m in re.finditer(r'<(style|script)\b[^>]*>.*?</\1>', v[:ls], re.S)]
+    for c in SCALE_CAPS:
+        i = 0
+        while True:
+            i = v.find(c, i)
+            if i < 0:
+                break
+            s = v.rfind('<', 0, i)
+            tm = re.match(r'<([a-zA-Z0-9-]+)', v[s:s + 40])
+            depth = 0
+            j = s
+            if tm:
+                for mm in re.compile(r'<(/?)' + re.escape(tm.group(1)) + r'(?=[\s>/])').finditer(v, s):
+                    depth += 1 if mm.group(1) == '' else -1
+                    if depth == 0:
+                        j = v.find('>', mm.start()) + 1
+                        break
+            if j > s:
+                skip.append((s, j))
+            i += len(c)
+    ks = v.find('<sc-if value="{{ isKiosk }}"')
+    if ks >= 0:
+        d = 0
+        for mm in re.finditer(r'<(/?)sc-if\b', v[ks:]):
+            d += 1 if mm.group(1) == '' else -1
+            if d == 0:
+                skip.append((ks, ks + mm.start()))
+                break
+    skip.sort()
+
+    def app(p):
+        if p < hd or p >= ls:
+            return False
+        for a, b in skip:
+            if a <= p < b:
+                return False
+            if a > p:
+                break
+        return True
+
+    def tag_at(p):
+        s = v.rfind('<', 0, p)
+        return v[s:p]
+
+    for m in re.finditer(r'font-size:\s*(\d+(?:\.\d+)?)px', v):
+        x = float(m.group(1))
+        if x > 24 or x in SCALE_FS or not app(m.start()):
+            continue
+        tg = tag_at(m.start())
+        if x == 16 and re.match(r'<(input|textarea|select)\b', tg):
+            continue        # 입력 칸 16px 는 허용(아이폰이 16px 미만 칸을 누르면 화면을 확대한다)
+        add('R7', '낮음', fingerprint('fs', v, m.start()),
+            '기준표 밖 글자 크기 %gpx — 11·12·13·15·18·22 가운데서 고르세요(24px 초과 큰 숫자는 자유)' % x, snippet(v, m.start()))
+    for m in re.finditer(r'(?<![a-z-])font:\s*[^;"]*?(\d+(?:\.\d+)?)px', v):
+        x = float(m.group(1))
+        if x > 24 or x in SCALE_FS or not app(m.start()):
+            continue
+        add('R7', '낮음', fingerprint('ft', v, m.start()),
+            '기준표 밖 글자 크기 %gpx (font 한 줄 표기) — 11·12·13·15·18·22 가운데서 고르세요' % x, snippet(v, m.start()))
+    for m in re.finditer(r'(?<![a-z-])border-radius:\s*(\d+(?:\.\d+)?)px(?=[;"])', v):
+        x = float(m.group(1))
+        if x <= 5.5 or x in SCALE_RAD or not app(m.start()):
+            continue
+        if 'data-cap-frame' in tag_at(m.start()):
+            continue        # 학부모 카드 미리보기를 감싸는 틀(카드 둥글기에 맞춘 값)
+        add('R7', '낮음', fingerprint('rad', v, m.start()),
+            '기준표 밖 둥글기 %gpx — 6·10·14·999(알약) 가운데서 고르세요(5px 이하 작은 표식은 자유)' % x, snippet(v, m.start()))
+
+
 # ─────────────────────────────────────────────────────────────
 RULES = {
     'R0': '파일 무결성',
@@ -267,6 +348,7 @@ RULES = {
     'R4': '복제 화면 불일치',
     'R5': '프레임워크 함정',
     'R6': '앱 밖 서버 규칙',
+    'R7': '디자인 기준표 밖 값',
 }
 
 
@@ -279,6 +361,7 @@ def main():
     rule_dup_markup(v)
     rule_binding(v)
     rule_server(v)
+    rule_scale(v)
 
     cur = {}
     for f in findings:
