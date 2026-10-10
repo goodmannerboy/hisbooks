@@ -214,8 +214,9 @@ def main():
             if pg.evaluate(FIBER):
                 break
             pg.wait_for_timeout(700)
-        pg.evaluate("""()=>{const els=[...document.querySelectorAll('button,div,span,a')]
-          .filter(x=>x.offsetParent && (x.textContent||'').trim()==='학생 일지');
+        # 위 탭 «일지 쓰기»(예전 이름 «학생 일지») — 홈 반 카드에도 같은 글자의 알약이 있어 위 탭(nav)에서만 찾는다
+        pg.evaluate("""()=>{const els=[...document.querySelectorAll('nav button')]
+          .filter(x=>x.offsetParent && ['일지 쓰기','학생 일지'].indexOf((x.textContent||'').trim())>=0);
           if(els.length) els[els.length-1].click(); return 1;}""")
         pg.wait_for_timeout(2200)
 
