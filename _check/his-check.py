@@ -340,6 +340,21 @@ def rule_scale(v):
 
 
 # ─────────────────────────────────────────────────────────────
+# R8  인쇄 문서의 여백 보호
+#   크롬 인쇄 창의 «여백»을 «없음·최소»로 두면 문서가 정한 쪽 여백(@page)은 무시되고 종이 끝까지 그려진다
+#   (그 설정은 다음 인쇄에도 남는다). 그래서 새 창 인쇄 문서는 여백을 «쪽마다 되풀이되는 흰 테두리»
+#   (box-decoration-break:clone)로도 갖고 있어야 한다. 인쇄 규칙(@media print) 뒤 900자 안에 그 규칙이 없으면 알린다.
+#   (CLAUDE.md §8-124 — 테두리 폭은 쪽 크기 vmin·vmax 로 계산해 «모자란 만큼만»)
+def rule_print(raw):
+    for m in re.finditer(r'@media print', raw):
+        if 'box-decoration-break:clone' in raw[m.start():m.start() + 900]:
+            continue
+        add('R8', '중', fingerprint('prt', raw, m.start()),
+            '인쇄 문서에 여백 보호가 없어요 — 인쇄 창 여백이 «없음»이면 종이 끝에서 잘립니다. '
+            '@media print 뒤에 흰 테두리 + box-decoration-break:clone 규칙을 두세요', snippet(raw, m.start()))
+
+
+# ─────────────────────────────────────────────────────────────
 RULES = {
     'R0': '파일 무결성',
     'R1': '학생 명단 직접 읽기',
@@ -349,6 +364,7 @@ RULES = {
     'R5': '프레임워크 함정',
     'R6': '앱 밖 서버 규칙',
     'R7': '디자인 기준표 밖 값',
+    'R8': '인쇄 문서 여백 보호',
 }
 
 
@@ -362,6 +378,7 @@ def main():
     rule_binding(v)
     rule_server(v)
     rule_scale(v)
+    rule_print(raw)
 
     cur = {}
     for f in findings:
