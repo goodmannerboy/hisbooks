@@ -355,6 +355,97 @@ def rule_print(raw):
 
 
 # ─────────────────────────────────────────────────────────────
+# R9  캡처 직전 «굳히기»는 한 곳(_capResolve)
+#   사파리 계열(WebKit)은 요소를 복제할 때 인라인 스타일을 «글자»에서 다시 읽는다. 계산값을 인라인에 굳히다가
+#   var() 가 든 단축 속성(border:1.5px solid var(--gold-200))의 일부(색)만 덮으면, 나머지(굵기·모양)는 글자로 적을 수 없는
+#   값으로 남아 html2canvas 가 요소를 복제하는 순간 테두리가 통째로 사라진다(크롬은 멀쩡해서 눈에 안 띈다).
+#   _capResolve 만 그 엔진을 가려 손실 없이 굳힌다 → 같은 굳히기(계산값과 다르면 e.style[p] 에 넣기)를
+#   다른 메서드에 또 만들면 알린다. 굳혀야 하면 this._capResolve(el) 을 부를 것. (CLAUDE.md «사파리 계열(WebKit)에서 만든 그림에 카드 테두리가 빠지던 것» 절)
+def rule_freeze(v):
+    a = v.find('_capResolve(el) {')
+    b = v.find('_capCloneLossy() {')
+    for m in re.finditer(r'e\.style\[p\]\s*!==\s*v\b', v):
+        if 0 <= a < m.start() < b:
+            continue
+        add('R9', '중', fingerprint('frz', v, m.start()),
+            '캡처 직전 굳히기가 _capResolve 밖에 있어요 — 사파리 계열에서 카드 테두리가 빠집니다. '
+            'this._capResolve(el) 을 부르세요', snippet(v, m.start()))
+
+
+# ─────────────────────────────────────────────────────────────
+# R10  캡처 카드 안 — «글자로 옮길 수 없는» 스타일 조합
+#   한 style 안에 «var() 가 든 단축 속성»(font:800 21px/1 var(--font-sans))과 같은 묶음의 낱개 속성
+#   (font-variant-numeric · line-height · font-size …)을 같이 적으면, 단축 속성 쪽 값은 글자로 적을 수 없는 상태가 된다.
+#   그 요소는 ① 사파리 계열이 요소를 복제할 때(= 모든 복사·저장 그림) ② 어느 엔진이든 outerHTML 로 옮길 때(= 미리보기 창 ·
+#   월간 오른쪽 칸) 단축 속성 쪽 값(크기·굵기·기울임·글꼴 · 테두리 굵기)을 잃는다. 크롬 그림은 멀쩡해서 눈에 안 띈다.
+#   → 학부모 캡처 카드 구역 안에서만 본다. 낱개 속성으로 풀어 적거나(font-weight · font-size · line-height · font-family),
+#     낱개 값을 단축 속성 한 줄에 합쳐 적을 것. (CLAUDE.md «사파리 계열 그림 · 미리보기에서 글꼴이 달라지던 것» 절)
+_R10_SIDES = ['top', 'right', 'bottom', 'left']
+_R10_SUBS = {
+    'font': ['font-style', 'font-variant', 'font-variant-caps', 'font-variant-numeric', 'font-variant-ligatures', 'font-variant-east-asian',
+             'font-weight', 'font-stretch', 'font-size', 'line-height', 'font-family', 'font-kerning', 'font-feature-settings',
+             'font-variation-settings', 'font-optical-sizing', 'font-size-adjust'],
+    'border': ['border-%s' % x for x in _R10_SIDES] + ['border-width', 'border-style', 'border-color', 'border-image']
+              + ['border-%s-%s' % (x, k) for x in _R10_SIDES for k in ('width', 'style', 'color')],
+    'background': ['background-color', 'background-image', 'background-size', 'background-position', 'background-repeat',
+                   'background-clip', 'background-origin', 'background-attachment'],
+    'margin': ['margin-%s' % x for x in _R10_SIDES], 'padding': ['padding-%s' % x for x in _R10_SIDES],
+    'outline': ['outline-color', 'outline-width', 'outline-style'], 'flex': ['flex-grow', 'flex-shrink', 'flex-basis'],
+    'gap': ['row-gap', 'column-gap'], 'inset': list(_R10_SIDES),
+    'border-radius': ['border-top-left-radius', 'border-top-right-radius', 'border-bottom-left-radius', 'border-bottom-right-radius'],
+    'text-decoration': ['text-decoration-line', 'text-decoration-color', 'text-decoration-style', 'text-decoration-thickness'],
+    'transition': ['transition-property', 'transition-duration', 'transition-timing-function', 'transition-delay'],
+}
+for _x in _R10_SIDES:
+    _R10_SUBS['border-' + _x] = ['border-%s-%s' % (_x, k) for k in ('width', 'style', 'color')] + ['border-width', 'border-style', 'border-color']
+for _k in ('width', 'style', 'color'):
+    _R10_SUBS['border-' + _k] = ['border-%s-%s' % (x, _k) for x in _R10_SIDES]
+
+
+def rule_cap_style(v):
+    regs = []
+    for c in SCALE_CAPS:
+        i = 0
+        while True:
+            i = v.find(c, i)
+            if i < 0:
+                break
+            s0 = v.rfind('<', 0, i)
+            tm = re.match(r'<([a-zA-Z0-9-]+)', v[s0:s0 + 40])
+            depth = 0
+            j = s0
+            if tm:
+                for mm in re.compile(r'<(/?)' + re.escape(tm.group(1)) + r'(?=[\s>/])').finditer(v, s0):
+                    depth += 1 if mm.group(1) == '' else -1
+                    if depth == 0:
+                        j = v.find('>', mm.start()) + 1
+                        break
+            if j > s0:
+                regs.append((s0, j))
+            i += len(c)
+    for a, b in regs:
+        for m in re.finditer(r'style="([^"]*)"', v[a:b]):
+            st = m.group(1)
+            if 'var(' not in st:
+                continue
+            parts = re.split(r';(?![^{]*\}\})', st)        # {{ }} 안의 ; 는 나누지 않는다
+            ds = []
+            for p in parts:
+                mm = re.match(r'\s*([a-zA-Z-]+)\s*:(.*)$', p, re.S)
+                if mm:
+                    ds.append((mm.group(1).lower(), mm.group(2)))
+            names = [n for n, _val in ds]
+            for n, val in ds:
+                if n in _R10_SUBS and 'var(' in val:
+                    sib = sorted(set(x for x in names if x in _R10_SUBS[n]))
+                    if sib:
+                        add('R10', '중', fingerprint('cst', v, a + m.start()),
+                            '캡처 카드 안 스타일이 글자로 옮길 수 없는 조합이에요(%s: …var() + %s) — 사파리 계열 그림과 미리보기에서 '
+                            '그 값을 잃습니다. 낱개 속성으로 풀어 적거나 한 줄로 합치세요' % (n, ' · '.join(sib)), snippet(v, a + m.start()))
+                        break
+
+
+# ─────────────────────────────────────────────────────────────
 RULES = {
     'R0': '파일 무결성',
     'R1': '학생 명단 직접 읽기',
@@ -365,6 +456,8 @@ RULES = {
     'R6': '앱 밖 서버 규칙',
     'R7': '디자인 기준표 밖 값',
     'R8': '인쇄 문서 여백 보호',
+    'R9': '캡처 직전 굳히기 한 곳',
+    'R10': '캡처 카드 스타일 조합',
 }
 
 
@@ -379,6 +472,8 @@ def main():
     rule_server(v)
     rule_scale(v)
     rule_print(raw)
+    rule_freeze(v)
+    rule_cap_style(v)
 
     cur = {}
     for f in findings:
@@ -395,7 +490,7 @@ def main():
     print(' 히즈북스 구조 검사 결과')
     print('=' * 62)
     total_new = 0
-    for r in sorted(RULES):
+    for r in sorted(RULES, key=lambda x: int(x[1:])):
         got = cur.get(r, [])
         was = set(old.get(r, []))
         new = [k for k in got if k not in was]
