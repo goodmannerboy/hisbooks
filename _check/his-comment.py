@@ -68,17 +68,29 @@ RUN = """()=>{const L=window.__L; const D=L.state.data; const dt='2026.08.30';
   const again=[]; for(let n=1;n<=10;n++) again.push(mk('s1','김민준',{},n));
   const three=[ mk('s1','김민준',{}), mk('s2','이지혜',{}), mk('s3','박서준',{}) ];
 
-  const cyc={}; let dup=0; const D2=JSON.parse(JSON.stringify(D));
-  for(let i=0;i<pool.length;i++){
+  // 한 바퀴 = 한 학생이 한 번도 겹치지 않는 수업 횟수(_cmtHorizon — 통째로 쓴 문장 수 × 4). 문장은 통째로 쓴 것 + 엮어 만드는 것(묶음마다 앞 × 뒤)
+  const HZ=(L._cmtHorizon ? L._cmtHorizon() : pool.length);
+  const cyc={}; let dup=0; const D2=JSON.parse(JSON.stringify(D)); const first40=[];
+  for(let i=0;i<HZ;i++){
     D2.records=[]; for(let k=0;k<i;k++) D2.records.push({id:'x'+k,classId:'C1',studentId:'s1',date:'2026.01.01',attendance:'출석'});
     const t=L._cmtDraft('김민준', base(), D2, 's1', dt, 1);
-    if(cyc[t]) dup++; cyc[t]=1; }
+    if(cyc[t]) dup++; cyc[t]=1; if(i<40) first40.push(t); }
+  const B=(L._cmtBank ? L._cmtBank() : { W:pool, G:[] }); const isW={}; B.W.forEach(function(x){ isW[x]=1; });
+  const gOk=(B.G.length>0 && B.G.every(function(g){ return g[0].length===B.G[0][0].length && g[1].length===B.G[0][1].length && g[0].length>=10 && g[1].length>=10; }));
+  const wIn40=first40.filter(function(x){ return !!isW[x]; }).length;
+
+  // 이미 저장된 적 있는 문장은 건너뛴다 — 어제 «다시 눌러» 고른 문장(= 오늘 첫 추천이 될 문장)이 오늘 또 나오지 않게
+  const D3=JSON.parse(JSON.stringify(D)); D3.records.push({id:'u1',classId:'C1',studentId:'s1',date:'2026.08.27',attendance:'출석',comment:''});
+  const tA=L._cmtDraft('김민준', base(), D3, 's1', dt, 1); const tB=L._cmtDraft('김민준', base(), D3, 's1', dt, 2);
+  const D4=JSON.parse(JSON.stringify(D3)); D4.records[D4.records.length-1].comment=tA+' 오늘도 애썼어.';
+  const tC=L._cmtDraft('김민준', base(), D4, 's1', dt, 1); const tD=L._cmtDraft('김민준', base(), D4, 's1', dt, 2);
+  const skipOk=(!!tA && tC!==tA && tC===tB && tD!==tC && tD!==tA);
 
   const uniqPool={}; let poolDup=0;
   pool.forEach(function(x){ if(uniqPool[x]) poolDup++; uniqPool[x]=1; });
 
   return { n:pool.length, pool:pool, same:same, again:again, three:three,
-           cycUniq:Object.keys(cyc).length, cycDup:dup, poolDup:poolDup,
+           cycUniq:Object.keys(cyc).length, cycDup:dup, poolDup:poolDup, hz:HZ, nW:B.W.length, nG:B.G.length, gOk:gOk, wIn40:wIn40, skipOk:skipOk, skip:[tA, tB, tC, tD],
            maxLen:Math.max.apply(null,pool.map(function(x){return x.length;})),
            minLen:Math.min.apply(null,pool.map(function(x){return x.length;})),
            withNL:pool.filter(function(x){return x.indexOf(NLc)>=0;}).length,
@@ -124,7 +136,7 @@ def main():
         pg = b.new_page(viewport={'width': 1300, 'height': 900})
         errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)[:120]))
-        pg.goto('http://127.0.0.1:%d/index.html' % port, wait_until='networkidle')
+        pg.goto('http://127.0.0.1:%d/%s' % (port, os.environ.get('HIS_PAGE', 'index.html')), wait_until='networkidle')
         pg.wait_for_timeout(3000)
         for _ in range(12):
             if pg.evaluate(FIBER):
@@ -134,7 +146,9 @@ def main():
         pg.wait_for_timeout(1500)
         r = pg.evaluate(RUN)
 
-        ck('문장이 넉넉히 준비되어 있음 (120편 이상)', r['n'] >= 120, r['n'])
+        ck('문장이 넉넉히 준비되어 있음 (3,000줄 이상 — 통째로 쓴 문장 240편 이상)', r['n'] >= 3000 and r['nW'] >= 240, (r['n'], r['nW']))
+        ck('엮어 만드는 묶음마다 앞 문장·뒤 문장 수가 같음 (어느 묶음도 덜 돌지 않음)', r['gOk'], r['nG'])
+        ck('네 번에 한 번은 통째로 쓴 문장 (처음 40번 중 10번)', r['wIn40'] == 10, r['wIn40'])
         ck('문장 풀에 중복이 없음', r['poolDup'] == 0, r['poolDup'])
         ck('모든 코멘트가 한 줄임', r['withNL'] == 0, r['withNL'])
         ck('길이가 카드에 맞음 (10~60자)',
@@ -149,8 +163,9 @@ def main():
         ck('같은 날 다시 누르면 매번 다름 (10회 전부)',
            len(set(r['again'])) == 10, len(set(r['again'])))
         ck('같은 날이어도 학생마다 다름', len(set(r['three'])) == 3, r['three'])
-        ck('수업이 쌓이는 한 바퀴 동안 한 번도 겹치지 않음',
-           r['cycDup'] == 0 and r['cycUniq'] == r['n'], '중복 %d' % r['cycDup'])
+        ck('수업이 쌓이는 한 바퀴(%d번) 동안 한 번도 겹치지 않음 — 1,000번 이상' % r['hz'],
+           r['cycDup'] == 0 and r['cycUniq'] == r['hz'] and r['hz'] >= 1000, '중복 %d · %d번' % (r['cycDup'], r['hz']))
+        ck('그 학생에게 이미 저장된 문장은 다시 추천하지 않음 (다음 문장으로 넘어감)', r['skipOk'], r['skip'])
         # 저작권: 책 문장을 출처와 함께 그대로 담지 않는다 (원장 설명 원칙)
         ck('출처를 붙인 인용문이 섞이지 않음 (책 문장 그대로 담기 금지)',
            not r['withCite'], r['withCite'][:2])
@@ -158,8 +173,8 @@ def main():
            r['split1']['quote'] == '' and r['split1']['main'] != '', r['split1'])
 
         print()
-        print('  [참고] 문장 %d편 · 길이 %d~%d자 · 한 바퀴 %d회 무중복'
-              % (r['n'], r['minLen'], r['maxLen'], r['cycUniq']))
+        print('  [참고] 문장 %d줄(통째로 쓴 %d + 엮은 %d) · 길이 %d~%d자 · 한 바퀴 %d회 무중복'
+              % (r['n'], r['nW'], r['n'] - r['nW'], r['minLen'], r['maxLen'], r['cycUniq']))
         for x in r['again'][:3]:
             print('  [본보기] ' + x)
         if errs:
@@ -172,7 +187,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  13항목 전부 통과')
+    print('  16항목 전부 통과')
     return 0
 
 
