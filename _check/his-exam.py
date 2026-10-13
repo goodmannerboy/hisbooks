@@ -176,6 +176,43 @@ CHECKS2 = [
                and r['r']['s5']['n'] == 1),
 ]
 
+# ── 3부: 시험 이름은 같은 모양으로(고르면 조립 · 읽어서 통일) ──
+#   이름의 모양: [연도] [학교] [학년] [학기·시험] [자료] [N차] (덧붙임) / [연도] [월] [고N] 전국연합학력평가 / [연도] [학년] [시험] [월]
+XN_MADE = ['2026 한울고 2학년 2학기 중간고사 모의평가 2차', '2026 한울고 2학년 2학기 중간고사',
+           '2026 9월 고1 전국연합학력평가', '2026 고2 진단평가 10월']
+XN_CANON = XN_MADE + ['2026 동지여고 1학년 1학기 기말고사 쪽집게 2차 재시험', '2026 6월 고3 평가원 모의평가',
+                      '2026 11월 고3 대학수학능력시험', '2026 고2 10월 단어 시험', '2026 새빛중 3학년 2학기 기말고사 파이널']
+XN_READ = [('26년 9월 고1 전국연합학력평가', '2026 9월 고1 전국연합학력평가'),
+           ('한울고2 2학기 중간 모의평가 2차', '2026 한울고 2학년 2학기 중간고사 모의평가 2차'),
+           ('한울고 2학년 2학기 중간고사 대비 모의평가', '2026 한울고 2학년 2학기 중간고사 모의평가'),
+           ('2026 새빛고 2-2 중간 쪽집게', '2026 새빛고 2학년 2학기 중간고사 쪽집게'),
+           ('새빛고 1학년 2학기 중간고사', '2026 새빛고 1학년 2학기 중간고사'),
+           ('고2 진단평가 10월', '2026 고2 진단평가 10월')]
+XN_NOPE = ['단어 시험', '2학기 중간고사 대비 모의평가', '기초 1단원 테스트']
+XN_CAT = [('2026 한울고 2학년 2학기 중간고사 모의평가 2차', '학원시험'), ('2026 한울고 2학년 2학기 중간고사 3차', '학원시험'),
+          ('2026 한울고 2학년 2학기 중간고사', '학교시험'), ('2026 9월 고1 전국연합학력평가', '모의고사'),
+          ('2026 고2 진단평가 10월', '학원시험')]
+READ3 = """(a)=>{ const L=window.__L; const D='2026.10.14';
+  const made=[L._xnMake({k:'prep',y:'2026',s:'한울고',n:'2',t:'2학기 중간고사',m:'모의평가',r:'2',x:''}),
+              L._xnMake({k:'school',y:'2026',s:'한울고',n:'2',t:'2학기 중간고사',m:'모의평가',r:'2',x:''}),
+              L._xnMake({k:'mock',y:'2026',mo:'9',g:'고1',w:'전국연합학력평가',x:''}),
+              L._xnMake({k:'acad',y:'2026',g:'고2',w:'진단평가',mo:'10',x:''})];
+  const dd={ exams:[{examSetId:'E',category:'옛 이름'},{examSetId:'E',category:'학원시험'},{examSetId:'F',category:'옛 이름'}] };
+  L._xnRecNames(dd,'E','새 이름'); const es={ name:'새 이름' }; L._xnAlias(es,'옛 이름'); L._xnAlias(es,'옛 이름');
+  return { made:made, canon:a.canon.map((n)=>L._xnCanon(n,D)), read:a.read.map((n)=>L._xnCanon(n,D)),
+           nope:a.nope.map((n)=>L._xnCanon(n,D)), cat:a.cat.map((n)=>L._examCat({category:n})),
+           rec:dd.exams.map((r)=>r.category), alias:es.alias }; }"""
+CHECKS3 = [
+    ('시험 이름 조립: 내신 대비 · 학교 시험 · 모의고사 · 학원 시험의 모양', lambda r: r['made'] == XN_MADE),
+    ('조립된 이름은 다시 읽어도 그대로(같은 모양이 고정)', lambda r: r['canon'] == XN_CANON),
+    ('여러 모양으로 친 이름이 같은 이름으로 읽힘 · 학교를 모르는 이름은 지어내지 않음',
+     lambda r: r['read'] == [b for a, b in XN_READ] and r['nope'] == ['', '', '']),
+    ('같은 모양의 이름은 구분을 이름에서 바로(«대비»가 없어도 내신 대비 시험 = 학원시험)',
+     lambda r: r['cat'] == [b for a, b in XN_CAT]),
+    ('시험 이름을 바꾸면 성적 기록의 이름이 따라가고(구분을 고른 기록 · 다른 시험은 그대로) 옛 이름이 남음',
+     lambda r: r['rec'] == ['새 이름', '학원시험', '옛 이름'] and r['alias'] == '옛 이름'),
+]
+
 
 def main():
     socketserver.TCPServer.allow_reuse_address = True
@@ -258,6 +295,27 @@ def main():
             fails.append('담임 스코프 누출')
             print('       실제: %s' % tOpts)
 
+        # ── 3부: 시험 이름은 같은 모양으로 ──
+        print()
+        print(' 시험 이름은 같은 모양으로 (고르면 조립 · 읽어서 통일)')
+        print('-' * 62)
+        try:
+            r3 = pg.evaluate(READ3, {'canon': XN_CANON, 'read': [a for a, b in XN_READ], 'nope': XN_NOPE,
+                                     'cat': [a for a, b in XN_CAT]})
+        except Exception as e3:
+            r3 = None
+            print('       실행 오류: %s' % str(e3)[:160])
+        for name, fn in CHECKS3:
+            try:
+                ok = bool(r3) and bool(fn(r3))
+            except Exception:
+                ok = False
+            print(('  OK  ' if ok else '  실패 ') + name)
+            if not ok:
+                fails.append(name)
+                if r3:
+                    print('       실제: %s' % {k: r3[k] for k in ('made', 'read', 'nope', 'cat', 'rec', 'alias')})
+
         if errs:
             fails.append('JS 오류 %d건' % len(errs))
             print('  실패 JS 오류: %s' % errs[:2])
@@ -268,7 +326,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  %d항목 전부 통과' % (len(CHECKS) + len(CHECKS2) + 2))
+    print('  %d항목 전부 통과' % (len(CHECKS) + len(CHECKS2) + len(CHECKS3) + 2))
     return 0
 
 
