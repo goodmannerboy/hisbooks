@@ -213,6 +213,56 @@ CHECKS3 = [
      lambda r: r['rec'] == ['새 이름', '학원시험', '옛 이름'] and r['alias'] == '옛 이름'),
 ]
 
+# ── 4부: 점수 직접 입력(성적 탭) · 시험 채점 선반 ──
+#   시험은 반에 한 번만 고르고 학교 · 학년은 학생마다 — 만들어지는 이름은 모두 «같은 모양»이어야 하고,
+#   같은 시험을 두 번 저장해도 기록은 하나(고치기) · 자동 채점된 같은 이름의 시험은 건드리지 않는다.
+SEED4 = """()=>{ const L=window.__L; const d=JSON.parse(JSON.stringify(L.state.data));
+  const S=(id,nm,sch)=>({ id:id, name:nm, registeredAt:'2025.03.02', school:sch, intake:{} });
+  d.classes=[{ id:'K1', name:'직접입력반', owner:'관리자', schedule:{days:[],times:{}},
+      students:[S('k1','가온','한울고 2학년'), S('k2','나래','포항새빛고등학교 1학년'), S('k3','다솜','새빛중 3학년'), S('k4','라온','새빛고 1학년')] },
+    { id:'K2', name:'다른반', owner:'관리자', schedule:{days:[],times:{}}, students:[S('k9','마루','한울고 2학년')] }];
+  const qs=[]; for(let i=1;i<=10;i++) qs.push({ no:i, key:String((i%5)+1), pt:10, group:'', type:'' });
+  const sub=(t)=>({ answers:{ 1:'2' }, t:t });
+  d.examSets=[{ id:'ES1', kind:'academy', name:'2026 새빛중 3학년 2학기 중간고사', date:L.today(), grade:'중3', questions:qs, submissions:{ k3:sub(Date.now()) }, createdT:1, keyT:1 },
+              { id:'ES2', kind:'academy', name:'2026 한울고 2학년 2학기 중간고사 모의평가 1차', date:L.today(), grade:'고2', questions:qs, submissions:{ k1:sub(Date.now()), k9:sub(Date.now()) }, createdT:2, keyT:2 },
+              { id:'ES3', kind:'academy', name:'2026 한울고 2학년 2학기 중간고사 모의평가 2차', date:L.today(), grade:'고2', questions:qs, submissions:{ k9:sub(Date.now()) }, createdT:3, keyT:3 }];
+  d.exams=[{ id:'o1', examSetId:'ES1', studentId:'k3', classId:'K1', category:'2026 새빛중 3학년 2학기 중간고사', date:L.today(), score:'70', total:'100', grade:'3', wrongTypes:[] }];
+  d.deletedExams=[]; d.capSent={ 'acad|ES2|k1':true };
+  L._sxD={}; L.setState({ data:d, currentUser:'관리자', view:'exams', activeClassId:'K1', examStudentId:'k1', sxP:{ k:'school', y:'2026', t:'2학기 중간고사' }, sxDate:'2026.10.14', sxTot:'100', sxOpen:false });
+  return 1; }"""
+ROWS4 = """()=>{ const L=window.__L; const R=L._sxRows(L.state, true); const sh=L._shelfVals(L.state);
+  return { rows:R.rows.map((r)=>({ sid:r.sid, exam:r.exam, canon:(L._xnCanon(r.exam, '2026.10.14')===r.exam), auto:!!r.autoId, g:r.gShow, pend:r.pend })), cat:R.cat,
+           shelf:sh.cards.map((c)=>[c.id, c.gT, c.sT, c.mode]) }; }"""
+EX4 = """()=>{ const d=window.__L.state.data; return { ex:(d.exams||[]).map((e)=>[e.id, e.studentId, e.category, e.title||'', String(e.score), String(e.total), String(e.grade||''), e.classId||'', e.examSetId||'']), del:(d.deletedExams||[]) }; }"""
+DRAFT4 = """(a)=>{ const L=window.__L; const D=L._sxDraft('K1'); Object.keys(a.d).forEach((k)=>{ D[k]={ v:a.d[k], g:'', dv:true, dg:false, gm:false }; }); if(a.p) L.setState({ sxP:a.p }); return 1; }"""
+T4 = '2026 한울고 2학년 2학기 중간고사'
+T4B = '2026 새빛고 1학년 2학기 중간고사'
+
+def _man(x):
+    return sorted([e for e in x['ex'] if not e[8]], key=lambda e: e[1])
+
+
+CHECKS4 = [
+    ('점수 직접 입력: 이름은 학생마다 학교 · 학년으로, 모두 같은 모양(«포항새빛고등학교» → 등록된 이름 «새빛고»)',
+     lambda r: [(x['sid'], x['exam']) for x in r['rows']['rows']] == [('k1', T4), ('k2', T4B), ('k3', '2026 새빛중 3학년 2학기 중간고사'), ('k4', T4B)]
+     and all(x['canon'] for x in r['rows']['rows']) and r['rows']['cat'] == '학교시험'),
+    ('저장: 구분 · 시험명 · 점수 · 반이 기록되고, 자동 채점된 같은 이름의 시험(다솜)은 건드리지 않음',
+     lambda r: [x['auto'] for x in r['rows']['rows']] == [False, False, True, False]
+     and [(e[1], e[2], e[3], e[4], e[5], e[7]) for e in _man(r['a'])] == [('k1', '학교시험', T4, '88', '100', 'K1'), ('k2', '학교시험', T4B, '91.5', '100', 'K1')]
+     and [e for e in r['a']['ex'] if e[8]] == [['o1', 'k3', '2026 새빛중 3학년 2학기 중간고사', '', '70', '100', '3', 'K1', 'ES1']]),
+    ('같은 시험을 다시 저장하면 새 기록이 아니라 같은 기록을 고침(88 → 90)',
+     lambda r: len(_man(r['b'])) == 2 and _man(r['b'])[0][0] == _man(r['a'])[0][0] and _man(r['b'])[0][4] == '90'),
+    ('되돌리기: 고친 것은 전 점수로(기록은 그대로) · 새로 만든 것은 삭제 표식과 함께 사라짐',
+     lambda r: _man(r['c'])[0][4] == '88' and len(_man(r['c'])) == 2 and r['c']['del'] == []
+     and len(_man(r['d'])) == 3 and len(_man(r['e'])) == 2
+     and r['e']['del'] == [[e for e in _man(r['d']) if e[1] == 'k4'][0][0]]),
+    ('등급: 모의고사는 점수에서 저절로(88점 → 2등급) · 학교 시험은 지어내지 않음',
+     lambda r: [x['g'] for x in r['mock']['rows'] if x['sid'] == 'k4'] == ['2'] and [x['exam'] for x in r['mock']['rows'] if x['sid'] == 'k4'] == ['2026 9월 고1 전국연합학력평가']
+     and [x['g'] for x in r['sch']['rows'] if x['sid'] == 'k4'] == ['']),
+    ('시험 채점 선반: 이 반 학생이 채점된 시험만 · 채점 n/N · 통지서 n/N (다른 반만 본 시험은 안 올라옴)',
+     lambda r: sorted(r['rows']['shelf']) == [['ES1', '채점 1/4', '통지서 0/4', 'grade'], ['ES2', '채점 1/4', '통지서 1/4', 'grade']]),
+]
+
 
 def main():
     socketserver.TCPServer.allow_reuse_address = True
@@ -316,6 +366,41 @@ def main():
                 if r3:
                     print('       실제: %s' % {k: r3[k] for k in ('made', 'read', 'nope', 'cat', 'rec', 'alias')})
 
+        # ── 4부: 점수 직접 입력 · 시험 채점 선반 ──
+        print()
+        print(' 점수 직접 입력 · 시험 채점 선반 (성적 탭)')
+        print('-' * 62)
+        r4 = {}
+        try:
+            pg.evaluate(SEED4); pg.wait_for_timeout(900)
+            r4['rows'] = pg.evaluate(ROWS4)
+            pg.evaluate(DRAFT4, {'d': {'k1': '88', 'k2': '91.5', 'k3': '55'}}); pg.evaluate("()=>{ window.__L.sxSave(); return 1; }"); pg.wait_for_timeout(700)
+            r4['a'] = pg.evaluate(EX4)
+            pg.evaluate(DRAFT4, {'d': {'k1': '90'}}); pg.evaluate("()=>{ window.__L.sxSave(); return 1; }"); pg.wait_for_timeout(700)
+            r4['b'] = pg.evaluate(EX4)
+            pg.evaluate("()=>{ window.__L._undoRun(); return 1; }"); pg.wait_for_timeout(700)
+            r4['c'] = pg.evaluate(EX4)
+            pg.evaluate(DRAFT4, {'d': {'k4': '77'}}); pg.evaluate("()=>{ window.__L.sxSave(); return 1; }"); pg.wait_for_timeout(700)
+            r4['d'] = pg.evaluate(EX4)
+            pg.evaluate("()=>{ window.__L._undoRun(); return 1; }"); pg.wait_for_timeout(700)
+            r4['e'] = pg.evaluate(EX4)
+            pg.evaluate(DRAFT4, {'d': {'k4': '88'}, 'p': {'k': 'mock', 'y': '2026', 'mm': '9', 'mw': '전국연합학력평가'}}); pg.wait_for_timeout(500)
+            r4['mock'] = pg.evaluate(ROWS4)
+            pg.evaluate(DRAFT4, {'d': {'k4': '88'}, 'p': {'k': 'school', 'y': '2026', 't': '1학기 기말고사'}}); pg.wait_for_timeout(500)
+            r4['sch'] = pg.evaluate(ROWS4)
+            pg.evaluate("()=>{ const L=window.__L; L._sxD={}; try{ L._undoDrop(); }catch(e){} return 1; }")
+        except Exception as e4:
+            print('       실행 오류: %s' % str(e4)[:200])
+        for name, fn in CHECKS4:
+            try:
+                ok = bool(fn(r4))
+            except Exception:
+                ok = False
+            print(('  OK  ' if ok else '  실패 ') + name)
+            if not ok:
+                fails.append(name)
+                print('       실제: %s' % str(r4)[:900])
+
         if errs:
             fails.append('JS 오류 %d건' % len(errs))
             print('  실패 JS 오류: %s' % errs[:2])
@@ -326,7 +411,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  %d항목 전부 통과' % (len(CHECKS) + len(CHECKS2) + len(CHECKS3) + 2))
+    print('  %d항목 전부 통과' % (len(CHECKS) + len(CHECKS2) + len(CHECKS3) + len(CHECKS4) + 2))
     return 0
 
 
