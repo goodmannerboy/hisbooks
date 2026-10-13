@@ -13,6 +13,11 @@
   · 매번 다른가 (다시 누를 때, 학생마다, 수업이 쌓일수록)
   · 책 문장을 그대로 담지 않았는가 (저작권)
 
+둘째 부분(월말 종합 코멘트 — 월간 탭): 명단에서 쓰는 학생 줄만 펼쳐지고, «전송 완료하고 다음»(Ctrl+Enter)이
+  · 지금 칸의 글을 저장하고 전송 완료로 표시한 뒤 아직 안 보낸 다음 학생으로 가는가
+  · 빈 코멘트는 막지 않고 한 번만 묻는가 · 방금 한 표시를 되돌릴 수 있는가
+  · 수업 기록이 없는 학생은 전송 표시를 하지 않는가 · 새 자료 칸을 만들지 않는가
+
     py _check/his-comment.py
 
 하나라도 실패하면 배포하지 마세요.
@@ -103,6 +108,21 @@ RUN = """()=>{const L=window.__L; const D=L.state.data; const dt='2026.08.30';
              return /(습니다|입니다|해요|세요|십시오|랍니다)/.test(x); }),
            split1:L._cmtSplit(mk('s1','김민준',{})) };}"""
 
+# ── 둘째 부분: 월말 종합 코멘트(월간 탭) ────────────────────────────────
+#   학생 셋(가나다: 김민준 s1 · 박서준 s3 · 이지혜 s2) — s2 는 이 달 수업 기록이 없다
+SEED2 = """()=>{const L=window.__L; const d=JSON.parse(JSON.stringify(L.state.data));
+  d.records=[]; const mk=(sid,day,g)=>({id:'m'+sid+day,classId:'C1',studentId:sid,date:'2026.08.'+day,attendance:'출석',homework:'완료',gS:String(g),gT:'100'});
+  ['04','11','18'].forEach((dy)=>{ d.records.push(mk('s1',dy,70)); d.records.push(mk('s3',dy,90)); });
+  d.monthlyComments={}; d.capSent={};
+  window.__keys0=Object.keys(d).sort().join(',');
+  L.setState({data:d,view:'monthly',activeClassId:'C1',monthlyMonth:'2026-08',monthlyActiveStudentId:null,moLeft:false,moMsg:null,_mDrafts:{},status:''});
+  return 'ok';}"""
+MO = """()=>{const L=window.__L; const S=L.state; const d=S.data; const m=(S.moMsg||{});
+  return { order:(L._moL||[]).map((x)=>x.sid), has:(L._moL||[]).map((x)=>!!x.has), tas:document.querySelectorAll('textarea[data-monthly-comment]').length,
+    act:String(L._mcapEff||''), cm:Object.assign({}, d.monthlyComments||{}), cap:Object.assign({}, d.capSent||{}), msg:String(m.t||''), bad:!!m.bad, undo:String(m.undo||''),
+    keys:Object.keys(d).sort().join(','), keys0:String(window.__keys0||''), rows:document.querySelectorAll('[data-mo-row]').length }; }"""
+MO_TYPE = """(t)=>{ const ta=document.querySelector('textarea[data-monthly-comment]'); if(!ta) return false; ta.value=t; window.__L.moNext(); return true; }"""
+
 NL = chr(10)
 
 
@@ -122,7 +142,7 @@ def main():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
 
     print('=' * 62)
-    print(' 히즈북스 일간일지 코멘트(감성 한 줄) 검사')
+    print(' 히즈북스 코멘트 검사 — 일간 감성 한 줄 · 월말 종합 코멘트')
     print('=' * 62)
     fails = []
 
@@ -172,6 +192,29 @@ def main():
         ck('한 줄 코멘트는 인용문으로 갈라지지 않음',
            r['split1']['quote'] == '' and r['split1']['main'] != '', r['split1'])
 
+        # ── 둘째 부분: 월말 종합 코멘트(월간 탭)
+        print()
+        pg.evaluate(SEED2); pg.wait_for_timeout(1800); m = pg.evaluate(MO)
+        ck('[월간] 명단은 가나다 차례 · 기록 없는 학생을 구분 · 코멘트 칸은 펼친 줄 하나(기록 있는 첫 학생)',
+           m['order'] == ['s1', 's3', 's2'] and m['has'] == [True, True, False] and m['rows'] == 3 and m['tas'] == 1 and m['act'] == 's1', m)
+        T9 = '이번 달도 성실하게 참여했습니다.'
+        pg.evaluate(MO_TYPE, T9); pg.wait_for_timeout(900); m = pg.evaluate(MO)
+        ck('[월간] «전송 완료하고 다음» = 지금 칸의 글 저장 + 전송 완료 표시 + 아직 안 보낸 다음 학생으로',
+           m['cm'].get('s1|2026-08') == T9 and m['cap'].get('monthly|s1|2026-08') is True and m['act'] == 's3' and m['undo'] == 's1' and m['tas'] == 1, m)
+        pg.evaluate("()=>{ window.__L.moNext(); return 1; }"); pg.wait_for_timeout(600); m1 = pg.evaluate(MO)
+        pg.evaluate("()=>{ window.__L.moNext(); return 1; }"); pg.wait_for_timeout(900); m2 = pg.evaluate(MO)
+        ck('[월간] 빈 코멘트는 막지 않고 한 번만 물음(처음엔 표시 안 함 → 한 번 더 누르면 넘어감)',
+           m1['bad'] and (not m1['cap'].get('monthly|s3|2026-08')) and m1['act'] == 's3' and m2['cap'].get('monthly|s3|2026-08') is True and (not m2['bad']) and m2['undo'] == 's3', (m1, m2))
+        pg.evaluate("()=>{ window.__L.moUndo(); return 1; }"); pg.wait_for_timeout(900); m = pg.evaluate(MO)
+        ck('[월간] 방금 한 전송 완료 표시는 되돌릴 수 있음(그 학생으로 돌아감 · 앞 학생의 표시와 글은 그대로)',
+           m['cap'].get('monthly|s3|2026-08') is False and m['cap'].get('monthly|s1|2026-08') is True and m['cm'].get('s1|2026-08') == T9 and m['act'] == 's3', m)
+        pg.evaluate("()=>{ window.__L.moPick('s2'); return 1; }"); pg.wait_for_timeout(800)
+        pg.evaluate(MO_TYPE, '미리 써 둔 글'); pg.wait_for_timeout(900); m = pg.evaluate(MO)
+        ck('[월간] 수업 기록이 없는 학생은 글만 저장하고 전송 표시는 하지 않음 · 다음 안 보낸 학생으로',
+           m['cm'].get('s2|2026-08') == '미리 써 둔 글' and ('monthly|s2|2026-08' not in m['cap']) and m['act'] == 's3', m)
+        ck('[월간] 새 자료 칸을 만들지 않음(월말 코멘트 monthlyComments · 전송 표시 capSent 그대로)',
+           m['keys'] == m['keys0'] and bool(m['keys0']), (m['keys'], m['keys0']))
+
         print()
         print('  [참고] 문장 %d줄(통째로 쓴 %d + 엮은 %d) · 길이 %d~%d자 · 한 바퀴 %d회 무중복'
               % (r['n'], r['nW'], r['n'] - r['nW'], r['minLen'], r['maxLen'], r['cycUniq']))
@@ -187,7 +230,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  16항목 전부 통과')
+    print('  22항목 전부 통과')
     return 0
 
 
