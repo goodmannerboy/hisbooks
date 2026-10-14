@@ -17,6 +17,9 @@
   · 지금 칸의 글을 저장하고 전송 완료로 표시한 뒤 아직 안 보낸 다음 학생으로 가는가
   · 빈 코멘트는 막지 않고 한 번만 묻는가 · 방금 한 표시를 되돌릴 수 있는가
   · 수업 기록이 없는 학생은 전송 표시를 하지 않는가 · 새 자료 칸을 만들지 않는가
+셋째 부분(학부모 월간 카드 — 지난 달을 고를 때): 카드의 «월간 변화 · 월간 영역별 성장 비교»가
+  · 고른 달과 그 앞 달까지만 견주고 그리는가 (뒤 달 점수가 섞이지 않는가) · 선생님용 수치 표도 같은 달인가
+  · 가장 최근 달은 예전과 같은가 · 견줄 앞 달이 없는 첫 달 카드에는 비교 칸이 없는가
 
     py _check/his-comment.py
 
@@ -123,6 +126,25 @@ MO = """()=>{const L=window.__L; const S=L.state; const d=S.data; const m=(S.moM
     keys:Object.keys(d).sort().join(','), keys0:String(window.__keys0||''), rows:document.querySelectorAll('[data-mo-row]').length }; }"""
 MO_TYPE = """(t)=>{ const ta=document.querySelector('textarea[data-monthly-comment]'); if(!ta) return false; ta.value=t; window.__L.moNext(); return true; }"""
 
+# ── 셋째 부분: 학부모 월간 카드 — 지난 달을 고를 때 ────────────────────────
+#   김민준 s1 = 7월 60 · 8월 70 · 9월 90점 (세 달) / 박서준 s3 = 9월만(첫 달)
+SEED3 = """()=>{const L=window.__L; const d=JSON.parse(JSON.stringify(L.state.data));
+  d.records=[]; const mk=(sid,mo,day,g)=>({id:'p'+sid+mo+day,classId:'C1',studentId:sid,date:'2026.'+mo+'.'+day,attendance:'출석',homework:'완료',gS:String(g),gT:'100'});
+  [['07',60],['08',70],['09',90]].forEach((x)=>{ ['04','11','18'].forEach((dy)=>{ d.records.push(mk('s1',x[0],dy,x[1])); }); });
+  ['04','11'].forEach((dy)=>{ d.records.push(mk('s3','09',dy,80)); });
+  d.monthlyComments={}; d.capSent={};
+  L.setState({data:d,view:'monthly',activeClassId:'C1',monthlyMonth:'2026-09',monthlyActiveStudentId:'s1',moLeft:false,moMsg:null,_mDrafts:{},status:''});
+  return 'ok';}"""
+MC = """(sid)=>{ const e=document.getElementById('monthcap-'+sid); if(!e) return null;
+  const tx=(n)=>String((n&&n.textContent)||'').split(String.fromCharCode(10)).join(' ').split(' ').filter(Boolean).join(' ');
+  const hd=[...e.querySelectorAll('div')].find((x)=>tx(x)==='월간 변화'); const mc=e.querySelector('[data-mcomp]'); const ks=(hd ? [...hd.parentElement.children] : []);
+  const mm=tx(e).match(/([0-9]{4})년 ([0-9]{1,2})월/);
+  const th=[...document.querySelectorAll('div')].filter((x)=>x.children.length<=1 && tx(x).indexOf('월별 수치 표')===0).pop();
+  const grid=(th ? th.parentElement.parentElement.querySelector('div[style*="grid-template-columns"]') : null); let table=null;
+  if(grid){ const cs=[...grid.children].map((x)=>tx(x)); table=[]; for(let i=7;i+6<cs.length;i+=7) table.push(cs[i]); }
+  return { month:(mm ? (mm[1]+'-'+String(mm[2]).padStart(2,'0')) : ''), box:!!mc, prev:(hd ? tx(ks[1]) : ''), cur:(hd ? tx(ks[2] && ks[2].children[0]) : ''), d:(hd ? tx(ks[2] && ks[2].children[1]) : ''),
+    xs:(mc ? [...mc.querySelectorAll('[data-mcomp-x]')].map((x)=>tx(x)) : []), end:(mc ? tx(mc.querySelector('[data-mcomp-end]')) : ''), table:table }; }"""
+
 NL = chr(10)
 
 
@@ -142,7 +164,7 @@ def main():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
 
     print('=' * 62)
-    print(' 히즈북스 코멘트 검사 — 일간 감성 한 줄 · 월말 종합 코멘트')
+    print(' 히즈북스 코멘트 검사 — 일간 감성 한 줄 · 월말 종합 코멘트 · 월간 카드')
     print('=' * 62)
     fails = []
 
@@ -215,6 +237,28 @@ def main():
         ck('[월간] 새 자료 칸을 만들지 않음(월말 코멘트 monthlyComments · 전송 표시 capSent 그대로)',
            m['keys'] == m['keys0'] and bool(m['keys0']), (m['keys'], m['keys0']))
 
+        # ── 셋째 부분: 학부모 월간 카드 — 지난 달을 고를 때
+        print()
+        pg.evaluate(SEED3); pg.wait_for_timeout(1500)
+
+        def mcard(mon, sid):
+            pg.evaluate("(a)=>{ window.__L.setState({ monthlyMonth:a.m, monthlyActiveStudentId:a.s, status:'' }); return 1; }", {'m': mon, 's': sid})
+            c = None
+            for _ in range(40):
+                pg.wait_for_timeout(200)
+                c = pg.evaluate(MC, sid)
+                if c and c['month'] == mon:
+                    break
+            pg.wait_for_timeout(400)
+            return pg.evaluate(MC, sid) or {}
+        a8 = mcard('2026-08', 's1')
+        ck('[월간 카드] 지난 달(8월)을 고르면 «월간 변화»는 그 달과 그 앞 달 · 그래프는 그 달까지 (뒤 달 9월 점수가 섞이지 않음)',
+           a8.get('box') is True and a8.get('prev') == '7월 대비' and a8.get('cur') == '70점' and a8.get('d') == '+10' and a8.get('xs') == ['7월', '8월'] and a8.get('end') == '종합 70', a8)
+        ck('[월간 카드] 선생님용 «월별 수치 표»도 고른 달까지만 (카드의 그래프와 같은 달)', a8.get('table') == ['7월', '8월'], a8.get('table'))
+        a9 = mcard('2026-09', 's1'); a7 = mcard('2026-07', 's1'); b9 = mcard('2026-09', 's3')
+        ck('[월간 카드] 가장 최근 달(9월)은 그 달과 그 앞 달 · 견줄 앞 달이 없는 첫 달 카드에는 비교 칸이 없음',
+           a9.get('prev') == '8월 대비' and a9.get('cur') == '90점' and a9.get('d') == '+20' and a9.get('xs') == ['7월', '8월', '9월'] and a7.get('month') == '2026-07' and a7.get('box') is False and b9.get('month') == '2026-09' and b9.get('box') is False, (a9, a7, b9))
+
         print()
         print('  [참고] 문장 %d줄(통째로 쓴 %d + 엮은 %d) · 길이 %d~%d자 · 한 바퀴 %d회 무중복'
               % (r['n'], r['nW'], r['n'] - r['nW'], r['minLen'], r['maxLen'], r['cycUniq']))
@@ -230,7 +274,7 @@ def main():
     if fails:
         print('  실패 %d건 — 배포 금지' % len(fails))
         return 1
-    print('  22항목 전부 통과')
+    print('  25항목 전부 통과')
     return 0
 
 
