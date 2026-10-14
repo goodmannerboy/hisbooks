@@ -216,6 +216,7 @@ CHECKS3 = [
 # ── 4부: 점수 직접 입력(성적 탭) · 시험 채점 선반 ──
 #   시험은 반에 한 번만 고르고 학교 · 학년은 학생마다 — 만들어지는 이름은 모두 «같은 모양»이어야 하고,
 #   같은 시험을 두 번 저장해도 기록은 하나(고치기) · 자동 채점된 같은 이름의 시험은 건드리지 않는다.
+#   보던 학생이 퇴원하면 성장일지 카드 · 고른 줄은 반의 첫 학생으로(퇴원생 카드가 남지 않음).
 SEED4 = """()=>{ const L=window.__L; const d=JSON.parse(JSON.stringify(L.state.data));
   const S=(id,nm,sch)=>({ id:id, name:nm, registeredAt:'2025.03.02', school:sch, intake:{} });
   d.classes=[{ id:'K1', name:'직접입력반', owner:'관리자', schedule:{days:[],times:{}},
@@ -237,6 +238,9 @@ EX4 = """()=>{ const d=window.__L.state.data; return { ex:(d.exams||[]).map((e)=
 DRAFT4 = """(a)=>{ const L=window.__L; const D=L._sxDraft('K1'); Object.keys(a.d).forEach((k)=>{ D[k]={ v:a.d[k], g:'', dv:true, dg:false, gm:false }; }); if(a.p) L.setState({ sxP:a.p }); return 1; }"""
 T4 = '2026 한울고 2학년 2학기 중간고사'
 T4B = '2026 새빛고 1학년 2학기 중간고사'
+WD4 = """()=>{ const L=window.__L; const S=L.state; const t=[...document.querySelectorAll('body *')].filter((d)=>d.tagName!=='SCRIPT' && d.children.length===0 && /의 성장일지$/.test((d.textContent||'').trim()) && d.getBoundingClientRect().width>0).map((d)=>d.textContent.trim());
+  const tt=(sid)=>{ try{ return L.examAgg(S.data, S.activeClassId, sid).studentTitle; }catch(e){ return '?'; } };
+  return { sid:(S.examStudentId||null), eff:(L._exSid ? L._exSid(S) : null), rows:L._sxRows(S, true).rows.map((r)=>r.sid), title:[...new Set(t)], t2:tt('k2'), t1:tt('k1') }; }"""
 
 def _man(x):
     return sorted([e for e in x['ex'] if not e[8]], key=lambda e: e[1])
@@ -261,6 +265,9 @@ CHECKS4 = [
      and [x['g'] for x in r['sch']['rows'] if x['sid'] == 'k4'] == ['']),
     ('시험 채점 선반: 이 반 학생이 채점된 시험만 · 채점 n/N · 통지서 n/N (다른 반만 본 시험은 안 올라옴)',
      lambda r: sorted(r['rows']['shelf']) == [['ES1', '채점 1/4', '통지서 0/4', 'grade'], ['ES2', '채점 1/4', '통지서 1/4', 'grade']]),
+    ('보던 학생이 퇴원하면 성장일지 카드 · 고른 줄은 반의 첫 학생으로(퇴원생 카드가 남지 않음)',
+     lambda r: r['wd']['sid'] == 'k2' and r['wd']['eff'] == 'k2' and r['wd']['rows'] == ['k2', 'k3', 'k4']
+     and r['wd']['title'] == [r['wd']['t2']] and r['wd']['t1'] not in r['wd']['title']),
 ]
 
 
@@ -389,6 +396,9 @@ def main():
             pg.evaluate(DRAFT4, {'d': {'k4': '88'}, 'p': {'k': 'school', 'y': '2026', 't': '1학기 기말고사'}}); pg.wait_for_timeout(500)
             r4['sch'] = pg.evaluate(ROWS4)
             pg.evaluate("()=>{ const L=window.__L; L._sxD={}; try{ L._undoDrop(); }catch(e){} return 1; }")
+            pg.evaluate("()=>{ window.__L.setState({ view:'exams', activeClassId:'K1', examStudentId:'k1', editingExamId:null, exEdNew:false }); return 1; }"); pg.wait_for_timeout(700)
+            pg.evaluate("()=>{ window.__L.withdrawStudent('k1', '', ''); return 1; }"); pg.wait_for_timeout(1100)
+            r4['wd'] = pg.evaluate(WD4)
         except Exception as e4:
             print('       실행 오류: %s' % str(e4)[:200])
         for name, fn in CHECKS4:
