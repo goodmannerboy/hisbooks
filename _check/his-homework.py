@@ -163,6 +163,21 @@ CARRY_APPLY3 = """()=>{const L=window.__L; const k=(s)=>s+'|'+L.state.bulk.date;
 CARRY_PAST = """(B)=>{const L=window.__L; const a=L.loadDraft(L.state.data,'C2','t2',B), b=L.loadDraft(L.state.data,'C2','t1',B);
   return { t2:(a.hwCarry===undefined), t1:(b.hwCarry||[]).map(x=>x.text+':'+x.status) };}"""
 
+# v33.347: 과제가 없던 날(바로 앞 수업의 «다음 수업 과제»가 빈 칸)은 새 일지의 과제가 «없음» — 장학마일리지 과제 몫 0
+#   이미 저장된 기록(과제 «완료»)의 마일리지는 그대로여야 한다
+NOHW = """()=>{const L=window.__L; const td=L.today();
+  const p=td.split('.').map(Number); const t=new Date(p[0],p[1]-1,p[2]-3);
+  const P=t.getFullYear()+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+String(t.getDate()).padStart(2,'0');
+  const d=JSON.parse(JSON.stringify(L.state.data));
+  d.classes.push({id:'C3',name:'고1 C반',owner:'관리자',schedule:{days:[],times:{}},students:[
+    {id:'u1',name:'정다온',registeredAt:'2025.03.02'},{id:'u2',name:'한서윤',registeredAt:'2025.03.02'}]});
+  d.records.push({id:'n_u1',classId:'C3',studentId:'u1',date:P,attendance:'출석',homework:'완료',lesson:'Unit 1',nextPrep:''},
+    {id:'n_u2',classId:'C3',studentId:'u2',date:P,attendance:'출석',homework:'완료',lesson:'Unit 1',nextPrep:'1. 워크북 p.10'});
+  const a=L.loadDraft(d,'C3','u1',td), b=L.loadDraft(d,'C3','u2',td);
+  const ma=L.mileageDetail(Object.assign({},a,{attendance:'출석'})), mb=L.mileageDetail(Object.assign({},b,{attendance:'출석'}));
+  const old=L.mileageDetail(d.records.find(x=>x.id==='n_u1'));
+  return { a:a.homework, b:b.homework, aT:(a.hwCheck||[]).length, ma:ma.delta, mb:mb.delta, old:old.delta };}"""
+
 
 def main():
     socketserver.TCPServer.allow_reuse_address = True
@@ -349,6 +364,15 @@ def main():
         past = pg.evaluate(CARRY_PAST, seed2['B'])
         ck('이미 저장된 지난 날짜 기록엔 새로 끼워 넣지 않음',
            past['t2'] is True and past['t1'] == ['영작 10문장:미완'], str(past))
+
+        # ── 과제가 없던 날(v33.347) ──
+        print('  -- 과제가 없던 날 --')
+        nh = pg.evaluate(NOHW)
+        ck('바로 앞 수업에 낸 과제가 없으면 새 일지의 과제는 «없음» (장학마일리지 과제 몫 0)',
+           nh['a'] == '없음' and nh['aT'] == 0 and abs(nh['ma'] - 0.2) < 1e-9, str(nh))
+        ck('과제를 낸 다음 수업은 예전처럼 «완료»로 시작',
+           nh['b'] == '완료' and abs(nh['mb'] - 0.6) < 1e-9, str(nh))
+        ck('이미 저장된 기록의 마일리지는 그대로', abs(nh['old'] - 0.6) < 1e-9, str(nh))
 
         if errs:
             fails.append('JS 오류 %d건' % len(errs))
