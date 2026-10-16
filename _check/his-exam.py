@@ -241,6 +241,12 @@ T4B = '2026 새빛고 1학년 2학기 중간고사'
 WD4 = """()=>{ const L=window.__L; const S=L.state; const t=[...document.querySelectorAll('body *')].filter((d)=>d.tagName!=='SCRIPT' && d.children.length===0 && /의 성장일지$/.test((d.textContent||'').trim()) && d.getBoundingClientRect().width>0).map((d)=>d.textContent.trim());
   const tt=(sid)=>{ try{ return L.examAgg(S.data, S.activeClassId, sid).studentTitle; }catch(e){ return '?'; } };
   return { sid:(S.examStudentId||null), eff:(L._exSid ? L._exSid(S) : null), rows:L._sxRows(S, true).rows.map((r)=>r.sid), title:[...new Set(t)], t2:tt('k2'), t1:tt('k1') }; }"""
+#   점수 ▲▼ 는 같은 종류(모의고사 · 학교시험 · 학원시험)의 바로 앞 시험과 견준다.
+SK4 = """()=>{ const L=window.__L; if(!L._sameKindPrev) return null; const E=(c,t,d)=>({ category:c, title:t, date:d });
+  const a=[E('모의고사','','2026.09.01'), E('학교시험','','2026.09.15'), E('모의고사','','2026.10.01')];
+  const b=[E('학원시험','','2026.09.01'), E('모의고사','','2026.10.01')];
+  const c=[E('','2학기 중간고사','2026.06.01'), E('모의고사','','2026.09.01'), E('','2학기 기말고사','2026.10.01')];
+  return [a.indexOf(L._sameKindPrev(a)), b.indexOf(L._sameKindPrev(b)), c.indexOf(L._sameKindPrev(c)), (L._sameKindPrev([a[0]]) === null)]; }"""
 
 def _man(x):
     return sorted([e for e in x['ex'] if not e[8]], key=lambda e: e[1])
@@ -268,6 +274,8 @@ CHECKS4 = [
     ('보던 학생이 퇴원하면 성장일지 카드 · 고른 줄은 반의 첫 학생으로(퇴원생 카드가 남지 않음)',
      lambda r: r['wd']['sid'] == 'k2' and r['wd']['eff'] == 'k2' and r['wd']['rows'] == ['k2', 'k3', 'k4']
      and r['wd']['title'] == [r['wd']['t2']] and r['wd']['t1'] not in r['wd']['title']),
+    ('점수 ▲▼ 는 같은 종류의 바로 앞 시험과(모의 → 학교 → 모의 = 첫 모의 · 앞에 같은 종류가 없으면 비교 없음)',
+     lambda r: r['sk'] == [0, -1, 0, True]),
 ]
 
 
@@ -399,6 +407,7 @@ def main():
             pg.evaluate("()=>{ window.__L.setState({ view:'exams', activeClassId:'K1', examStudentId:'k1', editingExamId:null, exEdNew:false }); return 1; }"); pg.wait_for_timeout(700)
             pg.evaluate("()=>{ window.__L.withdrawStudent('k1', '', ''); return 1; }"); pg.wait_for_timeout(1100)
             r4['wd'] = pg.evaluate(WD4)
+            r4['sk'] = pg.evaluate(SK4)
         except Exception as e4:
             print('       실행 오류: %s' % str(e4)[:200])
         for name, fn in CHECKS4:
