@@ -145,7 +145,7 @@ SCREENS = [
 #   (화면, 설명, 판정식)   판정식은 true 면 통과
 RULES = [
     ('학생관리(학원)', '접수대기 학생은 반 명단에 없음 (접수 대기 패널에만)',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('반별 일정'); return i>=0 && t.slice(i).indexOf('접수대기')<0;}"),
+     "()=>{const t=document.body.innerText; let i=t.indexOf('반별 관리'); if(i<0) i=t.indexOf('반별 일정'); return i>=0 && t.slice(i).indexOf('접수대기')<0;}"),
     ('학생관리(학원)', '전체 원생 10명 (접수대기·퇴원 제외 / 시작 전·퇴원 예정은 포함)',
      "()=>/전체 원생\s*10명/.test(document.body.innerText)"),
     ('학생관리(학원)', '이번 달 퇴원 2명 (반 안 1 + 반 삭제 보관함 1)',
