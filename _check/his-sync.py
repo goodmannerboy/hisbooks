@@ -214,6 +214,22 @@ const T=(name, ok)=>R.push([name, !!ok]);
   const m2=mergeAppData(JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(A)));
   T('학년 예외 — 순서 무관', m2.examSchoolG['한울고|2'].date==='2026.10.13'); }
 
+// ㉔ 전국 공통 시험(examNat — 수능 · 모의고사) — 키별 LWW · 삭제 표식 · 받을 때 보존 (v33.355)
+{ const A={examNat:{'m1':{label:'',date:'2026.10.22',g:'1,2,3',t:100}}};
+  const B={examNat:{'m1':{label:'',date:'2026.10.23',g:'3',t:200},
+                    'csat':{label:'대학수학능력시험',date:'2026.11.19',g:'3',on:1,t:150}}};
+  const m=mergeAppData(JSON.parse(JSON.stringify(A)), JSON.parse(JSON.stringify(B)));
+  T('전국 공통 시험 — 최신 편집 승(키별 LWW)', m.examNat['m1'].date==='2026.10.23');
+  T('전국 공통 시험 — 키 합집합', !!m.examNat['csat']);
+  const m2=mergeAppData(JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(A)));
+  T('전국 공통 시험 — 순서 무관', m2.examNat['m1'].date==='2026.10.23');
+  const C={examNat:{'m1':{del:1,t:300}}};
+  const m3=mergeAppData(JSON.parse(JSON.stringify(B)), JSON.parse(JSON.stringify(C)));
+  T('전국 공통 시험 — 삭제 표식이 이김', !!(m3.examNat['m1']||{}).del);
+  __T.state.data={examNat:{'m9':{label:'방금',date:'2026.10.22',g:'3',t:900}}, classes:[]};
+  __T._absorbFresh({examNat:{}, classes:[]});
+  T('받을 때 — 전국 공통 시험 보존', !!((__T.state.data.examNat||{})['m9']||{}).date); }
+
 // ⑧ 시험일 3종 — 받을 때도 보존 (v33.075, 입력이 12초 뒤 사라지던 구먍)
 { __T.state.data={examSchool:{'한울고':{label:'방금',date:'2026.10.06',t:900}},
     examSchoolG:{'한울고|2':{label:'학년',date:'2026.10.08',t:900}},
