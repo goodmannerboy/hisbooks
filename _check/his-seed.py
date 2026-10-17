@@ -158,16 +158,16 @@ RULES = [
      "()=>/8주\+ 미상담\s*8명/.test(document.body.innerText)"),
 
     ('등하원 관제', '관제판에 휴강 반이 없음',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
+     "()=>{const b9=document.querySelector('[data-ck-board]'); const t=b9?b9.innerText:document.body.innerText; const i=b9?0:t.indexOf('오늘 등하원 관제'); const j=b9?t.length:t.indexOf('오늘 등하원 현황');"
      " return i>=0 && j>i && t.slice(i,j).indexOf('휴강반학생')<0;}"),
     ('등하원 관제', '관제판에 등원 시작 전 학생이 없음',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
+     "()=>{const b9=document.querySelector('[data-ck-board]'); const t=b9?b9.innerText:document.body.innerText; const i=b9?0:t.indexOf('오늘 등하원 관제'); const j=b9?t.length:t.indexOf('오늘 등하원 현황');"
      " return i>=0 && j>i && t.slice(i,j).indexOf('시작전')<0;}"),
     ('등하원 관제', '관제판에 퇴원생이 없음',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
+     "()=>{const b9=document.querySelector('[data-ck-board]'); const t=b9?b9.innerText:document.body.innerText; const i=b9?0:t.indexOf('오늘 등하원 관제'); const j=b9?t.length:t.indexOf('오늘 등하원 현황');"
      " return i>=0 && j>i && !/(^|[^예])퇴원(?!예정)/.test(t.slice(i,j).split('퇴원예정').join(''));}"),
     ('등하원 관제', '개인 보강 학생은 «보강 예정»으로 표시 (미등원 아님)',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
+     "()=>{const b9=document.querySelector('[data-ck-board]'); const t=b9?b9.innerText:document.body.innerText; const i=b9?0:t.indexOf('오늘 등하원 관제'); const j=b9?t.length:t.indexOf('오늘 등하원 현황');"
      " return i>=0 && t.slice(i,j).indexOf('보강 예정')>=0;}"),
     ('등하원 관제', '미등원 3명 (결석 예정·개인 보강·시작 전·퇴원 제외)',
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 수업 대상');"
@@ -177,7 +177,7 @@ RULES = [
      " const t=document.body.innerText; const i=t.indexOf('미등원 확인');"
      " return i<0 || t.slice(i,i+500).indexOf('개인보강')<0;}"),
     ('등하원 관제', '결석 예정 학생은 미등원으로 안 셈 (수업 시작 후엔 «결석 · 사유»)',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
+     "()=>{const b9=document.querySelector('[data-ck-board]'); const t=b9?b9.innerText:document.body.innerText; const i=b9?0:t.indexOf('오늘 등하원 관제'); const j=b9?t.length:t.indexOf('오늘 등하원 현황');"
      " return i>=0 && t.slice(i,j).indexOf('결석 · 병원')>=0;}"),
 
     ('일정(선생님)', '주간 일정 명단에 등원 시작 전 학생이 없음',
