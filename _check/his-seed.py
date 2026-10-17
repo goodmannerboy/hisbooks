@@ -173,7 +173,8 @@ RULES = [
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 수업 대상');"
      " return i>=0 && /미등원\s*3/.test(t.slice(i,i+120));}"),
     ('등하원 관제', '안전망 목록에 개인 보강 학생이 없음',
-     "()=>{const t=document.body.innerText; const i=t.indexOf('미등원 확인');"
+     "()=>{const n=document.querySelector('[data-ops-ns]'); if(n) return n.innerText.indexOf('개인보강')<0;"
+     " const t=document.body.innerText; const i=t.indexOf('미등원 확인');"
      " return i<0 || t.slice(i,i+500).indexOf('개인보강')<0;}"),
     ('등하원 관제', '결석 예정 학생은 미등원으로 안 셈 (수업 시작 후엔 «결석 · 사유»)',
      "()=>{const t=document.body.innerText; const i=t.indexOf('오늘 등하원 관제'); const j=t.indexOf('오늘 등하원 현황');"
