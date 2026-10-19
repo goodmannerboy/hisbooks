@@ -354,6 +354,15 @@ const T=(name, ok)=>R.push([name, !!ok]);
   T('받을 때 — 다른 기기의 더 새 묶음·요약 반영', g9.wrongFlow.E1.b.s2.a==='3' && g9.clipSum.s2.t===300);
 }
 
+// ㉕ 성적 성장일지 «A Note for You» 한마디(examNotes) — 시험마다 나중에 쓴 쪽 (v33.367)
+{ const J9=(o)=>JSON.parse(JSON.stringify(o));
+  const A={ classes:[], examNotes:{ x1:{ v:'옛 한마디', t:100 }, x2:{ v:'A만', t:5 } } };
+  const B={ classes:[], examNotes:{ x1:{ v:'새 한마디', t:200 }, x1b:{ v:'', t:300 } } };
+  const m1=mergeAppData(J9(A),J9(B)), m2=mergeAppData(J9(B),J9(A));
+  T('성적 성장일지 한마디 — 나중에 쓴 쪽 (양방향)', [m1,m2].every(m=>m.examNotes.x1.v==='새 한마디'));
+  T('성적 성장일지 한마디 — 한쪽에만 있는 것도 남음 · 지운 것(빈 글)도 그대로', [m1,m2].every(m=>m.examNotes.x2.v==='A만' && m.examNotes.x1b && m.examNotes.x1b.v===''));
+}
+
 return R;
 """
 
