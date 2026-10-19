@@ -12,7 +12,9 @@
   1 가만히 40초 — 전체 보내기 0 · 전체 받기 0 (작은 확인만)
   2 한 기기에서 고치면 — 보내기 딱 1번, 다른 기기는 받기만 하고 다시 올리지 않음
   3 고친 것이 다른 기기 화면에 뜸
-동기화(로그인 관문의 보내기·받기)를 고쳤으면 반드시 돌릴 것. 기록: CLAUDE.md 맨 끝 §8-S1.
+  4 3초마다 15번 고쳐도 전체 보내기는 20초에 한 번꼴(4번 이하) · 마지막 것은 다른 기기에 뜸
+    (2026-10-20 Supabase «Disk IO Budget» 경고 — 예전엔 고칠 때마다 2초 뒤 줄 하나 약 2MB 를 통째로 올렸다. v33.365 에 돌리면 15번)
+동기화(로그인 관문의 보내기·받기)를 고쳤으면 반드시 돌릴 것. 기록: CLAUDE.md 맨 끝 §8-S1 · §8-S2.
 """
 import io
 import json
@@ -333,6 +335,16 @@ def main():
         spin([a, b], 26)
         ck("그 뒤 다시 조용함", cloud.count("push", t2) == 0 and cloud.count("pull", t2) == 0,
            "보내기 %d · 받기 %d" % (cloud.count("push", t2), cloud.count("pull", t2)))
+        # 고치는 동안은 모아서 올린다(2026-10-20 Disk IO 경고 — 예전엔 3초마다 고치면 3초마다 통째로 올렸다)
+        t3 = cloud.now()
+        for i in range(15):
+            a.evaluate("(t) => window.__L.setKioskNote(t)", "연속 %d" % (i + 1))
+            spin([a, b], 3)
+        n3 = cloud.count("push", t3, "PC")
+        t4 = cloud.now()
+        got3 = until(b, "() => (window.__L && window.__L.state.data.kioskNote) === '연속 15'", 45)
+        ck("3초마다 15번 고쳐도 전체 보내기는 20초에 한 번꼴", n3 <= 4, "%d번(예전 15번)" % n3)
+        ck("마지막으로 고친 것이 키오스크에 뜸", got3, "멈춘 뒤 %.0f초" % (cloud.now() - t4))
         ck("JS 오류 없음", not (a._errs + b._errs), (a._errs + b._errs)[:2])
         br.close()
     httpd.shutdown()
