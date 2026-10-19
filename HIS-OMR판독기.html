@@ -191,7 +191,8 @@ function gradeCard(ans, F){
     if(total>=nx[1]-2 && nx[5]!=null && d>=nx[5]+2 && meets(nx)){ level=nx[0]; note='총점은 경계선이지만 어려운 문항을 잘 풀어서 위 반으로 정했습니다.'; } }
   let retake=null;
   (K.retake||[]).forEach(x=>{ if((x[0]==='hi'&&total>=x[1])||(x[0]==='lo'&&total<=x[1])) retake=x[2]; });
-  const LG={'H-AD':1,'H-H':1,'H-M':2,'H-L':3,'M-AD':4,'M-H':5,'M-M':6,'GI':6,'M-L':7,'GB':7,'E-A':8,'JA':8,'HI':9,'JI':9,'HB':9,'JB':9,'LD':9};let g9 = LG[(level||'').replace(' 이상','').replace(' 이하','').split('~')[0].trim()] || 9;if((level||'').indexOf('이하')>=0) g9=Math.min(9,g9+1);
+  // 등급 = 절대평가(총점 10점 단위 · 수능 영어와 같은 방식) — 앱 v33.361 과 같음(원장 2026-10-19). 추천 반은 위 판정 그대로.
+  const g9 = total>=90?1:total>=80?2:total>=70?3:total>=60?4:total>=50?5:total>=40?6:total>=30?7:total>=20?8:9;
   return {total, d, areas, cnt, marks, level, note, retake, g9};
 }
 
@@ -247,11 +248,8 @@ function noticeHTML(r){
   const yr=date.slice(0,4);
   const A=['듣기','어휘','문법','독해'];
   const areaLines=A.map(a=>'<div>- '+a+'영역: '+r.g.areas[a][0]+'/'+r.g.areas[a][1]+'만점</div>').join('');
-  const pct=[['1등급','0 ~ 4%','1등 ~ 4등','4명'],['2등급','4.01 ~ 11%','5등 ~ 11등','7명'],
-    ['3등급','11.01 ~ 23%','12등 ~ 23등','12명'],['4등급','23.01 ~ 40%','24등 ~ 40등','17명'],
-    ['5등급','40.01 ~ 60%','41등 ~ 60등','20명'],['6등급','60.01 ~ 77%','61등 ~ 77등','17명'],
-    ['7등급','77.01 ~ 89%','78등 ~ 89등','12명'],['8등급','89.01 ~ 96%','90등 ~ 96등','7명'],
-    ['9등급','96.01 ~ 100%','97등 ~ 100등','4명']]
+  const pct=[['1등급','90 ~ 100점'],['2등급','80 ~ 89점'],['3등급','70 ~ 79점'],['4등급','60 ~ 69점'],
+    ['5등급','50 ~ 59점'],['6등급','40 ~ 49점'],['7등급','30 ~ 39점'],['8등급','20 ~ 29점'],['9등급','0 ~ 19점']]
     .map(x=>'<tr><td>'+x.join('</td><td>')+'</td></tr>').join('');
   const birth=r.birth.every(x=>x!=null)?r.birth.join(''):'';
   return '<div class="page">'
@@ -266,8 +264,8 @@ function noticeHTML(r){
     +'<tr><td class="k">등급</td><td><b>'+r.g.g9+'</b></td></tr>'
     +'</table>'
     +'<div class="date">'+date+'</div><div class="acad">히즈어학원</div>'
-    +'<div class="pctwrap"><div class="pcthead">등급 백분위 기준표</div>'
-    +'<table class="pct"><tr><th>등급</th><th>백분위</th><th>100명 중 등수</th><th>100명 중</th></tr>'+pct+'</table></div>'
+    +'<div class="pctwrap"><div class="pcthead">등급 기준표 · 절대평가(총점 기준)</div>'
+    +'<table class="pct"><tr><th>등급</th><th>총점</th></tr>'+pct+'</table></div>'
     +'</div>';
 }
 
