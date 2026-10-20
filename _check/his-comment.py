@@ -5,6 +5,7 @@
 코멘트는 성장일지의 «A Note for You» 자리에 그대로 실려 매일 나갑니다.
 원장 지시(2026-08-30): 학습평가는 하지 않고, 인생을 통찰하는 감성 한 줄을 매번 다르게.
 원장 정정: 이 말은 **스승이 학생에게 건네는 말**이지 부모에게 하는 말이 아니다.
+원장 지시(2026-10-21, v33.373): 문장은 학원노트 각 쪽 아래 문구(통째로 쓴 한 줄만 · 엮어 만드는 문장 없음).
 
 이 검사는 index.html 의 실제 문구 엔진(_cmtDraft)을 그대로 돌려서 확인합니다.
   · 한 줄인가
@@ -76,7 +77,7 @@ RUN = """()=>{const L=window.__L; const D=L.state.data; const dt='2026.08.30';
   const again=[]; for(let n=1;n<=10;n++) again.push(mk('s1','김민준',{},n));
   const three=[ mk('s1','김민준',{}), mk('s2','이지혜',{}), mk('s3','박서준',{}) ];
 
-  // 한 바퀴 = 한 학생이 한 번도 겹치지 않는 수업 횟수(_cmtHorizon — 통째로 쓴 문장 수 × 4). 문장은 통째로 쓴 것 + 엮어 만드는 것(묶음마다 앞 × 뒤)
+  // 한 바퀴 = 한 학생이 한 번도 겹치지 않는 수업 횟수(_cmtHorizon — 학원노트 문구 수). 문장은 통째로 쓴 한 줄뿐(엮어 만드는 문장 없음)
   const HZ=(L._cmtHorizon ? L._cmtHorizon() : pool.length);
   const cyc={}; let dup=0; const D2=JSON.parse(JSON.stringify(D)); const first40=[];
   for(let i=0;i<HZ;i++){
@@ -84,8 +85,11 @@ RUN = """()=>{const L=window.__L; const D=L.state.data; const dt='2026.08.30';
     const t=L._cmtDraft('김민준', base(), D2, 's1', dt, 1);
     if(cyc[t]) dup++; cyc[t]=1; if(i<40) first40.push(t); }
   const B=(L._cmtBank ? L._cmtBank() : { W:pool, G:[] }); const isW={}; B.W.forEach(function(x){ isW[x]=1; });
-  const gOk=(B.G.length>0 && B.G.every(function(g){ return g[0].length===B.G[0][0].length && g[1].length===B.G[0][1].length && g[0].length>=10 && g[1].length>=10; }));
+  const nG=((B.G||[]).length);
   const wIn40=first40.filter(function(x){ return !!isW[x]; }).length;
+  // 이웃한 두 수업의 문장이 노트에서 붙어 있던 줄(같은 주제 묶음)이 아님 — 노트 차례로 4줄 안이면 «붙어 있음»
+  const at={}; B.W.forEach(function(x,i){ at[x]=i; }); let near=0;
+  for(let i=1;i<first40.length;i++){ const d=Math.abs(at[first40[i]]-at[first40[i-1]]); if(Math.min(d, B.W.length-d)<=4) near++; }
 
   // 이미 저장된 적 있는 문장은 건너뛴다 — 어제 «다시 눌러» 고른 문장(= 오늘 첫 추천이 될 문장)이 오늘 또 나오지 않게
   const D3=JSON.parse(JSON.stringify(D)); D3.records.push({id:'u1',classId:'C1',studentId:'s1',date:'2026.08.27',attendance:'출석',comment:''});
@@ -98,13 +102,14 @@ RUN = """()=>{const L=window.__L; const D=L.state.data; const dt='2026.08.30';
   pool.forEach(function(x){ if(uniqPool[x]) poolDup++; uniqPool[x]=1; });
 
   return { n:pool.length, pool:pool, same:same, again:again, three:three,
-           cycUniq:Object.keys(cyc).length, cycDup:dup, poolDup:poolDup, hz:HZ, nW:B.W.length, nG:B.G.length, gOk:gOk, wIn40:wIn40, skipOk:skipOk, skip:[tA, tB, tC, tD],
+           cycUniq:Object.keys(cyc).length, cycDup:dup, poolDup:poolDup, hz:HZ, nW:B.W.length, nG:nG, near:near, wIn40:wIn40, skipOk:skipOk, skip:[tA, tB, tC, tD],
            maxLen:Math.max.apply(null,pool.map(function(x){return x.length;})),
            minLen:Math.min.apply(null,pool.map(function(x){return x.length;})),
            withNL:pool.filter(function(x){return x.indexOf(NLc)>=0;}).length,
            withCite:pool.filter(function(x){return x.indexOf(' — ')>=0;}),
+           // 학생을 평가하는 말(«점수가 올랐어»·등급·출결…)만 — «점수가 네 가치의 전부는 아니야» 같은 말은 평가가 아님
            evalWords:pool.filter(function(x){
-             return /(점수|등급|성적표|출결|정답률|평균)/.test(x); }),
+             return /((점수|성적)[가이은는도]? ?(올랐|올라|오르|내려|떨어|좋아|좋았|나빠|높|낮))|등급|출결|정답률|평균/.test(x); }),
            toParent:pool.filter(function(x){
              return /(아이|부모|학부모|주세요|주시면)/.test(x); }),
            polite:pool.filter(function(x){
@@ -188,16 +193,16 @@ def main():
         pg.wait_for_timeout(1500)
         r = pg.evaluate(RUN)
 
-        ck('문장이 넉넉히 준비되어 있음 (3,000줄 이상 — 통째로 쓴 문장 240편 이상)', r['n'] >= 3000 and r['nW'] >= 240, (r['n'], r['nW']))
-        ck('엮어 만드는 묶음마다 앞 문장·뒤 문장 수가 같음 (어느 묶음도 덜 돌지 않음)', r['gOk'], r['nG'])
-        ck('네 번에 한 번은 통째로 쓴 문장 (처음 40번 중 10번)', r['wIn40'] == 10, r['wIn40'])
+        ck('문장 = 학원노트 문구 130편 이상 · 통째로 쓴 한 줄뿐 (엮어 만드는 문장 없음)', r['n'] >= 130 and r['nW'] == r['n'] and r['nG'] == 0, (r['n'], r['nW'], r['nG']))
+        ck('처음 40번 수업의 추천이 모두 노트 문구 목록 안', r['wIn40'] == 40, r['wIn40'])
+        ck('이웃한 두 수업의 문장이 노트에서 붙어 있던 줄이 아님 (주제 묶음을 건너뛰며 돎)', r['near'] == 0, r['near'])
         ck('문장 풀에 중복이 없음', r['poolDup'] == 0, r['poolDup'])
         ck('모든 코멘트가 한 줄임', r['withNL'] == 0, r['withNL'])
         ck('길이가 카드에 맞음 (10~60자)',
            r['minLen'] >= 10 and r['maxLen'] <= 60, '%d~%d' % (r['minLen'], r['maxLen']))
         ck('학습평가를 하지 않음 — 출결·과제·점수가 달라도 같은 문장',
            len(set(r['same'])) == 1, r['same'][:2])
-        ck('점수·등급 같은 평가 낱말이 없음', not r['evalWords'], r['evalWords'][:2])
+        ck('학생을 평가하는 말이 없음 (점수가 올랐어·등급·출결·정답률·평균)', not r['evalWords'], r['evalWords'][:2])
         ck('학생에게 건네는 말임 — 부모를 향한 표현이 없음',
            not r['toParent'], r['toParent'][:2])
         ck('학생에게 건네는 말투 — 존댓말 종결이 없음',
@@ -205,8 +210,8 @@ def main():
         ck('같은 날 다시 누르면 매번 다름 (10회 전부)',
            len(set(r['again'])) == 10, len(set(r['again'])))
         ck('같은 날이어도 학생마다 다름', len(set(r['three'])) == 3, r['three'])
-        ck('수업이 쌓이는 한 바퀴(%d번) 동안 한 번도 겹치지 않음 — 1,000번 이상' % r['hz'],
-           r['cycDup'] == 0 and r['cycUniq'] == r['hz'] and r['hz'] >= 1000, '중복 %d · %d번' % (r['cycDup'], r['hz']))
+        ck('수업이 쌓이는 한 바퀴(%d번 = 노트 문구 수) 동안 한 번도 겹치지 않음' % r['hz'],
+           r['cycDup'] == 0 and r['cycUniq'] == r['hz'] and r['hz'] == r['nW'] and r['hz'] >= 130, '중복 %d · %d번' % (r['cycDup'], r['hz']))
         ck('그 학생에게 이미 저장된 문장은 다시 추천하지 않음 (다음 문장으로 넘어감)', r['skipOk'], r['skip'])
         # 저작권: 책 문장을 출처와 함께 그대로 담지 않는다 (원장 설명 원칙)
         ck('출처를 붙인 인용문이 섞이지 않음 (책 문장 그대로 담기 금지)',
