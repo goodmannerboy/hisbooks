@@ -110,14 +110,15 @@ py _check/his-storm.py
 진짜 로그인 관문·동기화 코드를 그대로 돌리고, 클라우드만 이 파일 안의 가짜 서버로 바꿔 «누가 언제 전체를 쓰고 읽는지»를 셉니다.
 실제 클라우드에는 아무것도 보내지 않습니다(React 두 파일만 인터넷에서 받습니다). 3분쯤 걸립니다.
 
-## 확인하는 것 (13항목)
+## 확인하는 것 (14항목)
 
 - 기기 두 대(PC · 키오스크)를 가만히 40초 — **전체 보내기 0 · 전체 받기 0**, 작은 확인은 계속
 - 한 기기에서 고치면 다른 기기 화면에 뜸 — **보내기는 고친 기기 1번뿐**, 받은 기기는 받기 1번, 그 뒤 다시 조용함
 - 3초마다 15번 고쳐도 전체 보내기는 20초에 한 번꼴(§8-S2)
 - 줄 나누기(v33.369~, §8-S3): 클라우드가 main + `pt-…` 줄로 나뉨 · 일지 임시 입력 한 칸을 고치면 **pt-draft 줄만** 올리고 받음(옛 판에서는 건너뜀)
+- 오늘 등원(키오스크) · 오늘 결석 예정(PC)은 **main 에**(v33.372, §8-S4) — 알림톡 서버는 main 의 «오늘» 것만 읽는다. 줄 규칙(`PT_RULES`)을 고쳐 이것이 다른 줄로 가면 등원한 학생 학부모에게 알림이 나간다
 - 자바스크립트 오류 0
 
 **동기화(로그인 관문의 보내기·받기 · `persist` 를 주기적으로 부르는 코드)를 고쳤으면 반드시 돌리세요.**
-기록과 규칙은 CLAUDE.md 맨 끝 «§8-S1 · §8-S2 · §8-S3», 더 깊은 시나리오(서버 장애·로그인 풀림·옛 버전 혼재·아이폰 엔진)는
-`C:\Users\User\Desktop\C\_tools\hisbooks-sync\t_sync.py`, 줄 나누기는 `C:\Users\User\Desktop\C\_tools\hisbooks-split\`(t_split · t_core — STATE.md)에 있습니다.
+기록과 규칙은 CLAUDE.md 맨 끝 «§8-S1 · §8-S2 · §8-S3 · §8-S4», 더 깊은 시나리오(서버 장애·로그인 풀림·옛 버전 혼재·아이폰 엔진)는
+`C:\Users\User\Desktop\C\_tools\hisbooks-sync\t_sync.py`, 줄 나누기는 `C:\Users\User\Desktop\C\_tools\hisbooks-split\`(t_split · t_core — STATE.md) · v33.372 줄 규칙과 실제 데이터 재기는 `C:\Users\User\Desktop\C\_tools\hisbooks-ck\`(STATE.md)에 있습니다.

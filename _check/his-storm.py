@@ -16,6 +16,7 @@
     (2026-10-20 Supabase «Disk IO Budget» 경고 — 예전엔 고칠 때마다 2초 뒤 줄 하나 약 2MB 를 통째로 올렸다. v33.365 에 돌리면 15번)
   5 줄 나누기(v33.369~): 클라우드가 main + pt-… 줄로 나뉨 · main 에 일지 기록이 없음 ·
     일지 임시 입력 한 칸을 고치면 pt-draft 줄만 올리고 받는 기기도 그 줄만 받음(main 은 안 씀)
+  6 오늘 등원(키오스크) · 오늘 결석 예정(PC)은 main 에 — 알림톡 서버는 main 의 «오늘» 것만 읽는다(§8-S4 · 못 보면 오발송)
 동기화(로그인 관문의 보내기·받기)를 고쳤으면 반드시 돌릴 것. 기록: CLAUDE.md 맨 끝 §8-S1 · §8-S2 · §8-S3.
 """
 import io
@@ -404,6 +405,19 @@ def main():
             ck("일지 임시 입력 한 칸 → pt-draft 줄만 올림(main 은 안 씀)", pr == ["pt-draft"], pr)
             pl = cloud.rows_pulled(t5, "KIOSK")
             ck("받는 기기도 그 줄만 받음", pl == ["pt-draft"], pl)
+            # (§8-S4) 알림톡 서버(noshow-alert)는 main 의 «오늘» 것만 읽는다 — 줄 규칙을 바꿔도 오늘 등원·오늘 결석 예정은 main 에 남아야
+            td = time.strftime("%Y.%m.%d")
+            b.evaluate("() => { window.__L.doCheckin('C1', 's2', 'in'); return 1; }")
+            a.evaluate("(td) => { const L=window.__L; L.setState((s) => { const dd = __hisCloneData(s.data); dd.noShowExcused = Object.assign({}, dd.noShowExcused || {});"
+                       " dd.noShowExcused['s3|' + td] = { reason: '검사', t: Date.now() }; L.persist(dd); return { data: dd }; }); return 1; }", td)
+            t6 = time.time() + 50
+            ok6 = False
+            while time.time() < t6 and not ok6:
+                spin([a, b], 2)
+                md6 = (cloud.rows.get("main") or {}).get("data") or {}
+                ok6 = bool(((md6.get("checkins") or {}).get("s2|" + td) or {}).get("in")) and ("s3|" + td) in (md6.get("noShowExcused") or {})
+            ck("오늘 등원 · 오늘 결석 예정은 main 에(알림톡 서버가 읽는 곳)", ok6,
+               "main 등원 %s · 결석 예정 %s" % (("s2|" + td) in (md6.get("checkins") or {}), ("s3|" + td) in (md6.get("noShowExcused") or {})))
         else:
             print("  (이 판은 줄을 나누지 않습니다 — 줄 나누기 항목은 건너뜀)")
         ck("JS 오류 없음", not (a._errs + b._errs), (a._errs + b._errs)[:2])
