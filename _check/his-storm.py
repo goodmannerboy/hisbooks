@@ -14,7 +14,9 @@
   3 고친 것이 다른 기기 화면에 뜸
   4 3초마다 15번 고쳐도 전체 보내기는 20초에 한 번꼴(4번 이하) · 마지막 것은 다른 기기에 뜸
     (2026-10-20 Supabase «Disk IO Budget» 경고 — 예전엔 고칠 때마다 2초 뒤 줄 하나 약 2MB 를 통째로 올렸다. v33.365 에 돌리면 15번)
-동기화(로그인 관문의 보내기·받기)를 고쳤으면 반드시 돌릴 것. 기록: CLAUDE.md 맨 끝 §8-S1 · §8-S2.
+  5 줄 나누기(v33.369~): 클라우드가 main + pt-… 줄로 나뉨 · main 에 일지 기록이 없음 ·
+    일지 임시 입력 한 칸을 고치면 pt-draft 줄만 올리고 받는 기기도 그 줄만 받음(main 은 안 씀)
+동기화(로그인 관문의 보내기·받기)를 고쳤으면 반드시 돌릴 것. 기록: CLAUDE.md 맨 끝 §8-S1 · §8-S2 · §8-S3.
 """
 import io
 import json
@@ -52,6 +54,8 @@ FAKE_LIB = r"""
   B.prototype.eq = function (k, v) { this.f.push(['eq', k, v]); return this; };
   B.prototype.like = function (k, v) { this.f.push(['like', k, v]); return this; };
   B.prototype.lt = function (k, v) { this.f.push(['lt', k, v]); return this; };
+  B.prototype['in'] = function (k, v) { this.f.push(['in', k, v]); return this; };
+  B.prototype.or = function (s) { this.f.push(['or', '', s]); return this; };
   B.prototype.order = function () { return this; };
   B.prototype.maybeSingle = function () { this.single = true; return this; };
   B.prototype.upsert = function (p) { this.op = 'upsert'; this.payload = p; return this; };
@@ -92,6 +96,8 @@ class Cloud(object):
     def __init__(self):
         self.rows = {}
         self.log = []          # (초, 기기, 종류)  종류 = push | pull | check | etc
+        self.pushes = []       # (초, 기기, [올린 줄 id]) — 줄을 나눈 뒤로는 한 번에 여러 줄
+        self.pulls = []        # (초, 기기, [받은 줄 id])
         self.lock = threading.Lock()
         self.t0 = time.time()
 
@@ -104,22 +110,48 @@ class Cloud(object):
                 return False
             if kind == "lt" and not (str(val) < str(v)):
                 return False
+            if kind == "in" and rid not in (v or []):
+                return False
+            if kind == "or":
+                hit = False
+                for cond in str(v).split(","):
+                    col, op, cv = cond.split(".", 2)
+                    cval = rid if col == "id" else row.get(col)
+                    if (op == "eq" and cval == cv) or (op == "like" and str(cval).startswith(cv.replace("*", "%").rstrip("%"))):
+                        hit = True
+                if not hit:
+                    return False
         return True
 
     def handle(self, b):
         op, f, cols, p = b.get("op"), (b.get("f") or []), (b.get("cols") or "*"), b.get("payload")
-        main = any(k == "id" and v == "main" for _, k, v in f)
+
+        def datarow(x):          # 데이터 줄(main · 줄 나누기 뒤 pt-…)
+            return str(x) == "main" or str(x).startswith("pt-")
+        main = any((k == "id" and k0 == "eq" and datarow(v)) or (k0 == "in" and any(datarow(x) for x in (v or []))) or (k0 == "or" and "main" in str(v))
+                   for k0, k, v in f)
+        ups = (p if isinstance(p, list) else ([p] if isinstance(p, dict) else []))
         kind = "etc"
-        if op == "upsert" and isinstance(p, dict) and p.get("id") == "main":
+        if op == "upsert" and any(datarow((x or {}).get("id")) for x in ups):
             kind = "push"
         elif op == "update" and main:
             kind = "push"
-        elif op == "select" and main and cols.strip() == "updated_at":
+        elif op == "select" and main and "data" not in cols:
             kind = "check"
         elif op == "select" and main and "data" in cols:
             kind = "pull"
         with self.lock:
             self.log.append((time.time() - self.t0, b.get("dev", "?"), kind))
+            if kind == "push" and op == "upsert":
+                self.pushes.append((time.time() - self.t0, b.get("dev", "?"), [str((x or {}).get("id")) for x in ups]))
+            if op == "upsert" and isinstance(p, list):
+                for pp in p:
+                    row = dict(self.rows.get(pp.get("id")) or {})
+                    for k, v in pp.items():
+                        if k != "id":
+                            row[k] = jsonb_norm(v) if k == "data" else v
+                    self.rows[pp.get("id")] = row
+                return {"data": None, "error": None}
             if op == "upsert":
                 row = dict(self.rows.get(p.get("id")) or {})
                 for k, v in p.items():
@@ -144,7 +176,17 @@ class Cloud(object):
                     full = dict(row)
                     full["id"] = rid
                     out.append({k: full.get(k) for k in want} if want else full)
+            if kind == "pull":
+                self.pulls.append((time.time() - self.t0, b.get("dev", "?"), [str(o.get("id")) for o in out]))
             return {"data": (out[0] if out else None) if b.get("single") else out, "error": None}
+
+    def rows_pushed(self, since, dev=None):
+        with self.lock:
+            return sorted(set(x for t, d, ids in self.pushes if t >= since and (dev is None or d == dev) for x in ids))
+
+    def rows_pulled(self, since, dev=None):
+        with self.lock:
+            return sorted(set(x for t, d, ids in self.pulls if t >= since and (dev is None or d == dev) for x in ids))
 
     def count(self, kind, since, dev=None):
         with self.lock:
@@ -225,9 +267,11 @@ def seed():
     studs = [{"id": "s%d" % i, "name": "학생%d" % i, "school": "검사고",
               "intake": {"parentContact": "010-0000-%04d" % (1000 + i)}} for i in range(1, 7)]
     sch = {"days": ["월", "화", "수", "목", "금", "토", "일"], "start": "20:00", "end": "22:00"}
+    recs = [{"id": "r%d" % i, "classId": "C1", "studentId": "s%d" % (1 + i % 3), "date": "2026.09.%02d" % (1 + i), "lesson": "1. 검사 수업 %d" % i,
+             "attendance": "출석", "homework": "완료", "editT": 1758000000000 + i} for i in range(6)]
     return {"classes": [{"id": "C1", "name": "검사 1반", "owner": "Dana", "students": studs[:3], "schedule": sch},
                         {"id": "C2", "name": "검사 2반", "owner": "Joey", "students": studs[3:], "schedule": sch}],
-            "records": [], "exams": [], "counsels": [], "checkins": {}, "kioskPin": "0000"}
+            "records": recs, "exams": [], "counsels": [], "checkins": {}, "kioskPin": "0000"}
 
 
 def device(br, port, label, data, kiosk):
@@ -345,6 +389,23 @@ def main():
         got3 = until(b, "() => (window.__L && window.__L.state.data.kioskNote) === '연속 15'", 45)
         ck("3초마다 15번 고쳐도 전체 보내기는 20초에 한 번꼴", n3 <= 4, "%d번(예전 15번)" % n3)
         ck("마지막으로 고친 것이 키오스크에 뜸", got3, "멈춘 뒤 %.0f초" % (cloud.now() - t4))
+        # 줄 나누기(v33.369~) — 한 칸을 고치면 그 칸이 든 줄만 올린다(예전엔 main 통째)
+        split9 = any(str(k).startswith("pt-") for k in cloud.rows)
+        if split9:
+            md9 = (cloud.rows.get("main") or {}).get("data") or {}
+            ck("클라우드가 main + pt-… 줄로 나뉨 · main 에 일지 기록 없음", ("records" not in md9) and any(str(k).startswith("pt-rec-") for k in cloud.rows),
+               "%d줄" % len([k for k in cloud.rows if k == "main" or str(k).startswith("pt-")]))
+            t5 = cloud.now()
+            a.evaluate("() => { const L=window.__L; L.openBulkFor('C1'); return 1; }")
+            spin([a, b], 2)
+            a.evaluate("() => { window.__L.setBulk('s1', 'comment', '줄 나누기 검사 ' + Date.now()); return 1; }")
+            spin([a, b], 22)
+            pr = cloud.rows_pushed(t5, "PC")
+            ck("일지 임시 입력 한 칸 → pt-draft 줄만 올림(main 은 안 씀)", pr == ["pt-draft"], pr)
+            pl = cloud.rows_pulled(t5, "KIOSK")
+            ck("받는 기기도 그 줄만 받음", pl == ["pt-draft"], pl)
+        else:
+            print("  (이 판은 줄을 나누지 않습니다 — 줄 나누기 항목은 건너뜀)")
         ck("JS 오류 없음", not (a._errs + b._errs), (a._errs + b._errs)[:2])
         br.close()
     httpd.shutdown()
