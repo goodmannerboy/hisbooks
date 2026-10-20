@@ -407,6 +407,7 @@ def main():
             ck("받는 기기도 그 줄만 받음", pl == ["pt-draft"], pl)
             # (§8-S4) 알림톡 서버(noshow-alert)는 main 의 «오늘» 것만 읽는다 — 줄 규칙을 바꿔도 오늘 등원·오늘 결석 예정은 main 에 남아야
             td = time.strftime("%Y.%m.%d")
+            tc = time.strftime("%Y.%m.%d", time.localtime(time.time() - 5 * 3600))   # 앱의 등원 날짜(_ckDate) — 새벽 5시 전은 전날(밤 반 하원이 자정을 넘김)
             b.evaluate("() => { window.__L.doCheckin('C1', 's2', 'in'); return 1; }")
             a.evaluate("(td) => { const L=window.__L; L.setState((s) => { const dd = __hisCloneData(s.data); dd.noShowExcused = Object.assign({}, dd.noShowExcused || {});"
                        " dd.noShowExcused['s3|' + td] = { reason: '검사', t: Date.now() }; L.persist(dd); return { data: dd }; }); return 1; }", td)
@@ -415,9 +416,9 @@ def main():
             while time.time() < t6 and not ok6:
                 spin([a, b], 2)
                 md6 = (cloud.rows.get("main") or {}).get("data") or {}
-                ok6 = bool(((md6.get("checkins") or {}).get("s2|" + td) or {}).get("in")) and ("s3|" + td) in (md6.get("noShowExcused") or {})
+                ok6 = bool(((md6.get("checkins") or {}).get("s2|" + tc) or {}).get("in")) and ("s3|" + td) in (md6.get("noShowExcused") or {})
             ck("오늘 등원 · 오늘 결석 예정은 main 에(알림톡 서버가 읽는 곳)", ok6,
-               "main 등원 %s · 결석 예정 %s" % (("s2|" + td) in (md6.get("checkins") or {}), ("s3|" + td) in (md6.get("noShowExcused") or {})))
+               "main 등원 %s(%s) · 결석 예정 %s" % (("s2|" + tc) in (md6.get("checkins") or {}), tc, ("s3|" + td) in (md6.get("noShowExcused") or {})))
         else:
             print("  (이 판은 줄을 나누지 않습니다 — 줄 나누기 항목은 건너뜀)")
         ck("JS 오류 없음", not (a._errs + b._errs), (a._errs + b._errs)[:2])
