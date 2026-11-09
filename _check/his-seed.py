@@ -154,8 +154,8 @@ RULES = [
      "()=>/퇴원 예정\s*1명/.test(document.body.innerText)"),
     ('학생관리(학원)', '퇴원 예정 배지가 명단에 보임',
      "()=>/퇴원 예정 [0-9]+\/[0-9]+/.test(document.body.innerText)"),
-    ('학생관리(학원)', '8주+ 미상담 8명 (상담 있는 1명만 제외)',
-     "()=>/8주\+ 미상담\s*8명/.test(document.body.innerText)"),
+    ('학생관리(학원)', '8주+ 미상담 7명 (상담 있는 2명 · 앞으로 시작하는 «시작전» 1명 제외 — 시작 4주 유예)',
+     "()=>/8주\+ 미상담\s*7명/.test(document.body.innerText)"),
 
     ('등하원 관제', '관제판에 휴강 반이 없음',
      "()=>{const b9=document.querySelector('[data-ck-board]'); const t=b9?b9.innerText:document.body.innerText; const i=b9?0:t.indexOf('오늘 등하원 관제'); const j=b9?t.length:t.indexOf('오늘 등하원 현황');"
