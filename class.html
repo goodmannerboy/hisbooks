@@ -7,7 +7,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#F4ECD7">
 <meta name="format-detection" content="telephone=no">
-<title>히즈 온라인 클래스</title>
+<title>히즈 온라인</title>
 <link rel="icon" type="image/png" sizes="32x32" href="his-icon-32.png?v=4">
 <link rel="icon" href="favicon.ico?v=4">
 <link rel="apple-touch-icon" href="his-icon-180.png?v=4">
@@ -322,7 +322,7 @@ window.__lecStart = function () {
     teardown();
     S.view = 'login';
     var h = '<div class="wrap"><div class="login">' +
-      '<div class="head"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈 온라인 클래스</h1></div>' +
+      '<div class="head"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈 온라인</h1></div>' +
       '<form id="loginForm" class="card" novalidate autocomplete="off">' +
       '<label class="fld"><span>이름</span><input id="lgName" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40"></label>' +
       '<label class="fld"><span>등원 번호 4자리</span><input id="lgPin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off"></label>' +
@@ -460,14 +460,14 @@ window.__lecStart = function () {
     if (again && m === 'agree') cur = '지금: 기록함 · ' + esc(L.fmtMD(S.consent.at)) + ' 동의';
     else if (again && m === 'none') cur = '지금: 기록 안 함';
     var h = '<div class="wrap"><div class="top">' +
-      (again ? '<button class="backb hit" type="button" data-act="recback">← 돌아가기</button>' : '<img class="logo" src="his_fish_green.png" alt="히즈어학원"><span class="brand">히즈 온라인 클래스</span>') +
+      (again ? '<button class="backb hit" type="button" data-act="recback">← 돌아가기</button>' : '<img class="logo" src="his_fish_green.png" alt="히즈어학원"><span class="brand">히즈 온라인</span>') +
       '<span class="sp"></span></div><div class="cons"><div class="card">' +
-      '<h1>온라인 클래스 기록 안내</h1><ol>' +
+      '<h1>히즈 온라인 기록 안내</h1><ol>' +
       '<li>기록하는 것: 영상을 어디까지 봤는지(재생 위치·본 칸), 남긴 질문과 받은 답</li>' +
       '<li>보는 사람: 원장 선생님과 담당 선생님</li>' +
       '<li>보관: 강의가 내려가면 그 강의 기록도 함께 지우고, 학원을 그만두면 30일 안에 지웁니다</li>' +
       '<li>지우기: 지워 달라고 하면 30일 안에 지웁니다. 동의는 맨 아래 ‘기록 안내’에서 언제든 바꿀 수 있어요</li>' +
-      '<li>영상: 히즈 온라인 클래스는 YouTube API 서비스로 영상을 틉니다<span class="links">' +
+      '<li>영상: 히즈 온라인은 YouTube API 서비스로 영상을 틉니다<span class="links">' +
       '<a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube 서비스 약관</a>' +
       '<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google 개인정보처리방침</a></span></li>' +
       '</ol>' + (cur ? '<p class="cur">' + cur + '</p>' : '') +
@@ -529,7 +529,7 @@ window.__lecStart = function () {
     var arr = S.lectures.slice().reverse(); /* 서버는 오래된 차례 → 새것부터 */
     var today = L.isoDay();
     var h = '<div class="wrap"><div class="top"><img class="logo" src="his_fish_green.png" alt="히즈어학원">' +
-      '<span class="brand">히즈 온라인 클래스</span><span class="sp"></span>' +
+      '<span class="brand">히즈 온라인</span><span class="sp"></span>' +
       '<span class="me">' + esc(S.name) + '</span>' +
       '<button class="tbtn hit" type="button" data-act="logout">나가기</button></div>';
     h += norecHTML();
@@ -1472,7 +1472,7 @@ window.__lecStart = function () {
     }
     pendFlush();
     if (!S.key) { showLogin(''); return; }
-    app.innerHTML = '<div class="wrap"><div class="top"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><span class="brand">히즈 온라인 클래스</span></div></div>';
+    app.innerHTML = '<div class="wrap"><div class="top"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><span class="brand">히즈 온라인</span></div></div>';
     loadHome();
   })();
 };
