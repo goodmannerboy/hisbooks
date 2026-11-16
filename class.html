@@ -11,6 +11,20 @@
 <link rel="icon" type="image/png" sizes="32x32" href="his-icon-32.png?v=4">
 <link rel="icon" href="favicon.ico?v=4">
 <link rel="apple-touch-icon" href="his-icon-180.png?v=4">
+<link rel="manifest" href="class.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="히즈 온라인">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>
+/* 홈 화면 앱(PWA · 11-16): 설치 이벤트를 맨 앞에서 받아 둠(크롬 기본 띠는 막고 «설치하기» 단추로 띄움) · 화면 코드는 window.__hisPwa 를 봄 */
+(function () {
+  var P = window.__hisPwa = { e: null, done: false, cb: null };
+  function tell(k) { if (P.cb) { try { P.cb(k); } catch (x) { /* 없음 */ } } }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); P.e = e; tell('prompt'); });
+  window.addEventListener('appinstalled', function () { P.e = null; P.done = true; tell('installed'); });
+})();
+</script>
 <style>
 /* 결론안 K(11-16) · 밝은 토큰 = 목록·들어오기 · 무대 토큰 = 보기 화면(html.stg) · 다크 모드 폰도 목록·들어오기는 크림(11-16 원장님) */
 :root{color-scheme:light;color-scheme:only light;--bg:#F4ECD7;--card:#FFFDF7;--line:#E6DCBF;--dash:#CBBF9A;--ink:#0C4631;--ink2:#5F6256;--track:#E8DFC4;--tile:#EDF3EF;--tileT:#0C4631;--done:#2F7A55;--focus:#9E7C14;--rv:#8A8D80;--fillB:#0C4631;--fillT:#F4ECD7;--press:#F4EEDB;--inL:#E6DCBF;--sl:#CBBF9A;--gold:#7A5410;--cur:#F4EEDB;--seen:#0C4631;--gB:#DDF0E5;--gT:#1E5A3E;--aB:#FBF0C9;--aT:#7A5410;--sB:#DFEAF8;--sT:#1F4C7E;--nB:#EFEDE5;--nT:#5F6256;--cB:#FBE9E3;--cT:#9A3F33}
@@ -79,6 +93,23 @@ h1,h2,.tt{text-wrap:balance}
 .cons li:first-child:before{top:4px}
 .cons .btns{display:flex;flex-direction:column;gap:8px;margin-top:16px}
 .cons .cur{margin:12px 0 0;font-size:13px;font-weight:700;color:var(--gT)}
+/* 홈 화면에 앱으로 추가(PWA · 11-16): 조용한 글자 단추(들어오기 «들어가기» 아래 · 목록 맨 아래) + 동의 카드 모양의 시트 */
+.pwab{display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;margin:0 auto;padding:0 12px;border:0;border-radius:12px;background:none;color:var(--ink2);font-size:14px;font-weight:400;line-height:1.3}
+.pwab svg{display:block}
+.login .pwab{margin-top:-4px}
+.pwab.l{margin-top:16px}
+html.pwon,html.pwon body{overflow:hidden}
+.pwa{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:12px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));padding-bottom:max(12px,env(safe-area-inset-bottom))}
+.pwbg{position:absolute;left:0;top:0;right:0;bottom:0;background:var(--ink);opacity:.4}
+.pwa .pwc{position:relative;width:100%;max-width:440px;max-height:100%;margin:0;overflow:auto;-webkit-overflow-scrolling:touch;outline:none}
+.pwc h2{margin:4px 0 8px;font-size:20px;font-weight:700;line-height:1.3;letter-spacing:-.02em}
+.pwc .pwt{margin:0 0 8px;font-size:15px;text-align:justify;word-break:normal;line-break:strict}
+.pwc .pwbd{margin-top:4px}
+.pwc .pwbd .btn-fill{margin-top:12px}
+.pwc .pws{margin:8px 0 0;font-size:13px;color:var(--ink2);text-align:justify;word-break:normal;line-break:strict}
+.pwc .pwok{font-weight:700;color:var(--gT)}
+.pwc ol{margin-top:4px}
+@media (min-width:600px){.pwa{align-items:center}}
 /* 꼬리표 · 맨 위 카드 */
 .tag{display:inline-flex;align-items:center;vertical-align:1px;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:700;line-height:1;white-space:nowrap;background:var(--nB);color:var(--nT)}
 .tag.amb{background:var(--aB);color:var(--aT)}
@@ -405,6 +436,142 @@ window.__lecStart = function () {
   }
   function norecHTML() { return recMode() === 'none' ? '<p class="norec">' + M.norec + '</p>' : ''; }
 
+  /* ------------------------------------------------------------ 홈 화면에 앱으로 추가(PWA · 11-16)
+     단추 = 들어오기 «들어가기» 아래 · 목록 맨 아래(홈 화면 앱으로 열었으면 둘 다 안 보임)
+     시트 = 카카오톡 안 › 설치 이벤트 받음(«설치하기») › 아이폰·아이패드 › 그 밖(브라우저 메뉴) 가운데 하나만 */
+  var PW = window.__hisPwa || { e: null, done: false, cb: null };
+  var pwa = { el: null, from: null, msg: '', busy: false };
+  function pwaStandalone() {
+    try { if (window.navigator.standalone === true) return true; } catch (e) { /* 없음 */ }
+    try { if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true; } catch (e2) { /* 없음 */ }
+    return false;
+  }
+  function pwaBtnHTML(where) {
+    if (PW.done || pwaStandalone()) return '';
+    return '<button id="pwaBtn" class="pwab' + (where === 'l' ? ' l' : '') + '" type="button" data-act="pwa" aria-haspopup="dialog">' +
+      icon('phone', 18) + '<span>홈 화면에 앱으로 추가</span></button>';
+  }
+  /* 폰 종류: 'ios'(아이폰·아이패드) · 'android' · ''(그 밖) — 카톡 작은 줄 · 아이폰 1번 줄을 고를 때 씀 */
+  function pwaOs() {
+    var ua = String(navigator.userAgent || '');
+    if (/iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+    if (/Android/i.test(ua)) return 'android';
+    return '';
+  }
+  function pwaCase() {
+    var ua = String(navigator.userAgent || '');
+    if (/KAKAOTALK/i.test(ua)) return 'kakao';
+    if (PW.e) return 'prompt';
+    if (pwaOs() === 'ios') return 'ios';
+    return 'other';
+  }
+  function pwaBodyHTML(k) {
+    if (pwa.msg) return '<p class="pwt pwok" role="status">' + esc(pwa.msg) + '</p>';
+    var os = pwaOs();
+    if (k === 'kakao') {
+      var kSmall = os === 'android' ? '안 열리면 오른쪽 아래 ⋮에서 «다른 브라우저로 열기»를 누르세요.' :
+        os === 'ios' ? '안 열리면 오른쪽 아래 공유 단추를 누르고 Safari를 고르세요.' :
+        '안 열리면 메뉴(⋮ 또는 ⋯)에서 «다른 브라우저로 열기»나 «Safari로 열기»를 누르세요.';
+      return '<p class="pwt">카카오톡 안에서는 추가할 수 없어요. 크롬이나 사파리로 열어 주세요.</p>' +
+        '<button class="btn-fill" type="button" data-act="pwakakao">다른 브라우저로 열기</button>' +
+        '<p class="pws">' + kSmall + '</p>';
+    }
+    if (k === 'prompt') return '<button class="btn-fill" type="button" data-act="pwainstall">설치하기</button>';
+    if (k === 'ios') {
+      var first = /CriOS/.test(String(navigator.userAgent || '')) ?
+        '주소창 오른쪽의 공유 단추(네모에 위쪽 화살표)를 누르세요.' :
+        '공유 단추(네모에 위쪽 화살표)를 누르세요. 안 보이면 아래쪽 ⋯를 먼저 누르세요.';
+      return '<ol><li>' + first + '</li>' +
+        '<li>«홈 화면에 추가»를 누르세요.</li><li>오른쪽 위 «추가»를 누르세요.</li></ol>' +
+        '<p class="pws">추가한 앱에서는 처음 한 번 다시 들어와야 해요.</p>';
+    }
+    return '<p class="pwt">브라우저 메뉴(⋮ 또는 ≡)에서 «홈 화면에 추가»나 «앱 설치»를 누르세요.</p>' +
+      '<p class="pwt">삼성 인터넷은 ≡ → «현재 페이지 추가» → «홈 화면»이에요.</p>';
+  }
+  function pwaHtmlCls(on) {
+    var r = document.documentElement;
+    r.className = (' ' + r.className + ' ').replace(/ pwon /g, ' ').replace(/^\s+|\s+$/g, '') + (on ? ' pwon' : '');
+  }
+  function pwaOpen(btn) {
+    if (pwa.el) return;
+    pwa.from = btn || null;
+    pwa.msg = '';
+    var d = document.createElement('div');
+    d.className = 'pwa';
+    d.id = 'pwaSheet';
+    d.innerHTML = '<div class="pwbg" data-act="pwaclose"></div>' +
+      '<div class="card cons pwc" id="pwaCard" role="dialog" aria-modal="true" aria-labelledby="pwaH" tabindex="-1">' +
+      '<h2 id="pwaH">홈 화면에 앱으로 추가</h2>' +
+      '<p class="pwt">추가하면 주소창 없이 앱처럼 열려요.</p>' +
+      '<div class="pwbd" id="pwaBd">' + pwaBodyHTML(pwaCase()) + '</div>' +
+      '<div class="btns"><button class="btn-line" type="button" data-act="pwaclose">닫기</button></div></div>';
+    document.body.appendChild(d);
+    pwa.el = d;
+    pwaHtmlCls(true);
+    app.setAttribute('aria-hidden', 'true');
+    try { $('pwaCard').focus(); } catch (e) { /* 없음 */ }
+  }
+  function pwaClose(back) {
+    if (!pwa.el) return;
+    if (pwa.el.parentNode) pwa.el.parentNode.removeChild(pwa.el);
+    pwa.el = null;
+    pwaHtmlCls(false);
+    app.removeAttribute('aria-hidden');
+    if (back) {
+      var b = pwa.from && document.documentElement.contains(pwa.from) ? pwa.from : $('pwaBtn');
+      if (b) { try { b.focus(); } catch (e) { /* 없음 */ } }
+    }
+    pwa.from = null;
+  }
+  /* 시트 안만 다시 그림(설치 이벤트가 늦게 왔을 때 · 설치 창을 닫았을 때) */
+  function pwaPaint() {
+    var bd = $('pwaBd');
+    if (!pwa.el || !bd) return;
+    bd.innerHTML = pwaBodyHTML(pwaCase());
+    /* 누른 단추가 사라지거나 잠기면 초점이 body 로 빠짐 → 시트로 되돌림 */
+    if (!pwa.el.contains(document.activeElement)) { try { $('pwaCard').focus(); } catch (e) { /* 없음 */ } }
+  }
+  function pwaInstall(btn) {
+    var ev = PW.e;
+    if (!ev || pwa.busy) return;
+    pwa.busy = true;
+    if (btn) btn.disabled = true;
+    function fin(ok) {
+      pwa.busy = false;
+      if (PW.e === ev) PW.e = null; /* 한 번 띄운 설치 창은 다시 못 씀 */
+      if (ok) pwa.msg = '홈 화면에 추가했어요.';
+      pwaPaint();
+    }
+    try { ev.prompt(); } catch (e) { fin(false); return; }
+    var uc = ev.userChoice;
+    if (uc && typeof uc.then === 'function') uc.then(function (r) { fin(!!r && r.outcome === 'accepted'); }, function () { fin(false); });
+    else fin(false);
+  }
+  function pwaKakao() {
+    var u = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.origin + location.pathname);
+    if (L.TEST && typeof window.__pwaGo === 'function') { window.__pwaGo(u); return; } /* 시험(?t=1)에서만 · 실제로 옮겨 가지 않고 주소만 넘김 */
+    location.href = u;
+  }
+  PW.cb = function (k) {
+    if (k === 'installed') {
+      var b = $('pwaBtn');
+      if (b && b.parentNode) b.parentNode.removeChild(b);
+      if (pwa.el && !pwa.msg) pwa.msg = '홈 화면에 추가했어요.';
+    }
+    if (pwa.el && !pwa.busy) pwaPaint();
+  };
+  document.addEventListener('keydown', function (e) {
+    if (!pwa.el) return;
+    var k = e.key || '', c = e.keyCode;
+    if (k === 'Escape' || k === 'Esc' || c === 27) { e.preventDefault(); pwaClose(true); return; }
+    if (k !== 'Tab' && c !== 9) return;
+    var f = pwa.el.querySelectorAll('button:not([disabled]),a[href]'), a = document.activeElement;
+    if (!f.length) { e.preventDefault(); return; }
+    if (e.shiftKey) {
+      if (a === f[0] || !pwa.el.contains(a) || a === $('pwaCard')) { e.preventDefault(); f[f.length - 1].focus(); }
+    } else if (a === f[f.length - 1] || !pwa.el.contains(a)) { e.preventDefault(); f[0].focus(); }
+  });
+
   /* 결론안 K: 진도 고리 36 · 진행 = 딥그린 · 교실에서 들은 강의 복습 = 회색(rv) · 끝남 = 끝남 색 고리 + 체크 */
   function ring(pct, done, rv) {
     var c = 2 * Math.PI * 15, p = Math.max(0, Math.min(100, pct || 0));
@@ -429,7 +596,8 @@ window.__lecStart = function () {
       book: '<path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1m3 0v16"/><path d="M13 8h2"/><path d="M13 12h2"/>',
       clock: '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M12 7v5l3 3"/>',
       check: '<path d="M5 12l5 5L20 7"/>',
-      back: '<path d="M4.05 11a8 8 0 1 1 .5 4"/><path d="M4 20v-5h5"/>'
+      back: '<path d="M4.05 11a8 8 0 1 1 .5 4"/><path d="M4 20v-5h5"/>',
+      phone: '<path d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2"/><path d="M11 18h2"/>'
     };
     return '<svg width="' + n + '" height="' + n + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (P[name] || '') + '</svg>';
   }
@@ -453,7 +621,7 @@ window.__lecStart = function () {
       '<i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i></div></div>' +
       '<button id="lgBtn" class="btn-fill" type="submit">들어가기</button>' +
       '<p id="lgErr" class="err" role="alert">' + esc(err || '') + '</p>' +
-      '</form>';
+      '</form>' + pwaBtnHTML('g');
     if (L.DEMO) {
       h += '<div class="demo"><p>연습용 화면이에요. 학생을 누르면 이름과 번호가 채워져요.</p><div class="chips">' +
         '<button class="dchip" type="button" data-act="dfill" data-n="김하늘" data-p="1234">김하늘 <small>동의 전</small></button>' +
@@ -801,7 +969,7 @@ window.__lecStart = function () {
         h += '</div></section>';
       }
     }
-    h += footHTML() + '</div>';
+    h += pwaBtnHTML('l') + footHTML() + '</div>';
     app.innerHTML = h;
   }
   /* 머리줄(목록 · 범위 · PC 보기 같음): 물고기 24 · «히즈 온라인» · 학생 이름 · «나가기» 44×44 */
@@ -2055,6 +2223,10 @@ window.__lecStart = function () {
     else if (act === 'del') { S.q.del = attr(el, 'data-id'); keepReply(); drawQList(); }
     else if (act === 'delno') { S.q.del = null; keepReply(); drawQList(); }
     else if (act === 'delyes') { keepReply(); delQ(attr(el, 'data-id')); }
+    else if (act === 'pwa') { pwaOpen(el); }
+    else if (act === 'pwaclose') { pwaClose(true); }
+    else if (act === 'pwainstall') { pwaInstall(el); }
+    else if (act === 'pwakakao') { pwaKakao(); }
   });
   function keepReply() { var rb = $('rBody'); if (rb && S.q) S.q.replyText = rb.value; }
 
@@ -2116,7 +2288,7 @@ window.__lecStart = function () {
   document.addEventListener('webkitfullscreenchange', onView);
   window.addEventListener('resize', onView);
   window.addEventListener('orientationchange', function () { setTimeout(onView, 250); });
-  window.addEventListener('hashchange', function () { S.nav = true; route(); });
+  window.addEventListener('hashchange', function () { pwaClose(false); S.nav = true; route(); });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden' && T) { sample(); sendBeat(true); }
   });
