@@ -568,6 +568,37 @@ html.tvon,html.tvon body{overflow:hidden}
 }
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
 </style>
+<style id="k-oth">
+/* 다른 선생님 수업(11-17 · 선생님 화면만 · 보기만): 표(.lo)는 강의 표(.lt)와 같은 모양 · 보기 서랍(#vw)은 서랍(.dw)과 같은 모양
+   .lt 를 쓰지 않는 까닭: 강의 표를 찾는 곳(table.lt)이 이 표를 내 강의로 잘못 세지 않게 */
+.oth{margin-top:16px}
+.lo{width:100%;border-collapse:collapse;font-size:14px}
+.lo th{text-align:left;font-size:13px;color:#5F6256;font-weight:700;padding:8px 10px;border-bottom:1px solid #E6DCBF;white-space:nowrap}
+.lo td{padding:10px;border-bottom:1px solid #EFE7D2;vertical-align:middle}
+.lo tr:last-child td{border-bottom:0}
+.lo .ttl .lnk{font-size:15px}
+.lo td.dt{white-space:nowrap;font-variant-numeric:tabular-nums}
+.lo td.vb{text-align:right;white-space:nowrap}
+#vw{width:min(960px,100%)}
+.vpl{border-radius:12px;overflow:hidden;background:#0C4631;aspect-ratio:16/9}
+.vpl iframe,.vpl>div{width:100%;height:100%;border:0;display:block}
+#vw .llb .d{min-width:56px}
+/* 필기 PDF: 서랍 칩(.pdc)과 같은 모양 · 칩 전체가 링크 */
+.vpf{padding-right:12px}
+a.vpf{text-decoration:none}
+a.vpf:hover .nm{text-decoration:underline}
+a.vpf:focus-visible{outline:2px solid #C9A227;outline-offset:2px}
+@media (max-width:860px){
+  .lo thead{display:none}
+  .lo,.lo tbody,.lo tr,.lo td{display:block;width:100%}
+  .lo tr{border:1px solid #EAE0C4;border-radius:12px;padding:8px 12px;margin-bottom:10px;background:#FFFFFF}
+  .lo td{padding:3px 0;border:0}
+  .lo td[data-l]:before{content:attr(data-l);display:inline-block;min-width:68px;color:#5C5A52;font-size:12.5px;font-weight:650}
+  .lo td.ttl:before{display:none}
+  .lo .ttl .lnk{font-size:16px}
+  .lo td.vb{text-align:left;padding-top:6px}
+}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -575,6 +606,8 @@ html.tvon,html.tvon body{overflow:hidden}
 <div id="dw" class="dw" role="dialog" aria-modal="true" aria-labelledby="dw-t" hidden></div>
 <div id="edb" class="dwb" data-act="edClose" hidden></div>
 <div id="ed" class="dw" role="dialog" aria-modal="true" aria-labelledby="ed-t" hidden></div>
+<div id="vwb" class="dwb" data-act="vwClose" hidden></div>
+<div id="vw" class="dw" role="dialog" aria-modal="true" aria-labelledby="vw-t" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:24px">자바스크립트를 켜야 쓸 수 있어요.</p></noscript>
 <script>
@@ -1477,11 +1510,114 @@ window.__lecAdminStart = function () {
     h = '<section class="card"><div class="bar"><h2>강의 <span class="mut">' + list.length + '개</span></h2><span class="sp"></span>' +
       (D.rg && D.rg.mine.length ? '<button type="button" class="btn" data-act="rngOpen">시험 범위</button>' : '') +
       '<button type="button" class="btn fill" data-act="newLec">새 강의</button></div>';
-    if (!list.length) return h + '<p class="empty">아직 올린 강의가 없어요. «새 강의»를 눌러 첫 강의를 올려 보세요.</p></section>';
+    if (!list.length) return h + '<p class="empty">아직 올린 강의가 없어요. «새 강의»를 눌러 첫 강의를 올려 보세요.</p></section>' + othHtml();
     h += '<table class="lt"><thead><tr><th scope="col">수업일</th><th scope="col">제목</th><th scope="col">교재</th><th scope="col">반</th>' +
       '<th scope="col">길이</th><th scope="col">공개 상태</th><th scope="col">완료</th><th scope="col">질문</th></tr></thead><tbody>';
     for (i = 0; i < list.length; i += 1) h += lecRow(list[i]);
+    return h + '</tbody></table></section>' + othHtml();
+  }
+
+  /* ------------------------------------------- 다른 선생님 수업(11-17 · 보기만)
+     원장님 «영상은 모든 선생님에게 · 학생 정보는 자기 반만»: 선생님 화면에만(원장님 화면은 그대로) ·
+     내 강의(D.vis)에 없는 강의 중 학생에게 보이는 것(숨김 · 공개 예정 뺌) · 표는 SQL 그대로(lec_lecture 는 선생님 모두 읽음) ·
+     강의 칸(날짜 · 제목 · 교재 · 반 · 길이 · 목차)만 씀 · 진도 · 시청 · 질문 · 학생 이름은 읽지도 그리지도 않음 ·
+     보기는 유튜브 재생기만(학생 진행 함수 · 기록 · 이어보기 없음) */
+  function othOk(l) { return !!l && !S.me.admin && !lecVisible(l) && !l.hidden && isPosted(l); }
+  function othHtml() {
+    var list = S.me.admin ? [] : D.lectures.filter(othOk).sort(lecSort), h, i, l, lid;
+    if (!list.length) return '';
+    h = '<section class="card oth" aria-labelledby="oth-t"><div class="bar"><h2 id="oth-t">다른 선생님 수업 <span class="mut">' + list.length + '개</span></h2></div>' +
+      '<table class="lo"><thead><tr><th scope="col">수업일</th><th scope="col">제목</th><th scope="col">교재</th><th scope="col">반</th>' +
+      '<th scope="col">길이</th><th scope="col"><span class="sr">보기</span></th></tr></thead><tbody>';
+    for (i = 0; i < list.length; i += 1) {
+      l = list[i]; lid = esc(l.id);
+      h += '<tr><td data-l="수업일" class="dt">' + esc((L.fmtDay(dayOf(l)) || '–') + (l.lesson_on && lecDays(l).length > 1 ? ' 외 ' + (lecDays(l).length - 1) + '일' : '')) + '</td>' +
+        '<td data-l="제목" class="ttl"><button type="button" class="lnk" data-act="vwOpen" data-l="' + lid + '">' + esc(l.title || '(제목 없음)') + '</button></td>' +
+        '<td data-l="교재">' + esc(l.book || '–') + '</td>' +
+        '<td data-l="반">' + esc(clsNames(l.class_ids) || '–') + '</td>' +
+        '<td data-l="길이" class="num">' + (l.dur > 0 ? esc(L.fmtDur(l.dur)) : '–') + '</td>' +
+        '<td class="vb"><button type="button" class="btn sm" data-act="vwOpen" data-l="' + lid + '" aria-label="' + esc((l.title || '') + ' 보기') + '">보기</button></td></tr>';
+    }
     return h + '</tbody></table></section>';
+  }
+  /* 보기 서랍(#vw): 다시 그리기(refresh · renderAll)와 따로 → 탭을 갔다 와도 영상이 처음으로 돌아가지 않음 */
+  var vwP = null, vwGen = 0, vwOk = false, vwAt = null, vwId = '';
+  function vwStop() {
+    vwGen += 1; vwOk = false; vwAt = null;
+    if (vwP) { try { vwP.destroy(); } catch (e) {} }
+    vwP = null;
+  }
+  function closeView() {
+    var e = $('vw'), id = vwId, b;
+    if (!e || e.hidden) return false;
+    vwStop();
+    vwId = '';
+    e.hidden = true; $('vwb').hidden = true; e.innerHTML = '';
+    b = app.querySelector('.oth .btn[data-act="vwOpen"][data-l="' + id.replace(/["\\]/g, '') + '"]');
+    if (b) { try { b.focus(); } catch (e2) {} }
+    return true;
+  }
+  function vwPlay(t) {
+    if (!vwP || !vwOk) { if (t != null) vwAt = t; return; }
+    try {
+      if (t != null && typeof vwP.seekTo === 'function') vwP.seekTo(t, true);
+      if (typeof vwP.playVideo === 'function') vwP.playVideo();
+    } catch (e) {}
+  }
+  function openView(id) {
+    var l = D ? D.lmap[id] : null, chs, sub, h, i, t, my, vid, pf, pz, e = $('vw');
+    if (!othOk(l) || !e) return;
+    closeDrawer(); closeEditor(); vwStop();
+    vwId = l.id;
+    sub = [str(l.book), clsNames(l.class_ids), L.fmtDay(dayOf(l)), l.dur > 0 ? L.fmtDur(l.dur) : ''].filter(function (x) { return !!x; })
+      .map(function (x) { return '<span class="nw">' + esc(x) + '</span>'; }).join(' · ');
+    h = '<div class="dh"><div class="dt"><h2 id="vw-t">' + esc(l.title || '(제목 없음)') + '</h2>' + (sub ? '<p class="mut">' + sub + '</p>' : '') + '</div>' +
+      '<button type="button" class="x" data-act="vwClose" aria-label="닫기">×</button></div>' +
+      '<div class="db"><div class="vpl"><div id="vw-player"></div></div><p id="vw-msg" class="msg" role="status"></p>';
+    /* 그 강의에 붙은 필기 PDF(§8-198): 새 창에서 열기(서랍 칩과 같은 주소 · 받은 횟수 안 셈) · 올린 파일 이름은 안 보임 · 연습 화면은 저장소가 흉내라 글만 */
+    pf = lecFiles(l)[0];
+    if (pf) {
+      pz = [+pf.b > 0 ? L.fmtBytes(+pf.b) : '', +pf.pg > 0 ? (+pf.pg) + '쪽' : ''].filter(function (x) { return !!x; }).join(' · ');
+      pz = kIcon('pdf') + '<span class="nm">필기 PDF</span>' + (pz ? '<span class="sz">' + esc(pz) + '</span>' : '');
+      h += demo ? '<div class="pdc vpf">' + pz + '</div>' :
+        '<a class="pdc vpf" href="' + esc(L.pdfUrl(pf.p, '', 'open')) + '" target="_blank" rel="noopener">' + pz + '</a>';
+    }
+    chs = isArr(l.chapters) ? l.chapters : [];
+    if (chs.length) {
+      h += '<div class="sec"><h3>목차</h3><ul class="ll">';
+      for (i = 0; i < chs.length; i += 1) {
+        t = Math.max(0, Math.floor(+(chs[i] && chs[i].t) || 0));
+        h += '<li><button type="button" class="llb" data-act="vwSeek" data-v="' + t + '"><span class="d">' + esc(L.fmtDur(t)) + '</span><span class="t">' + esc(str(chs[i] && chs[i].title)) + '</span></button></li>';
+      }
+      h += '</ul></div>';
+    }
+    e.innerHTML = h + '</div>';
+    e.hidden = false; $('vwb').hidden = false;
+    e.scrollTop = 0;
+    t = e.querySelector('[data-act="vwClose"]');
+    if (t) { try { t.focus(); } catch (e1) {} }
+    my = vwGen;
+    vid = L.ytId(l.yt);
+    if (!vid) { setMsg('vw-msg', L.ytErr(0, true), 'bad'); return; }
+    L.loadYT().then(function (YT) {
+      if (my !== vwGen) return;
+      try {
+        vwP = new YT.Player('vw-player', {
+          host: 'https://www.youtube-nocookie.com', videoId: vid, width: '100%', height: '100%',
+          playerVars: { rel: 0, playsinline: 1 },
+          events: {
+            onReady: function () { var a; if (my !== vwGen) return; vwOk = true; a = vwAt; vwAt = null; vwPlay(a); },
+            onError: function (er) { if (my === vwGen) setMsg('vw-msg', L.ytErr(er && er.data, true), 'bad'); }
+          }
+        });
+      } catch (e2) { setMsg('vw-msg', L.ytErr(0, true), 'bad'); }
+    }, function () { if (my === vwGen) setMsg('vw-msg', L.ytErr(0, true), 'bad'); });
+  }
+  /* 목차 줄: 그 시각으로 가서 재생 · 영상이 서랍 위로 밀려 올라가 있으면 맨 위로 */
+  function vwSeek(v) {
+    var box = $('vw'), pl = box ? box.querySelector('.vpl') : null, hd = box ? box.querySelector('.dh') : null;
+    vwPlay(Math.max(0, +v || 0));
+    if (pl && hd && pl.getBoundingClientRect().top < hd.getBoundingClientRect().bottom) box.scrollTop = 0;
   }
 
   /* ------------------------------------------------------------ 시청 현황 탭 */
@@ -1602,7 +1738,7 @@ window.__lecAdminStart = function () {
 
   /* ------------------------------------------------------------------- 서랍 */
   function openDrawer(d, push) {
-    closeEditor();
+    closeEditor(); closeView();
     if (push && S.drawer) S.stack.push(S.drawer);
     else S.stack = [];
     S.drawer = d;
@@ -2080,7 +2216,7 @@ window.__lecAdminStart = function () {
   function openEditor(id) {
     var l = id ? D.lmap[id] : null, ids, i, c, dc;
     if (id && !l) return;
-    closeDrawer();
+    closeDrawer(); closeView();
     ytDestroy();
     S.ed = {
       id: l ? l.id : '', can: !l || S.me.admin || str(l.created_by) === S.me.name, cls: {}, other: [],
@@ -3496,6 +3632,9 @@ window.__lecAdminStart = function () {
         break;
       case 'newLec': openEditor(''); break;
       case 'editLec': openEditor(l); break;
+      case 'vwOpen': openView(l); break;   /* 다른 선생님 수업(11-17) */
+      case 'vwSeek': vwSeek(v); break;
+      case 'vwClose': closeView(); break;
       case 'colOpen': openDrawer({ t: 'col', l: l, c: c, f: 'all' }, inDw); break;
       case 'colCls': if (S.drawer) { S.drawer.c = c; S.cf = null; renderDrawer(); } break;
       case 'colF': if (S.drawer) { S.drawer.f = v; renderDrawer(); } break;
@@ -3728,6 +3867,7 @@ window.__lecAdminStart = function () {
       if (k === 'cfnote' && !ev.shiftKey) { if (keyAct(t, 'cfSave', 'cfbox')) ev.preventDefault(); return; }
     }
     if (ev.key === 'Escape' || ev.keyCode === 27) {
+      if (closeView()) return;
       if (closeEditor()) return;
       if (S.drawer) closeDrawer();
     }
