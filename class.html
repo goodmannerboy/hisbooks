@@ -218,6 +218,11 @@ a.row:active{background:var(--press)}
 .ptop .pt span{display:none;flex:0 1 auto;min-width:0;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .backb{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;min-width:44px;height:44px;margin-left:-4px;padding:0 4px;background:none;border:0;font-size:15px;color:var(--ink);white-space:nowrap}
 .backb .ar{font-size:20px;line-height:1;margin-top:-2px}
+/* P1 필기 PDF(11-16): 제목 줄 오른쪽 단추(누르는 곳 44 · 목록 단추와 같은 높이) · 누른 뒤 단추 아래 한 줄(PC 는 없음) */
+.ptop .pdfb{flex:0 0 auto;margin-left:auto;gap:6px;min-height:44px;padding:0 12px;text-decoration:none;white-space:nowrap}
+.ptop .pdfb svg{flex:0 0 auto;color:var(--gold)}
+.pdfm{margin:0 0 8px;font-size:13px;line-height:1.45;color:var(--ink2);text-align:justify}
+.pdfm:empty{display:none}
 .vid{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:12px;overflow:hidden}
 .vid iframe,.vid .yt,.vid .fake{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
 .fake{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#F4ECD7;background:#000}
@@ -422,6 +427,7 @@ window.__lecStart = function () {
     att: null, /* lec_att 답(출결) · 없거나 옛 서버면 null = 예전 화면 그대로 */
     paper: null, /* lec_paper 답(지문 줄 · {강의 id: [{no, at, stop, wb}]}) · 없거나 옛 서버면 null = 종이 줄 · 멈춤 없음 */
     rng: null, /* C2 lec_range_me 답(학교 시험 범위) · 없거나 옛 서버면 null = 시험 카드 없음 */
+    pdf: null, /* P1 lec_pdf 답({강의 id: [{p, b}]}) · 없거나 옛 서버면 null = 필기 PDF 단추 없음 */
     absAt: 0, /* «N편 더»를 누른 수(누를 때마다 다음 결석 강의로 · 검수 A L19) */
     loginErr: '', nav: false, view: '', tab: 'toc',
     q: null
@@ -734,7 +740,8 @@ window.__lecStart = function () {
       dl: '<path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M7 11l5 5l5-5"/><path d="M12 4v12"/>',
       compass: '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M8 16l2-6l6-2l-2 6z"/>',
       globe: '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/>',
-      x: '<path d="M18 6L6 18"/><path d="M6 6l12 12"/>'
+      x: '<path d="M18 6L6 18"/><path d="M6 6l12 12"/>',
+      pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9.5 14.5L12 17l2.5-2.5"/>'
     };
     return '<svg width="' + n + '" height="' + n + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (P[name] || '') + '</svg>';
   }
@@ -797,7 +804,7 @@ window.__lecStart = function () {
     L.login(name, pin, DEV).then(function (r) {
       b.disabled = false;
       if (r && r.ok) {
-        S.key = r.key; S.name = r.name || name; S.att = null; S.paper = null; S.rng = null;
+        S.key = r.key; S.name = r.name || name; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
         L.lsSet(LS.key, r.key);
         loadHome();
         return;
@@ -816,7 +823,7 @@ window.__lecStart = function () {
 
   function reLogin() {
     L.lsDel(LS.key); L.lsDel(LS.sess);
-    S.key = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.rng = null;
+    S.key = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
     clearHash();
     showLogin(M.again);
   }
@@ -872,6 +879,7 @@ window.__lecStart = function () {
     L.att(k).then(function (a) { if (k === S.key) S.att = a; one(); }, one);
     L.rngMe(k).then(function (r) { if (k === S.key) S.rng = r; one(); }, one);
     loadPaper(k);
+    loadPdf(k);
     return sd;
   }
   function sideWait(sd, k, f) {
@@ -892,6 +900,38 @@ window.__lecStart = function () {
     });
   }
   function lecPaper(id) { return (S.paper && S.paper[String(id)]) || null; }
+  /* P1 필기 PDF 목록 · 집 정보와 같이 한 번 · 못 받으면(옛 서버 · 끊김 · 막힘) 단추 없음 */
+  function loadPdf(k) {
+    L.pdf(k).then(function (r) {
+      if (k !== S.key) return;
+      S.pdf = r ? L.pdfMap(r) : null;
+      if (S.view === 'player' && T) pdfPaint();
+    });
+  }
+  function lecPdf(id) { var a = S.pdf && S.pdf[String(id)]; return a && a.length ? a[0] : null; }
+  /* 단추 HTML(PDF 가 없는 강의 = '') · 카카오톡 안 · 안드로이드 = 같은 창에서 받기 / 아이폰 · 홈 화면 앱 · PC = 새 창에서 열기 */
+  function pdfBtnHTML(l) {
+    var f = l ? lecPdf(l.id) : null, way, url;
+    if (!f) return '';
+    way = L.pdfWay(navigator.userAgent);
+    url = L.pdfUrl(f.p, L.pdfName(l, lessonDay(l, attMap()['i' + l.id])), way);
+    if (!url) return '';
+    return '<a class="btn-sm pdfb" id="pdfB" data-act="pdf" href="' + esc(url) + '"' + (way === 'open' ? ' target="_blank" rel="noopener"' : '') +
+      ' aria-label="필기 PDF 받기">' + icon('pdf', 16) + '<span>필기 PDF</span></a>';
+  }
+  /* 목록이 영상을 연 뒤에 오면 그 자리에 단추를 넣고 · 없어졌으면 뺌 */
+  function pdfPaint() {
+    if (!T || !T.lec) return;
+    var top = app.querySelector('.ptop'), b = $('pdfB'), m = $('pdfM'), h = pdfBtnHTML(T.lec);
+    if (!top) return;
+    if (!h) {
+      if (b && b.parentNode) b.parentNode.removeChild(b);
+      if (m && m.parentNode) m.parentNode.removeChild(m);
+      return;
+    }
+    if (!b) top.insertAdjacentHTML('beforeend', h);
+    if (!m) top.insertAdjacentHTML('afterend', '<p class="pdfm" id="pdfM" role="status"></p>');
+  }
   function attMap() {
     var m = {}, a = S.att, i;
     if (!a || !a.items) return m;
@@ -1423,7 +1463,8 @@ window.__lecStart = function () {
     stage(true);
     var h = '<div class="wrap wide">' + topHTML('pch') + '<div class="ptop">' +
       '<button class="backb" type="button" data-act="list"><span class="ar" aria-hidden="true">‹</span>목록</button>' +
-      '<div class="pt"><b>' + esc(l.title) + '</b>' + (sub.length ? '<span>' + esc(sub.join(' · ')) + '</span>' : '') + '</div></div>' +
+      '<div class="pt"><b>' + esc(l.title) + '</b>' + (sub.length ? '<span>' + esc(sub.join(' · ')) + '</span>' : '') + '</div>' + pdfBtnHTML(l) + '</div>' +
+      (lecPdf(l.id) ? '<p class="pdfm" id="pdfM" role="status"></p>' : '') +
       norecHTML() +
       '<div class="pgrid" id="pgrid"><div class="pl">' +
       '<div class="vid" id="vid"><div class="yt" id="ytbox"></div></div>' +
@@ -2257,7 +2298,7 @@ window.__lecStart = function () {
     teardown();
     var w = fly.slice();
     L.lsDel(LS.key); L.lsDel(LS.sess); L.lsDel(LS.pend); L.lsDel(LS.rate);
-    S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.rng = null;
+    S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
     clearHash();
     showLogin('');
     if (Object.prototype.toString.call(a) === '[object Array]') {
@@ -2282,7 +2323,7 @@ window.__lecStart = function () {
     var d = M2.db(), key = L.hex64(), at = nowIso();
     d.key.push({ key: key, sid: 's0901|오가을', rid: 's0901', pin: '', sname: '오가을', cls: ['c-g1a'], dev: '개인 링크', made_by: 'Benjamin', created_at: at, last_at: at });
     M2.save(d);
-    S.key = key; S.att = null; S.paper = null; S.rng = null;
+    S.key = key; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
     L.lsSet(LS.key, key);
     loadHome();
   }
@@ -2293,6 +2334,12 @@ window.__lecStart = function () {
     if (!el) return;
     var act = el.getAttribute('data-act');
     if (act === 'go') { S.nav = true; S.autoplay = attr(el, 'data-play') ? Date.now() : 0; return; } /* 주소(#v=) 그대로 따라감 · 맨 위 카드 = 열리면 바로 재생(결론안 K 3절) */
+    if (act === 'pdf') { /* P1 필기 PDF: 주소(href · target)는 그릴 때 정함 · 여기서는 영상을 멈추고 한 줄만(받기 · 열기는 브라우저가) */
+      if (T && T.P) { try { T.P.pause(); } catch (ep) { /* 없음 */ } }
+      var pm = $('pdfM');
+      if (pm) pm.textContent = L.pdfNote(pwaOs(), /KAKAOTALK/i.test(String(navigator.userAgent || '')));
+      return;
+    }
     if (el.tagName === 'A' && act !== 'go') e.preventDefault();
     if (act === 'dfill') {
       var n = $('lgName'), p = $('lgPin');
@@ -2309,7 +2356,7 @@ window.__lecStart = function () {
     else if (act === 'none') { choose('none', el); }
     else if (act === 'recback') { goList(); }
     else if (act === 'logout') { logout(); }
-    else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.rng = null; clearHash(); showLogin(''); }
+    else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; clearHash(); showLogin(''); }
     else if (act === 'retry') { loadHome(); }
     else if (act === 'list') { goList(); }
     else if (act === 'absmore') { jumpAbs(); }

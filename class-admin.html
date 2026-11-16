@@ -450,6 +450,31 @@ b,strong,.bandn strong{font-weight:700}
 .txc.bad{background:#FBE9E3;color:#9A3F33}
 #ed-txtw{margin-top:8px}
 #ed-txt{border:1.5px dashed #CBBF9A;border-radius:12px;min-height:96px;font-size:13px;line-height:1.6}
+/* P1 필기 PDF(11-16): txt 줄 바로 아래 칩(높이 44) · 빈 칸 점선 / 올리는 중 / 붙음 / 뺌 / 실패 · 아래 코랄 줄(내보낸 날) · 호박 줄(PDF 여럿) */
+.pdc{display:flex;align-items:center;gap:8px;min-height:44px;margin-top:8px;padding:0 4px 0 12px;border-radius:12px;border:1px solid #E6DCBF;background:#FFFDF7;color:#1E5A3E;font-size:13px;line-height:1.35}
+.pdc svg{width:16px;height:16px;flex:none;display:block;color:#7A5410}
+.pdc .nm{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#0C4631;text-decoration:none}
+.pdc a.nm:hover{text-decoration:underline}
+.pdc a.nm:focus-visible{outline:2px solid #C9A227;outline-offset:2px}
+.pdc .sz{flex:none;white-space:nowrap;color:#5F6256}
+/* 빈 칸 · 뺀 칸: 이름(«필기 PDF» · «필기 PDF를 뺐어요»)은 그대로 · 긴 설명이 줄어 두 줄로(폰 390 에서 이름이 «…»로 잘리던 것) */
+.pdc.empty .nm,.pdc.off .nm{flex:none}
+.pdc.empty .sz,.pdc.off .sz{flex:0 1 auto;min-width:0;white-space:normal}
+.pdc .sp{flex:1 1 auto}
+.pdc .btn{color:inherit;font-size:13px;min-width:44px;min-height:34px}
+.pdc.empty{border:1.5px dashed #CBBF9A;background:transparent}
+.pdc.up{border-color:#F4ECD7;background:#F4ECD7}
+.pdc.off{border-color:#EFEDE5;background:#EFEDE5;color:#5F6256}
+.pdc.off .nm{color:#5F6256}
+.pdc.bad{border-color:#FBE9E3;background:#FBE9E3;color:#9A3F33;padding-top:6px;padding-bottom:6px}
+.pdc.bad svg,.pdc.bad .nm{color:#9A3F33}
+.pdc.bad .nm{white-space:normal}
+.pdbar{flex:0 0 72px;height:4px;border-radius:2px;background:rgba(47,122,85,.18);overflow:hidden}
+.pdbar i{display:block;width:40%;height:100%;border-radius:2px;background:#2F7A55;animation:pdmove 1.1s ease-in-out infinite}
+@keyframes pdmove{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+.pdw{margin:6px 0 0;font-size:13px;font-weight:700;line-height:1.45;color:#9A3F33}
+.pdn{margin:6px 0 0;font-size:13px;line-height:1.45;color:#7A5410}
+.pdw:empty,.pdn:empty{display:none}
 .fold #ed-txtmsg.ok{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 #ed.dg{outline:2px dashed #0C4631;outline-offset:-8px}
 .ok2{display:flex;align-items:center;gap:4px;margin:8px 0 0;font-size:12px;color:#1E5A3E}
@@ -798,7 +823,10 @@ window.__lecAdminStart = function () {
       qdelete: function (id) { return st.qdelete(id); },
       makeLink: function (skey) { return st.rpc('lec_link', { p_skey: skey }).then(linkKey); },
       logoutAll: function (sid) { return st.rpc('lec_logout_all', { p_skey: sid }).then(outCount); },
-      exams: function () { return st.exams(); }
+      exams: function () { return st.exams(); },
+      /* P1 필기 PDF 저장소 흉내 */
+      pdfPut: function (key, file) { return st.pdfPut(key, file.size, 'application/pdf'); },
+      pdfDel: function (keys) { return st.pdfDel(keys); }
     };
   }
   /* PostgREST 는 한 번에 1000 줄까지 → 끝까지 나눠 받음 */
@@ -856,7 +884,10 @@ window.__lecAdminStart = function () {
       /* C2: 히즈북스 학교 시험 일정(두 줄 · 그 두 칸만) */
       exams: function () {
         return rq(sb.from('app_state').select('id, es:data->examSchool, eg:data->examSchoolG').in('id', ['pt-etc', 'main']));
-      }
+      },
+      /* P1 필기 PDF: 버킷 lec-pdf · 덮어쓰기 없음(같은 이름 = 같은 내용 · «이미 있음»은 부르는 쪽이 성공으로 셈) */
+      pdfPut: function (key, file) { return rq(sb.storage.from('lec-pdf').upload(key, file, { upsert: false, contentType: 'application/pdf' })); },
+      pdfDel: function (keys) { return rq(sb.storage.from('lec-pdf').remove(keys)); }
     };
   }
 
@@ -923,6 +954,12 @@ window.__lecAdminStart = function () {
     for (i = 0; i < d.lectures.length; i += 1) {
       d.lcls = has(d.lectures[i], 'lesson_cls');
       if (d.lcls) break;
+    }
+    /* P1(11-16): 필기 PDF(files 칸)가 있는지 · 강의가 없으면 모름(null) · false 면 서랍에 PDF 칸을 안 그림 */
+    d.files = null;
+    for (i = 0; i < d.lectures.length; i += 1) {
+      d.files = has(d.lectures[i], 'files');
+      if (d.files) break;
     }
     buildAtt(d);
     D = d;
@@ -1326,7 +1363,8 @@ window.__lecAdminStart = function () {
       lock: '<rect x="5.5" y="11" width="13" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/>',
       box: '<path d="M4.5 7.5h15v12h-15zM3.5 4.5h17v3h-17zM10 11.5h4"/>',
       check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
-      copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>'
+      copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
+      pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9.5 14.5L12 17l2.5-2.5"/>'
     };
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">' + (p[n] || '') + '</svg>';
   }
@@ -1726,6 +1764,7 @@ window.__lecAdminStart = function () {
     if (isPosted(l)) a = head + '이 히즈 클래스에 올라왔어요. 복습할 때 보세요.';
     else a = head + '은 ' + L.fmtDay(l.posted_on) + '부터 히즈 클래스에서 볼 수 있어요. 복습할 때 보세요.';
     if (p) a += '\n' + p;
+    if (lecFiles(l).length) a += '\n필기 PDF도 영상 화면 오른쪽 위에서 받을 수 있어요.';
     c = '궁금한 곳은 히즈 클래스에서 질문으로 남겨 주세요.';
     if (l.until) c += ' ' + L.fmtMD(l.until) + '까지 볼 수 있어요.';
     return a + '\n' + c + '\n히즈 클래스 주소 ' + STU_URL + '\n홈 화면에 히즈 클래스를 추가했다면 이 링크 말고 아이콘으로 여세요.';   /* 설치 안내 결론안(11-16): 끝 한 줄 · 주소는 그대로(?i=1 안 붙임) */
@@ -2047,7 +2086,8 @@ window.__lecAdminStart = function () {
       id: l ? l.id : '', can: !l || S.me.admin || str(l.created_by) === S.me.name, cls: {}, other: [],
       hidden: !!(l && l.hidden), chs: [], shown: '', durAuto: false, delAsk: false,
       days: lecDays(l), runner: null, runN: runCount(l), clsTouched: false, cands: [], pickNote: '', dcls: lclsCopy(l), dclsTouched: {},
-      run: runCopy(l && l.runner ? l.runner.items : null), runMeta: runMetaOf(l ? l.runner : null), runDirty: false
+      run: runCopy(l && l.runner ? l.runner.items : null), runMeta: runMetaOf(l ? l.runner : null), runDirty: false,
+      pdf: pdfInit(l), pdfOrig: pdfOrigOf(l), pdfSeq: 0
     };
     ids = l ? (l.class_ids || []) : [];
     for (i = 0; i < ids.length; i += 1) {
@@ -2236,8 +2276,9 @@ window.__lecAdminStart = function () {
         '<div id="ed-txc" class="txc" hidden>' + kIcon('check') + '<span id="ed-txs"></span><span class="sp"></span>' +
         '<button type="button" class="btn sm txt" data-act="edTxtFold" aria-expanded="false" aria-controls="ed-txtw">다시 놓기</button></div>' +
         '<div id="ed-txtw"><textarea id="ed-txt" rows="3" placeholder="txt 내용을 붙여 넣거나 파일을 서랍에 끌어다 놓으세요. 제목 · 교재 · 수업일 · 목차가 채워져요."></textarea>' +
-        '<div class="row" style="margin-top:8px"><button type="button" class="btn sm" data-act="edFile">txt 파일 고르기</button><input id="ed-file" class="sr" type="file" accept=".txt,text/plain" tabindex="-1" aria-hidden="true"></div></div>' +
-        '<p id="ed-txtmsg" class="msg" role="status"></p></div>';
+        '<div class="row" style="margin-top:8px"><button type="button" class="btn sm" data-act="edFile">' + (pdfOn() ? 'txt · PDF 고르기' : 'txt 파일 고르기') + '</button>' +
+        '<input id="ed-file" class="sr" type="file" accept="' + (pdfOn() ? '.txt,text/plain,.pdf,application/pdf" multiple' : '.txt,text/plain"') + ' tabindex="-1" aria-hidden="true"></div></div>' +
+        '<p id="ed-txtmsg" class="msg" role="status"></p>' + pdfFldHtml() + '</div>';
     }
     h += '<div class="fld"><label for="ed-yt">유튜브 링크<span class="req">꼭</span></label><input id="ed-yt" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://youtu.be/영상 주소" value="' +
       esc(l ? ytShowUrl(l.yt) : '') + '"' + dis + '><div id="ed-prev" class="prev"></div><p id="ed-ytmsg" class="msg" role="status"></p></div>';
@@ -2417,12 +2458,12 @@ window.__lecAdminStart = function () {
     var h = '<span id="ed-sum" class="edsum">' + esc(edSumText()) + '</span>';
     if (S.ed.id) {
       h += S.ed.delAsk ?
-        '<div class="ask" role="group" aria-label="강의 지우기 확인"><p>정말 지울까요? 시청 기록과 질문도 함께 지워져요</p><div class="row">' +
+        '<div class="ask" role="group" aria-label="강의 지우기 확인"><p>정말 지울까요? 시청 기록과 질문' + (S.ed.pdfOrig ? ', 필기 PDF도 함께 지워져요' : '도 함께 지워져요') + '</p><div class="row">' +
         '<button type="button" class="btn sm warn" data-act="edDelYes">지우기</button><button type="button" class="btn sm txt" data-act="edDelNo">그만두기</button></div></div>' :
         '<button type="button" class="btn sm warn" data-act="edDelAsk">강의 지우기</button>';
     }
     h += '<button type="button" class="btn" data-act="edClose">그만두기</button>' +
-      '<button type="button" class="btn fill" data-act="edSave" aria-keyshortcuts="Control+Enter Meta+Enter">' + (S.ed.id ? '고친 내용 저장' : '강의 올리기') + '</button>';
+      '<button type="button" class="btn fill" data-act="edSave" aria-keyshortcuts="Control+Enter Meta+Enter"' + (pdfUp() ? ' disabled' : '') + '>' + (pdfUp() ? 'PDF 올리는 중…' : (S.ed.id ? '고친 내용 저장' : '강의 올리기')) + '</button>';
     return h;
   }
   function edSumText() {
@@ -2561,6 +2602,7 @@ window.__lecAdminStart = function () {
         $('ed-days').innerHTML = edDaysHtml();
       }
     }
+    pdfWarnPaint();
     if (!got.length) { setMsg('ed-txtmsg', '읽을 내용을 찾지 못했어요. «수업 영상 만들기»가 만든 txt인지 확인해 주세요', 'bad'); return; }
     last = got[got.length - 1];
     setMsg('ed-txtmsg', got.join(' · ') + eul(last) + ' 채웠어요', 'ok');
@@ -2599,8 +2641,225 @@ window.__lecAdminStart = function () {
     fr.onerror = function () { setMsg('ed-txtmsg', '파일을 읽지 못했어요', 'bad'); };
     fr.readAsText(file, 'utf-8');
   }
+  /* ------------------------------------------------------------------ P1 필기 PDF(11-16)
+     txt 줄 바로 아래 칩 하나: 빈 칸(점선) · 올리는 중 · 붙음 · 뺌 · 실패 · 강의 하나에 PDF 하나
+     파일 이름 = 내용 sha256 + .pdf(같은 파일은 한 번만 저장 · 덮어쓰기 없음 · «이미 있음» = 성공)
+     저장 때 강의 줄 files = [{p, n, b, pg}] · n(올린 파일 이름)은 선생님 화면만 · 학생 받는 이름은 학생 화면이 강의 칸으로 지음
+     올린 뒤 저장하지 않고 닫은 파일은 그대로 둠(청소 장치 없음 · 같은 파일을 다시 놓으면 그대로 다시 씀) */
+  var PDF_MAX = 31457280;
+  function pdfOn() { return D.files !== false; }
+  function lecFiles(l) {
+    var a = l && isArr(l.files) ? l.files : [], out = [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i] && L.pdfOk(a[i].p)) out.push(a[i]); }
+    return out;
+  }
+  function pdfInit(l) {
+    var f = lecFiles(l)[0];
+    return f ? { st: 'on', p: f.p, n: str(f.n), b: +f.b || 0, pg: +f.pg || 0 } : { st: 'none' };
+  }
+  function pdfOrigOf(l) { var f = lecFiles(l)[0]; return f ? f.p : ''; }
+  function pdfUp() { return !!(S.ed && S.ed.pdf && S.ed.pdf.st === 'up'); }
+  /* 저장하면 남을 PDF(올리는 중 · 실패면 그 앞에 붙어 있던 것) */
+  function pdfCur() {
+    var c = S.ed && S.ed.pdf;
+    if (!c) return null;
+    if (c.st === 'on') return c;
+    if (c.st === 'up' || c.st === 'bad') return c.keep || null;
+    return null;
+  }
+  function pdfItem(c) {
+    var o = { p: c.p, n: str(c.n).slice(0, 200), b: +c.b || 0 };
+    if (c.pg > 0) o.pg = c.pg;
+    return o;
+  }
+  function pdfHas(files, p) {
+    var i;
+    for (i = 0; isArr(files) && i < files.length; i += 1) { if (files[i] && files[i].p === p) return true; }
+    return false;
+  }
+  function pdfIsFile(f) { return /\.pdf$/i.test(str(f && f.name)) || str(f && f.type) === 'application/pdf'; }
+  /* 날짜 줄의 기준 = 칸에 적힌 수업일들(날짜순 · 칸을 읽기만 · S.ed.days 는 안 건드림 · 서랍을 그리는 중이면 S.ed.days) */
+  function pdfDays(fromState) {
+    var box = fromState ? null : $('ed-days'), a, i, v, out = [];
+    if (box) {
+      a = box.querySelectorAll('[data-di]');
+      for (i = 0; i < a.length; i += 1) { v = trim(a[i].value); if (isDay(v)) out.push(v); }
+    } else if (S.ed && isArr(S.ed.days)) {
+      for (i = 0; i < S.ed.days.length; i += 1) { if (isDay(S.ed.days[i])) out.push(S.ed.days[i]); }
+    }
+    out.sort();
+    return out;
+  }
+  function pdfCls() {
+    var c = S.ed && S.ed.pdf, k = c ? ({ none: 'empty', up: 'up', on: 'on', off: 'off', bad: 'bad' })[c.st] : '';
+    return 'pdc ' + (k || 'empty');
+  }
+  function pdfChipIn() {
+    var c = (S.ed && S.ed.pdf) || { st: 'none' }, nm = esc(str(c.n) || '필기 PDF'), h = kIcon('pdf'), sz = [];
+    if (c.st === 'up') {
+      if (c.b > 0) sz.push(L.fmtBytes(c.b));
+      sz.push('올리는 중');
+      return h + '<span class="nm" title="' + nm + '">' + nm + '</span><span class="sz">' + esc(sz.join(' · ')) + '</span>' +
+        '<span class="pdbar" aria-hidden="true"><i></i></span><span class="sp"></span>';
+    }
+    if (c.st === 'on') {
+      if (c.b > 0) sz.push(L.fmtBytes(c.b));
+      if (c.pg > 0) sz.push(c.pg + '쪽');
+      /* 이름을 누르면 새 창에서 그 파일을 열어 맞는지 봄(연습 화면은 저장소가 흉내라 글만) */
+      return h + (demo ? '<span class="nm" title="' + nm + '">' + nm + '</span>' :
+        '<a class="nm" href="' + esc(L.pdfUrl(c.p, '', 'open')) + '" target="_blank" rel="noopener" title="새 창에서 열어 보기 · ' + nm + '">' + nm + '</a>') +
+        (sz.length ? '<span class="sz">' + esc(sz.join(' · ')) + '</span>' : '') + '<span class="sp"></span>' +
+        '<button type="button" class="btn sm txt" data-act="edPdfOff" aria-label="필기 PDF 빼기">빼기</button>';
+    }
+    if (c.st === 'off') {
+      return h + '<span class="nm">필기 PDF를 뺐어요</span><span class="sz">저장하면 학생 화면에서도 없어져요</span><span class="sp"></span>' +
+        '<button type="button" class="btn sm txt" data-act="edPdfUndo">되돌리기</button>';
+    }
+    if (c.st === 'bad') {
+      return h + '<span class="nm">' + esc(c.msg || '붙이지 못했어요') + '</span><span class="sp"></span>' +
+        (c.keep ? '<button type="button" class="btn sm txt" data-act="edPdfUndo">되돌리기</button>' : '') +
+        '<button type="button" class="btn sm txt" data-act="edPdfPick">다시 고르기</button>';
+    }
+    return h + '<span class="nm">필기 PDF</span><span class="sz">선택 · 학생이 영상 화면에서 받아요</span><span class="sp"></span>' +
+      '<button type="button" class="btn sm txt" data-act="edPdfPick">PDF 고르기</button>';
+  }
+  function pdfFldHtml() {
+    if (!pdfOn()) return '';
+    return '<div id="ed-pdf" role="group" aria-label="필기 PDF"><div id="ed-pdc" class="' + pdfCls() + '">' + pdfChipIn() + '</div>' +
+      '<p id="ed-pdw" class="pdw" role="status">' + esc(pdfWarnText(true)) + '</p><p id="ed-pdn" class="pdn" role="status"></p>' +
+      '<input id="ed-pdfile" class="sr" type="file" accept=".pdf,application/pdf" tabindex="-1" aria-hidden="true"></div>';
+  }
+  /* 코랄 줄: 파일 이름의 날짜(실행기 = 영상 날짜 · 삼성 노트 = 내보낸 날)가 수업일과 안 맞으면(막지는 않음) */
+  function pdfWarnText(fromState) {
+    var c = S.ed && S.ed.pdf;
+    if (!c || !(c.st === 'on' || c.st === 'up') || !c.n) return '';
+    return L.pdfStamp(c.n, pdfDays(fromState));
+  }
+  function pdfWarnPaint() { var w = $('ed-pdw'); if (w && S.ed) w.textContent = pdfWarnText(); }
+  function pdfNote(t) { var n = $('ed-pdn'); if (n) n.textContent = t || ''; }
+  function pdfSet(o) {
+    if (!S.ed) return;
+    S.ed.pdf = o;
+    var c = $('ed-pdc');
+    if (c) { c.className = pdfCls(); c.innerHTML = pdfChipIn(); }
+    pdfWarnPaint();
+    edSaveBtnPaint();
+  }
+  function pdfFocus() {
+    var c = $('ed-pdc'), b = c ? c.querySelector('button') : null;
+    if (b) { try { b.focus(); } catch (e) { /* 없음 */ } }
+  }
+  /* 저장 단추: PDF 올리는 중이면 «PDF 올리는 중…» 잠금(저장 중이면 손대지 않음) */
+  function edSaveBtnPaint() {
+    var f = $('ed-foot'), b = f ? f.querySelector('[data-act=edSave]') : null, up = pdfUp();
+    if (!b || S.busy.ed || !S.ed) return;
+    b.disabled = up;
+    b.textContent = up ? 'PDF 올리는 중…' : (S.ed.id ? '고친 내용 저장' : '강의 올리기');
+  }
+  /* 빼기: 저장된 PDF 가 있던 강의면 «뺐어요 · 되돌리기» · 새로 붙인 것뿐이면 빈 칸 */
+  function pdfOff() {
+    var c = S.ed && S.ed.pdf;
+    if (!c || c.st !== 'on') return;
+    pdfNote('');
+    pdfSet(S.ed.pdfOrig ? { st: 'off', keep: c } : { st: 'none' });
+    pdfFocus();
+  }
+  function pdfUndo() {
+    var c = S.ed && S.ed.pdf;
+    if (!c || !c.keep) return;
+    pdfSet(c.keep);
+    pdfFocus();
+  }
+  function pdfBytes(file) {
+    return new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onload = function () { res(fr.result); };
+      fr.onerror = function () { rej({ pdfMsg: 'PDF 파일을 읽지 못했어요 · 다시 놓아 주세요' }); };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+  function pdfHash(buf) {
+    var c = window.crypto;
+    if (!c || !c.subtle || !c.subtle.digest) return Promise.reject({ pdfMsg: '이 브라우저에서는 PDF를 붙일 수 없어요 · 크롬이나 엣지로 열어 주세요' });
+    return new Promise(function (res) { res(c.subtle.digest('SHA-256', buf)); }).then(function (h) {
+      var u = new Uint8Array(h), x = '', i;
+      for (i = 0; i < u.length; i += 1) x += (u[i] < 16 ? '0' : '') + u[i].toString(16);
+      return x;
+    });
+  }
+  /* 쪽 수 세기용 글(바이트를 그대로 글자로) */
+  function pdfText(u8) {
+    var out = [], i, n = 32768;
+    for (i = 0; i < u8.length; i += n) out.push(String.fromCharCode.apply(null, u8.subarray(i, i + n)));
+    return out.join('');
+  }
+  /* 저장소 «이미 있음»(같은 내용의 파일이 벌써 있음 = 성공) · Storage 는 HTTP 400 에 글로 알려 줄 때가 있어 글도 봄 */
+  function pdfDup(e) {
+    var m = str(e && e.message) + ' ' + str(e && (e.error || e.detail));
+    return !!e && (+e.status === 409 || +e.statusCode === 409 || /already exists|Duplicate/i.test(m));
+  }
+  function pdfErr(e) {
+    var st = +(e && (e.status || e.statusCode)) || 0, m = str(e && e.message) + ' ' + str(e && (e.error || e.detail));
+    if (e && e.pdfMsg) return e.pdfMsg;
+    if (st === 413 || /exceeded|too large/i.test(m)) return 'PDF가 너무 커요 · 30MB까지예요';
+    if (st === 415 || /mime type/i.test(m)) return 'PDF 파일만 붙일 수 있어요';
+    if (/Bucket not found/i.test(m)) return '필기 PDF 저장 곳이 아직 없어요 · 원장님이 PDF SQL을 넣은 뒤에 붙여 주세요';
+    return '올리지 못했어요. ' + errText(e) + ' 다시 놓아 주세요';
+  }
+  /* 놓자마자: 30MB · 첫 다섯 바이트 «%PDF-» · 쪽 수 · sha256 → 올리기 · 그사이 서랍이 바뀌거나 다른 PDF 를 놓으면 앞의 결과는 버림 */
+  function readPdfFile(file) {
+    if (!file || !S.ed || !S.ed.can || !pdfOn()) return;
+    var ed = S.ed, keep = pdfCur(), seq = (ed.pdfSeq || 0) + 1, name = str(file.name) || '필기.pdf', size = +file.size || 0, pg = 0;
+    ed.pdfSeq = seq;
+    function live() { return S.ed === ed && ed.pdfSeq === seq; }
+    function bad(msg) { if (live()) pdfSet({ st: 'bad', msg: msg, keep: keep }); }
+    if (size > PDF_MAX) { bad('PDF가 너무 커요 · 30MB까지예요'); return; }
+    if (!size) { bad('빈 파일이에요 · 필기 PDF를 골라 주세요'); return; }
+    pdfSet({ st: 'up', n: name, b: size, keep: keep });
+    pdfBytes(file).then(function (buf) {
+      var u8;
+      if (!live()) return null;
+      u8 = new Uint8Array(buf);
+      if (!(u8.length > 4 && u8[0] === 37 && u8[1] === 80 && u8[2] === 68 && u8[3] === 70 && u8[4] === 45)) throw { pdfMsg: 'PDF 파일이 아니에요 · 필기 PDF를 골라 주세요' };
+      pg = L.pdfPages(pdfText(u8));
+      return pdfHash(buf).then(function (hx) {
+        var key = hx + '.pdf';
+        if (!live()) return null;
+        return DA.pdfPut(key, file).then(function () { return key; }, function (e) { if (pdfDup(e)) return key; throw e; });
+      });
+    }).then(function (key) {
+      if (!key || !live()) return;
+      pdfSet({ st: 'on', p: key, n: name, b: size, pg: pg });
+    }, function (e) { bad(pdfErr(e)); });
+  }
+  /* 끌어 놓기 · 고르기(여럿): 종류로 갈라 txt 는 지금처럼 첫 하나 · PDF 는 첫 하나만(여럿이면 호박 한 줄) */
+  function edFiles(fl) {
+    var i, f, txt = null, pdf = [];
+    if (!fl || !fl.length || !S.ed || !S.ed.can) return;
+    for (i = 0; i < fl.length; i += 1) { f = fl[i]; if (pdfIsFile(f)) pdf.push(f); else if (!txt) txt = f; }
+    if (txt) readTxtFile(txt);
+    if (!pdf.length) return;
+    if (!pdfOn()) { setMsg('ed-txtmsg', '필기 PDF 칸이 아직 없어요. 원장님이 PDF SQL을 넣으면 붙일 수 있어요', 'bad'); return; }
+    pdfNote(pdf.length > 1 ? 'PDF를 ' + pdf.length + '개 놓아서 첫 파일(' + str(pdf[0].name) + ')만 붙여요 · 강의 하나에 PDF 하나예요' : '');
+    readPdfFile(pdf[0]);
+  }
+  /* 저장소 파일 지우기: 다른 강의가 같은 파일을 안 쓸 때만 · 실패해도 강의 일은 막지 않음 */
+  function pdfUsed(p, exceptId) {
+    var i, j, a;
+    for (i = 0; i < D.lectures.length; i += 1) {
+      if (D.lectures[i].id === exceptId) continue;
+      a = lecFiles(D.lectures[i]);
+      for (j = 0; j < a.length; j += 1) { if (a[j].p === p) return true; }
+    }
+    return false;
+  }
+  function pdfDrop(p, exceptId, quiet) {
+    if (!p || !L.pdfOk(p) || !DA || !DA.pdfDel || pdfUsed(p, exceptId)) return;
+    DA.pdfDel([p]).then(null, function () { if (!quiet) toast('강의는 지웠어요 · 필기 PDF 파일은 저장 곳에 남았어요'); });
+  }
   function edSave(btn) {
     if (!S.ed || !S.ed.can || S.busy.ed) return;
+    if (pdfUp()) { setMsg('ed-msg', '필기 PDF를 올리는 중이에요. 다 올라가면 저장해 주세요', 'bad'); return; }
     readChs();
     readDays();
     var days = cleanDays(), lesson = days[0] || '';
@@ -2660,22 +2919,27 @@ window.__lecAdminStart = function () {
       for (i = 0; i < days.length; i += 1) { lv = dclsOf(days[i], lids); if (lv) { lco[days[i]] = lv; lcn += 1; } }
     }
     if (D.lcls === true || (D.lcls !== false && c1 !== false && lcn)) row.lesson_cls = lco;
+    /* P1 필기 PDF: 저장된 것과 달라졌을 때만 보냄(옛 DB 면 아래 PGRST204 에서 빼고 다시) */
+    var pdfOld = S.ed.pdfOrig || '', pc = pdfCur(), pdfDropped = false;
+    if (pdfOn() && (pc ? pc.p : '') !== pdfOld) row.files = pc ? [pdfItem(pc)] : [];
     var isNew = !S.ed.id, edId = S.ed.id;
     function done(rw) {
       S.busy.ed = 0;
       /* K: 새 강의는 같은 자리(서랍)에 반 공지 카드 · 고친 저장은 지금처럼 닫음 */
       if (isNew && rw) edNotice(rw);
       else closeEditor();
-      toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : ''));
+      toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : '') + (pdfDropped ? ' · 필기 PDF는 저장되지 않았어요' : ''));
+      /* PDF 를 바꾸거나 뺐으면 옛 파일은 저장이 된 뒤에 · 다른 강의가 안 쓸 때만 지움 */
+      if (rw && has(rw, 'files') && pdfOld && !pdfHas(rw.files, pdfOld)) pdfDrop(pdfOld, edId, true);
       refresh();
     }
-    /* 새 칸이 아직 없는 DB(PGRST204) → 말한 칸이 lesson_cls 면 그것만, 아니면 새 칸 셋 다 빼고 한 번 더(두 번까지) */
+    /* 새 칸이 아직 없는 DB(PGRST204) → 말한 칸이 files · lesson_cls 면 그것만, 다른 칸이면 C1 칸 셋, 모르면 넷 다 빼고 한 번 더(세 번까지) */
     function attempt(rw, n) {
       return DA.saveLecture(edId, rw).then(function () { done(rw); }, function (e) {
         var m, drop, r2 = {}, k2, cut = false;
-        if (!(e && e.code === 'PGRST204') || n > 1) throw e;
+        if (!(e && e.code === 'PGRST204') || n > 2) throw e;
         m = /'([A-Za-z_]+)' column/.exec(str(e.message) + ' ' + str(e.detail));
-        drop = m && m[1] === 'lesson_cls' ? ['lesson_cls'] : ['lesson_more', 'runner', 'lesson_cls'];
+        drop = m && m[1] === 'files' ? ['files'] : m && m[1] === 'lesson_cls' ? ['lesson_cls'] : m ? ['lesson_more', 'runner', 'lesson_cls'] : ['lesson_more', 'runner', 'lesson_cls', 'files'];
         for (k2 in rw) {
           if (!has(rw, k2) || k2 === 'id') continue;
           if (drop.indexOf(k2) >= 0) { cut = true; continue; }
@@ -2684,6 +2948,7 @@ window.__lecAdminStart = function () {
         if (!cut) throw e;
         if (has(rw, 'lesson_cls') && drop.indexOf('lesson_cls') >= 0) { D.lcls = false; if (lcn) lcDropped = true; }
         if (drop.indexOf('lesson_more') >= 0) { D.c1 = false; if (more.length) dropped = true; }
+        if (has(rw, 'files') && drop.indexOf('files') >= 0) { D.files = false; pdfDropped = true; }
         return attempt(r2, n + 1);
       });
     }
@@ -2968,12 +3233,14 @@ window.__lecAdminStart = function () {
   }
   function edDelete(btn) {
     if (!S.ed || !S.ed.id || S.busy.ed) return;
+    var pdfOld = S.ed.pdfOrig || '', lid = S.ed.id;
     S.busy.ed = 1;
     if (btn) btn.disabled = true;
     DA.deleteLecture(S.ed.id).then(function () {
       S.busy.ed = 0;
       closeEditor();
       toast('강의를 지웠어요');
+      pdfDrop(pdfOld, lid);
       refresh();
     }, function (e) {
       S.busy.ed = 0;
@@ -3358,6 +3625,9 @@ window.__lecAdminStart = function () {
         break;
       case 'edHidden': if (S.ed) { S.ed.hidden = !S.ed.hidden; $('ed-hid').innerHTML = edHidHtml(); refocus('ed-hid', 'data-act', 'edHidden'); } break;
       case 'edFile': r = $('ed-file'); if (r) r.click(); break;
+      case 'edPdfPick': r = $('ed-pdfile'); if (r) r.click(); break;
+      case 'edPdfOff': pdfOff(); break;
+      case 'edPdfUndo': pdfUndo(); break;
       case 'edTxtFold': if (S.ed && $('ed-txtw')) { txtFold(!$('ed-txtw').hidden); if (!$('ed-txtw').hidden && $('ed-txt')) { try { $('ed-txt').focus(); } catch (e3) {} } } break;
       default: return;
     }
@@ -3402,9 +3672,9 @@ window.__lecAdminStart = function () {
   function onChange(ev) {
     var t = ev.target, s;
     if (!t) return;
-    if (t.id === 'ed-file') { if (t.files && t.files[0]) readTxtFile(t.files[0]); t.value = ''; return; }
+    if (t.id === 'ed-file' || t.id === 'ed-pdfile') { if (t.files && t.files.length) edFiles(t.files); t.value = ''; return; }
     if (t.id === 'ed-post' || t.id === 'ed-until') { edNotes(); return; }
-    if (S.ed && t.getAttribute && t.getAttribute('data-di') !== null) { dayWeek(t); return; }
+    if (S.ed && t.getAttribute && t.getAttribute('data-di') !== null) { dayWeek(t); pdfWarnPaint(); return; }
     /* C2 범위 강의 체크: 다시 그리지 않고 고른 수만 고침(누른 자리 · 스크롤 그대로) */
     if (t.getAttribute && t.getAttribute('data-chg') === 'rngTog') {
       s = t.getAttribute('data-s');
@@ -3477,7 +3747,7 @@ window.__lecAdminStart = function () {
     edDragMark(false);
     if (!(S.ed && S.ed.can && (inTxt(ev) || inEd(ev.target))) || !ev.dataTransfer || !ev.dataTransfer.files || !ev.dataTransfer.files.length) return;
     ev.preventDefault();
-    readTxtFile(ev.dataTransfer.files[0]);
+    edFiles(ev.dataTransfer.files);
   });
   /* K: 서랍 안 글 칸 밖에서 붙여 넣어도 실행기 txt 면 읽음(머리줄 [제목] · [히즈 클래스] · [히즈 온라인] · [온라인 클래스] · [설명]) */
   document.addEventListener('paste', function (ev) {

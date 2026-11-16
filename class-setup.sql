@@ -4,9 +4,11 @@
 -- 1) supabase.com 로그인 → 히즈북스 프로젝트 → 왼쪽 «SQL Editor»
 -- 2) «New query» → 이 파일 전체(Ctrl+A → Ctrl+C)를 붙여 넣고 «Run»
 --    (경고 창이 뜨면 «Run this query»)
--- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 5/5 통과 · 학생 수 · 강의 수» 표가 나오면 통과입니다.
---    (스스로 점검 다섯은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
+-- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 6/6 통과 · 학생 수 · 강의 수 · PDF 저장 곳» 표가 나오면 통과입니다.
+--    (스스로 점검 여섯은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
 --    빨간 오류가 나오면 아무것도 바뀌지 않은 것입니다(통째로 되돌려짐).
+--    «PDF 저장 곳» 칸이 «됨»이 아니면 강의 필기 PDF 저장 곳(Storage)만 못 만든 것입니다 · 강의실은 그대로 씁니다
+--    (그때는 대시보드 Storage 에서 버킷 · 정책을 만듭니다 · 차례는 맨 아래 P1 절 머리글)
 --
 -- 만드는 표
 --   lec_lecture   강의(유튜브 영상 · 목차 · 볼 수 있는 반)
@@ -18,6 +20,7 @@
 --   lec_fail      틀린 번호 기록(번호 맞히기 막기 · 10분 5번 = 10분 잠금 · 24시간 15번 = 24시간 잠금 ·
 --                 선생님이 lec_unlock 으로 풀 수 있음)
 --   lec_consent   학생마다 기록 동의(agree · none)와 안내문 판
+--   (P1) lec_lecture.files = 강의 필기 PDF 칸 · 파일은 Storage 버킷 lec-pdf(누구나 받기 · 목록 보기 없음 · 선생님만 올림)
 -- 학생 구분 = 히즈북스 안의 학생 id + 띄어쓰기 뺀 이름.
 --   (같은 id 를 쓰는 다른 학생이 있을 수 있어 id 만으로 구분하지 않습니다)
 -- 학생은 로그인 계정이 없어서 표를 직접 못 읽습니다. 아래 lec_ 함수로 자기 것만 읽고 씁니다.
@@ -4293,9 +4296,301 @@ begin
 end
 $$;
 
+-- ---------------------------------------------------------------- P1 (11-16) 강의 필기 PDF
+-- 원장님 11-16 «PDF 결론안대로 · 단추는 제목 줄 오른쪽» · «필기본은 영상내 범위만»(자르기는 «수업 영상 만들기» 실행기 · 서랍에 끌어 넣음)
+--   강의마다 필기 PDF 하나(칸은 둘까지 받음): lec_lecture.files = [{p, n, b}]
+--     p = 파일 이름(내용 sha256 64자 + .pdf · 알아맞힐 수 없음 · 같은 파일은 한 번만 저장) · n = 올린 파일 이름(선생님 화면만) · b = 바이트
+--   파일은 Storage 버킷 lec-pdf(공개 · 30MB · PDF 만) · 정책은 선생님(lec__is_staff)이 올리고 지우는 것 하나뿐 ·
+--     anon 정책은 없음 = 목록을 볼 수 없음 → 주소(p)는 그 반 학생에게 lec_pdf 로만 감
+--   학생 함수 lec_pdf: 내가 볼 수 있는 강의(lec_paper 와 같은 판정 · 끝난 강의 뺌)의 {id, f:[{p, b}]} · 올린 파일 이름(n)은 안 보냄
+--     (lec_home · lec_paper 는 그대로 · 이 함수가 없는 서버면 학생 화면은 PDF 단추를 숨김)
+--   끄개 · 단추 숨김: revoke execute on function public.lec_pdf(text) from anon;
+--          주소 막음: update storage.buckets set public = false where id = 'lec-pdf';
+--          (이 파일을 다시 넣으면 둘 다 다시 켜짐)
+--   SQL Editor 계정이 Storage 표를 못 고치면(42501) 버킷 · 정책 덩어리만 건너뜀 → 맨 아래 표 «PDF 저장 곳»에 까닭이 나옴 · 그때는 대시보드:
+--     ① Storage › New bucket › 이름 lec-pdf · Public bucket 켬 · Restrict file size 30 MB · Allowed MIME types application/pdf › Save
+--     ② Storage › Policies › lec-pdf 의 New policy › For full customization › 이름 lec_pdf_staff ·
+--        Allowed operation 넷(SELECT · INSERT · UPDATE · DELETE) 모두 · Target roles authenticated ·
+--        식 bucket_id = 'lec-pdf' and (select public.lec__is_staff()) › Review › Save
+--     ③ 이 파일을 다시 넣어 맨 아래 «PDF 저장 곳» 이 «됨» 인지 봄
+alter table public.lec_lecture add column if not exists files jsonb not null default '[]'::jsonb;
+alter table public.lec_lecture drop constraint if exists lec_lecture_files_ok;
+alter table public.lec_lecture add constraint lec_lecture_files_ok check (
+  case when jsonb_typeof(files) = 'array'
+       then jsonb_array_length(files) <= 2
+            and not jsonb_path_exists(files, 'strict $[*] ? (@.type() != "object")')
+            and not jsonb_path_exists(files, 'lax $[*] ? (!(@.type() == "object" && @.p.type() == "string" && @.p like_regex "^[0-9a-f]{64}[.]pdf$" && @.n.type() == "string" && @.b.type() == "number"))')
+       else false end);
+
+-- 메모 숙제: 선생님 계정이 강의실 표를 통째로 비우거나(TRUNCATE · 정책을 안 거침) 남의 표에 걸 수 없게
+revoke truncate, references, trigger on public.lec_lecture, public.lec_progress, public.lec_session, public.lec_qna from authenticated;
+
+-- 학생: 내가 볼 수 있는 강의의 필기 PDF(주소 이름 p · 크기 b)
+--   새로 만든 함수라 정확한 모양으로 먼저 지우고 새로 만듦(권한은 바로 아래에서 다시 줌)
+drop function if exists public.lec_pdf(text);
+create or replace function public.lec_pdf(p_key text)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  k       public.lec_key;
+  v_items jsonb;
+begin
+  select * into k from public.lec_key where kh = public.lec__kh(p_key);
+  if not found then
+    return jsonb_build_object('ok', false, 'err', 'key');
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'f', x.f) order by x.id), '[]'::jsonb)
+    into v_items
+    from (
+      select l.id,
+             (select coalesce(jsonb_agg(jsonb_build_object(
+                        'p', e ->> 'p',
+                        'b', case when jsonb_typeof(e -> 'b') = 'number' then e -> 'b' else 'null'::jsonb end) order by e_o), '[]'::jsonb)
+                from jsonb_array_elements(case when jsonb_typeof(l.files) = 'array'
+                                               then l.files else '[]'::jsonb end) with ordinality as t(e, e_o)
+               where jsonb_typeof(e) = 'object'
+                 and coalesce(e ->> 'p', '') ~ '^[0-9a-f]{64}[.]pdf$') as f
+        from public.lec_lecture l
+       where public.lec__open(l.*, k.cls)
+         and not public.lec__ended_k(l.*, k)   -- 끝난 강의는 플레이어를 열지 않으므로 PDF 도 안 보냄 · 시험 범위 강의는 끝 날까지(M2)
+    ) x
+   where jsonb_array_length(x.f) > 0;
+  return jsonb_build_object('ok', true, 'items', v_items);
+end
+$$;
+
+revoke all on function public.lec_pdf(text) from public;
+grant execute on function public.lec_pdf(text) to anon, authenticated;
+
+-- PDF 저장 곳 상태(맨 아래 표 · 점검 표 SQL 이 씀): «됨» 또는 모자란 것 · 밖에서 못 부름
+drop function if exists public.lec__pdf_store();
+create or replace function public.lec__pdf_store()
+returns text
+language plpgsql stable set search_path = public as $$
+declare
+  v_out  text := '';
+  v_pub  boolean;
+  v_lim  bigint;
+  v_mime text[];
+  v_n    integer;
+  v_open text;
+  v_err  text := coalesce(current_setting('his.lec_pdf_err', true), '');
+begin
+  if to_regclass('storage.buckets') is null or to_regclass('storage.objects') is null then
+    return 'storage 없음';
+  end if;
+  begin
+    execute 'select public, file_size_limit, allowed_mime_types from storage.buckets where id = $1'
+       into v_pub, v_lim, v_mime using 'lec-pdf';
+    get diagnostics v_n = row_count;
+  exception when others then
+    return '버킷을 못 읽음(' || sqlstate || ') → 대시보드';
+  end;
+  if v_n = 0 then
+    v_out := '버킷 없음';
+  elsif v_pub is distinct from true or v_lim is distinct from 31457280
+        or v_mime is distinct from array['application/pdf'] then
+    v_out := '버킷 설정 다름';
+  end if;
+  select count(*) into v_n
+    from pg_policies
+   where schemaname = 'storage' and tablename = 'objects' and policyname = 'lec_pdf_staff';
+  if v_n = 0 then
+    v_out := v_out || case when v_out = '' then '' else ' · ' end || '정책 없음';
+  end if;
+  -- 누구나(anon · public) 목록을 볼 수 있는 정책(대시보드 «모두 허용» 틀 등)이 있으면 파일 이름이 다 보임
+  select string_agg(policyname::text, ', ' order by policyname) into v_open
+    from pg_policies
+   where schemaname = 'storage' and tablename = 'objects'
+     and roles && array['anon', 'public']::name[]
+     and cmd in ('SELECT', 'ALL')
+     and (qual is null or qual not like '%bucket_id%' or qual like '%lec-pdf%');
+  if v_open is not null then
+    v_out := v_out || case when v_out = '' then '' else ' · ' end || '누구나 목록 보는 정책: ' || v_open;
+  end if;
+  if v_err <> '' then
+    v_out := v_out || case when v_out = '' then '' else ' · ' end || 'SQL 로 못 만듦(' || v_err || ') → 대시보드';
+  end if;
+  return case when v_out = '' then '됨' else v_out end;
+end
+$$;
+
+revoke all on function public.lec__pdf_store() from public, anon, authenticated;
+
+-- PDF 저장 곳 만들기(버킷 · 정책 하나) · 권한이 없으면 이 덩어리만 건너뜀(까닭은 맨 아래 표 «PDF 저장 곳»)
+do $$
+begin
+  if to_regclass('storage.buckets') is null or to_regclass('storage.objects') is null then
+    raise notice 'P1 · storage 표 없음(PDF 저장 곳은 대시보드에서)';
+    return;
+  end if;
+  begin
+    execute 'insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types) '
+         || 'values (''lec-pdf'', ''lec-pdf'', true, 31457280, array[''application/pdf'']) '
+         || 'on conflict (id) do update set public = true, file_size_limit = 31457280, '
+         || 'allowed_mime_types = array[''application/pdf'']';
+  exception when others then
+    perform set_config('his.lec_pdf_err', '버킷 ' || sqlstate, true);
+    raise notice 'P1 · 버킷을 SQL 로 못 만듦(% %)', sqlstate, sqlerrm;
+  end;
+  begin
+    execute 'drop policy if exists lec_pdf_staff on storage.objects';
+    execute 'create policy lec_pdf_staff on storage.objects for all to authenticated '
+         || 'using (bucket_id = ''lec-pdf'' and (select public.lec__is_staff())) '
+         || 'with check (bucket_id = ''lec-pdf'' and (select public.lec__is_staff()))';
+  exception when others then
+    perform set_config('his.lec_pdf_err',
+                       coalesce(nullif(current_setting('his.lec_pdf_err', true), '') || ' · ', '') || '정책 ' || sqlstate, true);
+    raise notice 'P1 · 정책을 SQL 로 못 만듦(% %)', sqlstate, sqlerrm;
+  end;
+end
+$$;
+
+-- 스스로 점검(P1 필기 PDF): 없는 열쇠 · 열린 강의만 · 올린 파일 이름 안 보냄 · 틀린 files 막음 · 권한.
+-- 점검용으로 넣은 강의 · 열쇠는 끝에 되돌려 남지 않습니다
+do $$
+declare
+  r       jsonb;
+  v_n     integer;
+  v_a     uuid;
+  v_b     uuid;
+  v_c     uuid;
+  v_d     uuid;
+  v_e     uuid;
+  v_f     uuid;
+  v_g     uuid;
+  v_ok    boolean;
+  v_bad   jsonb;
+  v_t     text;
+  v_p     text := encode(sha256(convert_to('selftest-p1' || gen_random_uuid()::text, 'UTF8')), 'hex') || '.pdf';
+  v_q     text := encode(sha256(convert_to('selftest-p1q' || gen_random_uuid()::text, 'UTF8')), 'hex') || '.pdf';
+  v_key   text := 'selftest' || replace(gen_random_uuid()::text, '-', '');
+  v_cls   text := 'c-selftest-p1' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
+  v_today date := (now() at time zone 'Asia/Seoul')::date;
+begin
+  begin
+    r := public.lec_pdf(v_key);
+    if (r ->> 'err') is distinct from 'key' then raise exception '점검 실패(P1 필기 PDF · 없는 열쇠): %', r; end if;
+    insert into public.lec_key (kh, sid, rid, pin, sname, cls)
+    values (public.lec__kh(v_key), 'selftest-p1|점검', 'selftest-p1', '1234', '점검', array[v_cls]);
+
+    -- PDF 가 붙은 열린 강의 a · 모든 반 강의 g = 나감
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, files)
+    values ('selftest-p1a', 'selftest000', 100, array[v_cls], v_today,
+            jsonb_build_array(jsonb_build_object('p', v_p, 'n', '수업필기_점검_261116_120000.pdf', 'b', 1234567)))
+    returning id into v_a;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, files)
+    values ('selftest-p1g', 'selftest000', 100, array['*'], v_today,
+            jsonb_build_array(jsonb_build_object('p', v_q, 'n', '점검.pdf', 'b', 10)))
+    returning id into v_g;
+    -- PDF 없는 강의 · 숨긴 강의 · 아직 안 올린 강의 · 다른 반 강의 · 공개 끝 지난 강의 = 빠짐
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-p1b', 'selftest000', 100, array[v_cls], v_today) returning id into v_b;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, hidden, files)
+    values ('selftest-p1c', 'selftest000', 100, array[v_cls], v_today, true,
+            jsonb_build_array(jsonb_build_object('p', v_p, 'n', '점검.pdf', 'b', 10))) returning id into v_c;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, posted_on, files)
+    values ('selftest-p1d', 'selftest000', 100, array[v_cls], v_today, v_today + 1,
+            jsonb_build_array(jsonb_build_object('p', v_p, 'n', '점검.pdf', 'b', 10))) returning id into v_d;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, files)
+    values ('selftest-p1e', 'selftest000', 100, array[v_cls || '-other'], v_today,
+            jsonb_build_array(jsonb_build_object('p', v_p, 'n', '점검.pdf', 'b', 10))) returning id into v_e;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, until, files)
+    values ('selftest-p1f', 'selftest000', 100, array[v_cls], v_today - 3, v_today - 1,
+            jsonb_build_array(jsonb_build_object('p', v_p, 'n', '점검.pdf', 'b', 10))) returning id into v_f;
+
+    r := public.lec_pdf(v_key);
+    if not coalesce((r ->> 'ok')::boolean, false) or jsonb_typeof(r -> 'items') is distinct from 'array' then
+      raise exception '점검 실패(P1 · 열린 강의): %', left(r::text, 300);
+    end if;
+    select count(*) into v_n from jsonb_array_elements(r -> 'items') as t(x)
+     where (x ->> 'id')::uuid in (v_b, v_c, v_d, v_e, v_f);
+    if v_n <> 0 then raise exception '점검 실패(P1 · 빠져야 할 강의 %건)', v_n; end if;
+    select count(*) into v_n from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'id')::uuid in (v_a, v_g);
+    if v_n <> 2 then raise exception '점검 실패(P1 · 나가야 할 강의 %건)', v_n; end if;
+    if (select x -> 'f' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'id')::uuid = v_a)
+       is distinct from jsonb_build_array(jsonb_build_object('p', v_p, 'b', 1234567)) then
+      raise exception '점검 실패(P1 · 칸): %', left(r::text, 300);
+    end if;
+    if r::text like '%수업필기%' or r::text like '%"n"%' then
+      raise exception '점검 실패(P1 · 올린 파일 이름이 학생에게 나감)';
+    end if;
+
+    -- 틀린 files 는 표가 막음(주소 끼워 넣기 · 대문자 · 칸 빠짐 · 종류 다름 · 겹친 배열 · 셋 이상 · 배열 아님)
+    foreach v_bad in array array[
+      jsonb_build_array(jsonb_build_object('p', '../x.pdf', 'n', 'a', 'b', 1)),
+      jsonb_build_array(jsonb_build_object('p', upper(v_p), 'n', 'a', 'b', 1)),
+      jsonb_build_array(jsonb_build_object('p', v_p || 'x', 'n', 'a', 'b', 1)),
+      jsonb_build_array(jsonb_build_object('p', v_p, 'b', 1)),
+      jsonb_build_array(jsonb_build_object('p', v_p, 'n', 1, 'b', 1)),
+      jsonb_build_array(jsonb_build_object('p', v_p, 'n', 'a', 'b', '1')),
+      jsonb_build_array(jsonb_build_object('p', v_p, 'n', 'a')),
+      jsonb_build_array('x'),
+      jsonb_build_array(jsonb_build_array(jsonb_build_object('p', v_p, 'n', 'a', 'b', 1))),
+      jsonb_build_array(jsonb_build_object('p', v_p, 'n', 'a', 'b', 1), jsonb_build_object('p', v_q, 'n', 'b', 'b', 2),
+                        jsonb_build_object('p', v_p, 'n', 'c', 'b', 3)),
+      jsonb_build_object('p', v_p, 'n', 'a', 'b', 1)
+    ] loop
+      v_ok := false;
+      begin
+        update public.lec_lecture set files = v_bad where id = v_b;
+      exception when check_violation then
+        v_ok := true;
+      end;
+      if not v_ok then raise exception '점검 실패(P1 · 틀린 files 가 들어감): %', v_bad; end if;
+    end loop;
+    -- 맞는 것은 들어감(둘 · 빈 배열)
+    update public.lec_lecture
+       set files = jsonb_build_array(jsonb_build_object('p', v_p, 'n', 'a', 'b', 1), jsonb_build_object('p', v_q, 'n', 'b', 'b', 2))
+     where id = v_b;
+    update public.lec_lecture set files = '[]'::jsonb where id = v_b;
+
+    -- 반이 빈 열쇠(명단에서 빠진 학생) = 빈 목록
+    update public.lec_key set cls = '{}' where kh = public.lec__kh(v_key);
+    r := public.lec_pdf(v_key);
+    if not coalesce((r ->> 'ok')::boolean, false) or (r -> 'items') is distinct from '[]'::jsonb then
+      raise exception '점검 실패(P1 · 반 없음): %', left(r::text, 300);
+    end if;
+
+    -- 권한: 학생 함수는 누구나(열쇠로만 열림) · 상태 함수는 밖에서 못 부름 · 선생님 계정은 강의실 표를 통째로 못 비움
+    if not has_function_privilege('anon', 'public.lec_pdf(text)', 'execute')
+       or not has_function_privilege('authenticated', 'public.lec_pdf(text)', 'execute')
+       or has_function_privilege('anon', 'public.lec__pdf_store()', 'execute')
+       or has_function_privilege('authenticated', 'public.lec__pdf_store()', 'execute') then
+      raise exception '점검 실패(P1 함수 권한)';
+    end if;
+    select string_agg(c.relname || ' ' || pv.p, ', ') into v_t
+      from pg_class c
+     cross join unnest(array['truncate', 'references', 'trigger']) as pv(p)
+     where c.relnamespace = 'public'::regnamespace
+       and c.relname in ('lec_lecture', 'lec_progress', 'lec_session', 'lec_qna')
+       and has_table_privilege('authenticated', c.oid, pv.p);
+    if v_t is not null then
+      raise exception '점검 실패(P1 · 선생님 계정 표 권한): %', v_t;
+    end if;
+    -- 속 함수 전부(이 절이 파일 맨 끝이라 P1 의 lec__pdf_store 까지): anon · authenticated 가 직접 못 부름
+    select string_agg(p.oid::regprocedure::text, ', ' order by p.oid::regprocedure::text) into v_t
+      from pg_proc p
+     where p.pronamespace = 'public'::regnamespace
+       and left(p.proname, 5) = 'lec__'
+       and p.proname <> 'lec__is_staff'
+       and p.prorettype <> 'trigger'::regtype
+       and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'));
+    if v_t is not null then
+      raise exception '점검 실패(P1 · 속 함수를 밖에서 부를 수 있음): %', v_t;
+    end if;
+
+    raise exception 'LEC_SELFTEST_OK';
+  exception when others then
+    if sqlerrm <> 'LEC_SELFTEST_OK' then raise; end if;
+  end;
+end
+$$;
+
 notify pgrst, 'reload schema';
 
 select '강의실 준비 끝' as "결과",
-       '점검 5/5 통과' as "점검",
+       '점검 6/6 통과' as "점검",
        (select count(*) from public.lec__roster()) as "학생 수",
-       (select count(*) from public.lec_lecture) as "강의 수";
+       (select count(*) from public.lec_lecture) as "강의 수",
+       public.lec__pdf_store() as "PDF 저장 곳";

@@ -1066,6 +1066,131 @@
     });
   }
 
+  /* P1 강의 필기 PDF(11-16 · 내용은 필기 없는 원본 판서의 영상 범위 쪽): {ok, items:[{id, f:[{p, b}]}]} · 올린 파일 이름은 오지 않음 · 실패는 조용히 null
+     (서버에 lec_pdf 가 없거나(404) 막혀 있으면(401 · 403) 이 화면에서는 다시 묻지 않음 · 단추는 숨김) */
+  var pdfGone = false;
+  function pdf(key) {
+    if (pdfGone) return Promise.resolve(null);
+    return rpc('lec_pdf', { p_key: key == null ? null : str(key) }).then(function (r) {
+      return r && r.ok && isArr(r.items) ? r : null;
+    }, function (e) {
+      if (e && (e.status === 404 || e.status === 401 || e.status === 403)) pdfGone = true;
+      return null;
+    });
+  }
+  var PDF_P = /^[0-9a-f]{64}\.pdf$/;
+  function pdfOk(p) { return typeof p === 'string' && PDF_P.test(p); }
+  /* lec_pdf 응답 → {강의 id: [{p, b}]} · 꼴이 틀린 경로는 버림 */
+  function pdfMap(r) {
+    var out = {}, i, j, it, f, a;
+    if (!r || !isArr(r.items)) return out;
+    for (i = 0; i < r.items.length; i += 1) {
+      it = r.items[i];
+      if (!it || it.id == null || !isArr(it.f)) continue;
+      a = [];
+      for (j = 0; j < it.f.length; j += 1) {
+        f = it.f[j];
+        if (f && pdfOk(f.p)) a.push({ p: f.p, b: typeof f.b === 'number' && isFinite(f.b) ? f.b : null });
+      }
+      if (a.length) out[str(it.id)] = a;
+    }
+    return out;
+  }
+  /* 학생이 받는 파일 이름 «HIS MM.DD {교재} {제목} 필기.pdf» · 파일 이름에 못 쓰는 글자는 띄어쓰기로 ·
+     앞부분은 낱말 끝에서 46자 안으로 자름(올린 파일 이름은 학생에게 가지 않음) */
+  var PDF_BAD = /[\\\/:*?"<>|\u0000-\u001f\u007f]+/g;
+  function pdfName(l, day) {
+    var p = day ? dayParts(day) : null, bits = ['HIS'], base, cut, sp;
+    if (p) bits.push(pad2(p.m) + '.' + pad2(p.d));
+    if (l && l.book) bits.push(str(l.book));
+    if (l && l.title) bits.push(str(l.title));
+    base = bits.join(' ').replace(PDF_BAD, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    if (clen(base) > 46) {
+      cut = left(base, 47);
+      sp = cut.lastIndexOf(' ');
+      base = (sp > 12 ? cut.slice(0, sp) : left(base, 46)).replace(/[\s.]+$/, '');
+    }
+    return base + ' 필기.pdf';
+  }
+  /* 여는 길: 카카오톡 안(두 폰 모두) · 안드로이드 = 'dl'(같은 창 · 받기) / 아이폰 · 홈 화면 앱 · PC = 'open'(새 창) */
+  function pdfWay(ua) {
+    ua = str(ua);
+    return /KAKAOTALK/i.test(ua) || /Android/i.test(ua) ? 'dl' : 'open';
+  }
+  function pdfUrl(p, name, way) {
+    if (!pdfOk(p)) return '';
+    var u = SUPA_URL + '/storage/v1/object/public/lec-pdf/' + p;
+    return way === 'dl' ? u + '?download=' + encodeURIComponent(str(name) || 'HIS 필기.pdf') : u;
+  }
+  /* 누른 뒤 단추 아래 한 줄(os = 'ios' · 'android' · '') · PC 는 없음 */
+  function pdfNote(os, kakao) {
+    if (os === 'android') return '받기 시작했어요. 다 받으면 알림이나 ‘다운로드’에서 열 수 있어요.';
+    if (kakao) return '받기 시작했어요.';
+    if (os === 'ios') return '열린 PDF에서 공유 단추를 누르면 ‘파일에 저장’이나 ‘프린트’를 고를 수 있어요.';
+    return '';
+  }
+  /* PDF 쪽 수 · text = 바이트를 한 글자씩 옮긴 글
+     ① 트레일러 /Root → 카탈로그 /Pages → 그 묶음의 /Count(덧붙여 고친 PDF 는 뒤에 나온 정의가 이김)
+     ② 없으면 /Parent 없는 맨 위 «/Type /Pages» 의 /Count(마지막 것)
+     ③ 그래도 없으면 «/Type /Page» 셈 — 쪽 나무 밖에 버려진 쪽까지 세어 많게 나올 수 있다
+        (실행기가 원본 판서에서 영상 범위만 자른 «…_필기.pdf» 가 그렇다: 13쪽인데 17개)
+     압축 객체(ObjStm)라 셋 다 못 읽으면 0 → 화면은 쪽 칸을 뺌 */
+  function pdfPages(text) {
+    var t = str(text), re = /(\d+)\s+\d+\s+obj\b/g, objs = {}, top = 0, last = '', m, end, st, body, c, all, rr;
+    while ((m = re.exec(t))) {
+      end = t.indexOf('endobj', re.lastIndex);
+      if (end < 0) end = t.length;
+      st = t.indexOf('stream', re.lastIndex);
+      body = t.slice(re.lastIndex, st >= 0 && st < end ? st : end);
+      objs[m[1]] = body;
+      if (/\/Type\s*\/Pages(?![A-Za-z])/.test(body) && !/\/Parent(?![A-Za-z])/.test(body) && (c = /\/Count\s+(\d+)/.exec(body))) top = +c[1];
+      re.lastIndex = end;
+    }
+    rr = /\/Root\s+(\d+)\s+\d+\s+R/g;
+    while ((m = rr.exec(t))) last = m[1];
+    m = last && has(objs, last) ? /\/Pages\s+(\d+)\s+\d+\s+R/.exec(objs[last]) : null;
+    c = m && has(objs, m[1]) ? /\/Count\s+(\d+)/.exec(objs[m[1]]) : null;
+    if (c && +c[1] > 0) return +c[1];
+    if (top > 0) return top;
+    all = t.match(/\/Type\s*\/Page(?![A-Za-z])/g);
+    return all ? all.length : 0;
+  }
+  /* 서랍 코랄 줄(막지 않음): 파일 이름의 날짜가 수업일과 안 맞으면 한 줄 · 아니면 ''
+     ① 실행기 이름 «YYYY-MM-DD(요일) …_필기.pdf»(영상 날짜): 수업일 가운데 같은 날이 없으면
+     ② 삼성 노트 이름 «…_YYMMDD_…»(내보낸 날): 어느 수업일보다도 앞이거나 3일 넘게 뒤면
+     days = 수업일 하나('YYYY-MM-DD') 또는 여럿(배열 · 앞의 것이 글에 나옴) */
+  function pdfStamp(fileName, days) {
+    var nm = str(fileName), ds = isArr(days) ? days : [days], ps = [], first = '', i, p, m, a, b, g, lead;
+    for (i = 0; i < ds.length; i += 1) {
+      p = ds[i] ? dayParts(ds[i]) : null;
+      if (p) { ps.push(p); if (!first) first = ds[i]; }
+    }
+    if (!ps.length) return '';
+    m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)/.exec(nm);
+    lead = !!m;
+    if (m) a = { y: +m[1], m: +m[2], d: +m[3] };
+    else {
+      m = /_(\d{2})(\d{2})(\d{2})(?=_|\.pdf$|$)/i.exec(nm);
+      if (!m) return '';
+      a = { y: 2000 + +m[1], m: +m[2], d: +m[3] };
+    }
+    if (a.m < 1 || a.m > 12 || a.d < 1 || a.d > 31) return '';
+    b = Date.UTC(a.y, a.m - 1, a.d);
+    if (new Date(b).getUTCDate() !== a.d) return '';
+    for (i = 0; i < ps.length; i += 1) {
+      g = Math.round((b - Date.UTC(ps[i].y, ps[i].m - 1, ps[i].d)) / DAY);
+      if (lead ? g === 0 : (g >= 0 && g <= 3)) return '';
+    }
+    return '이 PDF 는 ' + a.m + '.' + a.d + (lead ? ' 수업 영상에서 만든 것이에요' : '에 내보낸 것이에요') + ' · 수업일 ' + fmtDay(first) + ' 필기가 맞는지 봐 주세요';
+  }
+  /* 3342000 → '3.2MB' · 51200 → '50KB' */
+  function fmtBytes(n) {
+    n = +n;
+    if (!isFinite(n) || n < 0) return '';
+    if (n < 1024 * 1024) return Math.max(1, Math.round(n / 1024)) + 'KB';
+    return (Math.round(n / 104857.6) / 10) + 'MB';
+  }
+
   var Lec = {
     SUPA_URL: SUPA_URL,
     SUPA_KEY: SUPA_KEY,
@@ -1091,6 +1216,7 @@
     logout: logout,
     att: att,
     paper: paper,
+    pdf: pdf,
 
     nows: nows,
     norm: norm,
@@ -1153,6 +1279,15 @@
     stopText: stopText,
     paperNotice: paperNotice,
     paperMatch: paperMatch,
+    pdfOk: pdfOk,
+    pdfMap: pdfMap,
+    pdfName: pdfName,
+    pdfWay: pdfWay,
+    pdfUrl: pdfUrl,
+    pdfNote: pdfNote,
+    pdfPages: pdfPages,
+    pdfStamp: pdfStamp,
+    fmtBytes: fmtBytes,
     classTime: classTime,
     pickClass: pickClass,
     hmMin: hmMin,

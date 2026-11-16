@@ -195,7 +195,16 @@
     if (ensureTest(d)) save(d);
     if (c2Ensure(d)) save(d);   /* C2 시연 자료(아래 C2 절) */
     if (c2Many(d)) save(d);     /* ?manyexams=1 = 시험 여럿(아래 C2 절) · 아니면 넣었던 것을 걷어 냄 */
+    if (pdfEnsure(d)) save(d);  /* P1: files 칸 · 저장 곳 목록 */
     return d;
+  }
+  function pdfEnsure(d) {
+    var ch = false, i;
+    if (!isArr(d.objects)) { d.objects = []; ch = true; }
+    for (i = 0; i < d.lecture.length; i += 1) {
+      if (!has(d.lecture[i], 'files')) { d.lecture[i].files = []; ch = true; }
+    }
+    return ch;
   }
 
   /* &t=1 이면 길이 0 강의가 있게(없을 때만 넣음) · t=1 이 아니면 그 강의와 딸린 기록을 걷어 냄
@@ -231,7 +240,8 @@
       lesson_on: o.lesson_on || null, posted_on: o.posted_on || today(), until: o.until || null,
       hidden: !!o.hidden, created_by: str(o.created_by),
       created_at: o.created_at || t, updated_at: o.updated_at || t,
-      lesson_more: o.lesson_more || [], runner: o.runner || {}, lesson_cls: o.lesson_cls || {}
+      lesson_more: o.lesson_more || [], runner: o.runner || {}, lesson_cls: o.lesson_cls || {},
+      files: o.files || []   /* P1(11-16) 필기 PDF [{p, n, b}] */
     };
   }
 
@@ -1419,6 +1429,30 @@
     return { ok: true, items: items };
   }
 
+  /* lec_pdf (P1 · 11-16): 열린 강의마다 필기 PDF [{p, b}] · 올린 파일 이름(n)은 안 보냄 · PDF 없는 강의는 뺌(SQL 과 같음) */
+  var PDF_P = /^[0-9a-f]{64}\.pdf$/;
+  function lec_pdf(d, a) {
+    var k = findKey(d, a.p_key);
+    if (!k) return { ok: false, err: 'key' };
+    var items = [], i, j, l, fs, e, f;
+    for (i = 0; i < d.lecture.length; i += 1) {
+      l = d.lecture[i];
+      if (!isOpen(l, k.cls)) continue;
+      if (endedK(d, l, k)) continue;   // 끝난 강의는 플레이어를 열지 않으므로 PDF 도 안 보냄 · 시험 범위 강의는 끝 날까지(M2)
+      fs = isArr(l.files) ? l.files : [];
+      f = [];
+      for (j = 0; j < fs.length; j += 1) {
+        e = fs[j];
+        if (!e || typeof e !== 'object' || isArr(e)) continue;
+        if (typeof e.p !== 'string' || !PDF_P.test(e.p)) continue;
+        f.push({ p: e.p, b: typeof e.b === 'number' && isFinite(e.b) ? e.b : null });
+      }
+      if (f.length) items.push({ id: l.id, f: f });
+    }
+    items.sort(function (x, y) { return cmpC(x.id, y.id); });
+    return { ok: true, items: items };
+  }
+
   /* lec_att_staff: 선생님 화면 · 내 반(관리자는 모든 반) 학생 × 수업일이 62일 안인 강의의 출결 ·
      시작 전 학생 · «결석한 날 수업 덜 본 학생» 띠 */
   function lec_att_staff(d) {
@@ -1528,7 +1562,8 @@
 
   var IMPL = {
     lec_login: lec_login, lec_home: lec_home, lec_consent: lec_consent, lec_beat: lec_beat, lec_qna_list: lec_qna_list,
-    lec_ask: lec_ask, lec_qdel: lec_qdel, lec_logout: lec_logout, lec_att: lec_att, lec_paper: lec_paper
+    lec_ask: lec_ask, lec_qdel: lec_qdel, lec_logout: lec_logout, lec_att: lec_att, lec_paper: lec_paper,
+    lec_pdf: lec_pdf
   };
 
   /* 함수 모양(PostgREST 와 같게: 이름이 모자라거나 남으면 404 PGRST202 · 값 꼴이 틀리면 400) */
@@ -1548,6 +1583,7 @@
     lec_logout: { p_key: 'text' },
     lec_att: { p_key: 'text' },
     lec_paper: { p_key: 'text' },
+    lec_pdf: { p_key: 'text' },
     /* 선생님 함수(로그인한 선생님만 · LecMock.staff.rpc 로) */
     lec_todo: {},
     lec_att_staff: {},
@@ -1624,6 +1660,7 @@
     var sig = SIG[fn], k, t, out = {};
     if (OLD && (fn === 'lec_att' || fn === 'lec_att_staff')) sig = null;
     if ((OLD || NOPAPER) && fn === 'lec_paper') sig = null;
+    if ((OLD || NOPDF) && fn === 'lec_pdf') sig = null;   /* P1 을 아직 안 넣은 서버(아래 NOPDF) */
     if ((OLD || NORANGE) && /^lec_range_/.test(fn)) sig = null;   /* C2 함수가 없는 서버(아래 C2 절) */
     if (!sig) throw httpErr(404, 'PGRST202', 'Could not find the function public.' + fn);
     args = args && typeof args === 'object' && !isArr(args) ? args : {};
@@ -1665,7 +1702,9 @@
     /* C1(덧붙인 칸): 더 있는 수업일 · 실행기 txt 의 [온라인 클래스] 묶음 */
     lesson_more: 'datearr', runner: 'json',
     /* C1 고침(11-16): 수업일마다 반 {"YYYY-MM-DD": [반 id]} · 없거나 빈 날 = 강의의 모든 반 */
-    lesson_cls: 'json'
+    lesson_cls: 'json',
+    /* P1(11-16): 필기 PDF [{p: sha256 64자 + '.pdf', n: 올린 파일 이름, b: 바이트}] · 둘까지(SQL check lec_lecture_files_ok) */
+    files: 'json'
   };
 
   /* 옛 SQL 흉내(?oldsql=1 또는 LecMock.oldSql(true)): 새 칸 · 새 함수가 없는 서버 */
@@ -1677,12 +1716,17 @@
   /* 수업일마다 반 칸(lesson_cls)만 없는 서버(11-16 고치기 전 C1 SQL · ?nolcls=1 또는 LecMock.noLcls(true)) */
   var NOLCLS = false;
   try { NOLCLS = /[?&]nolcls=1(&|$)/.test(w.location.search); } catch (e) { NOLCLS = false; }
+  /* P1 을 아직 안 넣은 서버(지금 운영과 같음 · 6·9 판까지): files 칸 · lec_pdf 가 없음(?nopdf=1 또는 LecMock.noPdf(true)) */
+  var NOPDF = false;
+  try { NOPDF = /[?&]nopdf=1(&|$)/.test(w.location.search); } catch (e) { NOPDF = false; }
+  /* 저장 곳(Storage 버킷 lec-pdf)을 못 만든 서버: 올리기가 «Bucket not found»(LecMock.storeFail(true)) */
+  var STOREFAIL = false;
   /* 시험용(M-2 맞대기): 고치기 전 셈(모든 짝에 모든 날 · 수업일마다 반 안 봄) · LecMock.legacyAtt(true) */
   var LEGACY = false;
-  function isNewCol(k) { return k === 'lesson_more' || k === 'runner' || k === 'lesson_cls'; }
-  function noCol(k) { return (OLD && isNewCol(k)) || (NOLCLS && k === 'lesson_cls'); }
+  function isNewCol(k) { return k === 'lesson_more' || k === 'runner' || k === 'lesson_cls' || k === 'files'; }
+  function noCol(k) { return (OLD && isNewCol(k)) || (NOLCLS && k === 'lesson_cls') || (NOPDF && k === 'files'); }
   function stripNew(l) {
-    if (!(OLD || NOLCLS) || !l) return l;
+    if (!(OLD || NOLCLS || NOPDF) || !l) return l;
     var o = {}, k;
     for (k in l) { if (has(l, k) && !noCol(k)) o[k] = l[k]; }
     return o;
@@ -2092,6 +2136,24 @@
     });
   }
 
+  /* P1 files 칸 검사(SQL check lec_lecture_files_ok 와 같음) */
+  function filesOk(v) {
+    var i, e;
+    if (!isArr(v) || v.length > 2) return false;
+    for (i = 0; i < v.length; i += 1) {
+      e = v[i];
+      if (!e || typeof e !== 'object' || isArr(e)) return false;
+      if (typeof e.p !== 'string' || !PDF_P.test(e.p) || typeof e.n !== 'string' || typeof e.b !== 'number') return false;
+    }
+    return true;
+  }
+  function storeChk(d, key) {
+    if (STOREFAIL) throw httpErr(400, '404', 'Bucket not found');
+    if (!ME) throw httpErr(403, '403', 'new row violates row-level security policy');
+    if (typeof key !== 'string' || !PDF_P.test(key)) throw httpErr(400, 'InvalidKey', 'Invalid key: ' + key);
+    if (!isArr(d.objects)) d.objects = [];
+  }
+
   var staff = {
     me: function () { return later(function () { return ME; }); },
     /* 시험용: 지금 로그인 바꾸기
@@ -2134,13 +2196,14 @@
           if (!has(o, k) || o[k] === undefined) continue;
           if (!has(COLS, k) || noCol(k)) throw httpErr(400, 'PGRST204', 'Could not find the \'' + k + '\' column of \'lec_lecture\'');
           v[k] = colVal(k, o[k]);
+          if (k === 'files' && !filesOk(v[k])) throw httpErr(400, '23514', 'new row for relation "lec_lecture" violates check constraint "lec_lecture_files_ok"');
         }
         var l = v.id ? findLecture(d, v.id) : null, now = pgts(nowMs());
         if (!l) {
           l = {
             id: v.id || L().uuid(), title: '', book: '', yt: '', dur: 0, chapters: [], class_ids: [],
             lesson_on: null, posted_on: today(), until: null, hidden: false, created_by: '', created_at: now, updated_at: now,
-            lesson_more: [], runner: {}, lesson_cls: {}
+            lesson_more: [], runner: {}, lesson_cls: {}, files: []
           };
           for (k in v) { if (has(v, k)) l[k] = v[k]; }
           d.lecture.push(l);
@@ -2153,6 +2216,36 @@
         return stripNew(l);
       });
     },
+
+    /* P1 저장 곳 lec-pdf 흉내: 올리기(upsert 없음 · 같은 이름 409) · 지우기 · 목록(시험용) */
+    pdfPut: function (key, size, type) {
+      return withDb(function (d) {
+        storeChk(d, key);
+        if (type !== undefined && type !== 'application/pdf') throw httpErr(415, '415', 'mime type ' + type + ' is not supported');
+        if (+size > 31457280) throw httpErr(413, '413', 'The object exceeded the maximum allowed size');
+        var i;
+        for (i = 0; i < d.objects.length; i += 1) {
+          if (d.objects[i].name === key) throw httpErr(409, '409', 'The resource already exists');
+        }
+        d.objects.push({ name: key, size: +size || 0, created_at: pgts(nowMs()) });
+        return { path: key };
+      });
+    },
+    pdfDel: function (keys) {
+      return withDb(function (d) {
+        if (STOREFAIL) throw httpErr(400, '404', 'Bucket not found');
+        if (!ME) return [];
+        if (!isArr(d.objects)) d.objects = [];
+        keys = isArr(keys) ? keys : [keys];
+        var out = [];
+        d.objects = d.objects.filter(function (o) {
+          if (keys.indexOf(o.name) >= 0) { out.push({ name: o.name }); return false; }
+          return true;
+        });
+        return out;
+      });
+    },
+    pdfList: function () { return withDb(function (d) { return isArr(d.objects) ? d.objects : []; }); },
 
     /* 지우면 진도 · 보기 기록 · 질문도 함께(SQL 의 on delete cascade) */
     deleteLecture: function (id) {
@@ -2244,7 +2337,10 @@
     noPaper: function (on) { if (on !== undefined) NOPAPER = !!on; return NOPAPER; },
     /* 시험용: 고치기 전 출결 셈 켜기·끄기(M-2 결과 맞대기) */
     legacyAtt: function (on) { if (on !== undefined) LEGACY = !!on; return LEGACY; },
-    noLcls: function (on) { if (on !== undefined) NOLCLS = !!on; return NOLCLS; }
+    noLcls: function (on) { if (on !== undefined) NOLCLS = !!on; return NOLCLS; },
+    /* 시험용: P1(files 칸 · lec_pdf)을 안 넣은 서버 · 저장 곳을 못 만든 서버 켜기·끄기 */
+    noPdf: function (on) { if (on !== undefined) NOPDF = !!on; return NOPDF; },
+    storeFail: function (on) { if (on !== undefined) STOREFAIL = !!on; return STOREFAIL; }
   };
 
   /* ======================================================= C2 (11-16) 학교 시험 D-day · 시험 범위 영상
