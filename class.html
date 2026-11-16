@@ -368,10 +368,44 @@ a.row:active{background:var(--press)}
 <script>
 (function () {
   'use strict';
-  var demo = /[?&]demo=1(?:&|$)/.test(location.search);
+  var Q = location.search, demo = /[?&]demo=1(?:&|$)/.test(Q);
+  /* 선생님 «학생 화면 미리 보기»(11-17): 주소에 preview=<강의 id> 가 있고 이 기기에 선생님 세션(@his.kr)이 있을 때만 class-preview.js 를 읽음 ·
+     세션이 없으면 preview 를 주소에서 빼고 보통 학생 화면 그대로(미리 보기 흔적 없음) · 안쪽(&in=1)은 바깥 미리 보기 창 안에서만 */
+  var pv = '', inner = false, m = /[?&]preview=([^&#]*)/.exec(Q);
+  function staff() {
+    try {
+      var ls = window.localStorage, i, k, v, u;
+      for (i = 0; i < ls.length; i += 1) {
+        k = ls.key(i) || '';
+        if (!/^sb-[a-z0-9]+-auth-token$/.test(k)) continue;
+        v = JSON.parse(ls.getItem(k) || 'null');
+        u = v && (v.user || (v.currentSession && v.currentSession.user));
+        if (u && /@his\.kr$/i.test(String(u.email || ''))) return true;
+      }
+    } catch (e) { /* 없음 */ }
+    return false;
+  }
+  if (m) {
+    try { pv = decodeURIComponent(m[1]); } catch (e1) { pv = ''; }
+    inner = /[?&]in=1(?:&|$)/.test(Q);
+    if (pv && inner) {
+      try { if (!(window.parent !== window && window.parent.__lecPv && window.parent.__lecPv.id === pv)) pv = ''; } catch (e2) { pv = ''; }
+    } else if (pv && !demo && !staff()) pv = '';
+    if (!pv) {
+      var q = Q.replace(/^\?/, '').split('&'), o = [], j;
+      for (j = 0; j < q.length; j += 1) { if (q[j] && !/^(preview|in)=/.test(q[j])) o.push(q[j]); }
+      try { history.replaceState(null, '', location.pathname + (o.length ? '?' + o.join('&') : '') + location.hash); } catch (e3) { /* 없음 */ }
+    }
+  }
   var list = demo ? ['class-mock.js', 'class-api.js'] : ['class-api.js'];
+  if (pv) list = inner ? ['class-api.js', 'class-preview.js'] :
+    (demo ? ['class-mock.js', 'class-api.js', 'class-preview.js'] : ['class-api.js', 'vendor-supabase-2.49.4.js', 'class-preview.js']);
   function next() {
-    if (!list.length) { if (window.__lecStart) window.__lecStart(); return; }
+    if (!list.length) {
+      if (pv && window.__lecPv0) window.__lecPv0(inner, pv);
+      else if (window.__lecStart) window.__lecStart();
+      return;
+    }
     var s = document.createElement('script');
     s.src = list.shift();
     s.onload = next;
@@ -391,6 +425,10 @@ window.__lecStart = function () {
   var L = window.Lec;
   var app = document.getElementById('app');
   if (!L) { app.innerHTML = '<div class="wrap"><div class="end1"><p>인터넷 연결을 확인해 주세요.</p></div></div>'; return; }
+  /* 선생님 «학생 화면 미리 보기» 안쪽(class-preview.js 가 선생님 세션을 확인한 뒤에만 켬): 자료는 읽어 둔 강의 · 기록 0(진도 · 질문 안 보냄) ·
+     «나가기» · «기록 안내» 줄 없음 · 학생 화면에서는 늘 false(그림 · 동작 그대로) */
+  var PV = !!window.__lecPvIn;
+  function pvNo() { if (window.__lecPvToast) window.__lecPvToast('미리 보기라 올리지 않았어요'); }
   var esc = L.esc;
   var LS = L.LS;
   var SESS_MS = 20 * 60000;
@@ -468,6 +506,7 @@ window.__lecStart = function () {
   }
 
   function footHTML() {
+    if (PV) return '';
     var m = recMode(), line = '';
     if (m === 'agree') line = '지금: 기록함 · ' + esc(L.fmtMD(S.consent.at)) + ' 동의';
     return '<div class="foot"><a href="#rec" class="hit">기록 안내</a>' +
@@ -968,7 +1007,7 @@ window.__lecStart = function () {
     if (wasPlayer) loadHome(true);
   }
   function goList() {
-    if (S.nav) { history.back(); return; }
+    if (S.nav && !PV) { history.back(); return; }   /* 미리 보기 = 바깥 탭 기록을 건드리지 않음 */
     clearHash();
     route();
   }
@@ -1106,7 +1145,7 @@ window.__lecStart = function () {
   function showList() {
     S.view = 'list';
     var m = recMode(), rec = m === 'agree';
-    var arr = S.lectures.slice().reverse(); /* 서버는 오래된 차례 → 새것부터 */
+    var arr = (PV ? S.lectures.filter(function (x) { return !x.__pv; }) : S.lectures.slice()).reverse(); /* 서버는 오래된 차례 → 새것부터 · 미리 보기: 학생에게 아직 안 보이는 강의는 목록에 없음 */
     var today = L.isoDay();
     var h = '<div class="wrap">' + topHTML();
     var am = attMap(), ab = absList(arr, am, today), i;
@@ -1150,7 +1189,7 @@ window.__lecStart = function () {
   /* 머리줄(목록 · 범위 · PC 보기 같음): 물고기 24 · «히즈 클래스» · 학생 이름 · «나가기» 44×44 */
   function topHTML(cls) {
     return '<div class="top' + (cls ? ' ' + cls : '') + '">' + fishSVG() + '<span class="brand">히즈 클래스</span><span class="sp"></span>' +
-      '<span class="me">' + esc(S.name) + '</span><button class="lo" type="button" data-act="logout">나가기</button></div>';
+      '<span class="me">' + esc(S.name) + '</span>' + (PV ? '' : '<button class="lo" type="button" data-act="logout">나가기</button>') + '</div>';
   }
   /* 결석한 날 수업 카드에 올릴 강의: 결석 · 아직 열림 · 다 보지 않음(선생님 확인 = 끝남) · 결석한 날이 오늘~13일 전 ·
      최근 결석한 날 → 많이 본 것 → id 차례 */
@@ -1786,6 +1825,7 @@ window.__lecStart = function () {
     return L.uuid();
   }
   function sendBeat(force) {
+    if (PV) { if (T) { T.dirty = false; T.lastBeat = L.now(); } return; }   /* 미리 보기 = 진도를 보내지도 · 쌓아 두지도 않음 */
     if (!T || !T.rec || T.err || T.stopped || !T.ready || T.lec.ended) return;
     if (!T.dirty && !force) return;
     if (!T.dirty && T.sess === null && T.real <= 0) return; /* 아직 튼 적 없음 */
@@ -2207,6 +2247,7 @@ window.__lecStart = function () {
     var body = L.btrim(String(ta.value || ''));
     var n = L.clen(body);
     if (n < 1 || n > 1000) { setHTML('qErr', esc(M.qinput)); return; }
+    if (PV) { pvNo(); return; }
     var at = S.q.useAt ? (S.q.at == null ? Math.floor(lecTime()) : S.q.at) : null;
     var pv = $('qPriv');
     S.q.busy = true; btn.disabled = true; setHTML('qErr', '');
@@ -2238,6 +2279,7 @@ window.__lecStart = function () {
     if (!ta) return;
     var body = L.btrim(String(ta.value || '')), n = L.clen(body);
     if (n < 1 || n > 1000) { setHTML('rErr', esc(M.qinput)); return; }
+    if (PV) { pvNo(); return; }
     S.q.busy = true;
     var k = S.key;
     L.ask(k, T.lec.id, body, null, false, pid, null).then(function (r) {
@@ -2254,6 +2296,7 @@ window.__lecStart = function () {
   }
 
   function delQ(id) {
+    if (PV) { pvNo(); return; }
     if (!S.q || S.q.busy) return;
     S.q.busy = true;
     var k = S.key;
