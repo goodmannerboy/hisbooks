@@ -482,6 +482,36 @@ b,strong,.bandn strong{font-weight:700}
 .ntc textarea{margin-top:12px;resize:vertical}
 .ntc .ntf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:12px}
 .ntc .ntf .mut{flex:1 1 220px;min-width:0;font-size:13px}
+/* 설치 안내 결론안(11-16): 공지 카드 «설치 안내» 테두리 단추 → 아래 작은 줄(TV 전체 화면 · 그림 복사 · 종이 인쇄 + 같이 설치 때) */
+.ntc .btn.insb{border:1px solid #0C4631;color:#0C4631;font-weight:400}
+.insr{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}
+.insr[hidden]{display:none}
+.insr .btn{border-color:#EFE6CF;background:#EFE6CF;color:#0C4631;font-size:13px;font-weight:400}
+.insr .btn:hover{border-color:#CBBF9A}
+.insr .mut{flex:1 1 100%;min-width:0;font-size:12px;color:#5F6256}
+.insr .mut>span{white-space:nowrap}
+html.tvon,html.tvon body{overflow:hidden}
+.instv{position:fixed;left:0;top:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;justify-content:center;background:#F4ECD7;color:#0C4631;outline:none}
+.instv .tvin{display:flex;align-items:center;justify-content:center;gap:5vw;padding:0 6vw}
+.instv .tvq{flex:0 0 auto;line-height:0}
+.instv .tvq svg{display:block;width:60vh;height:60vh}
+.instv .tvh{margin:0;font-size:clamp(28px,3.6vw,84px);font-weight:700;line-height:1.35;letter-spacing:-.02em;white-space:nowrap}
+.instv .tvm{display:flex;align-items:center;gap:.5em;margin:1.2em 0 0;font-size:clamp(14px,1.3vw,30px);color:#5F6256;white-space:nowrap}
+.instv .tvm svg{width:1.25em;height:1.25em;flex:0 0 auto}
+.instv .tvx{position:absolute;top:16px;right:16px;color:#5F6256}
+@media (max-width:760px){.instv .tvin{flex-direction:column;gap:24px;text-align:center}.instv .tvh{font-size:26px}.instv .tvm{justify-content:center;font-size:14px}}
+.insp{display:none}
+/* 인쇄 칸 이름은 ip* 만(앱의 .pl 알약 · .ph 줄 규칙과 겹치지 않게) · 종이 바탕은 흰색(배경 그래픽을 켜도 크림이 안 찍힘) */
+@media print{
+  html.insprint,html.insprint body{background:#fff!important}
+  html.insprint body>*{display:none!important}
+  html.insprint body>.insp{display:block!important;color:#000;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:11pt;font-weight:400;line-height:1.5}
+  .insp .iph{font-size:14pt;font-weight:700;padding-bottom:3mm;border-bottom:1px solid #000}
+  .insp .ipq{display:flex;align-items:center;gap:6mm;padding:5mm 0}
+  .insp .ipq svg{display:block;width:40mm;height:40mm;flex:0 0 auto}
+  .insp .ipqt{font-size:13pt;font-weight:700;line-height:1.45}
+  .insp .ipl{padding:2.5mm 0;border-top:1px solid #000}
+}
 @media (max-width:760px){
   .btn,.btn.sm,.chip,.tab,.ti,.x,.x.sm,.dyc .chip.sm{min-height:44px}
   .x,.x.sm{width:44px;height:44px}
@@ -1698,7 +1728,7 @@ window.__lecAdminStart = function () {
     if (p) a += '\n' + p;
     c = '궁금한 곳은 히즈 클래스에서 질문으로 남겨 주세요.';
     if (l.until) c += ' ' + L.fmtMD(l.until) + '까지 볼 수 있어요.';
-    return a + '\n' + c + '\n히즈 클래스 주소 ' + STU_URL;
+    return a + '\n' + c + '\n히즈 클래스 주소 ' + STU_URL + '\n홈 화면에 히즈 클래스를 추가했다면 이 링크 말고 아이콘으로 여세요.';   /* 설치 안내 결론안(11-16): 끝 한 줄 · 주소는 그대로(?i=1 안 붙임) */
   }
   /* 둘째 줄: 워크북이 있는 지문이 없으면 «판서를 펴 두고 보세요.» · 번호가 다 같으면 «워크북 번호는 지문과 같아요.»
      · 다른 곳만 «워크북 번호가 다른 곳: 05번은 워크북 5~6번 · …»(빈 워크북은 적지 않음) */
@@ -2677,11 +2707,264 @@ window.__lecAdminStart = function () {
       esc((ids.indexOf('*') >= 0 ? '전체' : clsNames(ids)) + ' 반 공지 문구') + '</b></div>' +
       '<label class="sr" for="ed-nt">반 공지 문구</label><textarea id="ed-nt" rows="' + noticeRows(rw) + '">' + esc(noticeText(rw)) + '</textarea>' +
       '<div class="ntf"><button type="button" class="btn fill" data-act="ntCopy" data-t="ed-nt">' + kIcon('copy') + '반 공지 문구 복사</button>' +
+      '<button type="button" class="btn insb" data-act="insTog" aria-expanded="false" aria-controls="ed-ins">' + insIcon('qr') + '설치 안내</button>' +
       '<span class="mut">반 단톡방에 그대로 붙여 넣을 수 있어요. 학생 이름은 들어가지 않아요.</span>' +
-      '<button type="button" class="btn" data-act="edClose">닫기</button></div></section>';
+      '<button type="button" class="btn" data-act="edClose">닫기</button></div>' + insRowHtml() + '</section>';
     el.scrollTop = 0;
     b = el.querySelector('[data-act=ntCopy]');
     if (b) { try { b.focus(); } catch (e) {} }
+  }
+  /* ------------------------------------------------------------------ 설치 안내 결론안(11-16)
+     공지 카드 «설치 안내»(테두리 단추) → 아래 작은 줄: TV 전체 화면(QR + 큰 글) · 그림 복사(학부모 카톡 그림 · QR 없음) · 종이 인쇄(A5 흑백) · 새 화면 없음
+     QR 주소 = INS_URL · 파이썬 qrcode(ERROR_CORRECT_M) 행렬을 16진으로 넣음(33칸 · 한 줄 9자리 · 왼쪽부터 · cv2 로 판독 확인) · QR 프로그램은 넣지 않음 */
+  var INS_URL = 'https://goodmannerboy.github.io/hisbooks/class.html?i=1';
+  var INS_N = 33, INS_QR = 'FE00F53F8827928208BAF2862E8BAD8732E8BA97DF2E882F04C208FEAAAABF800B2BE800BE5E5ABE0F9FC7D3684FDF08AB059EC1E6E05A7BF8DC8B4DD116185659C2EF0E8250C6E0CBBF53DC8600CB936816F5A21B088F9957F8ABFB239D8DDEBF9228967E2A4D0B0FE8DEF8AE52D2F9000ECD88A8FE4345AA082E9758F8BAB882FD8BACD3F4B8BAC187300826F2E6E0FE9D4BF10';
+  var insPath = '', ins = { tv: null, fs: false, from: null };
+  var INS_I = {
+    qr: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M7 7v.01M17 7v.01M7 17v.01M14 14h3M20 14v.01M14 14v3M14 20h3M17 17h3M20 17v3"/>',
+    tv: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3l-4 4l-4-4"/>',
+    photo: '<path d="M15 8h.01"/><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 16l5-5c.93-.9 2.07-.9 3 0l5 5"/><path d="M14 14l1-1c.93-.9 2.07-.9 3 0l3 3"/>',
+    printer: '<path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2"/><path d="M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4"/><rect x="7" y="13" width="10" height="8" rx="2"/>',
+    camera: '<path d="M5 7h1a2 2 0 0 0 2-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2"/><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0-6 0"/>'
+  };
+  /* 학부모 그림의 칩 그림(학생 화면 class.html icon() 과 같은 줄) */
+  var INS_P = {
+    dots: ['M4 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0', 'M11 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0', 'M18 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0'],
+    share: ['M8 9H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1', 'M12 14V3', 'M9 6l3-3l3 3'],
+    dl: ['M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2', 'M7 11l5 5l5-5', 'M12 4v12']
+  };
+  function insIcon(n) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">' + (INS_I[n] || '') + '</svg>';
+  }
+  function insQrPath() {
+    if (insPath) return insPath;
+    var D = Math.ceil(INS_N / 4), y, k, x, s, bt, p = '';
+    for (y = 0; y < INS_N; y += 1) {
+      bt = '';
+      for (k = 0; k < D; k += 1) bt += ('000' + parseInt(INS_QR.charAt(y * D + k), 16).toString(2)).slice(-4);
+      for (x = 0; x < INS_N;) {
+        if (bt.charAt(x) === '1') {
+          s = x;
+          while (x < INS_N && bt.charAt(x) === '1') x += 1;
+          p += 'M' + s + ' ' + y + 'h' + (x - s) + 'v1h-' + (x - s) + 'z';
+        } else x += 1;
+      }
+    }
+    insPath = p;
+    return p;
+  }
+  /* 흰 여백 4칸 포함 · 칸이 흐려지지 않게 crispEdges */
+  function insQrSvg(color) {
+    var W = INS_N + 8;
+    return '<svg viewBox="-4 -4 ' + W + ' ' + W + '" shape-rendering="crispEdges" role="img" aria-label="QR: 히즈 클래스 주소" focusable="false">' +
+      '<rect x="-4" y="-4" width="' + W + '" height="' + W + '" fill="#ffffff"/><path d="' + insQrPath() + '" fill="' + color + '"/></svg>';
+  }
+  function insRowHtml() {
+    return '<div class="insr" id="ed-ins" hidden>' +
+      '<button type="button" class="btn" data-act="insTv">' + insIcon('tv') + 'TV 전체 화면</button>' +
+      '<button type="button" class="btn" data-act="insImg">' + insIcon('photo') + '그림 복사</button>' +
+      '<button type="button" class="btn" data-act="insPrint">' + insIcon('printer') + '종이 인쇄</button>' +
+      '<span class="mut"><span>같이 설치: 수업 시작 2분 ·</span> <span>OT ·</span> <span>첫 영상 다음 수업 ·</span> <span>시험 3주 전</span></span></div>';
+  }
+  function insTog(btn) {
+    var r = $('ed-ins'), on;
+    if (!r) return;
+    on = !!r.hidden;
+    r.hidden = !on;
+    if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function insCls(k, on) {
+    var r = document.documentElement;
+    r.className = (' ' + r.className + ' ').replace(new RegExp(' ' + k + ' ', 'g'), ' ').replace(/^\s+|\s+$/g, '') + (on ? ' ' + k : '');
+  }
+  /* TV 전체 화면: 크림 덮개 · 왼쪽 QR(화면 높이의 60% 안팎 · 칸은 정수 px) · 오른쪽 큰 글 · 누른 김에 전체 화면(안 되면 덮개만) · Esc · 닫기 */
+  function insTvFit() {
+    var o = ins.tv, s, W, H, max, m, q = INS_N + 8;
+    if (!o) return;
+    s = o.querySelector('.tvq svg');
+    W = window.innerWidth || 1280; H = window.innerHeight || 720;
+    max = W <= 760 ? Math.min(H * 0.5, W * 0.8) : Math.min(H * 0.6, W * 0.45);
+    m = Math.max(1, Math.round(max / q));
+    if (m > 1 && m * q > max * 1.04) m -= 1;
+    s.style.width = s.style.height = (m * q) + 'px';
+  }
+  function insTv(btn) {
+    if (ins.tv) return;
+    var o = document.createElement('div'), rq, pr;
+    o.className = 'instv';
+    o.id = 'instv';
+    o.setAttribute('role', 'dialog');
+    o.setAttribute('aria-modal', 'true');
+    o.setAttribute('aria-label', '설치 안내 TV 화면');
+    o.tabIndex = -1;
+    o.innerHTML = '<div class="tvin"><div class="tvq">' + insQrSvg('#0C4631') + '</div>' +
+      '<div class="tvt"><p class="tvh">카메라 앱으로 찍고,<br>폰 화면 안내대로</p>' +
+      '<p class="tvm">' + insIcon('camera') + '<span>히즈 클래스 · 홈 화면에 앱으로 추가</span></p></div></div>' +
+      '<button type="button" class="btn txt tvx" data-act="insTvX">닫기</button>';
+    document.body.appendChild(o);
+    ins.tv = o; ins.fs = false; ins.from = btn || null;
+    insCls('tvon', true);
+    insTvFit();
+    try { o.querySelector('.tvx').focus(); } catch (e) {}
+    rq = o.requestFullscreen || o.webkitRequestFullscreen;
+    if (rq) {
+      try { pr = rq.call(o); if (pr && typeof pr.then === 'function') pr.then(null, function () {}); } catch (e2) {}
+    }
+  }
+  function insTvClose() {
+    var o = ins.tv, d = document, fe = d.fullscreenElement || d.webkitFullscreenElement, b = ins.from, x;
+    if (!o) return;
+    ins.tv = null; ins.fs = false; ins.from = null;
+    if (fe) {
+      try { x = d.exitFullscreen ? d.exitFullscreen() : (d.webkitExitFullscreen ? d.webkitExitFullscreen() : null); if (x && typeof x.then === 'function') x.then(null, function () {}); } catch (e) {}
+    }
+    if (o.parentNode) o.parentNode.removeChild(o);
+    insCls('tvon', false);
+    if (b && d.documentElement.contains(b)) { try { b.focus(); } catch (e2) {} }
+  }
+  function insFsChange() {
+    var fe = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!ins.tv) return;
+    if (fe === ins.tv) { ins.fs = true; insTvFit(); return; }
+    if (ins.fs && !fe) insTvClose(); /* 전체 화면을 Esc 로 나오면(브라우저가 키를 가져감) 덮개도 닫음 */
+  }
+  document.addEventListener('fullscreenchange', insFsChange);
+  document.addEventListener('webkitfullscreenchange', insFsChange);
+  window.addEventListener('resize', function () { if (ins.tv) insTvFit(); });
+  /* 덮개가 떠 있으면 Esc 는 덮개만 닫음(뒤 서랍은 그대로) · Tab 은 «닫기»에 머묾 */
+  document.addEventListener('keydown', function (ev) {
+    if (!ins.tv) return;
+    if (ev.key === 'Escape' || ev.key === 'Esc' || ev.keyCode === 27) { ev.preventDefault(); ev.stopPropagation(); insTvClose(); return; }
+    if (ev.key === 'Tab' || ev.keyCode === 9) { ev.preventDefault(); try { ins.tv.querySelector('.tvx').focus(); } catch (e) {} }
+  }, true);
+  /* 학부모 카톡 그림(QR 없음): 680 × 2배 = 가로 1360px · 크림 바탕 · 딥그린 글자 · 두 칸(아이폰 · 갤럭시) */
+  function insDraw() {
+    var Z = 2, W = 680, P = 32, G = 16, F = '"Apple SD Gothic Neo","Malgun Gothic",-apple-system,BlinkMacSystemFont,sans-serif';
+    var cv = document.createElement('canvas'), c = cv.getContext('2d'), colW = (W - P * 2 - G) / 2, cp = 18, inner = colW - cp * 2;
+    var ink = '#0C4631', sub = '#5F6256', LH = 36, CH = 28;
+    var cols = [
+      { t: '아이폰', s: [[{ k: '사파리로 열기' }], [{ i: 'dots' }, '→', { i: 'share', k: '공유' }], [{ k: '홈 화면에 추가' }, '→', { k: '추가' }]] },
+      { t: '갤럭시', s: [[{ k: '다른 브라우저로 열기' }], [{ i: 'dl', k: '설치하기' }], ['홈 화면 아이콘']] }
+    ];
+    function font(px, b) { c.font = (b ? '700 ' : '400 ') + px + 'px ' + F; }
+    function itemW(it) {
+      if (typeof it === 'string') { font(15, false); return c.measureText(it).width; }
+      font(15, false);
+      return 18 + (it.i ? 16 : 0) + (it.i && it.k ? 5 : 0) + (it.k ? c.measureText(it.k).width : 0);
+    }
+    /* 한 단계 = 칩·화살표·글을 줄에 채우고 넘치면 다음 줄 · 돌려주는 값 = 자리 목록과 줄 수 */
+    function flow(items, w) {
+      var out = [], x = 0, ln = 0, i, iw;
+      for (i = 0; i < items.length; i += 1) {
+        iw = itemW(items[i]);
+        if (x > 0 && x + iw > w) { x = 0; ln += 1; }
+        out.push({ it: items[i], x: x, ln: ln, w: iw });
+        x += iw + 8;
+      }
+      return { pos: out, n: ln + 1 };
+    }
+    function colH(col) {
+      var h = cp + 24 + 12, j;
+      for (j = 0; j < col.s.length; j += 1) h += flow(col.s[j], inner - 32).n * LH + (j < col.s.length - 1 ? 8 : 0);
+      return h + cp;
+    }
+    var cardH = Math.max(colH(cols[0]), colH(cols[1]));
+    var H = P + 34 + 8 + 22 + 22 + cardH + 22 + 26 + 26 + P - 6;
+    cv.width = W * Z; cv.height = Math.round(H * Z);
+    c.scale(Z, Z);
+    function rr(x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.arcTo(x + w, y, x + w, y + r, r); c.lineTo(x + w, y + h - r); c.arcTo(x + w, y + h, x + w - r, y + h, r);
+      c.lineTo(x + r, y + h); c.arcTo(x, y + h, x, y + h - r, r); c.lineTo(x, y + r); c.arcTo(x, y, x + r, y, r); c.closePath();
+    }
+    function ico(n, x, y) {
+      var a = INS_P[n] || [], k;
+      if (typeof window.Path2D !== 'function') return;
+      c.save(); c.translate(x, y); c.scale(16 / 24, 16 / 24);
+      c.strokeStyle = ink; c.lineWidth = 2; c.lineCap = 'round'; c.lineJoin = 'round';
+      for (k = 0; k < a.length; k += 1) c.stroke(new window.Path2D(a[k]));
+      c.restore();
+    }
+    c.fillStyle = '#F4ECD7'; c.fillRect(0, 0, W, H);
+    c.textBaseline = 'middle';
+    c.fillStyle = ink; font(26, true); c.fillText('히즈 클래스를 홈 화면에', P, P + 17);
+    c.fillStyle = sub; font(15, false); c.fillText('자녀 폰에서, 자녀 이름과 등원 번호로 · 반 카톡 링크를 누른 뒤', P, P + 34 + 8 + 11);
+    var top = P + 34 + 8 + 22 + 22, ci, col, x0, y, j, fl, q, it, ix, iy;
+    for (ci = 0; ci < 2; ci += 1) {
+      col = cols[ci]; x0 = P + ci * (colW + G);
+      c.fillStyle = '#FFFDF7'; rr(x0, top, colW, cardH, 12); c.fill();
+      c.fillStyle = ink; font(17, true); c.fillText(col.t, x0 + cp, top + cp + 12);
+      y = top + cp + 24 + 12;
+      for (j = 0; j < col.s.length; j += 1) {
+        fl = flow(col.s[j], inner - 32);
+        c.fillStyle = ink; c.beginPath(); c.arc(x0 + cp + 11, y + LH / 2, 11, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#F4ECD7'; font(13, true); c.textAlign = 'center'; c.fillText(String(j + 1), x0 + cp + 11, y + LH / 2 + 0.5); c.textAlign = 'left';
+        for (q = 0; q < fl.pos.length; q += 1) {
+          it = fl.pos[q].it; ix = x0 + cp + 32 + fl.pos[q].x; iy = y + fl.pos[q].ln * LH;
+          if (typeof it === 'string') { c.fillStyle = it === '→' ? sub : ink; font(15, false); c.fillText(it, ix, iy + LH / 2); continue; }
+          c.fillStyle = '#EFE6CF'; rr(ix, iy + (LH - CH) / 2, fl.pos[q].w, CH, 7); c.fill();
+          if (it.i) ico(it.i, ix + 9, iy + (LH - 16) / 2);
+          if (it.k) { c.fillStyle = ink; font(15, false); c.fillText(it.k, ix + 9 + (it.i ? 21 : 0), iy + LH / 2); }
+        }
+        y += fl.n * LH + 8;
+      }
+    }
+    y = top + cardH + 22;
+    c.fillStyle = sub; font(15, false);
+    c.fillText('설치하기가 안 보이면 폰 화면 안내대로 하면 돼요.', P, y + 11);
+    c.fillText('앱으로 처음 열면 이름과 번호를 한 번 더 넣어요.', P, y + 26 + 11);
+    return cv;
+  }
+  function insSave(b) {
+    var u, a;
+    try {
+      u = URL.createObjectURL(b);
+      a = document.createElement('a');
+      a.href = u; a.download = '히즈클래스_홈화면_안내.png';
+      document.body.appendChild(a); a.click(); a.parentNode.removeChild(a);
+      setTimeout(function () { try { URL.revokeObjectURL(u); } catch (e) {} }, 4000);
+      toast('여기서는 그림 복사가 막혀 있어 내려받았어요. 카톡 창에 끌어 넣으세요.');
+    } catch (e2) { toast('그림을 만들지 못했어요', true); }
+  }
+  /* 그림 복사: 누른 그 자리에서 clipboard.write(ClipboardItem) · 사파리는 약속(Promise) 꼴만 받음 → 약속 꼴 먼저 · 안 되면 그림 꼴 · 그래도 안 되면 PNG 내려받기 */
+  function insImg() {
+    var cv, cb = navigator.clipboard, CI = window.ClipboardItem, p = null, OK = '그림을 복사했어요. 카톡 창에 붙여 넣으세요.';
+    try { cv = insDraw(); } catch (e) { toast('그림을 만들지 못했어요', true); return; }
+    function down() { cv.toBlob(function (b) { if (b) insSave(b); else toast('그림을 만들지 못했어요', true); }, 'image/png'); }
+    if (!cb || !cb.write || !CI || typeof window.Promise !== 'function') { down(); return; }
+    try {
+      p = cb.write([new CI({ 'image/png': new window.Promise(function (res, rej) { cv.toBlob(function (b) { if (b) res(b); else rej(new Error('png')); }, 'image/png'); }) })]);
+    } catch (e1) { p = null; }
+    function again() {
+      cv.toBlob(function (b) {
+        if (!b) { toast('그림을 만들지 못했어요', true); return; }
+        var p2 = null;
+        try { p2 = cb.write([new CI({ 'image/png': b })]); } catch (e3) { p2 = null; }
+        if (p2 && typeof p2.then === 'function') p2.then(function () { toast(OK); }, function () { insSave(b); });
+        else insSave(b);
+      }, 'image/png');
+    }
+    if (p && typeof p.then === 'function') p.then(function () { toast(OK); }, again);
+    else again();
+  }
+  /* 종이 인쇄: A5 흑백 카드(여백 8mm · 11pt · 색 대신 선) · 인쇄 전용 칸만 찍음 · 인쇄 크기 규칙은 찍는 동안만 넣음(다른 인쇄에 안 남게) */
+  function insPrint() {
+    var d = document, p = $('insp'), st = $('insps');
+    if (!p) { p = d.createElement('div'); p.id = 'insp'; p.className = 'insp'; d.body.appendChild(p); }
+    p.innerHTML = '<div class="iph">히즈 클래스 · 홈 화면에 앱으로</div>' +
+      '<div class="ipq">' + insQrSvg('#000000') + '<div class="ipqt">카메라 앱으로 찍고,<br>폰 화면 안내대로</div></div>' +
+      '<div class="ipl">아이폰: ⋯ → 공유 → 홈 화면에 추가 → 추가</div>' +
+      '<div class="ipl">갤럭시: 설치하기 → 설치 · 없으면 화면 안내대로</div>';
+    if (!st) { st = d.createElement('style'); st.id = 'insps'; st.textContent = '@page{size:A5;margin:8mm}'; d.head.appendChild(st); }
+    insCls('insprint', true);
+    function done() {
+      window.removeEventListener('afterprint', done);
+      insCls('insprint', false);
+      var s2 = $('insps');
+      if (s2 && s2.parentNode) s2.parentNode.removeChild(s2);
+    }
+    window.addEventListener('afterprint', done);
+    try { window.print(); } catch (e) { done(); }
   }
   function edDelete(btn) {
     if (!S.ed || !S.ed.id || S.busy.ed) return;
@@ -2978,6 +3261,11 @@ window.__lecAdminStart = function () {
         break;
       case 'unconf': act('uncf', el, DA.rpc('lec_unconfirm', { p_lecture: l, p_skey: s }), '되돌렸어요'); break;
       case 'ntCopy': t = el.getAttribute('data-t') || 'nt-txt'; copyText($(t) ? $(t).value : '', function () { return $(t); }); break;   /* K: 올린 뒤 카드는 data-t="ed-nt" */
+      case 'insTog': insTog(el); break;   /* 설치 안내 결론안(11-16) */
+      case 'insTv': insTv(el); break;
+      case 'insTvX': insTvClose(); break;
+      case 'insImg': insImg(); break;
+      case 'insPrint': insPrint(); break;
       case 'pmAbsent':
         if (S.pm[s]) { S.pm[s].ab = !S.pm[s].ab; delete S.inputs['pm:' + s]; renderDrawer(); }
         break;
