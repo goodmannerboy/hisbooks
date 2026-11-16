@@ -15,7 +15,7 @@
   'use strict';
 
   var STORE = 'lec-demo-v1';
-  var VER = 4;
+  var VER = 5;
   var CONSENT_VER = 'v1-2026-11';   /* class-setup.sql lec__consent_ver() 와 같게 */
   var SEOUL = 9 * 3600000;
   var MINUTE = 60000, HOUR = 3600000, DAY = 86400000;
@@ -193,6 +193,8 @@
     }
     if (!d || d.v !== VER) { d = seed(); save(d); }
     if (ensureTest(d)) save(d);
+    if (c2Ensure(d)) save(d);   /* C2 시연 자료(아래 C2 절) */
+    if (c2Many(d)) save(d);     /* ?manyexams=1 = 시험 여럿(아래 C2 절) · 아니면 넣었던 것을 걷어 냄 */
     return d;
   }
 
@@ -228,7 +230,8 @@
       chapters: o.chapters || [], class_ids: o.class_ids || [],
       lesson_on: o.lesson_on || null, posted_on: o.posted_on || today(), until: o.until || null,
       hidden: !!o.hidden, created_by: str(o.created_by),
-      created_at: o.created_at || t, updated_at: o.updated_at || t
+      created_at: o.created_at || t, updated_at: o.updated_at || t,
+      lesson_more: o.lesson_more || [], runner: o.runner || {}, lesson_cls: o.lesson_cls || {}
     };
   }
 
@@ -310,6 +313,76 @@
       [2520, '06~07번'], [3300, '08번']
     ], -1);
     if (X.TEST) ensureTest(d);
+
+    /* C1 · 출결(히즈북스 자료를 흉내 · 읽기만): 두 반 모두 날마다 수업(고1 A 18:00~19:30 · 고2 B 19:00~20:30) */
+    (function () {
+      var wk = ['일', '월', '화', '수', '목', '금', '토'];
+      function sched(st, en) {
+        var tm = {}, i;
+        for (i = 0; i < wk.length; i += 1) tm[wk[i]] = { start: st, end: en };
+        return { days: wk.slice(), times: tm };
+      }
+      d.classes[0].schedule = sched('18:00', '19:30');
+      d.classes[1].schedule = sched('19:00', '20:30');
+      function dk(off) { return dayStr(off).replace(/-/g, '.'); }
+      function ym(off) { return dayStr(off).slice(0, 7); }
+      function cin(off, hh, mm) { return { 'in': pad(hh, 2) + ':' + pad(mm, 2), t: atMs(off, hh, mm) }; }
+      function row(id, k) { if (!d.app[id]) d.app[id] = {}; if (!d.app[id][k]) d.app[id][k] = (k === 'records' ? [] : {}); return d.app[id][k]; }
+      var main, ck, i, sid;
+      d.app = { main: { records: [], checkins: {}, noShowExcused: {}, sessions: {}, mkup: {}, closedDays: [dk(-1)] } };
+      main = d.app.main;
+      /* 20일 전(L7 · 공개 끝): 고1 A 다섯 모두 등원(달 줄 pt-ck) */
+      ck = row('pt-ck-' + ym(-20), 'checkins');
+      for (i = 1; i <= 5; i += 1) ck['s100' + i + '|' + dk(-20)] = cin(-20, 17, 50);
+      /* 5일 전(L1 · L2): 김하늘 · 이바다 · 최새봄 등원 · 박구름 안 옴 · 정단비 결석 예정(달 줄 pt-old) */
+      ['s1001', 's1002', 's1004'].forEach(function (s) { main.checkins[s + '|' + dk(-5)] = cin(-5, 17, 55); });
+      row('pt-old-' + ym(-5), 'noShowExcused')['s1005|' + dk(-5)] = { reason: '병원', t: atMs(-6, 20, 0) };
+      /* 4일 전(L2 의 둘째 수업일): 이바다만 안 옴 */
+      ['s1001', 's1003', 's1004', 's1005'].forEach(function (s) { main.checkins[s + '|' + dk(-4)] = cin(-4, 17, 52); });
+      /* 3일 전(L3): 윤가람만 안 옴 */
+      ['s2001', 's1005', 's2003'].forEach(function (s) { main.checkins[s + '|' + dk(-3)] = cin(-3, 18, 50); });
+      /* 2일 전(L4 · L5): 최새봄은 등원을 찍었다가 지움(달 줄의 지움 표식이 더 늦음) · 한겨울은 안 왔지만 보강이 잡힘 ·
+         강노을은 등원 기록 없이 일지에 «지각» */
+      ['s1001', 's1002', 's1003', 's1005', 's2002'].forEach(function (s) { main.checkins[s + '|' + dk(-2)] = cin(-2, 17, 55); });
+      main.checkins['s1004|' + dk(-2)] = cin(-2, 17, 50);
+      row('pt-ck-' + ym(-2), 'checkins')['s1004|' + dk(-2)] = { del: 1, t: atMs(-2, 18, 5) };
+      main.mkup['s2001|' + dk(1)] = { cid: 'c-g2b', start: '16:00', end: '17:30', from: dk(-2), t: atMs(-1, 12, 0) };
+      row('pt-rec-' + ym(-2), 'records').push({
+        classId: 'c-g2b', studentId: 's2003', date: dk(-2), attendance: '지각', editT: atMs(-2, 20, 40)
+      });
+      for (i = 0; i < d.lecture.length; i += 1) {
+        sid = d.lecture[i].id;
+        /* L2 는 이틀에 나눠 한 수업(5일 전 · 4일 전) */
+        if (sid === ID.L2) d.lecture[i].lesson_more = [dayStr(-4)];
+        /* L1 은 워크북 번호가 지문 이름과 다른 지문이 있는 강의(C3 회색 표 · C7 멈춤 · 보기용 값) */
+        if (sid === ID.L1) {
+          d.lecture[i].runner = {
+            days: [dayStr(-5)], start: '19:02', items: [
+              { no: '01', at: 11, stop: 600, board: 1, wb: '01' },
+              { no: '02', at: 612, stop: 1200, board: 2, wb: '02' },
+              { no: '03', at: 1213, stop: 1695, board: 3, wb: '5-6' },
+              { no: '04', at: 1707, stop: 2150, board: 4, wb: '3,5' },
+              { no: '05', at: 2163, stop: 2555, board: 5, wb: '' },
+              { no: '06', at: 2567, stop: 2810, board: 6, wb: '06' }
+            ]
+          };
+        }
+        /* L5 는 실행기 txt 의 [온라인 클래스] 묶음이 들어온 강의(보기용 값) */
+        if (sid === ID.L5) {
+          d.lecture[i].runner = {
+            days: [dayStr(-2)], start: '22:52', items: [
+              { no: 'ANALYSIS', at: 11, stop: 16, board: 1, wb: 'ANALYSIS' },
+              { no: '01', at: 25, stop: 625, board: 2, wb: '01' },
+              { no: '02', at: 634, stop: 1082, board: 3, wb: '02' },
+              { no: '03', at: 1091, stop: 1703, board: 4, wb: '03' },
+              { no: '04', at: 1712, stop: 2225, board: 5, wb: '04' },
+              { no: '05', at: 2234, stop: 2683, board: 6, wb: '05' },
+              { no: '06', at: 2692, stop: 3122, board: 7, wb: '06' }
+            ]
+          };
+        }
+      }
+    })();
 
     /* 진도 · 보기 기록: [며칠 전, 시, 분, 시작 비율, 끝 비율, 배속, 기기] */
     var sn = 0;
@@ -926,9 +999,536 @@
     return { ok: true };
   }
 
+  /* ------------------------------------- C1 결석한 날 수업(class-setup.sql 의 C1 묶음과 같은 규칙)
+     출결은 히즈북스 자료를 읽기만 합니다(영상을 봐도 출결은 그대로 · 아무것도 쓰지 않음).
+     연습 자료 d.app = { main: {records, checkins, noShowExcused, sessions, mkup, closedDays},
+                         'pt-rec-YYYY-MM': {records}, 'pt-ck-YYYY-MM': {checkins}, 'pt-old-YYYY-MM': {noShowExcused, sessions, mkup} }
+     반 · 학생 명단은 main.classes 자리에 d.classes 를 씁니다(lec__roster 와 같은 자료) */
+
+  var ATT_FROM = '2026.07.15';
+  var ATT_WK = ['일', '월', '화', '수', '목', '금', '토'];
+
+  function isObj(v) { return !!v && typeof v === 'object' && !isArr(v); }
+  /* jsonb -> 'k' : 객체가 아니거나 열쇠가 없으면 undefined(= SQL null) */
+  function jget(o, k) { return isObj(o) && has(o, k) ? o[k] : undefined; }
+  function objOr(v) { return isObj(v) ? v : {}; }
+  function arrOr(v) { return isArr(v) ? v : []; }
+  /* lec__num: 숫자면 그 값 · 아니면 0 */
+  function attNum(v) { return typeof v === 'number' && isFinite(v) ? v : 0; }
+  /* lec__pint: 앞쪽 숫자만(없으면 null) */
+  function attPint(t) {
+    var m = str(t).match(/^[ \t\n\v\f\r]*([+\-]?[0-9]+)/);
+    return m ? Number(m[1]) : null;
+  }
+  /* lec__dnum: 2026-11-1 · 2026/11/01 → 2026.11.01 · 못 읽으면 '' */
+  function attDnum(p) {
+    var a = str(p).replace(/-/g, '.').replace(/\//g, '.').split('.'), y, m, dd;
+    if (a.length < 3) return '';
+    y = attPint(a[0]); m = attPint(a[1]); dd = attPint(a[2]);
+    if (y == null || m == null || dd == null || y <= 0 || m <= 0 || dd <= 0) return '';
+    return String(y) + '.' + ('0' + m).slice(-2) + '.' + ('0' + dd).slice(-2);
+  }
+  /* lec__closed: 휴원일(날짜 목록 또는 날짜 → {v}) */
+  function attClosed(cd, dk) {
+    if (isArr(cd)) return cd.indexOf(dk) >= 0;
+    if (isObj(cd)) { var o = jget(cd, dk); return isObj(o) && L().truthy(o.v); }
+    return false;
+  }
+  /* lec__held: 그 반 그날 보강 수업이 열림 */
+  function attHeld(ses, cid, dk) {
+    var X = L(), o = jget(ses, cid + '|' + dk);
+    return X.truthy(o) && !X.truthy(jget(o, 'del')) && !X.truthy(jget(o, 'off')) && X.truthy(jget(o, 'start'));
+  }
+  /* lec__ctime: 그 반 그날 수업 시작(isEnd 거짓) · 끝(참) · 수업 없으면 '' */
+  function attCtime(c, wd, dk, ses, isEnd) {
+    var X = L(), cid, ov, sc, ds, tm, v, dy;
+    if (!isObj(c)) return '';
+    cid = X.jtext(jget(c, 'id'));
+    if (str(dk) !== '' && isObj(ses) && cid != null && cid !== '') {
+      ov = jget(ses, cid + '|' + dk);
+      if (X.truthy(ov) && !X.truthy(jget(ov, 'del'))) {
+        if (X.truthy(jget(ov, 'off'))) return '';
+        if (isEnd) {
+          if (X.truthy(jget(ov, 'end'))) return X.jtext(ov.end);
+          if (X.truthy(jget(ov, 'start'))) return '';
+        } else if (X.truthy(jget(ov, 'start'))) {
+          return X.jtext(ov.start);
+        }
+      }
+    }
+    if (wd == null || wd < 0 || wd > 6) return '';
+    dy = ATT_WK[wd];
+    sc = jget(c, 'schedule');
+    if (!sc || typeof sc !== 'object') sc = {};
+    v = isArr(sc) ? sc[wd] : jget(sc, String(wd));
+    ds = jget(sc, 'days');
+    if (isArr(ds) && ds.length > 0) {
+      if (ds.indexOf(dy) < 0) return '';
+    } else if (typeof ds === 'string' && ds !== '') {
+      if (ds.indexOf(dy) < 0) return '';
+    } else if (v === undefined || v === null || v === '') {
+      return '';
+    }
+    tm = jget(jget(sc, 'times'), dy);
+    if (isEnd) {
+      if (X.truthy(jget(tm, 'end'))) return X.jtext(tm.end);
+      if (X.truthy(jget(sc, 'end'))) return X.jtext(sc.end);
+      if (X.truthy(jget(c, 'endTime'))) return X.jtext(c.endTime);
+    } else {
+      if (X.truthy(jget(tm, 'start'))) return X.jtext(tm.start);
+      if (X.truthy(v)) return X.jtext(v);
+      if (X.truthy(jget(c, 'startTime'))) return X.jtext(c.startTime);
+    }
+    return '';
+  }
+  /* lec__stu: 학생 id 로 학생 찾기 — 모든 반에서 마지막 것 */
+  function attStu(classes, rid) {
+    var i, j, ss;
+    classes = arrOr(classes);
+    for (i = classes.length - 1; i >= 0; i -= 1) {
+      ss = arrOr(jget(classes[i], 'students'));
+      for (j = ss.length - 1; j >= 0; j -= 1) {
+        if (isObj(ss[j]) && L().jtext(ss[j].id) === rid) return ss[j];
+      }
+    }
+    return undefined;
+  }
+  /* lec__notyet: 그날 아직 시작 전 학생(반배정 대기 · 시작일/등록일이 그날보다 뒤) */
+  function attNotYet(stu, dk) {
+    var X = L(), sd, td;
+    if (!isObj(stu)) return false;
+    if (X.truthy(stu.pending)) return true;
+    sd = attDnum(X.truthy(stu.startPlan) ? X.jtext(stu.startPlan) : (X.truthy(stu.registeredAt) ? X.jtext(stu.registeredAt) : ''));
+    td = attDnum(dk);
+    return sd !== '' && td !== '' && sd > td;
+  }
+  function dotDay(iso) { return str(iso).replace(/-/g, '.'); }
+  function nextYm(ym) {
+    var y = +ym.slice(0, 4), m = +ym.slice(5, 7) + 1;
+    if (m > 12) { m = 1; y += 1; }
+    return y + '-' + pad(m, 2);
+  }
+  /* 서울 지금 HH:MM */
+  function nowHM() {
+    var t = new Date(nowMs() + SEOUL);
+    return pad(t.getUTCHours(), 2) + ':' + pad(t.getUTCMinutes(), 2);
+  }
+  /* 강의의 수업일(lesson_on + lesson_more) 중 lo..hi 안 · 겹침 없이 오름차순 */
+  function attWin(l, lo, hi) {
+    var a = arrOr(l.lesson_more).concat([l.lesson_on]), out = [], i;
+    for (i = 0; i < a.length; i += 1) {
+      if (a[i] && a[i] >= lo && a[i] <= hi && out.indexOf(a[i]) < 0) out.push(a[i]);
+    }
+    out.sort();
+    return out;
+  }
+  /* lec__lcls: 그 수업일에 든 반(lesson_cls 의 'YYYY-MM-DD' 줄 · 빈 글자는 뺌) · 없거나 비면 null(= 강의의 모든 반) */
+  function lcls(l, dISO) {
+    var m = l && isObj(l.lesson_cls) ? l.lesson_cls : null, a, out = [], i, v;
+    if (!m || !has(m, dISO) || !isArr(m[dISO])) return null;
+    a = m[dISO];
+    for (i = 0; i < a.length; i += 1) {
+      v = a[i];
+      if (v == null) continue;
+      v = typeof v === 'string' ? v : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+      if (v !== '') out.push(v);
+    }
+    return out.length ? out : null;
+  }
+  function lcOk(lc, cid) { return lc == null || lc.indexOf(cid) >= 0; }
+  /* 학생에게 보이는 강의 수업일: 그날 반이 정해져 있으면 내 반이 든 날만(SQL lec 의 lc && v_cls) */
+  function lecDays(l, dd, cls) {
+    var out = [], i, j, lc, ok;
+    for (i = 0; i < dd.length; i += 1) {
+      lc = LEGACY ? null : lcls(l, dd[i]);
+      ok = lc == null;
+      for (j = 0; !ok && j < cls.length; j += 1) { if (lc.indexOf(cls[j]) >= 0) ok = true; }
+      if (ok) out.push(dd[i]);
+    }
+    return out;
+  }
+  function covers(ids, cid) { return ids.indexOf(cid) >= 0 || ids.indexOf('*') >= 0; }
+  /* 반마다 수업일(SQL 의 cd → p_cdays): 반이 강의에 들고 그날 반이 정해져 있으면 그 반일 때만 · 옛 셈(LEGACY)은 모든 반에 모든 날 */
+  function attCdays(lecs, cids) {
+    var o = {}, i, j, q, l, ids, dd, lc, c;
+    for (q = 0; q < cids.length; q += 1) {
+      c = cids[q];
+      if (has(o, c)) continue;
+      o[c] = [];
+      for (i = 0; i < lecs.length; i += 1) {
+        l = lecs[i].l; ids = l.class_ids || []; dd = lecs[i].days;
+        if (!covers(ids, c)) continue;
+        for (j = 0; j < dd.length; j += 1) {
+          lc = LEGACY ? null : lcls(l, dd[j]);
+          if (lcOk(lc, c) && o[c].indexOf(dd[j]) < 0) o[c].push(dd[j]);
+        }
+      }
+      o[c].sort();
+      if (!o[c].length) delete o[c];
+    }
+    return o;
+  }
+
+  /* lec__att_data: 출결에 필요한 것만 한 묶음으로(학생 · 날짜에 걸리는 것만) · 같은 열쇠는 시각 도장 큰 쪽 · 같으면 달 줄
+     달 줄: 일지 · 등하원 · 결석 예정 · 날짜별 수업 = 수업일이 든 달만 / 개인 보강 = 가장 이른 수업일 한 달 앞 ~ 이번 달(C1 고침 L-3) */
+  function attData(d, rids, days) {
+    var app = objOr(d.app), main = objOr(app.main), t = today();
+    var dks = [], yms = [], mym = [], minD = null, i, x, ym, k, id;
+    for (i = 0; i < days.length; i += 1) {
+      x = days[i];
+      if (!x) continue;
+      if (dks.indexOf(dotDay(x)) < 0) dks.push(dotDay(x));
+      if (yms.indexOf(x.slice(0, 7)) < 0) yms.push(x.slice(0, 7));
+      if (minD == null || x < minD) minD = x;
+    }
+    ym = (minD == null || minD > t ? t : minD).slice(0, 7);
+    ym = (+ym.slice(5, 7) === 1) ? (+ym.slice(0, 4) - 1) + '-12' : ym.slice(0, 5) + pad(+ym.slice(5, 7) - 1, 2);
+    while (ym <= t.slice(0, 7)) { mym.push(ym); ym = nextYm(ym); }
+
+    function pick(best, key, val, tt, pri) {
+      var b = best[key];
+      if (!b || tt > b.t || (tt === b.t && pri > b.pri)) best[key] = { v: val, t: tt, pri: pri };
+    }
+    function flat(best) { var o = {}, kk; for (kk in best) { if (has(best, kk)) o[kk] = best[kk].v; } return o; }
+
+    /* 일지: '반|학생|날짜' */
+    var rb = {}, rsrc = [{ pri: 0, a: arrOr(main.records) }];
+    for (i = 0; i < yms.length; i += 1) {
+      id = 'pt-rec-' + yms[i];
+      if (has(app, id)) rsrc.push({ pri: 1, a: arrOr(jget(app[id], 'records')) });
+    }
+    rsrc.forEach(function (s) {
+      var j, v, cid, sid, dt;
+      for (j = 0; j < s.a.length; j += 1) {
+        v = s.a[j];
+        if (!isObj(v)) continue;
+        cid = L().jtext(v.classId); sid = L().jtext(v.studentId); dt = L().jtext(v.date);
+        if (cid == null || cid === '' || rids.indexOf(sid) < 0 || dks.indexOf(dt) < 0) continue;
+        pick(rb, cid + '|' + sid + '|' + dt, v, attNum(v.editT), s.pri);
+      }
+    });
+
+    /* 등하원: '학생|날짜' */
+    var cb = {}, csrc = [{ pri: 0, o: objOr(main.checkins) }];
+    for (i = 0; i < yms.length; i += 1) {
+      id = 'pt-ck-' + yms[i];
+      if (has(app, id)) csrc.push({ pri: 1, o: objOr(jget(app[id], 'checkins')) });
+    }
+    csrc.forEach(function (s) {
+      var kk, p;
+      for (kk in s.o) {
+        if (!has(s.o, kk)) continue;
+        p = kk.split('|');
+        if (rids.indexOf(p[0]) < 0 || dks.indexOf(p.length > 1 ? p[1] : '') < 0) continue;
+        pick(cb, kk, s.o[kk], attNum(jget(s.o[kk], 't')), s.pri);
+      }
+    });
+
+    /* 결석 예정 · 날짜별 수업 · 개인 보강 */
+    var nb = {}, sb = {}, mb = {}, osrc = [{ pri: 0, o: main, q: [0, 1, 2] }], ol = [], qs;
+    for (i = 0; i < yms.length; i += 1) { if (ol.indexOf(yms[i]) < 0) ol.push(yms[i]); }
+    for (i = 0; i < mym.length; i += 1) { if (ol.indexOf(mym[i]) < 0) ol.push(mym[i]); }
+    for (i = 0; i < ol.length; i += 1) {
+      id = 'pt-old-' + ol[i];
+      if (!has(app, id)) continue;
+      qs = [];
+      if (yms.indexOf(ol[i]) >= 0) { qs.push(0); qs.push(1); }
+      if (mym.indexOf(ol[i]) >= 0) qs.push(2);
+      osrc.push({ pri: 1, o: objOr(app[id]), q: qs });
+    }
+    osrc.forEach(function (s) {
+      var parts = [['noShowExcused', nb], ['sessions', sb], ['mkup', mb]], q, m, kk, p, ok;
+      for (q = 0; q < parts.length; q += 1) {
+        if (s.q.indexOf(q) < 0) continue;
+        m = objOr(jget(s.o, parts[q][0]));
+        for (kk in m) {
+          if (!has(m, kk)) continue;
+          p = kk.split('|');
+          if (q === 0) ok = rids.indexOf(p[0]) >= 0 && dks.indexOf(p.length > 1 ? p[1] : '') >= 0;
+          else if (q === 1) ok = dks.indexOf(p.length > 1 ? p[1] : '') >= 0;
+          else ok = rids.indexOf(p[0]) >= 0;
+          if (ok) pick(parts[q][1], kk, m[kk], attNum(jget(m[kk], 't')), s.pri);
+        }
+      }
+    });
+    k = has(main, 'closedDays') ? main.closedDays : null;
+    return { classes: arrOr(d.classes), rec: flat(rb), ck: flat(cb), nse: flat(nb), ses: flat(sb), mk: flat(mb), cd: k === undefined ? null : k };
+  }
+
+  /* lec__att_core: (학생 rids[i], 반 cids[i]) 마다 그 반의 수업일(cdays[반] · 오늘까지)마다 {rid, cid, day, att: in|abs|sub|'', mk}
+     cdays 가 배열이면 모든 반에 같은 날들(옛 셈) */
+  function attCore(p, rids, cids, cdays, tISO, now) {
+    var X = L(), cls = arrOr(p.classes), rec = objOr(p.rec), ck = objOr(p.ck), nse = objOr(p.nse),
+        ses = objOr(p.ses), mk = objOr(p.mk), cd = p.cd, tk = dotDay(tISO), ds, out = [];
+    var i, j, rid, cid, c, stu, mkf, kk, e, dISO, dk, a, x, wd, st, en, att, pp, src;
+    for (i = 0; i < rids.length; i += 1) {
+      rid = rids[i]; cid = cids[i];
+      if (str(rid) === '' || str(cid) === '') continue;
+      src = isArr(cdays) ? cdays : (isObj(cdays) && isArr(cdays[cid]) ? cdays[cid] : []);
+      ds = [];
+      for (j = 0; j < src.length; j += 1) {
+        if (typeof src[j] === 'string' && src[j] && src[j] <= tISO && ds.indexOf(src[j]) < 0) ds.push(src[j]);
+      }
+      ds.sort();
+      if (!ds.length) continue;
+      c = null;
+      for (j = 0; j < cls.length; j += 1) {
+        if (isObj(cls[j]) && X.jtext(cls[j].id) === cid) { c = cls[j]; break; }
+      }
+      stu = attStu(cls, rid);
+      mkf = [];
+      for (kk in mk) {
+        if (!has(mk, kk)) continue;
+        e = mk[kk];
+        if (kk.split('|')[0] !== rid || !isObj(e) || X.truthy(e.del) || X.truthy(e.free)) continue;
+        x = X.jtext(e.from);
+        if (x != null && x !== '' && mkf.indexOf(x) < 0) mkf.push(x);
+      }
+      for (j = 0; j < ds.length; j += 1) {
+        dISO = ds[j]; dk = dotDay(dISO); a = '';
+        x = jget(rec, cid + '|' + rid + '|' + dk);
+        if (isObj(x) && X.truthy(x.attendance)) {
+          a = X.jtext(x.attendance);
+        } else if (!attNotYet(stu, dk)) {
+          x = jget(mk, rid + '|' + dk);
+          if (X.truthy(x) && !X.truthy(jget(x, 'del'))) {
+            a = '보강';
+          } else {
+            x = jget(ck, rid + '|' + dk);
+            if (X.truthy(x) && !X.truthy(jget(x, 'del')) && X.truthy(jget(x, 'in'))) {
+              a = '출석';
+            } else if (attClosed(cd, dk) && !attHeld(ses, cid, dk)) {
+              a = '';
+            } else {
+              x = jget(nse, rid + '|' + dk);
+              if (X.truthy(x) && !X.truthy(jget(x, 'del')) && dk >= ATT_FROM) {
+                a = '결석';
+              } else if (c) {
+                pp = dISO.split('-');
+                wd = new Date(Date.UTC(+pp[0], +pp[1] - 1, +pp[2])).getUTCDay();
+                st = attCtime(c, wd, dk, ses, false);
+                if (st !== '' && dk >= ATT_FROM) {
+                  if (dk < tk) {
+                    a = '결석';
+                  } else if (dk === tk) {
+                    en = attCtime(c, wd, dk, ses, true);
+                    if (en !== '' && str(now) > en) a = '결석';
+                  }
+                }
+              }
+            }
+          }
+        }
+        att = (a === '출석' || a === '지각') ? 'in' : (a === '결석' ? 'abs' : (a === '보강' ? 'sub' : ''));
+        out.push({ rid: rid, cid: cid, day: dISO, att: att, mk: att === 'abs' && mkf.indexOf(dk) >= 0 });
+      }
+    }
+    return out;
+  }
+
+  /* 한 강의 · 한 학생(또는 학생 하나의 줄들)을 날짜별로 모아 강의 하나의 판정으로(SQL per → agg) */
+  function attAgg(rows, ldays, ids, rowOk, l) {
+    var per = [], i, j, r, ins, abs, mkd, n, out, lc;
+    for (i = 0; i < ldays.length; i += 1) {
+      ins = false; abs = false; mkd = false; n = 0;
+      lc = (l && !LEGACY) ? lcls(l, ldays[i]) : null;
+      for (j = 0; j < rows.length; j += 1) {
+        r = rows[j];
+        if (r.day !== ldays[i] || !(ids.indexOf(r.cid) >= 0 || ids.indexOf('*') >= 0) || !lcOk(lc, r.cid) || (rowOk && !rowOk(r))) continue;
+        n += 1;
+        if (r.att === 'in') ins = true;
+        if (r.att === 'abs') abs = true;
+        if (r.mk) mkd = true;
+      }
+      if (n) per.push({ day: ldays[i], att: ins ? 'in' : (abs ? 'abs' : ''), mk: mkd });
+    }
+    if (!per.length) return null;
+    out = { att: '', day: null, mk: false };
+    var anyAbs = false, anyIn = false, maxAbs = null, maxIn = null, allMk = true;
+    for (i = 0; i < per.length; i += 1) {
+      if (per[i].att === 'abs') { anyAbs = true; if (maxAbs == null || per[i].day > maxAbs) maxAbs = per[i].day; if (!per[i].mk) allMk = false; }
+      if (per[i].att === 'in') { anyIn = true; if (maxIn == null || per[i].day > maxIn) maxIn = per[i].day; }
+    }
+    out.att = anyAbs ? 'abs' : (anyIn ? 'in' : '');
+    out.day = maxAbs != null ? maxAbs : maxIn;
+    out.mk = anyAbs ? allMk : false;
+    return out;
+  }
+
+  /* lec_att: 학생 화면 · 내가 볼 수 있는 강의마다 «결석한 날 수업»(abs) · «교실에서 들음»(in) · 모름은 뺌 */
+  function lec_att(d, a) {
+    var k = findKey(d, a.p_key);
+    if (!k) return { ok: false, err: 'key' };
+    var t = today(), lo = dayStr(-62), rs = roster(d), r = null, i, j, l, opens = [], days = [], items = [], rows, g, rids;
+    for (i = 0; i < rs.length; i += 1) { if (rs[i].skey === k.sid) r = rs[i]; }
+    if (r && r.cls.length) {
+      for (i = 0; i < d.lecture.length; i += 1) {
+        l = d.lecture[i];
+        if (!isOpen(l, r.cls)) continue;
+        opens.push({ l: l, days: attWin(l, lo, t) });
+        for (j = 0; j < opens[opens.length - 1].days.length; j += 1) {
+          if (days.indexOf(opens[opens.length - 1].days[j]) < 0) days.push(opens[opens.length - 1].days[j]);
+        }
+      }
+    }
+    /* C1 고침(11-16): 반마다 그 반의 수업일만(수업일마다 반이 정해져 있으면 그 반일 때만) */
+    var cdays = LEGACY ? days : attCdays(opens, r ? r.cls : []), ad = [], kk;
+    if (!LEGACY) {
+      for (kk in cdays) { if (has(cdays, kk)) { for (j = 0; j < cdays[kk].length; j += 1) { if (ad.indexOf(cdays[kk][j]) < 0) ad.push(cdays[kk][j]); } } }
+      days = ad;
+    }
+    if (days.length) {
+      rids = [];
+      for (i = 0; i < r.cls.length; i += 1) rids.push(r.rid);
+      rows = attCore(attData(d, [r.rid], days), rids, r.cls, cdays, t, nowHM());
+      for (i = 0; i < opens.length; i += 1) {
+        g = attAgg(rows, opens[i].days, opens[i].l.class_ids || [], null, opens[i].l);
+        if (!g || g.att === '') continue;
+        items.push({ id: opens[i].l.id, att: g.att, day: g.day, days: lecDays(opens[i].l, opens[i].days, r.cls), mk: g.mk });
+      }
+      items.sort(function (x, y) { return cmpC(y.day, x.day) || cmpC(x.id, y.id); });
+    }
+    return { ok: true, today: t, items: items };
+  }
+
+  /* lec_paper (C3 · C7): 열린 강의마다 실행기 묶음의 지문 줄 [{no, at, stop, wb}] · 판서 쪽은 안 보냄 · 줄 없는 강의는 뺌 */
+  function lec_paper(d, a) {
+    var k = findKey(d, a.p_key);
+    if (!k) return { ok: false, err: 'key' };
+    var items = [], i, j, l, ri, e, p;
+    for (i = 0; i < d.lecture.length; i += 1) {
+      l = d.lecture[i];
+      if (!isOpen(l, k.cls)) continue;
+      if (ended(l)) continue;   // 끝난 강의는 플레이어를 열지 않으므로 지문 줄도 안 보냄(검수 B2 L-8 · SQL 과 같음)
+      ri = l.runner && isArr(l.runner.items) ? l.runner.items : [];
+      if (!ri.length) continue;
+      p = [];
+      for (j = 0; j < ri.length; j += 1) {
+        e = ri[j];
+        if (!e || typeof e !== 'object' || isArr(e)) continue;
+        p.push({
+          no: L().left(e.no == null ? '' : String(e.no), 40),
+          at: typeof e.at === 'number' && isFinite(e.at) ? e.at : null,
+          stop: typeof e.stop === 'number' && isFinite(e.stop) ? e.stop : null,
+          wb: L().left(e.wb == null ? '' : String(e.wb), 40)
+        });
+      }
+      items.push({ id: l.id, p: p });
+    }
+    items.sort(function (x, y) { return cmpC(x.id, y.id); });
+    return { ok: true, items: items };
+  }
+
+  /* lec_att_staff: 선생님 화면 · 내 반(관리자는 모든 반) 학생 × 수업일이 62일 안인 강의의 출결 ·
+     시작 전 학생 · «결석한 날 수업 덜 본 학생» 띠 */
+  function lec_att_staff(d) {
+    if (!ME) return { ok: false, err: 'forbidden' };
+    var name = ME.name, admin = !!ME.admin, t = today(), lo = dayStr(-62), b13 = dayStr(-13), tk = dotDay(t);
+    var cl = classRows(d).filter(function (c) { return admin || c.owner === name; });
+    var scope = cl.map(function (c) { return c.id; });
+    function inScope(cs) { for (var q = 0; q < cs.length; q += 1) { if (scope.indexOf(cs[q]) >= 0) return true; } return false; }
+    function covers(ids, cid) { return ids.indexOf(cid) >= 0 || ids.indexOf('*') >= 0; }
+    var ro = roster(d).filter(function (r) { return inScope(r.cls); });
+    var pairs = [], seen = {}, i, j, l, ids, days = [], lecs = [], ns = [], cells = [], lectures = [], bandN = 0, items = [];
+    for (i = 0; i < ro.length; i += 1) {
+      for (j = 0; j < ro[i].cls.length; j += 1) {
+        if (has(seen, ro[i].rid + '\u0001' + ro[i].cls[j])) continue;
+        seen[ro[i].rid + '\u0001' + ro[i].cls[j]] = 1;
+        pairs.push({ rid: ro[i].rid, cid: ro[i].cls[j] });
+      }
+    }
+    pairs.sort(function (x, y) { return cmpC(x.rid, y.rid) || cmpC(x.cid, y.cid); });
+    for (i = 0; i < d.lecture.length; i += 1) {
+      l = d.lecture[i];
+      ids = l.class_ids || [];
+      if (!(inScope(ids) || ids.indexOf('*') >= 0)) continue;
+      lecs.push({ l: l, days: attWin(l, lo, t) });
+      for (j = 0; j < lecs[lecs.length - 1].days.length; j += 1) {
+        if (days.indexOf(lecs[lecs.length - 1].days[j]) < 0) days.push(lecs[lecs.length - 1].days[j]);
+      }
+    }
+    for (i = 0; i < ro.length; i += 1) {
+      if (attNotYet(attStu(d.classes, ro[i].rid), tk)) ns.push(ro[i].skey);
+    }
+    ns.sort(cmpC);
+
+    /* C1 고침(11-16): 학생 · 반 짝마다 그 반의 수업일만 */
+    var cdays = LEGACY ? days : attCdays(lecs, pairs.map(function (p) { return p.cid; })), kd;
+    if (!LEGACY) {
+      days = [];
+      for (kd in cdays) { if (has(cdays, kd)) { for (j = 0; j < cdays[kd].length; j += 1) { if (days.indexOf(cdays[kd][j]) < 0) days.push(cdays[kd][j]); } } }
+    }
+    if (days.length && pairs.length) {
+      var rows = attCore(attData(d, pairs.map(function (p) { return p.rid; }), days),
+        pairs.map(function (p) { return p.rid; }), pairs.map(function (p) { return p.cid; }), cdays, t, nowHM());
+      lecs.forEach(function (L1) {
+        var lids = L1.l.class_ids || [];
+        ro.forEach(function (s) {
+          var hit = false, q;
+          for (q = 0; q < s.cls.length; q += 1) { if (scope.indexOf(s.cls[q]) >= 0 && covers(lids, s.cls[q])) hit = true; }
+          if (!hit) return;
+          var g = attAgg(rows, L1.days, lids, function (r) { return r.rid === s.rid && s.cls.indexOf(r.cid) >= 0; }, L1.l);
+          if (g && g.att !== '') cells.push({ l: L1.l.id, s: s.skey, a: g.att, d: g.day, mk: g.mk });
+        });
+      });
+      var by = {}, order = [];
+      cells.forEach(function (c) {
+        if (!has(by, c.l)) { by[c.l] = { l: c.l, ins: [], abss: [] }; order.push(c.l); }
+        if (c.a === 'in') by[c.l].ins.push(c.s);
+        if (c.a === 'abs') by[c.l].abss.push({ s: c.s, d: c.d, mk: c.mk });
+      });
+      order.sort(cmpC);
+      lectures = order.map(function (id) {
+        var g = by[id];
+        g.ins.sort(cmpC);
+        g.abss.sort(function (x, y) { return cmpC(x.s, y.s); });
+        return { l: id, 'in': g.ins, abs: g.abss };
+      });
+
+      var st = [];
+      cells.forEach(function (c) {
+        if (c.a !== 'abs' || c.mk || !(c.d >= b13 && c.d <= t) || ns.indexOf(c.s) >= 0) return;
+        var lec = findLecture(d, c.l), s = null, q;
+        if (!lec) return;
+        for (q = 0; q < ro.length; q += 1) { if (ro[q].skey === c.s) s = ro[q]; }
+        if (!s) return;
+        if (lec.hidden || (lec.posted_on || t) > t || ended(lec)) return;
+        var p = findProgress(d, s.skey, lec.id), cs = findConsent(d, s.skey);
+        if (!((p ? p.pct || 0 : 0) < 90) || (p && p.done_by != null)) return;
+        if (cs && cs.choice === 'none') return;
+        var blc = LEGACY ? null : lcls(lec, c.d);
+        cl.forEach(function (k) {
+          if (s.cls.indexOf(k.id) < 0 || !covers(lec.class_ids || [], k.id) || !lcOk(blc, k.id)) return;
+          st.push({ lid: lec.id, title: lec.title, lca: lec.created_at, d: c.d, cid: k.id, cname: k.name, skey: s.skey, sname: s.sname });
+        });
+      });
+      var stu = {}, gb = {}, gk = [];
+      st.forEach(function (x) {
+        stu[x.skey] = 1;
+        var key = [x.lid, x.title, x.lca, x.cid, x.cname].join('\u0001');
+        if (!has(gb, key)) { gb[key] = { lid: x.lid, title: x.title, lca: x.lca, cid: x.cid, cname: x.cname, day: x.d, rows: [] }; gk.push(key); }
+        if (x.d > gb[key].day) gb[key].day = x.d;
+        gb[key].rows.push(x);
+      });
+      for (var sk in stu) { if (has(stu, sk)) bandN += 1; }
+      var grp = gk.map(function (key) { return gb[key]; });
+      grp.sort(function (x, y) {
+        return cmpC(y.day, x.day) || cmpAtDesc(x.lca, y.lca) || cmpC(x.cname, y.cname) || cmpC(x.cid, y.cid) || cmpC(x.lid, y.lid);
+      });
+      items = grp.map(function (g) {
+        g.rows.sort(function (x, y) { return cmpC(x.sname, y.sname) || cmpC(x.skey, y.skey); });
+        return {
+          cls: g.cid, cname: g.cname, lecture: g.lid, title: g.title, day: g.day, n: g.rows.length,
+          names: g.rows.map(function (x) { return x.sname; })
+        };
+      });
+    }
+    return { ok: true, today: t, lectures: lectures, notstarted: ns, band: { n: bandN, items: items } };
+  }
+
   var IMPL = {
     lec_login: lec_login, lec_home: lec_home, lec_consent: lec_consent, lec_beat: lec_beat, lec_qna_list: lec_qna_list,
-    lec_ask: lec_ask, lec_qdel: lec_qdel, lec_logout: lec_logout
+    lec_ask: lec_ask, lec_qdel: lec_qdel, lec_logout: lec_logout, lec_att: lec_att, lec_paper: lec_paper
   };
 
   /* 함수 모양(PostgREST 와 같게: 이름이 모자라거나 남으면 404 PGRST202 · 값 꼴이 틀리면 400) */
@@ -946,8 +1546,11 @@
     },
     lec_qdel: { p_key: 'text', p_id: 'uuid' },
     lec_logout: { p_key: 'text' },
+    lec_att: { p_key: 'text' },
+    lec_paper: { p_key: 'text' },
     /* 선생님 함수(로그인한 선생님만 · LecMock.staff.rpc 로) */
     lec_todo: {},
+    lec_att_staff: {},
     lec_confirm: { p_lecture: 'uuid', p_skey: 'text', p_note: 'text?' },
     lec_unconfirm: { p_lecture: 'uuid', p_skey: 'text' },
     lec_forget: { p_skey: 'text' },
@@ -987,6 +1590,17 @@
       if (v > 2147483647 || v < -2147483648) throw httpErr(400, '22003', 'integer out of range: ' + name);
       return v;
     }
+    if (type === 'big') {   /* bigint · 화면이 보내는 값(밀리초 시각)은 2^53 안 */
+      if (typeof v === 'number') {
+        if (!isFinite(v) || Math.floor(v) !== v) throw httpErr(400, '22P02', 'invalid input syntax for type bigint: ' + name);
+      } else if (typeof v === 'string' && /^\s*[+\-]?\d{1,18}\s*$/.test(v)) {
+        v = parseInt(v, 10);
+      } else {
+        throw httpErr(400, '22P02', 'invalid input syntax for type bigint: ' + name);
+      }
+      if (Math.abs(v) > 9007199254740991) throw httpErr(400, '22003', 'bigint out of range: ' + name);
+      return v;
+    }
     if (type === 'num') {
       s = typeof v === 'number' ? v : (typeof v === 'string' && /^\s*[+\-]?(\d+\.?\d*|\.\d+)([eE][+\-]?\d+)?\s*$/.test(v) ? parseFloat(v) : NaN);
       if (!isFinite(s)) throw httpErr(400, '22P02', 'invalid input syntax for type numeric: ' + name);
@@ -1008,6 +1622,9 @@
 
   function checkArgs(fn, args) {
     var sig = SIG[fn], k, t, out = {};
+    if (OLD && (fn === 'lec_att' || fn === 'lec_att_staff')) sig = null;
+    if ((OLD || NOPAPER) && fn === 'lec_paper') sig = null;
+    if ((OLD || NORANGE) && /^lec_range_/.test(fn)) sig = null;   /* C2 함수가 없는 서버(아래 C2 절) */
     if (!sig) throw httpErr(404, 'PGRST202', 'Could not find the function public.' + fn);
     args = args && typeof args === 'object' && !isArr(args) ? args : {};
     for (k in args) {
@@ -1044,8 +1661,32 @@
 
   var COLS = {
     id: 'uuid', title: 'text', book: 'text', yt: 'text', dur: 'int', chapters: 'json', class_ids: 'textarr',
-    lesson_on: 'date?', posted_on: 'date', until: 'date?', hidden: 'bool', created_by: 'text', created_at: 'ts', updated_at: 'ts'
+    lesson_on: 'date?', posted_on: 'date', until: 'date?', hidden: 'bool', created_by: 'text', created_at: 'ts', updated_at: 'ts',
+    /* C1(덧붙인 칸): 더 있는 수업일 · 실행기 txt 의 [온라인 클래스] 묶음 */
+    lesson_more: 'datearr', runner: 'json',
+    /* C1 고침(11-16): 수업일마다 반 {"YYYY-MM-DD": [반 id]} · 없거나 빈 날 = 강의의 모든 반 */
+    lesson_cls: 'json'
   };
+
+  /* 옛 SQL 흉내(?oldsql=1 또는 LecMock.oldSql(true)): 새 칸 · 새 함수가 없는 서버 */
+  var OLD = false;
+  try { OLD = /[?&]oldsql=1(&|$)/.test(w.location.search); } catch (e) { OLD = false; }
+  /* C1 SQL 은 있고 C3 · C7 함수(lec_paper)만 없는 서버(?nopaper=1 또는 LecMock.noPaper(true)) */
+  var NOPAPER = false;
+  try { NOPAPER = /[?&]nopaper=1(&|$)/.test(w.location.search); } catch (e) { NOPAPER = false; }
+  /* 수업일마다 반 칸(lesson_cls)만 없는 서버(11-16 고치기 전 C1 SQL · ?nolcls=1 또는 LecMock.noLcls(true)) */
+  var NOLCLS = false;
+  try { NOLCLS = /[?&]nolcls=1(&|$)/.test(w.location.search); } catch (e) { NOLCLS = false; }
+  /* 시험용(M-2 맞대기): 고치기 전 셈(모든 짝에 모든 날 · 수업일마다 반 안 봄) · LecMock.legacyAtt(true) */
+  var LEGACY = false;
+  function isNewCol(k) { return k === 'lesson_more' || k === 'runner' || k === 'lesson_cls'; }
+  function noCol(k) { return (OLD && isNewCol(k)) || (NOLCLS && k === 'lesson_cls'); }
+  function stripNew(l) {
+    if (!(OLD || NOLCLS) || !l) return l;
+    var o = {}, k;
+    for (k in l) { if (has(l, k) && !noCol(k)) o[k] = l[k]; }
+    return o;
+  }
 
   function colVal(c, v) {
     var t = COLS[c], opt = t.charAt(t.length - 1) === '?';
@@ -1061,6 +1702,18 @@
       var o = [], i;
       for (i = 0; i < v.length; i += 1) o.push(v[i] == null ? null : coerce('text', v[i], c));
       return o;
+    }
+    if (t === 'datearr') {
+      if (!isArr(v)) throw httpErr(400, '22P02', 'malformed array literal: ' + c);
+      var da = [], j, mm, okd;
+      for (j = 0; j < v.length; j += 1) {
+        if (v[j] == null) { da.push(null); continue; }
+        mm = typeof v[j] === 'string' ? v[j].match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
+        okd = mm && new Date(Date.UTC(+mm[1], +mm[2] - 1, +mm[3])).getUTCDate() === +mm[3] && +mm[2] >= 1 && +mm[2] <= 12;
+        if (!okd) throw httpErr(400, '22007', 'invalid input syntax for type date: ' + c);
+        da.push(v[j]);
+      }
+      return da;
     }
     if (t === 'date') {
       var m = typeof v === 'string' ? v.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
@@ -1410,7 +2063,7 @@
 
   var STAFF = {
     lec_todo: lec_todo, lec_confirm: lec_confirm, lec_unconfirm: lec_unconfirm, lec_forget: lec_forget, lec_unlock: lec_unlock,
-    lec_keys: lec_keys, lec_link: lec_link, lec_logout_all: lec_logout_all
+    lec_keys: lec_keys, lec_link: lec_link, lec_logout_all: lec_logout_all, lec_att_staff: lec_att_staff
   };
 
   /* 선생님 판정(class-setup.sql lec__staff 와 같게): 로그인 이메일만 · user_metadata 는 보지 않음.
@@ -1451,6 +2104,8 @@
     },
     rpc: staffRpc,
     todo: function () { return staffRpc('lec_todo', {}); },
+    /* C1: 결석한 날 수업 · 교실에서 들음 · 덜 본 학생 띠 */
+    att: function () { return staffRpc('lec_att_staff', {}); },
     confirm: function (lecture, skey, note) {
       var a = { p_lecture: lecture, p_skey: skey };
       if (note !== undefined) a.p_note = note;
@@ -1463,7 +2118,7 @@
     /* 기록 동의 표(선생님은 읽기만) */
     consents: function () { return withDb(function (d) { return ME ? (d.consent || []) : []; }); },
     classes: function () { return withDb(function (d) { return d.classes; }); },
-    lectures: function () { return withDb(function (d) { return ME ? d.lecture : []; }); },
+    lectures: function () { return withDb(function (d) { return ME ? d.lecture.map(stripNew) : []; }); },
 
     /* 새 강의(id 가 없거나 처음 보는 id) = 넣기 · 있는 id = 고치기. 고친 줄을 돌려줌
        (선생님이 아니면: 넣기 403 · 고치기는 고칠 줄이 안 보여 406 PGRST116 — .update().select().single() 과 같게) */
@@ -1477,24 +2132,25 @@
         var k, v = {};
         for (k in o) {
           if (!has(o, k) || o[k] === undefined) continue;
-          if (!has(COLS, k)) throw httpErr(400, 'PGRST204', 'Could not find the \'' + k + '\' column of \'lec_lecture\'');
+          if (!has(COLS, k) || noCol(k)) throw httpErr(400, 'PGRST204', 'Could not find the \'' + k + '\' column of \'lec_lecture\'');
           v[k] = colVal(k, o[k]);
         }
         var l = v.id ? findLecture(d, v.id) : null, now = pgts(nowMs());
         if (!l) {
           l = {
             id: v.id || L().uuid(), title: '', book: '', yt: '', dur: 0, chapters: [], class_ids: [],
-            lesson_on: null, posted_on: today(), until: null, hidden: false, created_by: '', created_at: now, updated_at: now
+            lesson_on: null, posted_on: today(), until: null, hidden: false, created_by: '', created_at: now, updated_at: now,
+            lesson_more: [], runner: {}, lesson_cls: {}
           };
           for (k in v) { if (has(v, k)) l[k] = v[k]; }
           d.lecture.push(l);
-          return l;
+          return stripNew(l);
         }
         var oldDur = l.dur;
         for (k in v) { if (has(v, k) && k !== 'id') l[k] = v[k]; }
         if (!has(v, 'updated_at')) l.updated_at = now; /* 진짜 화면도 updated_at 을 직접 넣어야 함(SQL 에 갱신 장치 없음) */
         if (has(v, 'dur') && l.dur !== oldDur) durChanged(d, l.id, l.dur);
-        return l;
+        return stripNew(l);
       });
     },
 
@@ -1581,6 +2237,420 @@
     db: function () { return load(); },
     save: function (d) { save(d); },
     ids: ID,
-    STORE: STORE
+    STORE: STORE,
+    /* 시험용: 옛 SQL 흉내 켜기·끄기(새 칸 lesson_more · runner 와 새 함수 lec_att · lec_att_staff 가 없는 서버) */
+    oldSql: function (on) { if (on !== undefined) OLD = !!on; return OLD; },
+    /* 시험용: lec_paper 만 없는 서버 켜기·끄기 */
+    noPaper: function (on) { if (on !== undefined) NOPAPER = !!on; return NOPAPER; },
+    /* 시험용: 고치기 전 출결 셈 켜기·끄기(M-2 결과 맞대기) */
+    legacyAtt: function (on) { if (on !== undefined) LEGACY = !!on; return LEGACY; },
+    noLcls: function (on) { if (on !== undefined) NOLCLS = !!on; return NOLCLS; }
   };
+
+  /* ======================================================= C2 (11-16) 학교 시험 D-day · 시험 범위 영상
+     class-setup.sql C2 절(lec_range 표 · lec_range_me · lec_range_staff · lec_range_save · lec_range_sync)과 같은 규칙.
+     ?norange=1 또는 LecMock.noRange(true) = C2 함수만 없는 서버(?oldsql=1 도 없음) · 위 checkArgs 의 한 줄이 404 PGRST202 로.
+     시연 자료(c2Ensure · 저장소에 한 번만 · d.c2 표시): 학생 학교 · 학년, 히즈북스 학교 시험 일정(app 'pt-etc' 줄 · main 에 옛 값),
+     저장된 범위 두 줄. 오늘을 D 라 하면
+       한빛여고 1학년 = 학교 일정 «2학기 기말고사» D+9~D+12 · 범위 저장됨(Joey · L1 L2 L5 L7) → 김하늘 · 최새봄 · 정단비 카드
+         (정단비는 학년 칸 없이 학교 칸 «한빛여고 1학년» · 같은 id s1005 를 서은별도 써서 학생 열쇠로 들어감)
+       바다고 1학년(이바다) = «2학기 기말» D+12 · 저장 안 됨 → 선생님 띠 · 학생 카드 없음
+       푸른고(박구름) = 일정 지움 → 시험 없음 · 강노을 = 학교 없음 · 서은별 = 한빛여고 학년 모름
+       새솔고 2학년(한겨울) = «기말고사» D+25 · 범위 저장됨(Dana · L3 L4) → 아직 D-20 밖이라 카드 없음
+       한빛여고 2학년(윤가람) = 학년 예외 D+26(켬) · 저장 안 됨 → 선생님 띠(D-30 안)
+     'pt-etc' 줄의 급여 · 금전 칸은 학생 쪽으로 새지 않는지 보려는 가짜 값
+     ?manyexams=1 = 위에 더해 시험 다섯(c2Many · 띠가 여럿일 때) · 그냥 ?demo=1 은 위 그대로 */
+  var NORANGE = false;
+  try { NORANGE = /[?&]norange=1(&|$)/.test(w.location.search); } catch (e) { NORANGE = false; }
+  var C2ID = {
+    R1: '5eedc2a0-0000-4000-8000-000000000001',
+    R2: '5eedc2a0-0000-4000-8000-000000000002'
+  };
+
+  /* lec__date: 'YYYY-MM-DD' · 있는 날 · 2000~2100 → 그 글자 · 아니면 null */
+  function c2Date(v) {
+    var m = typeof v === 'string' ? v.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null, dt;
+    if (!m || +m[1] < 2000 || +m[1] > 2100) return null;
+    dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    if (dt.getUTCFullYear() !== +m[1] || dt.getUTCMonth() + 1 !== +m[2] || dt.getUTCDate() !== +m[3]) return null;
+    return v;
+  }
+  function c2Add(iso, n) {
+    var p = str(iso).split('-'), dt = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + n));
+    return dt.getUTCFullYear() + '-' + pad(dt.getUTCMonth() + 1, 2) + '-' + pad(dt.getUTCDate(), 2);
+  }
+  /* 서버가 받는 date 인자(PostgREST): null · 'YYYY-MM-DD' 만(그 밖은 400 · 화면은 늘 이 꼴로 보냄) */
+  function c2DateArg(v, name) {
+    var m, dt;
+    if (v === null || v === undefined) return null;
+    m = typeof v === 'string' ? v.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
+    dt = m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+    if (!m || dt.getUTCMonth() + 1 !== +m[2] || dt.getUTCDate() !== +m[3]) {
+      throw httpErr(400, '22007', 'invalid input syntax for type date: ' + name);
+    }
+    return v;
+  }
+  /* 서버가 받는 배열 인자(text[] · uuid[]): null · 배열만(칸마다 꼴 검사 · 빈 칸은 그대로) */
+  function c2ArrArg(v, type, name) {
+    var o = [], i;
+    if (v === null || v === undefined) return null;
+    if (!isArr(v)) throw httpErr(400, '22P02', 'malformed array literal: ' + name);
+    for (i = 0; i < v.length; i += 1) o.push(v[i] == null ? null : coerce(type, v[i], name));
+    return o;
+  }
+  function c2Uniq(a) {
+    var o = [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i] != null && o.indexOf(a[i]) < 0) o.push(a[i]); }
+    o.sort(cmpC);
+    return o;
+  }
+  /* lec__range_ok: 명단에서 한 학생만 쓰는 rid · 모든 학생 열쇠(같은 rid 를 두 학생이 쓰면 그 rid 는 빠짐) */
+  function c2Ids(d) {
+    var rs = roster(d), o = {}, n = {}, i;
+    for (i = 0; i < rs.length; i += 1) n['#' + rs[i].rid] = (n['#' + rs[i].rid] || 0) + 1;
+    for (i = 0; i < rs.length; i += 1) {
+      if (n['#' + rs[i].rid] === 1 && str(rs[i].rid) !== '') o['#' + rs[i].rid] = 1;
+      o['#' + rs[i].skey] = 1;
+    }
+    return o;
+  }
+  /* 규칙 판 · 일정 시각: 서버와 같은 범위(판은 지금 1 뿐 · 시각 0 ~ 지금 + 5분 · C2 검수 L-2) */
+  function c2Ver(v) { v = +v || 1; return Math.min(Math.max(Math.floor(v), 1), 1); }
+  function c2T(v) { v = +v || 0; return Math.min(Math.max(Math.floor(v), 0), nowMs() + 5 * MINUTE); }
+  /* 화면이 본 강의의 가장 늦은 만든 시각(ms · 0 ~ 지금 · 마지막 검수 L-2) */
+  function c2Seen(v) { v = +v || 0; return Math.min(Math.max(Math.floor(v), 0), nowMs()); }
+  /* 줄에 있던 받는 학생(rid · 학생 열쇠)의 반(마지막 검수 L-1 · M1 강의가 실제로 학생에게 가는지 보는 기준) */
+  function c2RCls(d, ids) {
+    var rs = roster(d), o = [], i, j;
+    ids = isArr(ids) ? ids : [];
+    for (i = 0; i < rs.length; i += 1) {
+      if (ids.indexOf(rs[i].rid) < 0 && ids.indexOf(rs[i].skey) < 0) continue;
+      for (j = 0; j < rs[i].cls.length; j += 1) { if (o.indexOf(rs[i].cls[j]) < 0) o.push(rs[i].cls[j]); }
+    }
+    return o;
+  }
+  /* 강의의 수업일(가장 늦은 수업일 · 없으면 올린 날) */
+  function c2Day(l) {
+    var a = arrOr(l.lesson_more).concat([l.lesson_on]), best = '', i;
+    for (i = 0; i < a.length; i += 1) { if (typeof a[i] === 'string' && a[i] > best) best = a[i]; }
+    return best || str(l.posted_on).slice(0, 10);
+  }
+  /* 저장한 뒤 올린 강의(C2 검수 M1 · 서버 lec_range_me 와 같음): 줄 저장(saved_at) 뒤에 만듦 · «모든 반» 아님 ·
+     수업일이 시험 첫날 70일 전 ~ 시험 끝 날 전(볼 수 있는지 · 숨김 · 공개 끝은 부르는 쪽이 봄) */
+  function c2New(g, l) {
+    var day = c2Day(l);
+    return !!(g && g.saved_at && isFinite(tms(l.created_at)) && isFinite(tms(g.saved_at)) && tms(l.created_at) > tms(g.saved_at) &&
+      (l.class_ids || []).indexOf('*') < 0 && day && day >= c2Add(g.exam_on, -70) && day < g.end_on);
+  }
+  function c2Meets(a, b) {
+    var i;
+    a = isArr(a) ? a : []; b = isArr(b) ? b : [];
+    for (i = 0; i < a.length; i += 1) { if (b.indexOf(a[i]) >= 0) return true; }
+    return false;
+  }
+  /* lec__range_json 과 같은 칸 · 같은 차례 */
+  function c2Row(o) {
+    return {
+      id: o.id, school_key: str(o.school_key), grade: str(o.grade), term: str(o.term), name: str(o.name),
+      school_nm: str(o.school_nm), exam_on: o.exam_on, end_on: o.end_on, show_on: o.show_on || c2Add(o.exam_on, -20),
+      rids: o.rids || [], lecture_ids: o.lecture_ids || [], off: !!o.off,
+      saved_by: str(o.saved_by), saved_at: o.saved_at || pgts(nowMs()), synced_at: o.synced_at || null,
+      rule_ver: o.rule_ver || 1, src_t: o.src_t || 0
+    };
+  }
+  function c2Ts(a, b) {
+    var x = tms(a), y = tms(b);
+    x = isFinite(x) ? x : 0; y = isFinite(y) ? y : 0;
+    return x - y;
+  }
+
+  function c2Ensure(d) {
+    if (!d || d.c2 === 1) return false;
+    var X = w.Lec;
+    if (!X || typeof X.examName !== 'function') return false;
+    var info = {
+      's1001|김하늘': { school: '한빛여고', grade: '1' },
+      's1002|이바다': { school: '바다고등학교', grade: '1' },
+      's1003|박구름': { school: '푸른고', grade: '1' },
+      's1004|최새봄': { intake: { school: '한빛여자고등학교', grade: '1학년' } },
+      's1005|정단비': { school: '한빛여고 1학년' },
+      's2001|한겨울': { school: '새솔고', grade: '2' },
+      's2002|윤가람': { school: '한빛여고', grade: '2' },
+      's1005|서은별': { school: '한빛여고' }
+    };
+    var i, j, s, x, k, t0 = nowMs() - DAY;
+    for (i = 0; i < (d.classes || []).length; i += 1) {
+      for (j = 0; j < ((d.classes[i] && d.classes[i].students) || []).length; j += 1) {
+        s = d.classes[i].students[j];
+        x = s ? info[s.id + '|' + s.name] : null;
+        if (!x) continue;
+        if (x.school != null) s.school = x.school;
+        if (x.grade != null) s.grade = x.grade;
+        if (x.intake) {
+          if (!s.intake || typeof s.intake !== 'object') s.intake = {};
+          for (k in x.intake) { if (has(x.intake, k)) s.intake[k] = x.intake[k]; }
+        }
+      }
+    }
+    function dk(off) { return dayStr(off).replace(/-/g, '.'); }
+    if (!d.app || typeof d.app !== 'object') d.app = {};
+    if (!d.app.main || typeof d.app.main !== 'object') d.app.main = {};
+    /* 줄 나누기 전에 main 에 남은 옛 값(시각 도장이 더 작아 pt-etc 것이 이김 · 옛길고는 끝난 시험) */
+    d.app.main.examSchool = {
+      '한빛여고': { label: '2학기 중간고사', date: dk(-40), t: t0 - HOUR },
+      '옛길고': { label: '기말고사', date: dk(-100), end: dk(-98) }
+    };
+    d.app['pt-etc'] = {
+      examSchool: {
+        '한빛여고': { label: '2학기 기말고사', date: dk(9), end: dayStr(12), name: '한빛여고', by: 'Joey', t: t0 },
+        '새솔고': { label: '기말고사', date: dayStr(25), by: 'Dana', t: t0 },
+        '바다고': { label: '2학기 기말', date: dk(12), end: dk(13), t: t0 },
+        '푸른고': { del: 1, t: t0 }
+      },
+      examSchoolG: {
+        '한빛여고|2': { label: '2학기 기말고사', date: dk(26), end: dk(27), on: 1, by: 'Dana', t: t0 }
+      },
+      payroll: { 'Joey|C2-FAKE': { amount: 1234567, note: 'C2-FAKE-PAYROLL' } },
+      cash: { 'C2-FAKE': { amount: 7654321, note: 'C2-FAKE-CASH' } }
+    };
+    var n1 = X.examName('2학기 기말고사', dayStr(9)), n2 = X.examName('기말고사', dayStr(25));
+    d.range = [
+      c2Row({
+        id: C2ID.R1, school_key: '한빛여고', grade: '1', term: n1.term, name: n1.name, school_nm: '한빛여고',
+        exam_on: dayStr(9), end_on: dayStr(12), rids: ['s1001', 's1004', 's1005|정단비'],
+        lecture_ids: [ID.L1, ID.L2, ID.L5, ID.L7], saved_by: 'Joey', saved_at: pgts(atMs(-1, 21, 10)), src_t: t0
+      }),
+      c2Row({
+        id: C2ID.R2, school_key: '새솔고', grade: '2', term: n2.term, name: n2.name, school_nm: '새솔고',
+        exam_on: dayStr(25), end_on: dayStr(25), rids: ['s2001'],
+        lecture_ids: [ID.L3, ID.L4], saved_by: 'Dana', saved_at: pgts(atMs(-1, 22, 0)), src_t: t0
+      })
+    ];
+    d.c2 = 1;
+    return true;
+  }
+
+  /* ?manyexams=1 = 시험이 여럿 몰린 때(C2 검수 M3 · L1 · L5 화면 확인용): 고1 A반(Joey)에 학생 다섯 + 학교 시험 일정 다섯
+       동해고 «2학기 기말고사» D+5 · 솔빛여자고등학교(솔빛여고) «기말고사» D+7(긴 이름) · 한결고 시험 이름 없음 D+15 ·
+       가람중학교 3학년 «2학기 기말고사» D+20 · 은하고 «2학기 기말고사» D-1 ~ D+2(시험 중)
+     → 바다고까지 Joey 띠 여섯(셋만 보이고 «시험 범위 3개 더 고르기») · 그냥 ?demo=1 로 돌아가면 넣은 것을 걷어 냄 */
+  var MANY = false;
+  try { MANY = /[?&]manyexams=1(&|$)/.test(w.location.search); } catch (e) { MANY = false; }
+  var C2MANY = [
+    { id: 's1101', name: '남동해', tel: '6101', school: '동해고', grade: '1', key: '동해고', rec: { label: '2학기 기말고사', d: 5 } },
+    { id: 's1102', name: '오솔빛', tel: '6102', school: '솔빛여자고등학교', grade: '1', key: '솔빛여고',
+      rec: { label: '기말고사', d: 7, name: '솔빛여자고등학교' } },
+    { id: 's1103', name: '문한결', tel: '6103', school: '한결고', grade: '1', key: '한결고', rec: { label: '', d: 15 } },
+    { id: 's1104', name: '장가람', tel: '6104', school: '가람중학교', grade: '3', key: '가람중', rec: { label: '2학기 기말고사', d: 20 } },
+    { id: 's1105', name: '하은하', tel: '6105', school: '은하고', grade: '1', key: '은하고', rec: { label: '2학기 기말고사', d: -1, e: 2 } }
+  ];
+  function c2Many(d) {
+    var cls = null, es, ids = {}, keys = {}, i, x, s, t0 = nowMs() - DAY, ch = false;
+    if (!d || d.c2 !== 1) return false;
+    for (i = 0; i < (d.classes || []).length; i += 1) { if (d.classes[i] && d.classes[i].id === 'c-g1a') cls = d.classes[i]; }
+    if (!d.app || typeof d.app !== 'object') d.app = {};
+    if (!d.app['pt-etc'] || typeof d.app['pt-etc'] !== 'object') d.app['pt-etc'] = {};
+    if (!d.app['pt-etc'].examSchool || typeof d.app['pt-etc'].examSchool !== 'object') d.app['pt-etc'].examSchool = {};
+    es = d.app['pt-etc'].examSchool;
+    for (i = 0; i < C2MANY.length; i += 1) { ids[C2MANY[i].id] = 1; keys[C2MANY[i].key] = 1; }
+    if (MANY && d.c2many !== 1) {
+      for (i = 0; i < C2MANY.length; i += 1) {
+        x = C2MANY[i];
+        if (cls) {
+          s = stu(x.id, x.name, x.tel);
+          s.school = x.school; s.grade = x.grade;
+          cls.students.push(s);
+        }
+        es[x.key] = { label: x.rec.label, date: dayStr(x.rec.d).replace(/-/g, '.'), t: t0 };
+        if (x.rec.e != null) es[x.key].end = dayStr(x.rec.e).replace(/-/g, '.');
+        if (x.rec.name) es[x.key].name = x.rec.name;
+      }
+      d.c2many = 1;
+      return true;
+    }
+    if (!MANY && d.c2many === 1) {
+      if (cls) cls.students = cls.students.filter(function (q) { return !(q && ids[q.id]); });
+      for (x in keys) { if (has(keys, x)) delete es[x]; }
+      d.range = (d.range || []).filter(function (g) { return !(g && keys[g.school_key]); });
+      if (isArr(d.key)) d.key = d.key.filter(function (k) { return !(k && ids[str(k.sid).split('|')[0]]); });
+      delete d.c2many;
+      ch = true;
+    }
+    return ch;
+  }
+
+  /* lec_range_me: 내 rid(또는 학생 열쇠)가 든 줄 · 꺼지지 않음 · 오늘이 show_on ~ end_on · 볼 수 있는 강의만 · 빈 줄 뺌
+     같은 이름 · 같은 날짜 줄이 둘이면 나중에 저장한 줄 하나(C2 검수 L-3) · 저장한 뒤 올린 강의도 들어감(M1 · c2New) */
+  function lec_range_me(d, a) {
+    var k = findKey(d, a.p_key), t = today(), items = [], pick = {}, order = [];
+    if (!k) return { ok: false, err: 'key' };
+    var rid = str(k.rid) !== '' ? str(k.rid) : str(k.sid).split('|')[0];
+    (d.range || []).forEach(function (g) {
+      var rids = g.rids || [], key, cur;
+      if (g.off || !(t >= g.show_on && t <= g.end_on)) return;
+      if (!((rid !== '' && rids.indexOf(rid) >= 0) || rids.indexOf(k.sid) >= 0)) return;
+      key = str(g.name) + '|' + g.exam_on + '|' + g.end_on;
+      cur = pick[key];
+      if (!cur) { pick[key] = g; order.push(key); return; }
+      if (c2Ts(g.saved_at, cur.saved_at) > 0 || (c2Ts(g.saved_at, cur.saved_at) === 0 && cmpC(g.id, cur.id) < 0)) pick[key] = g;
+    });
+    order.forEach(function (key) {
+      var g = pick[key], ls = [], done = 0;
+      d.lecture.forEach(function (l) {
+        if (((g.lecture_ids || []).indexOf(l.id) >= 0 || c2New(g, l)) && isOpen(l, k.cls) && !ended(l)) ls.push(l);
+      });
+      if (!ls.length) return;
+      ls.sort(function (x, y) {
+        return cmpC(x.lesson_on || x.posted_on, y.lesson_on || y.posted_on) || c2Ts(x.created_at, y.created_at) || cmpC(x.id, y.id);
+      });
+      ls.forEach(function (l) {
+        var p = findProgress(d, k.sid, l.id);
+        if (p && (p.done_at != null || p.done_by != null)) done += 1;
+      });
+      items.push({ id: g.id, name: g.name, exam_on: g.exam_on, end_on: g.end_on, lectures: ls.map(function (l) { return l.id; }), done: done });
+    });
+    items.sort(function (x, y) { return cmpC(x.exam_on, y.exam_on) || cmpC(x.id, y.id); });
+    return { ok: true, today: t, items: items };
+  }
+
+  /* lec_range_staff: 끝난 지 90일이 안 된 줄(꺼진 줄 포함) */
+  function lec_range_staff(d) {
+    if (!ME) return { ok: false, err: 'forbidden' };
+    var t = today(), from = c2Add(t, -90);
+    var items = (d.range || []).filter(function (g) { return g.end_on >= from; }).map(function (g) { return clone(g); });
+    items.sort(function (x, y) {
+      return cmpC(x.exam_on, y.exam_on) || cmpC(x.school_key, y.school_key) || cmpC(x.grade, y.grade) || cmpC(x.term, y.term);
+    });
+    return { ok: true, today: t, items: items };
+  }
+
+  /* lec_range_save: 같은 학교 · 학년 · 시험이면 덮어씀 · 받는 학생은 명단만 · 관리자 아닌 선생님은 볼 수 있는 강의만 바꿈 */
+  function lec_range_save(d, a) {
+    var X = L();
+    var ex = c2DateArg(a.p_exam, 'p_exam'), en = c2DateArg(a.p_end, 'p_end');
+    var rids = c2ArrArg(a.p_rids, 'text', 'p_rids'), lecs = c2ArrArg(a.p_lectures, 'uuid', 'p_lectures');
+    if (!ME) return { ok: false, err: 'forbidden' };
+    var school = X.btrim(str(a.p_school)), grade = X.btrim(str(a.p_grade)), term = X.btrim(str(a.p_term));
+    if (X.clen(school) < 1 || X.clen(school) > 40 || !/^[1-6]$/.test(grade) || X.clen(term) < 1 || X.clen(term) > 40 ||
+        ex == null || ex < '2000-01-01' || ex > '2100-12-31' || (rids ? rids.length : 0) > 2000 || (lecs ? lecs.length : 0) > 200) {
+      return { ok: false, err: 'input' };
+    }
+    var end = en == null || en < ex ? ex : en;
+    if (end > c2Add(ex, 31)) return { ok: false, err: 'input' };
+    var ok = c2Ids(d);
+    var rr = c2Uniq((rids || []).filter(function (x) { return x != null && has(ok, '#' + x); }));
+    var mine = myClassIds(d, ME.name), row = null, i;
+    for (i = 0; i < (d.range || []).length; i += 1) {
+      if (d.range[i].school_key === school && d.range[i].grade === grade && d.range[i].term === term) row = d.range[i];
+    }
+    var old = row ? (row.lecture_ids || []) : [];
+    var ver = c2Ver(a.p_ver), tt = c2T(a.p_t);
+    /* 옛 판(p_ver) · 옛 일정(p_t) 화면 = 날짜 · 이름 · 켜고 끄기는 줄에 있던 대로 */
+    var fresh = !row || (tt >= (+row.src_t || 0) && ver >= (+row.rule_ver || 1));
+    var vis = function (l) {
+      return ME.admin || l.created_by === ME.name || (l.class_ids || []).indexOf('*') >= 0 || c2Meets(l.class_ids, mine);
+    };
+    var lv = [], rc = row ? c2RCls(d, row.rids) : [], seen = c2Seen(a.p_seen);
+    /* 이 선생님이 못 보는 강의는 줄에 있던 대로 · 줄 저장 뒤 올라와 받는 학생에게 저절로 들어가던 강의(M1 · L-1)는
+       못 보는 강의면 그대로 · 볼 수 있는 강의면 화면이 본 적 없는 강의(만든 시각이 p_seen 뒤)만 그대로(L-2) */
+    d.lecture.forEach(function (l) {
+      var m1 = !!row && !l.hidden && !ended(l) && c2New(row, l) && c2Meets(l.class_ids, rc);
+      if (((lecs || []).indexOf(l.id) >= 0 && vis(l)) || (old.indexOf(l.id) >= 0 && !vis(l)) ||
+          (m1 && (!vis(l) || Math.floor(tms(l.created_at)) > seen))) lv.push(l.id);
+    });
+    var o = c2Row({
+      id: row ? row.id : X.uuid(), school_key: school, grade: grade, term: term,
+      name: fresh ? X.left(X.btrim(str(a.p_name)), 40) : row.name,
+      school_nm: fresh ? X.left(X.btrim(str(a.p_school_nm)), 40) : str(row.school_nm),
+      exam_on: fresh ? ex : row.exam_on, end_on: fresh ? end : row.end_on,
+      show_on: fresh ? c2Add(ex, -20) : row.show_on, rids: rr, lecture_ids: c2Uniq(lv), off: fresh ? false : !!row.off,
+      saved_by: ME.name, saved_at: pgts(nowMs()), synced_at: row ? row.synced_at : null,
+      rule_ver: fresh ? ver : (+row.rule_ver || 1), src_t: fresh ? tt : (+row.src_t || 0)
+    });
+    if (!d.range) d.range = [];
+    if (row) d.range[d.range.indexOf(row)] = o;
+    else d.range.push(o);
+    return { ok: true, id: o.id, item: clone(o), stale: !fresh };
+  }
+
+  /* lec_range_sync: 있는 줄만 · 끄기 · 날짜 · 이름 · 받는 학생(명단만) · 강의 · 저장한 사람은 그대로
+     t(일정 고친 시각) · p_ver(규칙 판)가 줄의 src_t · rule_ver 보다 낮으면 그 줄은 건너뜀 */
+  var C2UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  function lec_range_sync(d, a) {
+    if (!ME) return { ok: false, err: 'forbidden' };
+    var rows = a.p_rows, X = L(), n = 0, ok, now = pgts(nowMs()), ver = c2Ver(a.p_ver);
+    if (!isArr(rows) || rows.length > 500) return { ok: false, err: 'input' };
+    ok = c2Ids(d);
+    rows.forEach(function (e) {
+      var id, row = null, i, ex, en, tx, tt;
+      if (!e || typeof e !== 'object' || isArr(e)) return;
+      id = X.jtext(e.id);
+      if (!C2UUID.test(str(id))) return;
+      id = id.toLowerCase();
+      for (i = 0; i < (d.range || []).length; i += 1) { if (d.range[i].id === id) row = d.range[i]; }
+      tx = X.jtext(e.t);
+      tt = /^[0-9]{1,15}$/.test(str(tx)) ? c2T(+tx) : 0;
+      var can = function () { return row && (+row.rule_ver || 1) <= ver && (+row.src_t || 0) <= tt; };
+      var bump = function () {
+        row.src_t = Math.max(+row.src_t || 0, tt); row.rule_ver = Math.max(+row.rule_ver || 1, ver);
+      };
+      if (X.truthy(e.off)) {
+        if (can() && !row.off) { row.off = true; row.synced_at = now; bump(); n += 1; }
+        return;
+      }
+      ex = c2Date(X.jtext(e.exam));
+      if (!ex) return;
+      en = c2Date(X.jtext(e.end));
+      en = en && en > ex ? en : ex;
+      if (en > c2Add(ex, 31) || !can()) return;
+      row.exam_on = ex; row.end_on = en; row.show_on = c2Add(ex, -20);
+      if (typeof e.name === 'string' && X.btrim(e.name) !== '') row.name = X.left(X.btrim(e.name), 40);
+      if (isArr(e.rids)) {
+        row.rids = c2Uniq(e.rids.map(function (x) { return X.jtext(x); }).filter(function (x) { return x != null && has(ok, '#' + x); }));
+      }
+      row.off = false; row.synced_at = now; bump(); n += 1;
+    });
+    return { ok: true, n: n };
+  }
+
+  IMPL.lec_range_me = lec_range_me;
+  SIG.lec_range_me = { p_key: 'text' };
+  SIG.lec_range_staff = {};
+  SIG.lec_range_save = {
+    p_school: 'text', p_grade: 'text', p_term: 'text', p_name: 'text', p_exam: 'date', p_end: 'date',
+    p_rids: 'textarr', p_lectures: 'uuidarr', p_school_nm: 'text?', p_ver: 'int?', p_t: 'big?', p_seen: 'big?'
+  };
+  SIG.lec_range_sync = { p_rows: 'json', p_ver: 'int?' };
+  STAFF.lec_range_staff = lec_range_staff;
+  STAFF.lec_range_save = lec_range_save;
+  STAFF.lec_range_sync = lec_range_sync;
+
+  /* 선생님 화면(연습용): 저장된 범위 · 저장 · 조용히 맞추기 · 히즈북스 학교 시험 일정 줄
+     exams() = 진짜 화면의 app_state 읽기(id in (pt-etc, main) · id · data->examSchool · data->examSchoolG 만)와 같은 꼴 */
+  staff.ranges = function () { return staffRpc('lec_range_staff', {}); };
+  staff.saveRange = function (args) { return staffRpc('lec_range_save', args); };
+  staff.syncRange = function (rows, ver) {
+    var a = { p_rows: rows };
+    if (ver !== undefined) a.p_ver = ver;
+    return staffRpc('lec_range_sync', a);
+  };
+  staff.exams = function () {
+    return withDb(function (d) {
+      var out = [], ids = ['pt-etc', 'main'], i, r;
+      if (!ME) return out;
+      for (i = 0; i < ids.length; i += 1) {
+        r = d.app && d.app[ids[i]];
+        if (!r || typeof r !== 'object') continue;
+        out.push({
+          id: ids[i],
+          es: r.examSchool === undefined ? null : r.examSchool,
+          eg: r.examSchoolG === undefined ? null : r.examSchoolG
+        });
+      }
+      return out;
+    });
+  };
+  w.LecMock.c2ids = C2ID;
+  /* 시험용: C2 함수만 없는 서버 켜기·끄기 */
+  w.LecMock.noRange = function (on) { if (on !== undefined) NORANGE = !!on; return NORANGE; };
 })(window);

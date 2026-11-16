@@ -77,6 +77,33 @@ a{color:inherit}
 .cont .ln{display:flex;align-items:center;gap:10px;margin-top:10px}
 .cont .ln b{font-size:14px;white-space:nowrap}
 .pbar{flex:1 1 auto;height:6px;border-radius:3px;background:#E6E0CC;overflow:hidden}
+.abs1{display:block;margin:0 0 18px;border-color:#C9A227;box-shadow:inset 4px 0 0 #C9A227}
+.abs1 .absgo{display:block;text-decoration:none;color:inherit}
+.abs1 .lab{font-size:12px;font-weight:800;color:#8A6520;letter-spacing:.2px}
+.abs1 .tt{font-size:17px;font-weight:800;margin:2px 0 0}
+.abs1 .bk{font-size:13px;color:#6B6E62}
+.abs1 .ln{display:flex;align-items:center;gap:10px;margin-top:10px}
+.abs1 .ln b{font-size:14px;white-space:nowrap}
+.abs1 .ln em{font-style:normal;font-size:13px;font-weight:800;color:#1E5A3E;white-space:nowrap}
+.abs1 .tip{margin:8px 0 0;font-size:12px;color:#6B6E62}
+/* 결석 카드 안의 줄(이어서 보기 · «N편 더») = 카드 장수에 안 셈(검수 A M6) */
+.absln{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin:12px 0 0;padding:10px 0 0;border:0;border-top:1px solid #EDE3C6;background:none;border-radius:0;font-size:14px;font-weight:800;color:#8A6520;text-align:left;text-decoration:none}
+.absln + .absln{margin-top:0}
+.abscont{gap:4px}
+.absln .k{flex:0 0 auto;white-space:nowrap}
+.absln .v{flex:1 1 auto;min-width:0;font-weight:700;color:#4A4D44;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 누를 수 있는 줄 표시 «›»(C2 검수 L3 · 글자가 아니라 꾸밈이라 읽어 주지 않음) */
+.absln::after{content:'\203A';flex:0 0 auto;margin-left:auto;padding-left:4px;font-size:20px;line-height:1;font-weight:700;color:#8A6520}
+/* 학교 시험 카드(C2) · 범위 영상 */
+.exam1{display:block;text-decoration:none;margin:0 0 18px;border-color:#9DBFAE;box-shadow:inset 4px 0 0 #1E5A3E}
+.exam1 .lab{font-size:12px;font-weight:800;color:#1E5A3E;letter-spacing:.2px}
+.exam1 .tt{font-size:17px;font-weight:800;margin:2px 0 0}
+.exam1 .bk{font-size:13px;color:#6B6E62}
+.exam1 .ln{display:flex;align-items:center;gap:10px;margin-top:10px}
+.exam1 .ln b{font-size:14px;flex:0 1 auto}
+.rhead{margin:4px 0 14px}
+.rhead h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.3px}
+.rhead p{margin:4px 0 0;font-size:14px;color:#6B6E62}
 .pbar i{display:block;height:100%;background:#8CC4A6;border-radius:3px}
 .grp{margin:0 0 18px}
 .grp h2{margin:0 0 8px;padding:0 2px;font-size:14px;font-weight:800;color:#6B6E62}
@@ -92,6 +119,10 @@ a.row:active{background:#F4EEDB}
 .row .st.pre{color:#6B6E62}
 .row .st.ing{color:#0C4631}
 .row .st.ok{color:#1E5A3E}
+.row .st.in{color:#6B6E62}
+.row .ab{font-size:12px;font-weight:800;color:#8A6520;margin-top:4px}
+.row .ab.in{color:#6B6E62;font-weight:700}
+.row.flash{background:#FBF0C9;transition:background .6s}
 .row .un{font-size:12px;font-weight:700;color:#7A5410;margin-top:3px}
 .row.off{opacity:.55;cursor:default}
 .tag{display:inline-block;vertical-align:2px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:800;line-height:18px;white-space:nowrap}
@@ -122,12 +153,22 @@ a.row:active{background:#F4EEDB}
 .spd button{min-width:44px;height:44px;border:0;border-left:1px solid #EDE3C6;background:transparent;font-size:14px;font-weight:700;color:#0C4631;padding:0 6px}
 .spd button.on{background:#DDF0E5;color:#1E5A3E;font-weight:800}
 .b10{height:46px;border:1px solid #D9CFAE;border-radius:12px;background:#FAFAF5;font-size:14px;font-weight:700;color:#0C4631;padding:0 14px}
-.hint{margin:8px 0 0;font-size:12px;color:#6B6E62}
 .nowl{display:flex;align-items:flex-start;gap:10px;margin:12px 0 0}
 .nowl .ch{flex:1 1 auto;min-width:0;font-size:14px;font-weight:700}
 .nowl .ch em{font-style:normal;font-size:12px;font-weight:700;color:#6B6E62;margin-right:6px}
 .nowl .ms{flex:0 0 auto;font-size:13px;font-weight:800;color:#1E5A3E;white-space:nowrap}
 .mybar{margin:8px 0 0}
+/* C3 종이 자리 · C7 멈추고 풀기(영상 밖 옆 판: 폰 = 영상 바로 아래 · PC = 오른쪽 칸 맨 위) */
+.paper{margin:0 0 8px;font-size:13px;font-weight:700;color:#5F6256}
+.tag.wb{background:#F2F1EA;color:#5F6256}
+.toc .tag.wb{display:table;margin:3px 0 0}  /* 검수 A L7: 목차 꼬리표는 늘 제목 아래 줄 */
+.stopw{margin:12px 0 0;padding:14px 16px;border:1px solid #C9A227;border-radius:14px;background:#FAFAF5;box-shadow:inset 4px 0 0 #C9A227}
+.stopw .sq{margin:0;font-size:16px;font-weight:800;line-height:1.45;word-break:keep-all}
+.stopw .sb{display:flex;gap:8px;margin:12px 0 0}
+.stopw .sb button{flex:1 1 0;min-width:0;min-height:44px;border-radius:12px;font-size:15px;font-weight:800;padding:8px 12px}
+.stopw .go{border:0;background:#0C4631;color:#F4ECD7}
+.stopw .lt{border:1px solid #C9A227;background:#FAFAF5;color:#0C4631;font-weight:700}
+.stopw.w{display:none}
 .tabs{display:flex;gap:0;border-bottom:1px solid #E0C97A;margin:22px 0 0}
 .tabs button{flex:0 0 auto;min-height:44px;border:0;background:none;padding:8px 14px;font-size:15px;font-weight:700;color:rgba(12,70,49,.75);border-bottom:3px solid transparent;margin-bottom:-1px}
 .tabs button.on{color:#0C4631;font-weight:800;border-bottom-color:#0C4631}
@@ -196,6 +237,8 @@ a.row:active{background:#F4EEDB}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,420px);gap:28px;align-items:start}
   .pgrid .pr{position:-webkit-sticky;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:4px}
   .pgrid .tabs{margin-top:0}
+  .stopw.m{display:none}
+  .stopw.w{display:block;margin:0 0 14px}
 }
 </style>
 </head>
@@ -245,7 +288,11 @@ window.__lecStart = function () {
     qnorec: '질문을 남기려면 기록에 동의해 주세요',
     ended: '공개 기간이 끝난 영상이에요',
     endedChip: '공개 기간이 끝난 영상',
-    hint: '처음 보는 결석 영상은 1.5배까지 권해요',
+    absLab: '결석한 날 수업',
+    absTip: '1.5배까지 권해요',
+    inLab: '교실에서 들음',
+    examLab: '학교 시험',
+    contLab: '이어서 보기',
     qmany: '한 시간에 질문은 20개까지 올릴 수 있어요.',
     qinput: '내용을 1~1000자로 써 주세요.',
     qparent: '답을 달 수 없는 질문이에요.',
@@ -254,6 +301,10 @@ window.__lecStart = function () {
 
   var S = {
     key: '', name: '', home: null, lectures: [], consent: null, cver: L.CONSENT_VER,
+    att: null, /* lec_att 답(출결) · 없거나 옛 서버면 null = 예전 화면 그대로 */
+    paper: null, /* lec_paper 답(지문 줄 · {강의 id: [{no, at, stop, wb}]}) · 없거나 옛 서버면 null = 종이 줄 · 멈춤 없음 */
+    rng: null, /* C2 lec_range_me 답(학교 시험 범위) · 없거나 옛 서버면 null = 시험 카드 없음 */
+    absAt: 0, /* «N편 더»를 누른 수(누를 때마다 다음 결석 강의로 · 검수 A L19) */
     loginErr: '', nav: false, view: '', tab: 'toc',
     q: null
   };
@@ -354,7 +405,7 @@ window.__lecStart = function () {
     L.login(name, pin, DEV).then(function (r) {
       b.disabled = false;
       if (r && r.ok) {
-        S.key = r.key; S.name = r.name || name;
+        S.key = r.key; S.name = r.name || name; S.att = null; S.paper = null; S.rng = null;
         L.lsSet(LS.key, r.key);
         loadHome();
         return;
@@ -373,7 +424,7 @@ window.__lecStart = function () {
 
   function reLogin() {
     L.lsDel(LS.key); L.lsDel(LS.sess);
-    S.key = ''; S.home = null; S.lectures = []; S.consent = null;
+    S.key = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.rng = null;
     clearHash();
     showLogin(M.again);
   }
@@ -395,6 +446,7 @@ window.__lecStart = function () {
   function loadHome(quiet) {
     if (!S.key) { showLogin(''); return; }
     var k = S.key;
+    var side = quiet ? null : sideStart(k);
     L.home(k).then(function (r) {
       if (k !== S.key) return; /* 그새 나감(다른 학생) = 버림 */
       if (!r || !r.ok) {
@@ -408,19 +460,59 @@ window.__lecStart = function () {
       S.consent = r.consent || null;
       if (r.consent_ver) S.cver = r.consent_ver;
       if (quiet) { quietList(); return; }
-      route();
+      sideWait(side, k, route);
     }, function () {
       if (quiet || k !== S.key) return;
       showNet();
     });
   }
+  /* 검수 A M4: 출결(결석한 날 수업 · 교실에서 들음) · 학교 시험 범위(C2) · 지문 줄을 집 정보와 같이 부름 → 맨 위 카드와 목록을 한 번에 그림.
+     집 정보가 온 뒤 SIDE_MS(0.6초)까지만 기다림 · 그보다 늦게 온 것은 이미 그린 목록을 밀지 않고 다음에 목록을 다시 그릴 때(영상에서 돌아올 때) 들어감.
+     못 받으면(옛 서버 · 끊김) 카드 없이 예전 화면 그대로 */
+  var SIDE_MS = 600;
+  function sideStart(k) {
+    var sd = { n: 2, cb: null };
+    function one() {
+      sd.n -= 1;
+      if (sd.n <= 0 && sd.cb) { var f = sd.cb; sd.cb = null; f(); }
+    }
+    S.att = null; S.rng = null; S.absAt = 0;
+    L.att(k).then(function (a) { if (k === S.key) S.att = a; one(); }, one);
+    L.rngMe(k).then(function (r) { if (k === S.key) S.rng = r; one(); }, one);
+    loadPaper(k);
+    return sd;
+  }
+  function sideWait(sd, k, f) {
+    if (!sd || sd.n <= 0) { f(); return; }
+    var t = setTimeout(function () {
+      if (!sd.cb) return;
+      sd.cb = null;
+      if (k === S.key) f();
+    }, SIDE_MS);
+    sd.cb = function () { clearTimeout(t); if (k === S.key) f(); };
+  }
+  /* 지문 줄(C3 종이 자리 · C7 멈추고 풀기) · 집 정보와 같이 한 번 · 못 받으면(옛 서버 · 끊김) 둘 다 조용히 없음 */
+  function loadPaper(k) {
+    L.paper(k).then(function (r) {
+      if (k !== S.key) return;
+      S.paper = r ? L.paperMap(r) : null;
+      if (S.view === 'player' && T) paperPaint();
+    });
+  }
+  function lecPaper(id) { return (S.paper && S.paper[String(id)]) || null; }
+  function attMap() {
+    var m = {}, a = S.att, i;
+    if (!a || !a.items) return m;
+    for (i = 0; i < a.items.length; i += 1) { if (a.items[i] && a.items[i].id) m['i' + a.items[i].id] = a.items[i]; }
+    return m;
+  }
   /* 영상에서 돌아온 뒤 새 진도로 목록을 다시 그림. 누르는 중이거나 막 뗐으면 조금 미룸:
      누른 단추를 다시 그리면 그 누름이 사라짐(아이폰 사파리·마우스) → «나가기»를 눌러도 안 나가던 것 */
   function quietList() {
-    if (S.view !== 'list') return;
+    if (S.view !== 'list' && S.view !== 'rng') return;
     var ago = Date.now() - press.at;
     if (press.on ? ago < 3000 : ago < 400) { setTimeout(quietList, 100); return; }
-    showList();
+    if (S.view === 'rng') showRange(); else showList();
   }
 
   /* ------------------------------------------------------------ 길 찾기 */
@@ -444,7 +536,7 @@ window.__lecStart = function () {
     }
     var wasPlayer = S.view === 'player';
     teardown();
-    showList();
+    if (hs === 'rng') showRange(); else showList();   /* C2 학교 시험 범위 영상 */
     if (wasPlayer) loadHome(true);
   }
   function goList() {
@@ -513,9 +605,15 @@ window.__lecStart = function () {
     return { cls: 'pre', txt: '학습 전' };
   }
   /* 메타 줄(이스케이프한 HTML) · 조각마다 한 덩어리로 묶어 이름과 값이 줄바꿈으로 갈리지 않게 */
-  function metaOf(l) {
+  function metaOf(l, at) {
     var a = [], h = [], i, ld = l.lesson_on ? L.isoDay(l.lesson_on) : '';
-    if (l.lesson_on) a.push('수업일 ' + L.fmtDay(l.lesson_on));
+    /* C1 고침(11-16): 수업일마다 반이 정해진 강의면 내 반의 수업일(출결 days)로 · 첫 수업일이 그 안에 있으면 지금처럼 */
+    if (at && Object.prototype.toString.call(at.days) === '[object Array]' && at.days.length && at.days.indexOf(ld) < 0 && typeof at.days[0] === 'string' && L.isoDay(at.days[0])) {
+      ld = L.isoDay(at.days[0]);
+    }
+    /* 검수 A L2: 내 반 수업일이 둘 이상이면 «수업일 11.11(수) 외 1일»(선생님 표와 같은 꼴) */
+    var more = at && Object.prototype.toString.call(at.days) === '[object Array]' && at.days.length >= 2 ? at.days.length - 1 : 0;
+    if (ld) a.push('수업일 ' + L.fmtDay(ld) + (more ? ' 외 ' + more + '일' : ''));
     if (l.posted_on && !(ld && L.isoDay(l.posted_on) === ld)) a.push('탑재일 ' + L.fmtDay(l.posted_on)); /* 수업일과 같은 날이면 뺌 */
     if (+l.dur > 0) a.push('강의시간 ' + L.fmtDur(l.dur));
     var n = (l.chapters && l.chapters.length) || 0;
@@ -533,21 +631,25 @@ window.__lecStart = function () {
       '<span class="me">' + esc(S.name) + '</span>' +
       '<button class="tbtn hit" type="button" data-act="logout">나가기</button></div>';
     h += norecHTML();
-    /* 이어서 보기 */
-    if (rec) {
-      var best = null, bt = -Infinity, i, l, t;
-      for (i = 0; i < arr.length; i += 1) {
-        l = arr[i];
-        if (l.ended || l.confirmed || (+l.pct || 0) >= L.DONE || !l.last_at) continue;
-        t = L.ts(l.last_at);
-        if (t > bt) { bt = t; best = l; }
-      }
-      if (best) {
-        h += '<a class="cont card" href="#v=' + encodeURIComponent(best.id) + '" data-act="go">' +
-          '<span class="lab">이어서 보기</span><div class="tt">' + esc(best.title) + '</div>' +
-          '<div class="bk">' + esc(best.book || '') + '</div>' +
-          '<div class="ln"><b>' + esc(L.fmtDur(best.pos || 0)) + '부터</b><span class="pbar"><i style="width:' + (+best.pct || 0) + '%"></i></span></div></a>';
-      }
+    var am = attMap(), ab = absList(arr, am, today), i;
+    /* 맨 위 카드는 두 장까지 · 차례 결석한 날 수업 › 학교 시험 범위 › 이어서 보기(C2 정한 것 · 검수 A M6)
+       결석 카드가 있으면 «이어서 보기»와 «결석한 날 수업 N편 더»는 그 카드 안의 줄(카드 장수에 안 셈) */
+    /* «이어서 보기»는 결석한 날 수업(결석 카드 · «N편 더»가 이미 가리킴)을 빼고 고름(C2 검수 L2) */
+    var skip = {};
+    for (i = 0; i < ab.length; i += 1) skip['i' + ab[i].id] = 1;
+    var best = rec ? contBest(arr, skip) : null, ex = examTop(rec), tops = 0;
+    if (ab.length) {
+      if (best && best.id === ab[0].id) best = null; /* 같은 강의면 결석 카드가 대신함 */
+      h += absCardHTML(ab[0], am['i' + ab[0].id], rec, best, ab.length - 1);
+      best = null;
+      tops += 1;
+    }
+    if (ex) { h += examCardHTML(ex, rec); tops += 1; }
+    if (best && tops < 2) {
+      h += '<a class="cont card" href="#v=' + encodeURIComponent(best.id) + '" data-act="go" data-top="cont">' +
+        '<span class="lab">' + esc(M.contLab) + '</span><div class="tt">' + esc(best.title) + '</div>' +
+        '<div class="bk">' + esc(best.book || '') + '</div>' +
+        '<div class="ln"><b>' + esc(L.fmtDur(best.pos || 0)) + '부터</b><span class="pbar"><i style="width:' + (+best.pct || 0) + '%"></i></span></div></a>';
     }
     if (!arr.length) {
       h += '<div class="rows"><div class="empty">아직 올라온 강의가 없어요.<br>수업 영상이 올라오면 여기에 보여요.</div></div>';
@@ -561,32 +663,185 @@ window.__lecStart = function () {
       for (j = 0; j < groups.length; j += 1) {
         g = groups[j];
         h += '<section class="grp"><h2>' + esc(g.book || '강의') + '</h2><div class="rows">';
-        for (i = 0; i < g.list.length; i += 1) h += rowHTML(g.list[i], rec, today);
+        for (i = 0; i < g.list.length; i += 1) h += rowHTML(g.list[i], rec, today, am['i' + g.list[i].id]);
         h += '</div></section>';
       }
     }
     h += footHTML() + '</div>';
     app.innerHTML = h;
   }
-  function rowHTML(l, rec, today) {
+  /* 결석한 날 수업 카드에 올릴 강의: 결석 · 아직 열림 · 다 보지 않음(선생님 확인 = 끝남) · 결석한 날이 오늘~13일 전 ·
+     최근 결석한 날 → 많이 본 것 → id 차례 */
+  function absList(arr, am, today) {
+    var out = [], i, l, a, dd;
+    for (i = 0; i < arr.length; i += 1) {
+      l = arr[i]; a = am['i' + l.id];
+      if (!a || a.att !== 'abs' || !a.day || l.ended || l.confirmed || (+l.pct || 0) >= L.DONE) continue;
+      dd = dayDiff(today, a.day);
+      if (dd < 0 || dd > 13) continue;
+      out.push(l);
+    }
+    out.sort(function (x, y) {
+      var dx = am['i' + x.id].day, dy = am['i' + y.id].day;
+      if (dx !== dy) return dx < dy ? 1 : -1;
+      var px = +x.pct || 0, py = +y.pct || 0;
+      if (px !== py) return py - px;
+      return x.id < y.id ? -1 : (x.id > y.id ? 1 : 0);
+    });
+    return out;
+  }
+  /* 결석 카드 = 카드 하나(div) 안에 링크: 위 = 그 강의 · 아래 줄 = 다른 강의 «이어서 보기»(cont) · «결석한 날 수업 N편 더»(more) */
+  function absCardHTML(l, a, rec, cont, more) {
+    var pct = +l.pct || 0, pos = +l.pos || 0;
+    var h = '<div class="abs1 card" data-top="abs"><a class="absgo" href="#v=' + encodeURIComponent(l.id) + '" data-act="go">' +
+      '<span class="lab">' + esc(M.absLab) + ' · ' + esc(L.fmtDay(a.day)) + '</span>' +
+      '<div class="tt">' + esc(l.title) + '</div>' +
+      '<div class="bk">' + esc(l.book || '') + '</div><div class="ln">';
+    if (rec && pos > 0) h += '<b>' + esc(L.fmtDur(pos)) + '부터 이어 보기</b>';
+    else h += '<b>처음부터 보기</b>';
+    if (rec && pct > 0) h += '<span class="pbar"><i style="width:' + pct + '%"></i></span><em>' + pct + '%</em>';
+    h += '</div><p class="tip">' + esc(M.absTip) + '</p></a>';
+    if (cont) {
+      /* «이어서 보기 · 18~32번 · 12:40부터»(C2 검수 L3 · 어디부터인지는 본 자리가 있을 때만) */
+      var cpos = +cont.pos || 0;
+      h += '<a class="absln abscont" href="#v=' + encodeURIComponent(cont.id) + '" data-act="go">' +
+        '<span class="k">' + esc(M.contLab) + '</span><span class="v">· ' + esc(cont.title) +
+        (rec && cpos > 0 ? ' · ' + esc(L.fmtDur(cpos)) + '부터' : '') + '</span></a>';
+    }
+    if (more > 0) {
+      h += '<button class="absln absmore" type="button" data-act="absmore"><span class="k">' +
+        esc(M.absLab) + ' ' + more + '편 더</span></button>';
+    }
+    return h + '</div>';
+  }
+  /* 이어서 보기: 다 보지 않은 강의 중 마지막으로 본 것(기록 동의일 때만) · skip = 뺄 강의({'i'+id: 1} · 결석한 날 수업) */
+  function contBest(arr, skip) {
+    var best = null, bt = -Infinity, i, l, t;
+    skip = skip || {};
+    for (i = 0; i < arr.length; i += 1) {
+      l = arr[i];
+      if (l.ended || l.confirmed || (+l.pct || 0) >= L.DONE || !l.last_at || skip['i' + l.id]) continue;
+      t = L.ts(l.last_at);
+      if (t > bt) { bt = t; best = l; }
+    }
+    return best;
+  }
+
+  /* ------------------------------------------------------------ 학교 시험 범위(C2) */
+  /* 범위 한 줄의 강의 중 이 목록에서 열 수 있는 것(공개 끝 뺌 · 서버 차례 = 수업일 이른 차례) */
+  function rngLecs(it) {
+    var out = [], ids = it && Object.prototype.toString.call(it.lectures) === '[object Array]' ? it.lectures : [], i, l;
+    for (i = 0; i < ids.length; i += 1) {
+      l = findLec(ids[i]);
+      if (l && !l.ended && out.indexOf(l) < 0) out.push(l);
+    }
+    return out;
+  }
+  /* 카드에 띄울 시험 → {it, c:{title, sub, n, during, total, done}, ls} · 없으면 null
+     범위가 저장된 시험만(서버가 D-20부터 시험 끝날까지만 줌 · 여기서도 D-20 넘으면 안 띄움) · 일정 없는 학교 = 빈 카드도 없음 */
+  function examTop(rec) {
+    var r = S.rng, today = L.isoDay(), items = [], i, it, ls, n, j, best, c;
+    if (!r || Object.prototype.toString.call(r.items) !== '[object Array]') return null;
+    for (i = 0; i < r.items.length; i += 1) {
+      it = r.items[i];
+      if (!it || typeof it !== 'object') continue;
+      ls = rngLecs(it);
+      if (!ls.length) continue;
+      for (n = 0, j = 0; j < ls.length; j += 1) { if (isDone(ls[j], +ls[j].pct || 0)) n += 1; }
+      items.push({ id: it.id, name: it.name, exam_on: it.exam_on, end_on: it.end_on, lectures: ls, done: n, src: it });
+    }
+    best = L.rngPickItem(items, today);
+    if (!best) return null;
+    c = L.rngCard(best, today, rec);
+    if (!c || (!c.during && c.n > 20)) return null;
+    return { it: best.src, c: c, ls: best.lectures };
+  }
+  function examCardHTML(ex, rec) {
+    var c = ex.c, p = c.total ? Math.round(c.done * 100 / c.total) : 0;
+    return '<a class="exam1 card" href="#rng" data-act="go" data-top="exam">' +
+      '<span class="lab">' + esc(M.examLab) + '</span>' +
+      '<div class="tt">' + esc(c.title) + '</div>' +
+      '<div class="ln"><b>' + esc(c.sub) + '</b>' +
+      (rec ? '<span class="pbar"><i style="width:' + p + '%"></i></span>' : '') + '</div></a>';
+  }
+  /* 범위 영상 목록(#rng): 덜 본 것 먼저(다 본 것은 아래 · 같으면 수업일 이른 차례) */
+  function showRange() {
+    var m = recMode(), rec = m === 'agree', ex = examTop(rec);
+    if (!ex) { clearHash(); showList(); return; } /* 시험이 지났거나 범위가 빠짐 = 목록으로 */
+    S.view = 'rng';
+    var today = L.isoDay(), am = attMap(), ls = ex.ls.slice(), ord = {}, i;
+    for (i = 0; i < ls.length; i += 1) ord[ls[i].id] = i;
+    if (rec) {
+      ls.sort(function (x, y) {
+        var px = +x.pct || 0, py = +y.pct || 0, dx = isDone(x, px) ? 1 : 0, dy = isDone(y, py) ? 1 : 0;
+        return (dx - dy) || (px - py) || (ord[x.id] - ord[y.id]);
+      });
+    }
+    var h = '<div class="wrap"><div class="top">' +
+      '<button class="backb hit" type="button" data-act="list">← 목록</button><span class="sp"></span>' +
+      '<span class="me">' + esc(S.name) + '</span></div>' + norecHTML() +
+      '<div class="rhead"><h1>' + esc(ex.c.title) + '</h1><p>' + esc(ex.c.sub) + (rec ? ' · 덜 본 영상부터' : '') + '</p></div>' +
+      '<section class="grp"><div class="rows">';
+    for (i = 0; i < ls.length; i += 1) h += rowHTML(ls[i], rec, today, am['i' + ls[i].id]);
+    h += '</div></section>' + footHTML() + '</div>';
+    app.innerHTML = h;
+  }
+  /* 강의 줄의 출결 한 줄 · 결석 = «결석한 날 수업 · 11.11(수)»(아래에 진도 그대로) · 교실 = 진도 대신 회색 «교실에서 들음» */
+  function attLine(l, a, rec, st) {
+    if (!a || l.ended) return { lab: '', st: rec ? '<div class="st ' + st.cls + '">' + esc(st.txt) + '</div>' : '' };
+    if (a.att === 'abs') {
+      /* 검수 A L1: 날짜는 수업일이 둘 이상일 때만(한 날이면 위 «수업일» 줄과 같은 날짜가 두 번 나옴) */
+      var many = Object.prototype.toString.call(a.days) === '[object Array]' && a.days.length >= 2;
+      return { lab: '<div class="ab">' + esc(M.absLab) + (a.day && many ? ' · ' + esc(L.fmtDay(a.day)) : '') + '</div>',
+        st: rec ? '<div class="st ' + st.cls + '">' + esc(st.txt) + '</div>' : '' };
+    }
+    if (a.att === 'in') {
+      var pct = +l.pct || 0, t = M.inLab;
+      if (!rec) return { lab: '<div class="ab in">' + esc(t) + '</div>', st: '' }; /* 기록 안 함 = 진도 줄 없이 출결만 */
+      if (l.confirmed) return { lab: '', st: '<div class="st ' + st.cls + '">' + esc(st.txt) + '</div>' };
+      if (pct >= L.DONE) t += ' · 복습 완료';
+      else if (pct > 0 || l.first_at) t += ' · 복습 ' + pct + '%';
+      return { lab: '', st: '<div class="st in">' + esc(t) + '</div>' };
+    }
+    return { lab: '', st: rec ? '<div class="st ' + st.cls + '">' + esc(st.txt) + '</div>' : '' };
+  }
+  function rowHTML(l, rec, today, a) {
     var pct = +l.pct || 0, st = statusOf(l), done = isDone(l, pct);
     var isNew = !l.first_at && l.posted_on && dayDiff(today, l.posted_on) <= 3 && dayDiff(today, l.posted_on) >= 0;
     var tags = '';
     if (isNew && !l.ended) tags += '<span class="tag new">NEW</span>';
     if (+l.ans_new > 0) tags += '<span class="tag ans">새 답변 ' + (+l.ans_new) + '</span>';
+    var al = attLine(l, a, rec, st);
     var inner = '<div class="mn"><div class="tt">' + esc(l.title) + tags + '</div>' +
-      '<div class="mt">' + metaOf(l) + '</div>';
+      '<div class="mt">' + metaOf(l, a) + '</div>' + al.lab;
     if (l.ended) {
       inner += '<span class="tag end">' + M.endedChip + '</span>';
     } else {
-      if (rec) inner += '<div class="st ' + st.cls + '">' + esc(st.txt) + '</div>';
+      inner += al.st;
       var un = L.untilNote(l.until);
       if (un) inner += '<div class="un">' + esc(un) + '</div>';
     }
     inner += '</div>';
-    if (rec && !l.ended) inner += ring(pct, done);
+    /* 검수 A M7: 교실에서 들은 강의는 복습 진도가 없으면 0% 고리를 숨김(안 본 강의처럼 보이지 않게) */
+    if (rec && !l.ended && !(a && a.att === 'in' && !(pct > 0) && !done)) inner += ring(pct, done);
     if (l.ended) return '<div class="row off" aria-disabled="true" data-id="' + esc(l.id) + '">' + inner + '</div>';
     return '<a class="row" href="#v=' + encodeURIComponent(l.id) + '" data-act="go" data-id="' + esc(l.id) + '">' + inner + '</a>';
+  }
+
+  /* «결석한 날 수업 N편 더» = 다음 결석한 날 수업 줄로 내려가 잠깐 칠함 · 누를 때마다 그다음 강의로(끝나면 둘째부터 다시 · 검수 A L19) */
+  function jumpAbs() {
+    var ab = absList(S.lectures.slice().reverse(), attMap(), L.isoDay()), id;
+    if (ab.length < 2) return;
+    id = ab[1 + (S.absAt % (ab.length - 1))].id;
+    S.absAt += 1;
+    var rs = app.querySelectorAll('.row[data-id]'), i, r = null;
+    for (i = 0; i < rs.length; i += 1) { if (rs[i].getAttribute('data-id') === id) { r = rs[i]; break; } }
+    if (!r) return;
+    try { r.scrollIntoView({ block: 'center' }); } catch (e) { r.scrollIntoView(); }
+    var base = r.className.replace(/(^|\s)flash(?=\s|$)/g, ''); /* 칠하는 중에 또 눌러도 칠이 남지 않게 */
+    r.className = base + ' flash';
+    try { r.focus(); } catch (e2) { /* 없음 */ }
+    setTimeout(function () { r.className = base; }, 1600);
   }
 
   function showEnded() {
@@ -705,17 +960,19 @@ window.__lecStart = function () {
       '<div class="pt"><b>' + esc(l.title) + '</b><span>' + esc(l.book || '') + '</span></div></div>' +
       norecHTML() +
       '<div class="pgrid"><div class="pl">' +
+      '<p class="paper" id="paperL" hidden></p>' +
       '<div class="vid" id="vid"><div class="yt" id="ytbox"></div></div>' +
+      '<div class="stopw m" id="stopM" role="status" hidden></div>' +
       '<div class="card verr" id="verr" hidden><p id="verrT"></p><button class="btn-line" type="button" data-act="list">목록으로</button></div>' +
       '<div class="resume" id="resume" hidden></div>' +
       '<div class="ctl"><div class="spd" role="group" aria-label="배속"><span>배속</span>';
     var i;
     for (i = 0; i < RATES.length; i += 1) h += '<button type="button" data-act="rate" data-r="' + RATES[i] + '">' + RATES[i] + '</button>';
     h += '</div><button class="b10" type="button" data-act="back10">10초 뒤로</button></div>' +
-      '<p class="hint">' + M.hint + '</p>' +
       '<div class="nowl"><div class="ch" id="nowCh"></div>' + (rec ? '<div class="ms" id="mySt"></div>' : '') + '</div>' +
       (rec ? '<div class="mybar"><span class="pbar" style="display:block"><i id="myBar" style="width:0"></i></span></div>' : '') +
       '</div><div class="pr">' +
+      '<div class="stopw w" id="stopW" role="status" hidden></div>' +
       '<div class="tabs" role="tablist"><button type="button" role="tab" data-act="tab" data-tab="toc" id="tabToc" class="on">목차</button>' +
       '<button type="button" role="tab" data-act="tab" data-tab="qna" id="tabQna">질문</button></div>' +
       '<div class="tbody" id="tbody"></div></div></div>' +
@@ -724,7 +981,76 @@ window.__lecStart = function () {
     try { window.scrollTo(0, 0); } catch (e) { /* 없음 */ }
     startTrack(l);
     drawTabs();
+    paperPaint();
     drawToc(true);
+  }
+
+  /* ------------------------------------------------------------ C3 종이 자리 · C7 멈추고 풀기 */
+  /* 영상 위 한 줄 + 목차 회색 표(워크북 번호가 다른 지문만) · 지문 줄이 없으면 둘 다 없음(예전 화면 그대로) */
+  function paperPaint() {
+    if (!T) return;
+    var it = lecPaper(T.lec.id) || [], p = $('paperL'), tx = L.paperLine(it);
+    if (p) { p.textContent = tx; p.hidden = !tx; }
+    T.ptags = null;
+    T.stopList = null;
+    if (S.tab === 'toc') drawToc(true);
+  }
+  function paperTags() {
+    if (T.ptags) return T.ptags;
+    var ch = T.lec.chapters || [], m = L.paperMatch(ch, lecPaper(T.lec.id) || []), out = [], i;
+    for (i = 0; i < ch.length; i += 1) out.push(m[i] ? L.paperTag(m[i]) : '');
+    T.ptags = out;
+    return out;
+  }
+  /* 멈춤 판이 서는 지문(시작 → 멈춤 60초 이상) */
+  function stopList() {
+    if (T.stopList) return T.stopList;
+    var it = lecPaper(T.lec.id) || [], out = [], i;
+    for (i = 0; i < it.length; i += 1) { if (L.canStop(it[i])) out.push(it[i]); }
+    T.stopList = out;
+    return out;
+  }
+  /* 보통 재생으로 a → b(강의 초)를 지났을 때만 부름(sample) · 멈춤 시각을 지나면 한 번 멈추고 옆 판 ·
+     지문마다 이 화면에서 한 번(멈출 때 표시 · «계속 보기»«나중에» 뒤에도 다시 안 멈춤) · 기록은 예전 멈춤과 같은 길(onState 2)
+     검수 B2: 이어 보기로 연 화면은 이어 본 자리 + 5초까지의 멈춤을 지난 것으로 봄(T.skipTo · M-1) ·
+     한 구간에 멈춤이 둘 이상 들면 모두 지난 것으로 하고 판은 뒤 것(지금 자리의 지문) 하나(L-1 · L-3) ·
+     탭이 숨겨져 있으면 멈추지 않고 지난 것으로만 함(L-1) · atEnd = 영상이 끝나며 지난 멈춤 → 멈추지 않고 판만(L-2) */
+  function stopCheck(a, b, atEnd) {
+    var it = stopList(), i, x, k, last = null, hid = false;
+    try { hid = !!document.hidden; } catch (e) { /* 없음 */ }
+    for (i = 0; i < it.length; i += 1) {
+      x = it[i];
+      k = L.noKey(x.no) + '|' + x.stop;
+      if (T.stopDone[k] || x.stop <= T.skipTo) continue;
+      if (a < x.stop && x.stop <= b) {
+        T.stopDone[k] = true;
+        if (!last || x.stop > last.stop) last = x;
+      }
+    }
+    if (!last || hid) return;
+    if (!atEnd) { try { T.P.pause(); } catch (e) { /* 없음 */ } }
+    stopShow(last, atEnd);
+  }
+  function stopShow(x, atEnd) {
+    var h = '<p class="sq">' + esc(L.stopText(x)) + '</p><div class="sb">' +
+      '<button type="button" class="go" data-act="stopGo">계속 보기</button>' +
+      '<button type="button" class="lt" data-act="stopLater">나중에</button></div>';
+    var ids = ['stopM', 'stopW'], i, e;
+    for (i = 0; i < ids.length; i += 1) { e = $(ids[i]); if (e) { e.innerHTML = h; e.hidden = false; } }
+    T.stopOn = true;
+    T.stopEnd = !!atEnd;
+    T.stopT = Date.now();
+    /* 검수 B2 M-2: 유튜브 전체 화면이면 판이 안 보이므로 전체 화면을 끔(안 되면 조용히 넘어감 · 아이폰 영상 전체 화면은 페이지에서 못 끔) */
+    try {
+      var d = document, pr;
+      if (d.fullscreenElement && d.exitFullscreen) { pr = d.exitFullscreen(); if (pr && pr.then) pr.then(null, function () { /* 없음 */ }); }
+      else if (d.webkitFullscreenElement && d.webkitExitFullscreen) d.webkitExitFullscreen();
+    } catch (e2) { /* 없음 */ }
+  }
+  function stopHide() {
+    var ids = ['stopM', 'stopW'], i, e;
+    for (i = 0; i < ids.length; i += 1) { e = $(ids[i]); if (e) { e.hidden = true; e.innerHTML = ''; } }
+    if (T) { T.stopOn = false; T.stopEnd = false; }
   }
 
   function startTrack(l) {
@@ -735,7 +1061,9 @@ window.__lecStart = function () {
       secs: [], local: '', server: l.seen || '', sess: null, real: 0,
       from: null, to: null, prevT: null, prevW: null, prevPlay: false, prevRate: 1,
       err: 0, stopped: false, dirty: false, lastBeat: L.now(), iv: null,
-      pendSeekL: null, resumeL: resumeL, rateSet: false, tocSig: '', stSig: '', played: false
+      pendSeekL: null, resumeL: resumeL, rateSet: false, tocSig: '', stSig: '', played: false,
+      ptags: null, stopList: null, stopDone: {}, stopOn: false, stopT: 0,
+      skipTo: resumeL > 0 ? resumeL + 5 : 0, stopEnd: false   /* 검수 B2 M-1: 이어 본 자리 + 5초까지의 멈춤은 지난 것 · «처음부터»면 0 */
     };
     var box = $('ytbox');
     var cb = {
@@ -748,6 +1076,7 @@ window.__lecStart = function () {
         play: function () { if (T && T.P) T.P.play(); },
         pause: function () { if (T && T.P) T.P.pause(); },
         seek: function (x) { if (T && T.P) { T.P.seek(x); T.prevT = null; } },
+        jump: function (x) { if (T && T.P) T.P.seek(x); }, /* 유튜브 자체 막대로 옮김(앱이 모름) 흉내 */
         rate: function (r) { if (T && T.P) { return arguments.length ? T.P.rate(r) : T.P.rate(); } return 1; },
         state: function () { return T && T.P ? T.P.state() : -1; },
         time: function () { return T && T.P ? T.P.time() : 0; },
@@ -781,6 +1110,8 @@ window.__lecStart = function () {
     if (!T) return;
     if (st === 1) {
       T.played = true;
+      /* 멈춤 판이 선 채 유튜브 재생 단추로 다시 틀면 판만 닫고 그대로 봄(멈춘 직후 0.4초 안의 늦은 알림은 무시) */
+      if (T.stopOn && Date.now() - T.stopT >= 400) stopHide();
       checkDur();
       if (!T.rateSet) {
         T.rateSet = true;
@@ -802,6 +1133,7 @@ window.__lecStart = function () {
     if (!T) return;
     T.err = code || -1;
     T.stopped = true;
+    stopHide();
     if (T.iv) { clearInterval(T.iv); T.iv = null; }
     try { T.P.destroy(); } catch (e) { /* 없음 */ }
     var v = $('vid'), ve = $('verr'), rs = $('resume');
@@ -840,17 +1172,26 @@ window.__lecStart = function () {
     var w = L.now() / 1000;
     var st = T.P.state(), t = T.P.time(), playing = st === 1;
     if (!T.ready) checkDur();
-    var r = curRate();
-    if (T.rec && !T.stopped && T.ready && T.prevPlay && playing && T.prevT !== null) {
+    var r = curRate(), norm = false, a0 = T.prevT, endNorm = false;
+    if (T.ready && T.prevPlay && playing && T.prevT !== null) {
       var dtw = w - T.prevW, dv = t - T.prevT, hi = Math.max(r, T.prevRate), lo = Math.min(r, T.prevRate);
-      if (dtw > 0 && dv > 0 && dv <= dtw * hi + 2) {
+      norm = dtw > 0 && dv > 0 && dv <= dtw * hi + 2; /* 보통 재생(건너뛰기·되감기·옮기기 아님) */
+      if (norm && T.rec && !T.stopped) {
         credit(T.prevT * T.S, t * T.S);
         T.real += Math.min(dtw, dv / lo);
         T.dirty = true;
       }
     }
+    /* 검수 B2 L-2: 재생 중이던 영상이 이 구간에 끝났으면(보통 재생으로) 끝까지 지난 멈춤도 봄 */
+    if (T.ready && T.prevPlay && st === 0 && T.prevT !== null) {
+      var dtw0 = w - T.prevW, ve = Math.max(t, T.pDur) - T.prevT, hi0 = Math.max(r, T.prevRate);
+      endNorm = dtw0 > 0 && ve >= 0 && ve <= dtw0 * hi0 + 2;
+    }
     T.prevT = t; T.prevW = w; T.prevPlay = playing; T.prevRate = r;
     if (playing && T.ready && L.now() - T.lastBeat >= BEAT_MS) sendBeat(false);
+    if (T.stopOn && playing && Date.now() - T.stopT >= 1500) stopHide(); /* 판이 선 채 다시 재생 중이면 닫음 */
+    if (norm) stopCheck(a0 * T.S, t * T.S);
+    if (endNorm) stopCheck(a0 * T.S, Infinity, true);
     paint();
   }
 
@@ -1066,14 +1407,16 @@ window.__lecStart = function () {
       var v = seen[i] || 0;
       marks.push(v >= 0.9 ? 'full' : (v >= 0.1 ? 'half' : ''));
     }
-    var sig = cur + '|' + marks.join(',') + '|' + T.rec;
+    var tags = paperTags();
+    var sig = cur + '|' + marks.join(',') + '|' + T.rec + '|' + tags.join(',');
     if (!force && sig === T.tocSig) return;
     T.tocSig = sig;
     var h = '<ul class="toc">';
     for (i = 0; i < ch.length; i += 1) {
       h += '<li><button type="button" data-act="seek" data-t="' + (+ch[i].t || 0) + '"' + (i === cur ? ' class="cur" aria-current="true"' : '') + '>' +
         (T.rec ? '<span class="dot ' + marks[i] + '"></span>' : '') +
-        '<span class="tt">' + esc(ch[i].title) + '</span><span class="tm">' + esc(L.fmtDur(ch[i].t)) + '</span></button></li>';
+        '<span class="tt">' + esc(ch[i].title) + (tags[i] ? '<span class="tag wb">' + esc(tags[i]) + '</span>' : '') + '</span>' +
+        '<span class="tm">' + esc(L.fmtDur(ch[i].t)) + '</span></button></li>';
     }
     box.innerHTML = h + '</ul>';
   }
@@ -1307,7 +1650,7 @@ window.__lecStart = function () {
     teardown();
     var w = fly.slice();
     L.lsDel(LS.key); L.lsDel(LS.sess); L.lsDel(LS.pend); L.lsDel(LS.rate);
-    S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null;
+    S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.rng = null;
     clearHash();
     showLogin('');
     if (Object.prototype.toString.call(a) === '[object Array]') {
@@ -1332,7 +1675,7 @@ window.__lecStart = function () {
     var d = M2.db(), key = L.hex64(), at = nowIso();
     d.key.push({ key: key, sid: 's0901|오가을', rid: 's0901', pin: '', sname: '오가을', cls: ['c-g1a'], dev: '개인 링크', made_by: 'Benjamin', created_at: at, last_at: at });
     M2.save(d);
-    S.key = key;
+    S.key = key; S.att = null; S.paper = null; S.rng = null;
     L.lsSet(LS.key, key);
     loadHome();
   }
@@ -1358,11 +1701,12 @@ window.__lecStart = function () {
     else if (act === 'none') { choose('none', el); }
     else if (act === 'recback') { goList(); }
     else if (act === 'logout') { logout(); }
-    else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; clearHash(); showLogin(''); }
+    else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.rng = null; clearHash(); showLogin(''); }
     else if (act === 'retry') { loadHome(); }
     else if (act === 'list') { goList(); }
+    else if (act === 'absmore') { jumpAbs(); }
     else if (act === 'restart') {
-      if (T && T.P) { T.pendSeekL = null; seekL(0); }
+      if (T && T.P) { T.pendSeekL = null; T.skipTo = 0; seekL(0); }   /* 처음부터 = 모든 멈춤을 다시 봄(검수 B2 M-1) */
       var rs = $('resume'); if (rs) rs.hidden = true;
     } else if (act === 'rate') {
       var r = +attr(el, 'data-r');
@@ -1376,6 +1720,12 @@ window.__lecStart = function () {
       if (T && T.P) seekL(Math.max(0, lecTime() - 10));
     } else if (act === 'fake') {
       if (T && T.P) { if (T.P.state() === 1) T.P.pause(); else T.P.play(); }
+    } else if (act === 'stopGo' || act === 'stopLater') {
+      /* C7 · 계속 보기 = 바로 재생 · 나중에 = 판을 닫고 바로 이어 재생(그 지문은 이 화면에서 다시 안 멈춤 · 검수 A)
+         영상 끝에서 선 판(검수 B2 L-2)은 닫기만(다시 틀지 않음) */
+      var endOn = !!(T && T.stopEnd);
+      stopHide();
+      if (T && T.P && !T.err && !endOn) T.P.play();
     } else if (act === 'tab') {
       var tb = attr(el, 'data-tab');
       if (tb === S.tab) return;
@@ -1450,7 +1800,9 @@ window.__lecStart = function () {
     window.__lecDbg = function () {
       return {
         view: S.view, rec: recMode(), tab: S.tab,
-        T: T ? { id: T.lec.id, S: T.S, durL: T.durL, ready: T.ready, real: T.real, local: T.local, server: T.server, sess: T.sess, err: T.err, stopped: T.stopped } : null
+        T: T ? { id: T.lec.id, S: T.S, durL: T.durL, ready: T.ready, real: T.real, local: T.local, server: T.server, sess: T.sess, err: T.err, stopped: T.stopped,
+          stopOn: T.stopOn, stopDone: Object.keys(T.stopDone), to: T.to, skipTo: T.skipTo, stopEnd: T.stopEnd } : null,
+        paper: S.paper, rng: S.rng, absAt: S.absAt
       };
     };
   }

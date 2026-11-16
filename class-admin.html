@@ -82,6 +82,7 @@ textarea{resize:vertical}
 .ti .tx{flex:1 1 auto;min-width:0;font-weight:650}
 .ti .go{color:#7A5410;font-weight:800;font-size:18px;line-height:1}
 .ti.more{justify-content:center;color:#5C5A52;font-weight:650}
+.bandn{margin:0 0 8px;font-size:14.5px;font-weight:700;color:#9A3F33}
 .none{margin:2px 0 0;color:#5C5A52}
 .sub{margin:12px 0 0;padding:4px 0 0 14px;border-left:2px solid #E0C97A}
 .sub h3{font-size:13.5px;color:#5C5A52;font-weight:700;margin:4px 0}
@@ -128,6 +129,8 @@ textarea{resize:vertical}
 .c-zero{background:#F2F1EA;color:#5F6256}
 .c-conf{background:#FFFFFF;color:#1E5A3E;border:1.5px solid #1E5A3E}
 .c-none,.c-pend{background:transparent;color:#5F6256;border:1px dashed #D6D1BF}
+.c-in{background:#FFFFFF;color:#5F6256;border:1px solid #E3DECB}
+.c-abs{background:#FBE9E3;color:#9A3F33}
 .mt tfoot td,.mt tfoot th{background:#FBF8EE;font-weight:750;font-size:13px;border-bottom:0}
 .mt tfoot td{padding:8px 15px;font-variant-numeric:tabular-nums}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;font-size:12.5px;color:#5C5A52}
@@ -206,6 +209,20 @@ textarea{resize:vertical}
 .qs .qb{display:block;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .lk input{margin-bottom:6px}
 .nt textarea{min-height:118px}
+/* 시험 범위 고르기(C2) */
+.rgc{margin:0 0 12px}
+.rgi{margin:0 0 4px;font-size:14px}
+.rgi.mut{font-size:13px}
+.rgl{list-style:none;margin:6px 0 0;padding:0}
+.rgl li{border-bottom:1px solid #EFE7D2}
+.rgl label{display:flex;align-items:center;gap:10px;min-height:44px;padding:7px 4px;cursor:pointer}
+.rgl label:hover{background:#FFFFFF}
+.rgl input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;margin:0;accent-color:#0C4631}
+.rgl .d{min-width:78px;font-size:12.5px;color:#5C5A52;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rgl .t{flex:1 1 auto;min-width:0;font-size:14px;font-weight:650}
+.rgl .b{font-size:12.5px;color:#5C5A52;white-space:nowrap}
+.rgl .u{white-space:nowrap;font-variant-numeric:tabular-nums}
+.rgm{margin-top:10px}
 /* 편집 칸 */
 .fld{margin-top:14px}
 .fld>label,.fl{display:block;font-size:13.5px;font-weight:750;margin-bottom:5px}
@@ -215,6 +232,18 @@ textarea{resize:vertical}
 .prev.on{display:block}
 .prev iframe,.prev>div{width:100%;height:100%;border:0;display:block}
 .chr{display:grid;grid-template-columns:86px minmax(0,1fr) 32px;gap:6px;margin-bottom:6px;align-items:center}
+.chx{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:-2px 38px 10px 92px;font-size:12.5px;font-weight:650;color:#5C5A52}
+.chx label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.chx input[type=text]{padding:4px 8px;font-size:14px;border-radius:8px;min-height:0}
+.chx .cxb input{width:52px;text-align:center}
+.chx .cxw input{width:98px}
+.chx .cxs input{width:76px;text-align:center}
+.dyr{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.dyr input{flex:0 1 220px}
+.dyr .dyw{font-size:13px;color:#5C5A52;white-space:nowrap}
+.dyc{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-2px 0 10px 2px}
+.dyc .dyl{font-size:12.5px;font-weight:650;color:#5C5A52;margin-right:2px}
+.dyc .chip.sm{min-height:28px;padding:3px 10px;font-size:13px}
 .edfoot{position:-webkit-sticky;position:sticky;bottom:0;padding:12px 18px;background:#FAFAF5;border-top:1px solid #EAE0C4}
 .edfoot .msg{margin:0 0 8px;font-weight:650}
 .edrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -252,6 +281,11 @@ textarea{resize:vertical}
   input[type=text],input[type=date],input[type=password],input:not([type]),select{min-height:42px}
   .mt .nm{min-width:116px;max-width:140px}
   .colh,.cell{width:112px}
+  .chx{margin:-2px 0 12px 0;gap:6px 9px;font-size:12px}
+  .chx input[type=text]{min-height:44px;padding:4px 6px}
+  .chx .cxb input{width:46px}
+  .chx .cxw input{width:84px}
+  .chx .cxs input{width:70px}
   .cell{min-height:52px}
   .cr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .cr .cra{grid-column:1/-1;justify-content:flex-start}
@@ -344,7 +378,11 @@ window.__lecAdminStart = function () {
   var S = {
     me: null, as: '', tab: 'lec', todo: null, todoErr: false, open: {}, statCls: '',
     qf: 'all', qLec: '', qFocus: '', drawer: null, stack: [], dSig: '', inputs: {}, busy: {},
-    ask: {}, cf: null, pm: {}, link: {}, sess: null, ed: null, addrShow: false, loadedAt: 0, retry: null
+    ask: {}, cf: null, pm: {}, link: {}, sess: null, ed: null, addrShow: false, loadedAt: 0, retry: null,
+    att: null,
+    /* C2 시험 범위: rng = {rows, ex, today}(못 받으면 null) · rngOld = 서버에 범위 함수가 없음(이 화면에서는 다시 묻지 않음) ·
+       rngSel = 묶음마다 고른 강의 {강의 id: true} · rngMore = 묶음마다 «이전 강의» 펼침 */
+    rng: null, rngOld: false, rngSel: {}, rngMore: {}
   };
   var D = null;
   var sb = null;
@@ -402,6 +440,13 @@ window.__lecAdminStart = function () {
     secs = +secs || 0;
     return secs >= 3600 ? Math.floor(secs / 3600) + '시간' : Math.max(1, Math.ceil(secs / 60)) + '분';
   }
+  function addDays(iso, n) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str(iso)), d;
+    if (!m) return '';
+    d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + n));
+    return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+  }
+  function isDay(v) { return /^\d{4}-\d{2}-\d{2}$/.test(str(v)) && !!addDays(v, 0) && addDays(v, 0) === str(v); }
   function attr(el, k) { return el.getAttribute(k) || ''; }
   function byKey(root, k) {
     var a = root.querySelectorAll('[data-k]'), i;
@@ -507,7 +552,8 @@ window.__lecAdminStart = function () {
       answer: function (root, body) { return st.answer(root.id, body); },
       qdelete: function (id) { return st.qdelete(id); },
       makeLink: function (skey) { return st.rpc('lec_link', { p_skey: skey }).then(linkKey); },
-      logoutAll: function (sid) { return st.rpc('lec_logout_all', { p_skey: sid }).then(outCount); }
+      logoutAll: function (sid) { return st.rpc('lec_logout_all', { p_skey: sid }).then(outCount); },
+      exams: function () { return st.exams(); }
     };
   }
   /* PostgREST 는 한 번에 1000 줄까지 → 끝까지 나눠 받음 */
@@ -561,7 +607,11 @@ window.__lecAdminStart = function () {
       },
       qdelete: function (id) { return rq(sb.from('lec_qna').update({ deleted: true }).eq('id', id)); },
       makeLink: function (skey) { return rq(sb.rpc('lec_link', { p_skey: skey })).then(linkKey); },
-      logoutAll: function (sid) { return rq(sb.rpc('lec_logout_all', { p_skey: sid })).then(outCount); }
+      logoutAll: function (sid) { return rq(sb.rpc('lec_logout_all', { p_skey: sid })).then(outCount); },
+      /* C2: 히즈북스 학교 시험 일정(두 줄 · 그 두 칸만) */
+      exams: function () {
+        return rq(sb.from('app_state').select('id, es:data->examSchool, eg:data->examSchoolG').in('id', ['pt-etc', 'main']));
+      }
     };
   }
 
@@ -616,10 +666,103 @@ window.__lecAdminStart = function () {
     if (S.todo && isArr(S.todo.locked)) {
       for (i = 0; i < S.todo.locked.length; i += 1) d.locked[S.todo.locked[i].skey] = S.todo.locked[i];
     }
+    d.myRaw = mineRaw;
+    /* C1: 새 SQL(lesson_more 칸)이 들어왔는지 · 강의가 하나도 없으면 모름(null) */
+    d.c1 = null;
+    for (i = 0; i < d.lectures.length; i += 1) {
+      d.c1 = has(d.lectures[i], 'lesson_more');
+      if (d.c1) break;
+    }
+    /* C1 고침(11-16): 수업일마다 반(lesson_cls 칸)이 있는지 · 강의가 없으면 모름(null) */
+    d.lcls = null;
+    for (i = 0; i < d.lectures.length; i += 1) {
+      d.lcls = has(d.lectures[i], 'lesson_cls');
+      if (d.lcls) break;
+    }
+    buildAtt(d);
     D = d;
     d.vis = d.lectures.filter(lecVisible);
     d.th = threads();
+    rngBuild(d);
   }
+  /* C2 시험 범위: 학교 · 학년 · 시험 묶음(히즈북스 학교 시험 일정에서) · 내 반 학생이 든 묶음 · 저장한 줄 · 띠
+     S.rng 이 없으면(서버에 범위 함수가 없음 · 못 읽음) d.rg = null → 띠 · 단추 · 서랍 모두 없음(지금 화면 그대로) */
+  function gkey(g) { return str(g.k) + '|' + str(g.g) + '|' + str(g.term); }
+  function rngBuild(d) {
+    var r = S.rng, gs, i, j, g, mine = [], rows = {}, x;
+    d.rg = null;
+    if (!r || S.rngOld || !isArr(r.rows) || !L.examGroups || !L.rngBand) return;
+    gs = r.ex ? L.examGroups(d.classes, r.ex.es, r.ex.eg, r.today) : { groups: [], unknown: {} };
+    for (i = 0; i < r.rows.length; i += 1) {
+      x = r.rows[i];
+      if (x && typeof x === 'object') rows[str(x.school_key) + '|' + str(x.grade) + '|' + str(x.term)] = x;
+    }
+    for (i = 0; i < gs.groups.length; i += 1) {
+      g = gs.groups[i];
+      if (S.me.admin) { mine.push(g); continue; }
+      for (j = 0; j < g.cids.length; j += 1) { if (d.myIds.indexOf(g.cids[j]) >= 0) { mine.push(g); break; } }
+    }
+    d.rg = { today: r.today, ex: r.ex, mine: mine, unknown: gs.unknown || {}, rows: rows, band: L.rngBand(gs.groups, r.rows, r.today, d.myIds) };
+  }
+  function rngGrp(key) {
+    var a = D && D.rg ? D.rg.mine : [], i;
+    for (i = 0; i < a.length; i += 1) { if (gkey(a[i]) === key) return a[i]; }
+    return null;
+  }
+  function rngRow(g) { var x = D && D.rg && g ? D.rg.rows[gkey(g)] : null; return x && !x.off ? x : null; }
+  /* 띠 · 칩 · 서랍 머리 = 짧은 학교 이름(«바다고 1학년 기말») · 긴 이름은 title 에만(C2 검수 L1) */
+  function rngLabel(g) { return L.rngName ? L.rngName(g) : str(g.school_nm || g.k) + ' ' + str(g.g) + '학년 ' + str(g.kind || g.name); }
+  function rngDd(g) { var x = L.ddayOf(g.exam_on, g.end_on, D.rg.today); return x ? x.val : ''; }
+  function rngWhen(g) { return L.fmtDay(g.exam_on) + (str(g.end_on) > str(g.exam_on) ? '~' + L.fmtDay(g.end_on) : ''); }
+  function rngTitle(g) {
+    var u = D.rg.unknown[g.k] || 0;
+    return str(g.school_nm || g.k) + ' ' + str(g.g) + '학년 ' + str(g.label || g.name) + ' · 시험 ' + rngWhen(g) + ' · 받는 학생 ' + g.rids.length + '명' + (u ? ' · 학년 모름 ' + u + '명' : '');
+  }
+  /* 고른 강의: 후보 가운데 체크한 것(후보 차례) + 저장한 줄에 있던 강의 가운데 이 화면 후보에 없는 것(숨김 · 공개 끝 · 남의 반 강의 · 그대로 둠) */
+  function rngCandsOf(g) { return L.rngCands(D.vis, g.cids, g.exam_on, D.rg.today, g.end_on); }
+  /* 체크 = 바탕(L.rngBase: 저장한 줄 + 저장 뒤 올라온 강의 · 줄이 없으면 처음부터 체크) 위에 사람이 켜고 끈 것(S.rngSel[key] = {id: true|false})
+     S.rngSel 에는 사람이 바꾼 것만 둠 · 그래서 서랍을 연 뒤 강의가 올라오거나 저장이 바뀌어도 바탕이 따라감(C2 검수 M1 · L6) */
+  function rngSelOf(g, cands) {
+    var key = gkey(g), tog = S.rngSel[key] || {}, sel = L.rngBase(cands, rngRow(g)), id;
+    for (id in tog) {
+      if (!Object.prototype.hasOwnProperty.call(tog, id)) continue;
+      if (tog[id]) sel[id] = true; else delete sel[id];
+    }
+    return sel;
+  }
+  function rngIds(g) {
+    var cands = rngCandsOf(g), sel = rngSelOf(g, cands), row = rngRow(g), out = [], seen = {}, i;
+    for (i = 0; i < cands.length; i += 1) { seen[cands[i].id] = 1; if (sel[cands[i].id]) out.push(cands[i].id); }
+    if (row && isArr(row.lecture_ids)) { for (i = 0; i < row.lecture_ids.length; i += 1) { if (!seen[row.lecture_ids[i]]) out.push(row.lecture_ids[i]); } }
+    return out;
+  }
+  function rngPickedN(g) {
+    var cands = rngCandsOf(g), sel = rngSelOf(g, cands), n = 0, i;
+    for (i = 0; i < cands.length; i += 1) { if (sel[cands[i].id]) n += 1; }
+    return n;
+  }
+  /* 출결(lec_att_staff): 강의·학생마다 «교실» / «결석(날짜)» · 시작 전 학생 · 맨 위 띠 · 없으면 모두 비워 둠(지금처럼) */
+  function buildAtt(d) {
+    var a = S.att, i, j, x, ab;
+    d.att = null; d.ns = {}; d.band = null;
+    if (!a || !isArr(a.lectures)) return;
+    d.att = {};
+    for (i = 0; i < a.lectures.length; i += 1) {
+      x = a.lectures[i];
+      if (!x || !x.l) continue;
+      for (j = 0; x.in && j < x.in.length; j += 1) d.att[x.l + '\n' + x.in[j]] = { a: 'in' };
+      for (j = 0; x.abs && j < x.abs.length; j += 1) {
+        ab = x.abs[j];
+        if (ab && ab.s) d.att[x.l + '\n' + ab.s] = { a: 'abs', d: str(ab.d), mk: !!ab.mk };
+      }
+    }
+    for (i = 0; isArr(a.notstarted) && i < a.notstarted.length; i += 1) d.ns[a.notstarted[i]] = 1;
+    d.attT = isDay(a.today) ? a.today : today();
+    d.attLo = addDays(d.attT, -13);
+    d.band = a.band && isArr(a.band.items) ? a.band : { n: 0, items: [] };
+  }
+  function attOf(lid, skey) { return D && D.att ? D.att[lid + '\n' + skey] || null : null; }
+  function absOn(lid, skey) { var x = attOf(lid, skey); return !!(x && x.a === 'abs'); }
 
   /* 질문 줄기: 처음 질문 + 덧붙인 글 · 선생님 답. 상태는 학생이 마지막으로 쓴 때와 선생님 답의 때로 */
   function threads() {
@@ -681,6 +824,49 @@ window.__lecAdminStart = function () {
   }
   function isDone(s) { return s.k === 'conf' || s.k === 'done'; }
   function isBehind(s) { return !isDone(s) && s.rec !== 'none'; }
+  /* «덜 본 학생»: 출결이 있으면 «결석한 날 수업»만(서버 띠와 같은 셈: 수업일 0~13일 전 결석 · 90% 미만 ·
+     확인 전 · 기록 안 함 아님 · 시작 전 아님 · 보강 아님 · 올린 강의) · 출결이 없으면 지금처럼 */
+  function behindOf(l, skey, s) {
+    var x, raw;
+    if (!D.att) return isBehind(s);
+    x = attOf(l.id, skey);
+    if (!x || x.a !== 'abs' || x.mk || D.ns[skey]) return false;
+    if (!(x.d >= D.attLo && x.d <= D.attT)) return false;
+    if (l.hidden || !(!l.posted_on || str(l.posted_on) <= D.attT) || isEnded(l)) return false;
+    if (s.rec === 'none' || (s.p && s.p.done_by)) return false;
+    raw = s.p ? +s.p.pct || 0 : 0;
+    return raw < DONE;
+  }
+  /* 칸 하나: 출결이 있으면 «교실» / «결석 · 47% · 11.14» / «결석 · 완료 · 11.07» · 모르면 지금 모양 */
+  function cellOf(l, skey, s) {
+    var x = attOf(l.id, skey), p = s.p, head, sub = [], when = '';
+    if (!x) return { cls: s.k, inner: cellInner(s), text: statText(s) };
+    if (x.a === 'in') {
+      if (s.k === 'conf') sub.push('확인 완료');
+      else if (s.rec !== 'none' && s.pct > 0) sub.push('복습 ' + s.pct + '%');
+      return cellMake('in', '교실', sub);
+    }
+    if (isDone(s)) {
+      if (p) when = s.k === 'conf' ? (p.done_by_at || p.done_at || p.last_at) : (p.done_at || p.last_at);
+      head = s.k === 'conf' ? '결석 · 확인 완료' : '결석 · 완료';   /* 검수 A M5: 선생님 확인은 «확인 완료 / Benjamin · 11.14»(전 칸과 같은 꼴) */
+      if (s.k === 'conf' && p && trim(str(p.done_by))) sub.push(trim(str(p.done_by)));
+      if (when) sub.push(md(when));
+    } else if (s.k === 'none') {
+      head = '결석';
+      sub.push('기록 안 함');
+    } else if (s.k === 'pend') {
+      head = '결석 · 동의 전';
+    } else {
+      head = '결석 · ' + s.pct + '%';
+      if (p && p.last_at) sub.push(md(p.last_at));
+    }
+    if (x.mk) sub.push('보강');
+    return cellMake(isDone(s) ? s.k : 'abs', head, sub);
+  }
+  function cellMake(cls, head, sub) {
+    var t = sub.join(' · ');
+    return { cls: cls, inner: '<b>' + esc(head) + '</b>' + (t ? '<small>' + esc(t) + '</small>' : ''), text: head + (t ? ' · ' + t : '') };
+  }
   function pillHtml(s) {
     if (s.k === 'conf') return '<span class="pl c-conf">확인 완료</span>';
     if (s.k === 'none') return '<span class="pl c-none">기록 안 함</span>';
@@ -724,8 +910,10 @@ window.__lecAdminStart = function () {
     for (i = 0; i < ids.length; i += 1) out.push(ids[i] === '*' ? '전체' : (D.cname[ids[i]] || '지워진 반'));
     return out.join(', ');
   }
+  /* 시작 전 학생(반배정 대기 · 시작일이 아직)은 출결이 있을 때 표·띠에서 뺌 */
+  function started(r) { return !(D.att && D.ns[r.skey]); }
   function stuIn(cid) {
-    var out = D.roster.filter(function (r) { return r.cls.indexOf(cid) >= 0; });
+    var out = D.roster.filter(function (r) { return r.cls.indexOf(cid) >= 0 && started(r); });
     out.sort(function (a, b) { return cmpKo(a.sname, b.sname) || (a.skey < b.skey ? -1 : 1); });
     return out;
   }
@@ -733,6 +921,7 @@ window.__lecAdminStart = function () {
     var ids = l.class_ids || [], all = ids.indexOf('*') >= 0, out = [], i, j, r, c;
     for (i = 0; i < D.roster.length; i += 1) {
       r = D.roster[i];
+      if (!started(r)) continue;
       for (j = 0; j < r.cls.length; j += 1) {
         c = r.cls[j];
         if (D.myIds.indexOf(c) < 0) continue;
@@ -848,16 +1037,31 @@ window.__lecAdminStart = function () {
       return head + '<p class="none">할 일을 불러오지 못했어요. <button type="button" class="btn sm" data-act="reload">다시 불러오기</button></p></section>';
     }
     if (!t) return '';
-    var w = t.waiting || { count: 0 };
+    var w = t.waiting || { count: 0 }, band = D && D.band, bandN = '';
     if (w.count > 0) items.push(ti('todoQ', '', 't-honey', '질문', '답을 기다리는 질문 ' + w.count));
-    var bh = isArr(t.behind) ? t.behind : [];
+    /* C1: 출결이 있으면 «결석한 날 수업 덜 본 학생»(서버 띠) · 없으면 지금처럼 lec_todo 의 덜 본 학생 */
+    var bh = band ? band.items : (isArr(t.behind) ? t.behind : []);
     lim = S.open.behind ? bh.length : 4;
     for (i = 0; i < bh.length && i < lim; i += 1) {
       b = bh[i];
       items.push(ti('todoBehind', ' data-l="' + esc(b.lecture) + '" data-c="' + esc(b.cls) + '" title="' + esc((b.names || []).join(', ')) + '"',
-        't-sky', '덜 본 학생', b.cname + ' · ' + b.title + ' · ' + b.n + '명'));
+        band ? 't-coral' : 't-sky', band ? '결석한 날' : '덜 본 학생', b.cname + ' · ' + b.title + ' · ' + b.n + '명'));
     }
-    if (bh.length > lim) items.push('<button type="button" class="ti more" data-act="todoMore">덜 본 강의 ' + (bh.length - lim) + '개 더 보기</button>');
+    if (bh.length > lim) {
+      items.push('<button type="button" class="ti more" data-act="todoMore">' + (band ? '결석한 날 수업 ' : '덜 본 강의 ') + (bh.length - lim) + '개 더 보기</button>');
+    }
+    if (band && band.n > 0) bandN = '<p class="bandn">결석한 날 수업 덜 본 학생 <strong>' + band.n + '명</strong> · 강의 ' + bh.length + '개</p>';   /* 검수 A L5: 아래 항목은 강의별 */
+    /* C2: 범위를 아직 저장하지 않은 학교 시험(시험 30일 전 ~ 시험 끝 날 · 내 반 학생이 든 시험)
+       가까운 시험부터 셋 · 나머지는 «시험 범위 N개 더 고르기» 한 칸(누르면 다 펼침 · 결석한 날 «N개 더 보기»와 같음 · C2 검수 M3) */
+    var rb = D && D.rg ? D.rg.band : [], rlim = S.open.rngBand ? rb.length : 3;
+    for (i = 0; i < rb.length && i < rlim; i += 1) {
+      b = rb[i];
+      items.push(ti('rngPick', ' data-s="' + esc(gkey(b.g)) + '" title="' + esc(rngTitle(b.g)) + '"', 't-honey',
+        esc(b.during ? '시험 중' : '시험 ' + b.val), b.text));
+    }
+    if (rb.length > rlim) {
+      items.push('<button type="button" class="ti more" data-act="rngBandMore">시험 범위 ' + (rb.length - rlim) + '개 더 고르기</button>');
+    }
     var lf = S.me.admin && isArr(t.left) ? t.left : [];
     if (lf.length) items.push(ti('todoToggle', ' data-v="left" aria-expanded="' + (S.open.left ? 'true' : 'false') + '"', 't-neutral', '기록 정리', '그만둔 학생 기록 ' + lf.length + '명 · 지우기'));
     var lk = isArr(t.locked) ? t.locked : [];
@@ -865,7 +1069,7 @@ window.__lecAdminStart = function () {
     if (!items.length) return head + '<p class="none">오늘 할 일이 없어요</p></section>';
     if (S.open.left && lf.length) subs += leftListHtml(lf);
     if (S.open.locked && lk.length) subs += lockedListHtml(lk);
-    return head + '<div class="tgrid">' + items.join('') + '</div>' + subs + '</section>';
+    return head + bandN + '<div class="tgrid">' + items.join('') + '</div>' + subs + '</section>';
   }
   function forgetAskHtml(skey, name) {
     var c = forgetCounts(skey);
@@ -906,7 +1110,7 @@ window.__lecAdminStart = function () {
   function lecRow(l) {
     var c = compl(l, ''), q = lecQ(l.id), dc = defCls(l), lid = esc(l.id);
     return '<tr>' +
-      '<td data-l="수업일" class="dt">' + esc(L.fmtDay(dayOf(l)) || '–') + '</td>' +
+      '<td data-l="수업일" class="dt">' + esc((L.fmtDay(dayOf(l)) || '–') + (l.lesson_on && lecDays(l).length > 1 ? ' 외 ' + (lecDays(l).length - 1) + '일' : '')) + '</td>' +
       '<td data-l="제목" class="ttl"><button type="button" class="lnk" data-act="editLec" data-l="' + lid + '">' + esc(l.title || '(제목 없음)') + '</button></td>' +
       '<td data-l="교재">' + esc(l.book || '–') + '</td>' +
       '<td data-l="반">' + esc(clsNames(l.class_ids) || '–') + '</td>' +
@@ -920,6 +1124,7 @@ window.__lecAdminStart = function () {
   function lecHtml() {
     var list = D.vis.slice().sort(lecSort), h, i;
     h = '<section class="card"><div class="bar"><h2>강의 <span class="mut">' + list.length + '개</span></h2><span class="sp"></span>' +
+      (D.rg && D.rg.mine.length ? '<button type="button" class="btn" data-act="rngOpen">시험 범위</button>' : '') +
       '<button type="button" class="btn fill" data-act="newLec">새 강의</button></div>';
     if (!list.length) return h + '<p class="empty">아직 올린 강의가 없어요. «새 강의»를 눌러 첫 강의를 올려 보세요.</p></section>';
     h += '<table class="lt"><thead><tr><th scope="col">수업일</th><th scope="col">제목</th><th scope="col">교재</th><th scope="col">반</th>' +
@@ -954,9 +1159,9 @@ window.__lecAdminStart = function () {
       r = rows[i];
       h += '<tr><th class="nm" scope="row"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + '</th>';
       for (j = 0; j < cols.length; j += 1) {
-        l = cols[j]; s = stat(l, r.skey);
-        h += '<td><button type="button" class="cell c-' + s.k + '" data-act="cellOpen" data-s="' + esc(r.skey) + '" data-l="' + esc(l.id) + '" aria-label="' +
-          esc(r.sname + ' · ' + l.title + ' · ' + statText(s)) + '">' + cellInner(s) + '</button></td>';
+        l = cols[j]; s = cellOf(l, r.skey, stat(l, r.skey));
+        h += '<td><button type="button" class="cell c-' + s.cls + '" data-act="cellOpen" data-s="' + esc(r.skey) + '" data-l="' + esc(l.id) + '" aria-label="' +
+          esc(r.sname + ' · ' + l.title + ' · ' + s.text) + '">' + s.inner + '</button></td>';
       }
       h += '</tr>';
     }
@@ -969,6 +1174,7 @@ window.__lecAdminStart = function () {
     h += '</tr></tfoot></table></div>';
     h += '<p class="legend"><span><i class="c-done"></i>90% 넘게 봄(완료)</span><span><i class="c-conf"></i>선생님 확인 완료</span>' +
       '<span><i class="c-part"></i>보는 중</span><span><i class="c-zero"></i>0%</span><span><i class="c-none"></i>기록 안 함 · 동의 전</span>' +
+      (D.att ? '<span><i class="c-in"></i>교실(그날 출석)</span><span><i class="c-abs"></i>결석한 날 · 덜 봄</span>' : '') +
       '<span>학생 이름이나 칸을 누르면 자세히 볼 수 있어요</span></p>';
     return h + '</section>';
   }
@@ -1063,7 +1269,7 @@ window.__lecAdminStart = function () {
   function renderDrawer() {
     var dw = $('dw'), bk = $('dwb'), html, wasHidden, sig;
     if (!S.drawer || !D) { dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; return; }
-    html = S.drawer.t === 'col' ? colHtml(S.drawer) : (S.drawer.t === 'cell' ? cellHtml(S.drawer) : stuHtml(S.drawer));
+    html = S.drawer.t === 'col' ? colHtml(S.drawer) : (S.drawer.t === 'cell' ? cellHtml(S.drawer) : (S.drawer.t === 'rng' ? rngHtml(S.drawer) : stuHtml(S.drawer)));
     if (!html) { S.drawer = null; S.stack = []; dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; return; }
     wasHidden = dw.hidden;
     dw.hidden = false; bk.hidden = false;
@@ -1076,6 +1282,90 @@ window.__lecAdminStart = function () {
     return '<div class="dh">' + (S.stack.length ? '<button type="button" class="btn sm txt" data-act="dBack">← 뒤로</button>' : '') +
       '<div class="dt"><h2 id="dw-t">' + esc(title) + '</h2>' + (sub ? '<p class="mut">' + esc(sub) + '</p>' : '') + '</div>' +
       '<button type="button" class="x" data-act="dClose" aria-label="닫기">×</button></div>';
+  }
+
+  /* C2 시험 범위 고르기: 학교 · 학년 · 시험 → 그 반들의 강의(시험 70일 전부터 수업한 강의는 처음부터 체크 · 그 전 강의는 접어 둠) → 저장 한 번 */
+  function rngHtml(dr) {
+    var rg = D.rg, h, i, g, key, row, cands, sel, top = [], rest = [], c, u, kept = 0, li;
+    if (!rg) return '';
+    if (!rg.mine.length) {
+      return dHead('시험 범위 고르기', '') + '<div class="db"><p class="empty">' +
+        (rg.ex ? '범위를 고를 학교 시험이 없어요. 히즈북스 «학교 시험 한눈에»에 시험 날짜를 넣으면 여기에 나와요.'
+          : '학교 시험 일정을 읽지 못했어요. «다시 불러오기»를 눌러 주세요.') + '</p></div>';
+    }
+    g = rngGrp(dr.s);
+    if (!g) {
+      for (i = 0; i < rg.band.length && !g; i += 1) g = rngGrp(gkey(rg.band[i].g));
+      if (!g) g = rg.mine[0];
+    }
+    key = gkey(g);
+    dr.s = key;
+    row = rngRow(g);
+    cands = rngCandsOf(g);
+    sel = rngSelOf(g, cands);
+    h = dHead('시험 범위 고르기', rngLabel(g) + ' · ' + rngDd(g)) + '<div class="db">';
+    if (rg.mine.length > 1) {
+      /* 칩 차례: 아직 저장하지 않은 시험 먼저(그 안에서는 시험 날짜 차례 · C2 검수 M3) */
+      var chs = rg.mine.map(function (x, ix) { return { g: x, i: ix, s: rngRow(x) ? 1 : 0 }; });
+      chs.sort(function (a, b) { return (a.s - b.s) || (a.i - b.i); });
+      h += '<div class="chips rgc" role="group" aria-label="시험 고르기">';
+      for (i = 0; i < chs.length; i += 1) {
+        c = chs[i].g;
+        u = gkey(c) === key;
+        h += '<button type="button" class="chip' + (u ? ' on' : '') + '" aria-pressed="' + (u ? 'true' : 'false') + '" data-act="rngChip" data-s="' + esc(gkey(c)) + '">' +
+          esc(rngLabel(c)) + ' <span class="cnt">' + esc(rngDd(c) + (rngRow(c) ? ' · 저장됨' : '')) + '</span></button>';
+      }
+      h += '</div>';
+    }
+    h += '<p class="rgi">시험 ' + esc(rngWhen(g)) + ' · 받는 학생 ' + g.rids.length + '명</p>' +
+      '<p class="rgi mut">학생 화면에는 ' + esc(L.fmtDay(row && row.show_on ? row.show_on : g.show_on)) + '부터 보여요(시험 20일 전).</p>';
+    u = rg.unknown[g.k] || 0;
+    if (u) h += '<p class="rgi mut">이 학교에서 학년을 모르는 학생 ' + u + '명은 받는 학생에서 빠져요. 히즈북스에서 학년을 적어 주세요.</p>';
+    if (row) h += '<p class="rgi mut">저장됨 · ' + esc(row.saved_by || '모름') + (row.saved_at ? ' · ' + esc(whenFull(row.saved_at)) : '') + '</p>';
+    for (i = 0; i < cands.length; i += 1) {
+      c = cands[i];
+      /* 위 목록 = 시험 70일 전부터 수업한 강의(«모든 반» 강의도 · 체크는 안 함 · L7) · 고른 강의 · 저장한 강의 */
+      if (c.near || sel[c.id] || (row && isArr(row.lecture_ids) && row.lecture_ids.indexOf(c.id) >= 0)) top.push(c); else rest.push(c);
+    }
+    if (row && isArr(row.lecture_ids)) {
+      for (i = 0; i < row.lecture_ids.length; i += 1) {
+        for (li = 0; li < cands.length && cands[li].id !== row.lecture_ids[i]; li += 1) {}
+        if (li >= cands.length) kept += 1;
+      }
+    }
+    function item(x) {
+      return '<li><label><input type="checkbox" data-chg="rngTog" data-s="' + esc(key) + '" data-l="' + esc(x.id) + '"' + (sel[x.id] ? ' checked' : '') + '>' +
+        '<span class="d">' + esc(x.day ? L.fmtDay(x.day) : '–') + '</span><span class="t">' + esc(x.title || '(제목 없음)') + '</span>' +
+        (x.all ? '<span class="tag t-neutral">모든 반</span>' : '') +
+        /* 공개가 시험 첫날 전에 끝나는 강의: 회색 «MM.DD까지»(강의 목록과 같은 꼴 · 공개는 늘리지 않음 · C2 검수 M2) */
+        (x.until && x.until < str(g.exam_on) ? '<span class="u mut sm">' + esc(L.fmtMD(x.until)) + '까지</span>' : '') +
+        (x.book ? '<span class="b">' + esc(x.book) + '</span>' : '') + '</label></li>';
+    }
+    h += '<div class="sec"><h3>범위 강의</h3>';
+    if (!cands.length) {
+      h += '<p class="empty">이 반들에 올린 강의가 아직 없어요. 강의를 올린 뒤 다시 골라 주세요.</p>';
+    } else {
+      if (top.length) {
+        h += '<ul class="rgl">';
+        for (i = 0; i < top.length; i += 1) h += item(top[i]);
+        h += '</ul>';
+      } else {
+        h += '<p class="empty">시험 70일 전부터 수업한 강의가 없어요. 아래 이전 강의에서 골라 주세요.</p>';
+      }
+      if (rest.length) {
+        h += '<div class="rgm"><button type="button" class="btn sm txt" data-act="rngMore" data-s="' + esc(key) + '" aria-expanded="' + (S.rngMore[key] ? 'true' : 'false') + '">' +
+          (S.rngMore[key] ? '이전 강의 접기' : '이전 강의 ' + rest.length + '개 보기') + '</button></div>';
+        if (S.rngMore[key]) {
+          h += '<ul class="rgl">';
+          for (i = 0; i < rest.length; i += 1) h += item(rest[i]);
+          h += '</ul>';
+        }
+      }
+    }
+    if (kept) h += '<p class="rgi mut">이 목록에 없는 강의 ' + kept + '개(숨김 · 공개 끝 · 다른 반 강의)는 저장한 그대로 둬요.</p>';
+    h += '</div></div>';
+    return h + '<div class="edfoot"><div class="edrow"><span id="rng-n" class="mut" aria-live="polite">고른 강의 ' + rngPickedN(g) + '개</span><span class="sp"></span>' +
+      '<button type="button" class="btn fill" data-act="rngSave" data-s="' + esc(key) + '">저장</button></div></div>';
   }
   function axisHtml(dur) { return '<div class="ax"><span>0:00</span><span>' + esc(L.fmtDur(dur)) + '</span></div>'; }
   /* 10초 칸 막대: cnt[i] = 그 칸을 본 학생 수(한 학생이면 0/1) · 목차 눈금 · 번호 */
@@ -1112,14 +1402,18 @@ window.__lecAdminStart = function () {
     if (lab) h += '<div class="hlab" aria-hidden="true">' + lab + '</div>';
     return h + '</div>' + axisHtml(dur);
   }
+  /* 반 공지: 머리 한 줄 → (워크북 번호가 다른 지문이 있을 때만) «워크북: 03번 → 5~6번 · 07번 → 9번» 한 줄 → 복습 안내 · 주소(검수 A M1)
+     C3: 판서 쪽 번호 · 시간 · 인증샷은 넣지 않음 */
   function noticeText(l) {
-    var d = L.fmtDay(dayOf(l)), head = (d ? d + ' ' : '') + '수업 영상(' + str(l.title) + ')', a;
+    var d = L.fmtDay(dayOf(l)), head = (d ? d + ' ' : '') + '수업 영상(' + str(l.title) + ')', a, list = noticeList(l);
     if (isPosted(l)) a = head + '이 히즈 온라인에 올라왔어요.';
     else a = head + '은 ' + L.fmtDay(l.posted_on) + '부터 히즈 온라인에서 볼 수 있어요.';
-    a += ' 다음 등원 전까지 끝까지 봐 주세요. 궁금한 곳은 히즈 온라인에서 질문으로 남겨 주세요.';
+    a += (list ? '\n' + list + '\n' : ' ') + '복습할 때 보세요. 궁금한 곳은 히즈 온라인에서 질문으로 남겨 주세요.';
     if (l.until) a += ' ' + L.fmtMD(l.until) + '까지 볼 수 있어요.';
     return a + '\n히즈 온라인 주소 ' + STU_URL;
   }
+  function noticeList(l) { return l && l.runner && isArr(l.runner.items) ? L.paperNotice(l.runner.items) : ''; }
+  function noticeRows(l) { var t = noticeList(l); return t ? Math.min(16, 5 + t.split('\n').length) : 5; }
   function confLine(p) {
     var a = ['선생님 확인'];
     if (trim(p.done_note)) a.push(trim(p.done_note));
@@ -1143,9 +1437,16 @@ window.__lecAdminStart = function () {
     if (S.cf && S.cf.s === r.skey && S.cf.l === l.id) return cfFormHtml();
     return '<button type="button" class="btn sm strong" data-act="cfOpen"' + a + '>확인 완료</button>';
   }
+  /* 출결 꼬리표: «교실» · «결석 11.14(토)»(보강이면 « · 보강») · 모르면 없음 */
+  function attTag(lid, skey) {
+    var x = attOf(lid, skey);
+    if (!x) return '';
+    if (x.a === 'in') return '<span class="tag t-neutral">교실</span>';
+    return '<span class="tag t-coral">결석 ' + esc(L.fmtDay(x.d)) + (x.mk ? ' · 보강' : '') + '</span>';
+  }
   function crHtml(l, r, s) {
     var p = s.p, open = S.cf && S.cf.s === r.skey && S.cf.l === l.id;
-    return '<div class="cr' + (open ? ' open' : '') + '"><div class="crm"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + '</div>' +
+    return '<div class="cr' + (open ? ' open' : '') + '"><div class="crm"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + attTag(l.id, r.skey) + '</div>' +
       '<button type="button" class="crp" data-act="cellOpen" data-s="' + esc(r.skey) + '" data-l="' + esc(l.id) + '" aria-label="' + esc(r.sname + ' 진도 자세히') + '">' +
       pillHtml(s) + barHtml(s.k === 'none' || s.k === 'pend' ? 0 : s.pct) + '<span class="mut sm">' + (p && p.last_at ? '마지막 ' + esc(md(p.last_at)) : '') + '</span></button>' +
       '<div class="cra">' + confCtl(l, r, s) + '</div></div>';
@@ -1159,8 +1460,9 @@ window.__lecAdminStart = function () {
     rows = cid ? stuIn(cid) : [];
     for (i = 0; i < rows.length; i += 1) {
       s = stat(l, rows[i].skey);
-      if (isDone(s)) nD += 1; else if (isBehind(s)) nB += 1;
-      if (f === 'all' || (f === 'done' && isDone(s)) || (f === 'behind' && isBehind(s))) list.push({ r: rows[i], s: s });
+      x = behindOf(l, rows[i].skey, s);
+      if (isDone(s)) nD += 1; else if (x) nB += 1;
+      if (f === 'all' || (f === 'done' && isDone(s)) || (f === 'behind' && x)) list.push({ r: rows[i], s: s });
     }
     h = dHead(l.title, (L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업 · ' : '') + (cid ? D.cname[cid] + ' · ' : '') + '완료 ' + nD + '/' + rows.length);
     h += '<div class="db">';
@@ -1191,12 +1493,13 @@ window.__lecAdminStart = function () {
     }
     /* 완료 목록 */
     h += '<div class="sec"><h3>학생별 진도</h3><div class="chips" role="group" aria-label="학생 거르기">' +
-      fchip('all', '전체', rows.length, f) + fchip('behind', '덜 본 학생', nB, f) + fchip('done', '완료', nD, f) + '</div>';
-    if (!list.length) h += '<p class="empty">' + (f === 'behind' ? '덜 본 학생이 없어요.' : (f === 'done' ? '아직 완료한 학생이 없어요.' : '이 반에 학생이 없어요.')) + '</p>';
+      fchip('all', '전체', rows.length, f) + fchip('behind', D.att ? '결석·덜 봄' : '덜 본 학생', nB, f) + fchip('done', '완료', nD, f) + '</div>';
+    /* 검수 A L3: 출결이 있으면 «덜 본 학생» = 결석한 날 수업을 덜 본 학생(띠 · 범례와 같은 말) */
+    if (!list.length) h += '<p class="empty">' + (f === 'behind' ? (D.att ? '결석한 날 수업을 덜 본 학생이 없어요.' : '덜 본 학생이 없어요.') : (f === 'done' ? '아직 완료한 학생이 없어요.' : '이 반에 학생이 없어요.')) + '</p>';
     for (i = 0; i < list.length; i += 1) h += crHtml(l, list[i].r, list[i].s);
     h += '</div>';
     /* 반 공지 문구(이름 없음) */
-    h += '<div class="sec nt"><h3>반 공지 문구</h3><label class="sr" for="nt-txt">반 공지 문구</label><textarea id="nt-txt" data-k="nt:' + esc(l.id) + '" rows="5">' + esc(noticeText(l)) + '</textarea>' +
+    h += '<div class="sec nt"><h3>반 공지 문구</h3><label class="sr" for="nt-txt">반 공지 문구</label><textarea id="nt-txt" data-k="nt:' + esc(l.id) + '" rows="' + noticeRows(l) + '">' + esc(noticeText(l)) + '</textarea>' +
       '<div class="row"><span class="mut sm">반 단톡방에 그대로 붙여 넣을 수 있어요. 학생 이름은 들어가지 않아요.</span><span class="sp"></span>' +
       '<button type="button" class="btn sm strong" data-act="ntCopy">반 공지 문구 복사</button></div></div>';
     return h + '</div>';
@@ -1246,7 +1549,7 @@ window.__lecAdminStart = function () {
     else if (s.k === 'pend') facts = '기록 동의 전이라 아직 본 기록이 없어요.';
     else if (p) facts = '본 시간 ' + L.fmtMin(p.watched) + ' · ' + (p.sessions || 0) + '번 열어 봄' + (p.last_at ? ' · 마지막 ' + L.fmtWhen(p.last_at) : '');
     else facts = '아직 열지 않았어요.';
-    h += '<div class="srow2">' + pillHtml(s) + '<span class="mut">' + esc(facts) + '</span></div>';
+    h += '<div class="srow2">' + attTag(l.id, r.skey) + pillHtml(s) + '<span class="mut">' + esc(facts) + '</span></div>';
     if (+l.dur > 0 && s.k !== 'none') {
       n = L.bmLen(l.dur); bits = p ? str(p.seen) : '';
       for (i = 0; i < n; i += 1) cnt.push(bits.charAt(i) === '1' ? 1 : 0);
@@ -1285,10 +1588,11 @@ window.__lecAdminStart = function () {
     h = '<div class="sec"><h3>학부모 안내 문구</h3>';
     if (!ls.length) return h + '<p class="mut">아직 이 학생에게 공개된 강의가 없어요.</p></div>';
     st = S.pm[r.skey];
-    if (!st) { st = { l: ls[0].id, ab: false }; S.pm[r.skey] = st; }
+    /* 결석한 수업이면 «결석한 수업이에요»가 저절로 켜짐(선생님이 끌 수 있음) */
+    if (!st) { st = { l: ls[0].id, ab: absOn(ls[0].id, r.skey) }; S.pm[r.skey] = st; }
     l = null;
     for (i = 0; i < ls.length; i += 1) { if (ls[i].id === st.l) l = ls[i]; }
-    if (!l) { l = ls[0]; st.l = l.id; }
+    if (!l) { l = ls[0]; st.l = l.id; st.ab = absOn(l.id, r.skey); }
     h += '<label class="lb" for="pm-sel">강의</label><select id="pm-sel" data-chg="pmLec" data-s="' + esc(r.skey) + '">';
     for (i = 0; i < ls.length; i += 1) {
       s = stat(ls[i], r.skey);
@@ -1302,7 +1606,8 @@ window.__lecAdminStart = function () {
       name: r.sname, day: dayOf(l), title: l.title, pct: s.pct,
       nextNo: p ? L.nextNo(p.seen, l.chapters, l.dur) : '', done: s.k === 'conf', absent: !!st.ab
     });
-    h += '<div class="row" style="margin:10px 0 8px"><button type="button" class="chip' + (st.ab ? ' on' : '') + '" aria-pressed="' + (st.ab ? 'true' : 'false') + '" data-act="pmAbsent" data-s="' + esc(r.skey) + '">결석한 수업이에요</button></div>' +
+    h += '<div class="row" style="margin:10px 0 8px"><button type="button" class="chip' + (st.ab ? ' on' : '') + '" aria-pressed="' + (st.ab ? 'true' : 'false') + '" data-act="pmAbsent" data-s="' + esc(r.skey) + '">결석한 수업이에요</button>' +
+      (absOn(l.id, r.skey) ? '<span class="mut sm">출결 기록: ' + esc(L.fmtDay(attOf(l.id, r.skey).d)) + ' 결석</span>' : '') + '</div>' +
       '<label class="sr" for="pm-txt">학부모 안내 문구</label><textarea id="pm-txt" data-k="pm:' + esc(r.skey) + '" rows="4">' + esc(txt) + '</textarea>' +
       '<div class="row" style="margin-top:6px"><span class="mut sm">고칠 곳이 있으면 고친 뒤 복사하세요.</span><span class="sp"></span><button type="button" class="btn sm strong" data-act="pmCopy">복사</button></div>';
     return h + '</div>';
@@ -1392,7 +1697,9 @@ window.__lecAdminStart = function () {
     ytDestroy();
     S.ed = {
       id: l ? l.id : '', can: !l || S.me.admin || str(l.created_by) === S.me.name, cls: {}, other: [],
-      hidden: !!(l && l.hidden), chs: [], shown: '', durAuto: false, delAsk: false
+      hidden: !!(l && l.hidden), chs: [], shown: '', durAuto: false, delAsk: false,
+      days: lecDays(l), runner: null, runN: runCount(l), clsTouched: false, cands: [], pickNote: '', dcls: lclsCopy(l), dclsTouched: {},
+      run: runCopy(l && l.runner ? l.runner.items : null), runMeta: runMetaOf(l ? l.runner : null), runDirty: false
     };
     ids = l ? (l.class_ids || []) : [];
     for (i = 0; i < ids.length; i += 1) {
@@ -1408,6 +1715,7 @@ window.__lecAdminStart = function () {
     if (l && isArr(l.chapters)) {
       for (i = 0; i < l.chapters.length; i += 1) S.ed.chs.push({ t: L.fmtDur(l.chapters[i].t), title: str(l.chapters[i].title) });
     }
+    runLink();
     $('ed').innerHTML = edHtml(l);
     $('ed').hidden = false; $('edb').hidden = false;
     $('ed').scrollTop = 0;
@@ -1415,6 +1723,149 @@ window.__lecAdminStart = function () {
     if (trim(edVal('ed-yt'))) ytCheck();
     var f = S.ed.can ? $('ed-yt') : $('ed').querySelector('[data-act="edClose"]');
     if (f) { try { f.focus(); } catch (e) {} }
+  }
+  /* C1 수업일 여러 날: lesson_on + lesson_more(새 칸 · 없으면 lesson_on 하나) · 날짜 차례 · 겹침 없이 */
+  function lecDays(l) {
+    var out = [], a, i;
+    if (!l) return out;
+    a = [l.lesson_on].concat(isArr(l.lesson_more) ? l.lesson_more : []);
+    for (i = 0; i < a.length; i += 1) { if (isDay(a[i]) && out.indexOf(str(a[i])) < 0) out.push(str(a[i])); }
+    return out.sort();
+  }
+  /* C1 고침(11-16) 수업일마다 반: 저장된 lesson_cls 를 베껴 둠({날짜: [반 id]} · 빈 줄은 뺌) */
+  function lclsCopy(l) {
+    var o = {}, m = l && l.lesson_cls && typeof l.lesson_cls === 'object' && !isArr(l.lesson_cls) ? l.lesson_cls : null, k, a, i;
+    if (!m) return o;
+    for (k in m) {
+      if (!has(m, k) || !isDay(k) || !isArr(m[k])) continue;
+      a = [];
+      for (i = 0; i < m[k].length; i += 1) { if (typeof m[k][i] === 'string' && m[k][i] && a.indexOf(m[k][i]) < 0) a.push(m[k][i]); }
+      if (a.length) o[k] = a;
+    }
+    return o;
+  }
+  /* 강의의 반(«전체»가 있으면 날마다 고르지 않음) · 내 반 차례 → 다른 선생님 반 */
+  function edClsIds() {
+    var out = [], i, k;
+    if (S.ed.cls['*'] || S.ed.other.indexOf('*') >= 0) return out;
+    for (i = 0; i < D.my.length; i += 1) { if (S.ed.cls[D.my[i].id]) out.push(D.my[i].id); }
+    for (k in S.ed.cls) { if (has(S.ed.cls, k) && S.ed.cls[k] && out.indexOf(k) < 0) out.push(k); }
+    for (i = 0; i < S.ed.other.length; i += 1) { if (out.indexOf(S.ed.other[i]) < 0) out.push(S.ed.other[i]); }
+    return out;
+  }
+  /* 날마다 반 고르기를 보이나: 반이 둘 이상 · 새 칸을 저장할 수 있을 때(옛 SQL 이면 지금 화면 그대로) */
+  function dclsOn() { return D.lcls !== false && D.c1 !== false && edClsIds().length >= 2; }
+  /* 그날 고른 반(강의 반 차례 · 강의에서 빠진 반은 뺌) · 없거나 모든 반이면 null(= 모든 반) */
+  function dclsOf(d, ids) {
+    var a = S.ed.dcls[d], out = [], i;
+    if (!isArr(a)) return null;
+    for (i = 0; i < ids.length; i += 1) { if (a.indexOf(ids[i]) >= 0) out.push(ids[i]); }
+    return out.length && out.length < ids.length ? out : null;
+  }
+  /* 수업일 한 줄 아래 «수업한 반» 칩(누르면 그 반을 빼거나 넣음 · 한 반은 남김) */
+  function dycHtml(i, d) {
+    var ids = edClsIds(), cur, h, j, on, dis = S.ed.can ? '' : ' disabled';
+    if (!dclsOn() || !isDay(d)) return '';
+    cur = dclsOf(d, ids);
+    h = '<div class="dyc" data-dyc="' + i + '" role="group" aria-label="' + esc(L.fmtDay(d) + ' 수업한 반') + '"><span class="dyl">수업한 반</span>';
+    for (j = 0; j < ids.length; j += 1) {
+      on = !cur || cur.indexOf(ids[j]) >= 0;
+      h += '<button type="button" class="chip sm' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="edDcls" data-i="' + i + '" data-c="' + esc(ids[j]) + '"' + dis + '>' + esc(D.cname[ids[j]] || '지워진 반') + '</button>';
+    }
+    return h + '</div>';
+  }
+  /* 한 줄의 «수업한 반» 칩만 다시 그림(날짜 칸은 그대로 둠) */
+  function dycRedo(i) {
+    var box = $('ed-days'), old, row, html;
+    if (!box || !S.ed) return;
+    html = dycHtml(i, S.ed.days[i]);
+    old = box.querySelector('[data-dyc="' + i + '"]');
+    if (old) { if (html) old.outerHTML = html; else old.parentNode.removeChild(old); return; }
+    row = box.querySelector('[data-di="' + i + '"]');
+    row = row ? row.parentNode : null;
+    if (row && html) row.insertAdjacentHTML('afterend', html);
+  }
+  function runCount(l) { return l && l.runner && isArr(l.runner.items) ? l.runner.items.length : 0; }
+  /* C3 목차의 지문 줄(판서 쪽 · 워크북 · 멈춤): 실행기 묶음 줄을 얕게 베껴 둠(손대지 않은 칸은 저장할 때도 한 글자 그대로) */
+  function runCopy(items) {
+    var out = [], i, x, o, k;
+    if (!isArr(items)) return out;
+    for (i = 0; i < items.length; i += 1) {
+      x = items[i];
+      if (!x || typeof x !== 'object') continue;
+      o = {};
+      for (k in x) { if (has(x, k)) o[k] = x[k]; }
+      out.push(o);
+    }
+    return out;
+  }
+  function runMetaOf(r) {
+    return { start: r && r.start ? str(r.start) : '', days: r && isArr(r.days) ? r.days.slice() : [] };
+  }
+  /* 지문 줄을 칸으로 쓸 수 있나(옛 SQL 이면 저장되지 않아 숨김) */
+  function runOn() { return D.c1 !== false; }
+  function runNum(v) { return typeof v === 'number' && isFinite(v) ? v : null; }
+  /* 목차 줄마다 맞는 지문 줄 찾기(학생 화면과 같은 규칙: 시각 3초 안 → 이름 앞부분) · 칸에 보일 글자와 처음 글자 */
+  function runLink() {
+    var chs = [], i, m, c, x;
+    for (i = 0; i < S.ed.chs.length; i += 1) chs.push({ t: parseT(S.ed.chs[i].t), title: S.ed.chs[i].title });
+    m = L.paperMatch(chs, S.ed.run);
+    for (i = 0; i < S.ed.chs.length; i += 1) {
+      c = S.ed.chs[i];
+      c.ri = m[i] ? S.ed.run.indexOf(m[i]) : -1;
+      x = c.ri >= 0 ? S.ed.run[c.ri] : null;
+      c.rb = x && runNum(x.board) !== null ? String(x.board) : '';
+      c.rw = x ? str(x.wb) : '';
+      c.rs = x && runNum(x.stop) !== null ? L.fmtDur(x.stop) : '';
+      c.r0 = [c.rb, c.rw, c.rs, c.t];
+    }
+  }
+  /* 목차 줄 이름의 앞부분 = 지문 이름('04번 · 종이 현미경' → '04번') */
+  function runNo(title) { return trim(str(title).split(/\s*[·•|:]\s*/)[0]); }
+  /* 저장할 지문 줄: 손으로 고친 칸만 바꾸고, 새로 적은 목차 줄은 새 지문 줄로 · 잘못 적은 칸은 bad */
+  function runBuild(dur) {
+    var items = runCopy(S.ed.run), i, c, b, w, s, t, st, it, at, nm, bad = '', sel = '', order = [];   /* sel = 틀린 칸(검수 A L11) */
+    for (i = 0; i < S.ed.chs.length; i += 1) {
+      c = S.ed.chs[i];
+      if (!trim(c.t) && !trim(c.title) && c.ri < 0) continue;
+      b = trim(c.rb); w = trim(c.rw); s = trim(c.rs); t = parseT(c.t);
+      if (c.ri < 0 && !b && !w && !s) continue;
+      if (b && (!/^\d{1,4}$/.test(b) || +b < 1)) { bad = '목차 ' + (i + 1) + '번째 줄 판서 쪽(' + b + ')은 1 이상의 숫자로 적어 주세요'; sel = '[data-cb="' + i + '"]'; break; }
+      st = s ? parseT(s) : null;
+      if (s && !isFinite(st)) { bad = '목차 ' + (i + 1) + '번째 줄 멈춤 시각(' + s + ')을 읽지 못했어요 (예: 9:50)'; sel = '[data-cs="' + i + '"]'; break; }
+      if (s && isFinite(t) && st <= t) { bad = '목차 ' + (i + 1) + '번째 줄 멈춤 시각(' + s + ')은 시작(' + L.fmtDur(t) + ')보다 뒤여야 해요'; sel = '[data-cs="' + i + '"]'; break; }
+      if (s && isFinite(dur) && dur > 0 && st > dur) { bad = '목차 ' + (i + 1) + '번째 줄 멈춤 시각(' + s + ')은 영상 길이(' + L.fmtDur(dur) + ')보다 앞이어야 해요'; sel = '[data-cs="' + i + '"]'; break; }
+      if (c.ri >= 0) {
+        it = items[c.ri];
+        if (b !== trim(c.r0[0])) it.board = b ? +b : null;
+        if (w !== trim(c.r0[1])) it.wb = w;
+        if (s !== trim(c.r0[2])) it.stop = s ? st : null;
+        if (trim(c.t) !== trim(c.r0[3]) && isFinite(t)) it.at = t;
+      } else {
+        nm = runNo(c.title);
+        if (!nm) { bad = '목차 ' + (i + 1) + '번째 줄에 지문 이름을 적어 주세요 (예: 04번)'; sel = '[data-cn="' + i + '"]'; break; }
+        at = isFinite(t) ? t : null;
+        items.push({ no: nm, at: at, stop: s ? st : null, board: b ? +b : null, wb: w });
+      }
+    }
+    if (bad) return { bad: bad, items: null, sel: sel };
+    /* 시작 시각 차례(시각이 없는 줄은 뒤 · 같은 차례는 그대로) */
+    for (i = 0; i < items.length; i += 1) order.push(i);
+    order.sort(function (p, q) {
+      var a = runNum(items[p].at), z = runNum(items[q].at);
+      if (a === null && z === null) return p - q;
+      if (a === null) return 1;
+      if (z === null) return -1;
+      return a - z || p - q;
+    });
+    for (i = 0; i < order.length; i += 1) order[i] = items[order[i]];
+    return { bad: '', items: order };
+  }
+  /* 지문 줄 칸을 손으로 고침 → 안내 줄 바꿈 */
+  function runTouch() {
+    if (!S.ed || S.ed.runDirty) return;
+    S.ed.runDirty = true;
+    if ($('ed-run')) $('ed-run').textContent = edRunText();
   }
   function closeEditor() {
     if (!S.ed) return false;
@@ -1439,14 +1890,16 @@ window.__lecAdminStart = function () {
     }
     h += '<div class="fld"><label for="ed-title">제목<span class="req">꼭</span></label><input id="ed-title" type="text" maxlength="120" value="' + esc(l ? l.title : '') + '"' + dis + '></div>';
     h += '<div class="fld"><label for="ed-book">교재</label><input id="ed-book" type="text" maxlength="120" value="' + esc(l ? l.book : '') + '"' + dis + '></div>';
-    h += '<div class="g2"><div class="fld"><label for="ed-lesson">수업일</label><input id="ed-lesson" type="date" value="' + esc(l && l.lesson_on ? l.lesson_on : '') + '"' + dis + '></div>' +
-      '<div class="fld"><label for="ed-dur">길이<span class="req">꼭</span></label><input id="ed-dur" type="text" inputmode="numeric" placeholder="예: 47:00" value="' + esc(l && l.dur > 0 ? L.fmtDur(l.dur) : '') + '"' + dis + '>' +
-      '<p class="msg mut sm">영상을 열면 저절로 채워져요.</p></div></div>';
+    h += '<div class="fld"><span class="fl" id="ed-days-l">수업일(교실에서 이 수업을 한 날)</span><div id="ed-days" role="group" aria-labelledby="ed-days-l">' + edDaysHtml() + '</div></div>';
+    h += '<div class="g2"><div class="fld"><label for="ed-dur">길이<span class="req">꼭</span></label><input id="ed-dur" type="text" inputmode="numeric" placeholder="예: 47:00" value="' + esc(l && l.dur > 0 ? L.fmtDur(l.dur) : '') + '"' + dis + '>' +
+      '<p class="msg mut sm">영상을 열면 저절로 채워져요.</p></div><div></div></div>';
     h += '<div class="g2"><div class="fld"><label for="ed-post">공개일</label><input id="ed-post" type="date" value="' + esc(l ? str(l.posted_on) : today()) + '"' + dis + '><p id="ed-postnote" class="msg" role="status"></p></div>' +
       '<div class="fld"><label for="ed-until">공개 끝 날짜(선택)</label><input id="ed-until" type="date" value="' + esc(l && l.until ? l.until : '') + '"' + dis + '><p id="ed-untilnote" class="msg" role="status"></p></div></div>';
     h += '<div class="fld"><span class="fl" id="ed-cls-l">볼 반<span class="req">꼭</span></span><div id="ed-cls">' + edClsHtml() + '</div></div>';
     h += '<div class="fld"><span class="fl">목차</span><div id="ed-chs">' + edChsHtml() + '</div>' +
-      (S.ed.can ? '<button type="button" class="btn sm" data-act="edChAdd">목차 줄 더하기</button>' : '') + '</div>';
+      (S.ed.can ? '<button type="button" class="btn sm" data-act="edChAdd">목차 줄 더하기</button>' : '') +
+      '<p id="ed-run" class="msg mut sm">' + esc(edRunText()) + '</p>' +
+      (runOn() ? '<p class="mut sm">멈춤 = 학생 영상이 잠깐 서고 «워크북 풀어 보고 계속 봐요»가 뜨는 시각 · 워크북 칸이 비면 멈추지 않아요</p>' : '') + '</div>';   /* 검수 A L10 · M2 */
     h += '<div class="fld"><span class="fl">숨김</span><div id="ed-hid">' + edHidHtml() + '</div></div>';
     h += '</div><div class="edfoot"><p id="ed-msg" class="msg bad" role="alert"></p><div class="edrow" id="ed-foot">' + edFootHtml() + '</div></div>';
     return h;
@@ -1456,15 +1909,52 @@ window.__lecAdminStart = function () {
     return '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="edHidden"' + (S.ed.can ? '' : ' disabled') + '>' +
       (on ? '숨김 켜짐 · 학생에게 안 보여요' : '숨기지 않음') + '</button>';
   }
+  /* 수업일 칸: 여러 날(이어 붙인 수업) · 날짜마다 요일 · × 로 빼기 · 첫 칸 id = ed-lesson */
+  function edDaysHtml() {
+    var h = '', i, dis = S.ed.can ? '' : ' disabled', ds = S.ed.days.length ? S.ed.days : [''];
+    for (i = 0; i < ds.length; i += 1) {
+      h += '<div class="dyr"><input type="date"' + (i === 0 ? ' id="ed-lesson"' : '') + ' data-di="' + i + '" value="' + esc(ds[i]) + '" aria-label="' + (i + 1) + '번째 수업일"' + dis + '>' +
+        '<span class="dyw">' + esc(isDay(ds[i]) ? L.fmtDay(ds[i]) : '') + '</span>' +
+        (S.ed.can && ds.length > 1 ? '<button type="button" class="x sm" data-act="edDayDel" data-i="' + i + '" aria-label="' + (i + 1) + '번째 수업일 빼기">×</button>' : '') + '</div>' +
+        dycHtml(i, ds[i]);
+    }
+    if (S.ed.can) h += '<button type="button" class="btn sm" data-act="edDayAdd">수업일 더하기</button>';
+    return h;
+  }
+  function readDays() {
+    var box = $('ed-days'), a, i;
+    if (!box || !S.ed) return;
+    a = box.querySelectorAll('[data-di]');
+    S.ed.days = [];
+    for (i = 0; i < a.length; i += 1) S.ed.days.push(trim(a[i].value));
+  }
+  /* 저장할 수업일: 바른 날짜만 · 차례 · 겹침 없이 */
+  function cleanDays() {
+    var out = [], i, v;
+    for (i = 0; i < S.ed.days.length; i += 1) { v = S.ed.days[i]; if (isDay(v) && out.indexOf(v) < 0) out.push(v); }
+    return out.sort();
+  }
+  function edRunText() {
+    /* 옛 SQL(새 칸 없음)이면 저장해도 안 남음 → 그렇게 말함 */
+    /* 검수 A L14: 같은 줄에 멈춤 시각도 들어 있음 */
+    if (S.ed.runDirty) return '판서 쪽·워크북·멈춤을 고쳤어요' + (D.c1 === false ? '(지금은 저장되지 않아요)' : '(저장하면 함께 남아요)');
+    if (S.ed.runner) return '판서 쪽·워크북·멈춤 ' + S.ed.runner.items.length + '줄을 읽었어요' + (D.c1 === false ? '(지금은 저장되지 않아요)' : '(저장하면 함께 남아요)');
+    if (S.ed.runN) return '판서 쪽·워크북·멈춤 ' + S.ed.runN + '줄이 저장돼 있어요';
+    return '판서 쪽·워크북·멈춤 없음(실행기 txt를 끌어 놓으면 들어와요)';
+  }
   function edClsHtml() {
-    var h = '<div class="chips" role="group" aria-labelledby="ed-cls-l">', i, c, dis = S.ed.can ? '' : ' disabled';
+    var h = '<div class="chips" role="group" aria-labelledby="ed-cls-l">', i, c, dis = S.ed.can ? '' : ' disabled', order = [], cd = S.ed.cands || [];
     function chip(id, name) {
       var on = !!S.ed.cls[id];
       return '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="edCls" data-c="' + esc(id) + '"' + dis + '>' + esc(name) + '</button>';
     }
     if (S.me.admin) h += chip('*', '전체');
-    for (i = 0; i < D.my.length; i += 1) { c = D.my[i]; h += chip(c.id, c.name); }
+    /* 녹화한 날 수업이 있는 반을 앞에(그 밖의 차례는 그대로) */
+    for (i = 0; i < D.my.length; i += 1) { if (cd.indexOf(D.my[i].id) >= 0) order.push(D.my[i]); }
+    for (i = 0; i < D.my.length; i += 1) { if (cd.indexOf(D.my[i].id) < 0) order.push(D.my[i]); }
+    for (i = 0; i < order.length; i += 1) { c = order[i]; h += chip(c.id, c.name); }
     h += '</div>';
+    if (S.ed.pickNote) h += '<p class="mut sm" id="ed-picknote">' + esc(S.ed.pickNote) + '</p>';
     if (!D.my.length && !S.me.admin) h += '<p class="mut sm">맡은 반이 없어요.</p>';
     if (S.ed.other.length) h += '<p class="mut sm">' + esc('다른 선생님 반 ' + clsNames(S.ed.other) + '도 함께 봐요.') + '</p>';
     return h;
@@ -1477,8 +1967,17 @@ window.__lecAdminStart = function () {
       h += '<div class="chr"><input type="text" data-ci="' + i + '" value="' + esc(c.t) + '" placeholder="0:00" aria-label="' + (i + 1) + '번째 목차 시각"' + dis + '>' +
         '<input type="text" data-cn="' + i + '" value="' + esc(c.title) + '" placeholder="01번 · 지문 이름" aria-label="' + (i + 1) + '번째 목차 이름"' + dis + '>' +
         (S.ed.can ? '<button type="button" class="x sm" data-act="edChDel" data-i="' + i + '" aria-label="' + (i + 1) + '번째 목차 줄 빼기">×</button>' : '<span></span>') + '</div>';
+      if (runOn()) h += chxHtml(c, i, dis);
     }
     return h;
+  }
+  /* C3 목차 줄 아래 한 줄: 판서 쪽 · 워크북 번호 · 멈춤 시각(선생님 화면에만 · 학생에겐 판서 쪽을 보내지 않음) */
+  function chxHtml(c, i, dis) {
+    var n = (i + 1) + '번째 목차 ';
+    return '<div class="chx" data-rx="' + i + '">' +
+      '<label class="cxb">판서<input type="text" inputmode="numeric" maxlength="4" data-cb="' + i + '" value="' + esc(str(c.rb)) + '" aria-label="' + n + '판서 쪽"' + dis + '>쪽</label>' +
+      '<label class="cxw">워크북<input type="text" maxlength="40" data-cw="' + i + '" value="' + esc(str(c.rw)) + '" placeholder="없음" aria-label="' + n + '워크북 번호"' + dis + '></label>' +
+      '<label class="cxs">멈춤<input type="text" inputmode="numeric" maxlength="8" data-cs="' + i + '" value="' + esc(str(c.rs)) + '" placeholder="분:초" aria-label="' + n + '멈춤 시각"' + dis + '></label></div>';
   }
   function readChs() {
     var box = $('ed-chs'), a, i, k;
@@ -1487,6 +1986,13 @@ window.__lecAdminStart = function () {
     for (i = 0; i < a.length; i += 1) { k = +a[i].getAttribute('data-ci'); if (S.ed.chs[k]) S.ed.chs[k].t = a[i].value; }
     a = box.querySelectorAll('[data-cn]');
     for (i = 0; i < a.length; i += 1) { k = +a[i].getAttribute('data-cn'); if (S.ed.chs[k]) S.ed.chs[k].title = a[i].value; }
+    readRunCells(box, 'data-cb', 'rb');
+    readRunCells(box, 'data-cw', 'rw');
+    readRunCells(box, 'data-cs', 'rs');
+  }
+  function readRunCells(box, at, f) {
+    var a = box.querySelectorAll('[' + at + ']'), i, k;
+    for (i = 0; i < a.length; i += 1) { k = +a[i].getAttribute(at); if (S.ed.chs[k]) S.ed.chs[k][f] = a[i].value; }
   }
   function edFootHtml() {
     if (!S.ed.can) return '<button type="button" class="btn" data-act="edClose">닫기</button>';
@@ -1555,15 +2061,62 @@ window.__lecAdminStart = function () {
   }
   function txtApply(text) {
     if (!S.ed || !S.ed.can) return;
-    var r = L.parseRunner(text), got = [], i, last;
+    var r = L.parseRunner(text), o = L.parseOnline(text), got = [], i, last, pd, pc, cands = [];
     if (r.title) { setEl('ed-title', r.title); got.push('제목'); }
     if (r.book) { setEl('ed-book', r.book); got.push('교재'); }
-    if (r.lessonOn) { setEl('ed-lesson', r.lessonOn); got.push('수업일'); }
+    readDays();
+    if (o.days.length) {
+      /* [온라인 클래스] 묶음의 수업일(여러 날)이 먼저 · 없으면 제목 줄 날짜 하나 */
+      S.ed.days = o.days.slice();
+      got.push('수업일 ' + o.days.length + '일');
+    } else if (r.lessonOn) {
+      if (S.ed.days.indexOf(r.lessonOn) < 0) { if (S.ed.days.length) S.ed.days[0] = r.lessonOn; else S.ed.days = [r.lessonOn]; }
+      got.push('수업일');
+    }
+    if (o.days.length || r.lessonOn) $('ed-days').innerHTML = edDaysHtml();
     if (r.chapters.length) {
       S.ed.chs = [];
       for (i = 0; i < r.chapters.length; i += 1) S.ed.chs.push({ t: L.fmtDur(r.chapters[i].t), title: r.chapters[i].title });
-      $('ed-chs').innerHTML = edChsHtml();
       got.push('목차 ' + r.chapters.length + '줄');
+    } else readChs();
+    /* 판서 쪽·워크북 번호(묶음이 없는 txt 면 지금 것을 그대로 둠) · 묶음이 있으면 목차 줄마다 칸이 채워짐 */
+    if (o.has && o.items.length) {
+      S.ed.runner = { start: o.start, days: o.days.slice(), items: o.items };
+      S.ed.run = runCopy(o.items);
+      S.ed.runMeta = { start: o.start, days: o.days.slice() };
+      got.push('판서와 워크북 ' + o.items.length + '줄');   /* 검수 A L15 */
+    }
+    if (r.chapters.length || (o.has && o.items.length)) {
+      /* 목차 줄이 새로 들어오거나 묶음이 바뀌면 칸을 다시 맞춤(손으로 고친 칸은 새 txt 값으로) */
+      S.ed.runDirty = false;
+      runLink();
+      $('ed-chs').innerHTML = edChsHtml();
+    }
+    if ($('ed-run')) $('ed-run').textContent = edRunText();
+    /* 어느 반 수업인지: 녹화 시작이 반 수업 시간(앞뒤 20분) 안에 드는 반이 꼭 하나면 골라 둠(새 강의 · 선생님이 아직 안 고름) */
+    if (o.has && o.start) {
+      pd = r.lessonOn && o.days.indexOf(r.lessonOn) >= 0 ? r.lessonOn : (o.days[0] || r.lessonOn || '');
+      if (pd) {
+        pc = L.pickClass(D.myRaw, pd, o.start);
+        for (i = 0; i < pc.cands.length; i += 1) { if (D.myIds.indexOf(pc.cands[i]) >= 0) cands.push(pc.cands[i]); }
+        S.ed.cands = cands;
+        S.ed.pickNote = '';
+        if (!S.ed.id && !S.ed.clsTouched && pc.pick && D.myIds.indexOf(pc.pick) >= 0) {
+          S.ed.cls = {};
+          S.ed.cls[pc.pick] = true;
+          S.ed.pickNote = L.fmtDay(pd) + ' ' + o.start + ' 녹화 · ' + (D.cname[pc.pick] || pc.pick) + ' 수업 시간이라 골라 두었어요';
+          got.push('볼 반');
+        } else if (cands.length) {
+          S.ed.pickNote = L.fmtDay(pd) + '에 수업이 있는 반을 앞에 두었어요';
+        }
+        /* C1 고침(11-16): 강의 반이 둘 이상이면 녹화한 날의 «수업한 반»을 녹화 시각으로 고른 반으로(그날 칩을 아직 안 건드렸을 때) */
+        if (pc.pick && dclsOn() && edClsIds().indexOf(pc.pick) >= 0 && !S.ed.dclsTouched[pd] && S.ed.days.indexOf(pd) >= 0) {
+          S.ed.dcls[pd] = [pc.pick];
+          got.push(L.fmtDay(pd) + ' 수업한 반');
+        }
+        $('ed-cls').innerHTML = edClsHtml();
+        $('ed-days').innerHTML = edDaysHtml();
+      }
     }
     if (!got.length) { setMsg('ed-txtmsg', '읽을 내용을 찾지 못했어요. «수업 영상 만들기»가 만든 txt인지 확인해 주세요', 'bad'); return; }
     last = got[got.length - 1];
@@ -1580,8 +2133,10 @@ window.__lecAdminStart = function () {
   function edSave(btn) {
     if (!S.ed || !S.ed.can || S.busy.ed) return;
     readChs();
+    readDays();
+    var days = cleanDays(), lesson = days[0] || '';
     var title = trim(edVal('ed-title')), book = trim(edVal('ed-book')), ytv = trim(edVal('ed-yt')), yt = L.ytId(ytv);
-    var dur = parseT(edVal('ed-dur')), lesson = trim(edVal('ed-lesson')), post = trim(edVal('ed-post')) || today(), until = trim(edVal('ed-until'));
+    var dur = parseT(edVal('ed-dur')), post = trim(edVal('ed-post')) || today(), until = trim(edVal('ed-until'));
     var ids = [], k, i, chs = [], c, t, bad = '', focus = '';
     for (k in S.ed.cls) { if (has(S.ed.cls, k) && S.ed.cls[k]) ids.push(k); }
     for (i = 0; i < S.ed.other.length; i += 1) { if (ids.indexOf(S.ed.other[i]) < 0) ids.push(S.ed.other[i]); }
@@ -1601,9 +2156,22 @@ window.__lecAdminStart = function () {
     else if (dur > L.MAX_DUR) { bad = '6시간보다 긴 영상은 올릴 수 없어요'; focus = 'ed-dur'; }
     else if (!ids.length) { bad = '볼 반을 하나 이상 골라 주세요'; focus = ''; }
     else if (until && until < post) { bad = '공개 끝 날짜는 공개일보다 앞설 수 없어요'; focus = 'ed-until'; }
+    /* C3 지문 줄: 손으로 고쳤으면 목차 칸에서 다시 만듦 · 아니면 txt 로 읽은 묶음 그대로 */
+    var run = null, rb;
+    if (!bad && S.ed.runDirty && runOn()) {
+      rb = runBuild(dur);
+      if (rb.bad) { bad = rb.bad; focus = rb.sel || ''; }
+      else run = { start: S.ed.runMeta.start, days: S.ed.runMeta.days.slice(), items: rb.items };
+    } else if (S.ed.runner) run = S.ed.runner;
     if (bad) {
       setMsg('ed-msg', bad, 'bad');
-      if (focus && $(focus)) { try { $(focus).focus(); } catch (e) {} }
+      /* 검수 A L11: 목차 줄 칸은 id 가 없어 data 표식으로 찾음 */
+      var fe = focus ? (focus.charAt(0) === '[' ? ($('ed-chs') || document).querySelector(focus) : $(focus)) : null;
+      /* 최종 확인 A12: 틀린 칸을 화면 가운데로 옮긴 뒤 커서(아래 «고친 내용 저장» 줄에 가려지지 않게) */
+      if (fe) {
+        try { fe.scrollIntoView({ block: 'center' }); } catch (e0) { try { fe.scrollIntoView(); } catch (e1) {} }
+        try { fe.focus({ preventScroll: true }); } catch (e) { try { fe.focus(); } catch (e2) {} }
+      }
       return;
     }
     setMsg('ed-msg', '', '');
@@ -1612,15 +2180,45 @@ window.__lecAdminStart = function () {
       lesson_on: lesson || null, posted_on: post, until: until || null, hidden: !!S.ed.hidden
     };
     if (!S.ed.id) row.created_by = S.me.name;
-    var isNew = !S.ed.id;
-    S.busy.ed = 1;
-    if (btn) btn.disabled = true;
-    DA.saveLecture(S.ed.id, row).then(function () {
+    /* C1 새 칸: 새 SQL이 있으면(또는 아직 모르는데 쓸 것이 있으면) 함께 · 옛 SQL이면 빼고(첫 수업일만 남음) */
+    var c1 = D.c1, more = days.slice(1), dropped = false, lcDropped = false;
+    if (c1 === true || (c1 === null && more.length)) row.lesson_more = more;
+    else if (more.length) dropped = true;
+    if (run && c1 !== false) row.runner = run;
+    /* C1 고침(11-16) 수업일마다 반: 고른 날만 {날짜: [반]} · 칸이 있으면 늘 보냄(빈 {} = 모두 지움) · 모르면 고른 것이 있을 때만 */
+    var lco = {}, lcn = 0, lids = edClsIds(), lv;
+    if (dclsOn()) {
+      for (i = 0; i < days.length; i += 1) { lv = dclsOf(days[i], lids); if (lv) { lco[days[i]] = lv; lcn += 1; } }
+    }
+    if (D.lcls === true || (D.lcls !== false && c1 !== false && lcn)) row.lesson_cls = lco;
+    var isNew = !S.ed.id, edId = S.ed.id;
+    function done() {
       S.busy.ed = 0;
       closeEditor();
-      toast(isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요');
+      toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : ''));
       refresh();
-    }, function (e) {
+    }
+    /* 새 칸이 아직 없는 DB(PGRST204) → 말한 칸이 lesson_cls 면 그것만, 아니면 새 칸 셋 다 빼고 한 번 더(두 번까지) */
+    function attempt(rw, n) {
+      return DA.saveLecture(edId, rw).then(done, function (e) {
+        var m, drop, r2 = {}, k2, cut = false;
+        if (!(e && e.code === 'PGRST204') || n > 1) throw e;
+        m = /'([A-Za-z_]+)' column/.exec(str(e.message) + ' ' + str(e.detail));
+        drop = m && m[1] === 'lesson_cls' ? ['lesson_cls'] : ['lesson_more', 'runner', 'lesson_cls'];
+        for (k2 in rw) {
+          if (!has(rw, k2) || k2 === 'id') continue;
+          if (drop.indexOf(k2) >= 0) { cut = true; continue; }
+          r2[k2] = rw[k2];
+        }
+        if (!cut) throw e;
+        if (has(rw, 'lesson_cls') && drop.indexOf('lesson_cls') >= 0) { D.lcls = false; if (lcn) lcDropped = true; }
+        if (drop.indexOf('lesson_more') >= 0) { D.c1 = false; if (more.length) dropped = true; }
+        return attempt(r2, n + 1);
+      });
+    }
+    S.busy.ed = 1;
+    if (btn) btn.disabled = true;
+    attempt(row, 0).then(null, function (e) {
       S.busy.ed = 0;
       if (btn) btn.disabled = false;
       setMsg('ed-msg', '저장하지 못했어요. ' + errText(e), 'bad');
@@ -1682,15 +2280,82 @@ window.__lecAdminStart = function () {
       else { S.todo = r; S.todoErr = false; }
     }, function () { S.todo = null; S.todoErr = true; });
   }
+  /* C1 출결: 새 SQL(lesson_more 칸)이 있을 때만 부름 → 옛 SQL이면 요청도 안 함(404 없음) · 실패는 조용히 지금처럼 */
+  function loadAtt(rows) {
+    var i, ok = false;
+    for (i = 0; isArr(rows) && i < rows.length; i += 1) { if (rows[i] && has(rows[i], 'lesson_more')) { ok = true; break; } }
+    if (!ok) { S.att = null; return null; }
+    return DA.rpc('lec_att_staff', {}).then(function (r) {
+      S.att = r && r.ok && isArr(r.lectures) ? r : null;
+    }, function () { S.att = null; });
+  }
+  /* C2 시험 범위: 저장한 범위 줄 + 히즈북스 학교 시험 일정(main · pt-etc 두 줄) · 늘 끝남(실패해도 다른 화면은 그대로)
+     서버에 범위 함수가 없으면(옛 SQL) S.rngOld → 이 화면에서는 다시 부르지 않음 */
+  function loadRng() {
+    if (S.rngOld || !L.rngStaff || !L.examMerge || !DA.exams) { S.rng = null; return null; }
+    var ex = Promise.resolve().then(function () { return DA.exams(); }).then(L.examMerge, function () { return null; });
+    return Promise.all([L.rngStaff(DA.rpc), ex]).then(function (a) {
+      var r = a[0];
+      if (r && r.err === 'old') { S.rngOld = true; S.rng = null; return; }
+      S.rng = r && r.ok && isArr(r.items) ? { rows: r.items, ex: a[1] || null, today: isDay(r.today) ? r.today : today() } : null;
+    }).then(null, function () { S.rng = null; });
+  }
+  function rngOff() { S.rngOld = true; S.rng = null; if (D) D.rg = null; }
+  /* C2 조용히 맞추기: 저장한 범위의 시험 날짜 · 이름 · 받는 학생을 학교 시험 일정에 맞춤
+     두 일정 줄을 다 읽었을 때만(rg.ex) · 보낼 것이 없으면 부르지 않음 · 실패는 조용히(다음에 다시) · 맞춘 줄이 있으면 범위 줄만 다시 읽음 */
+  function rngSyncNow(my) {
+    var rg = D && D.rg, rows;
+    if (!rg || !rg.ex || !S.rng || !L.rngSyncRows || !L.rngSync) return;
+    try { rows = L.rngSyncRows(S.rng.rows, D.classes, rg.ex.es, rg.ex.eg, rg.today); } catch (e) { return; }
+    if (!rows || !rows.length) return;
+    L.rngSync(DA.rpc, rows).then(function (r) {
+      if (my !== loadGen) return null;
+      if (r && r.err === 'old') { rngOff(); renderAll(); return null; }
+      if (!r || !r.ok || !(r.n > 0)) return null;
+      return L.rngStaff(DA.rpc).then(function (x) {
+        if (my !== loadGen || !S.rng || !x || !x.ok || !isArr(x.items)) return;
+        S.rng.rows = x.items;
+        rngBuild(D);
+        renderAll();
+      });
+    }).then(null, function () {});
+  }
+  function rngSaveNow(btn, key) {
+    var g = rngGrp(key);
+    if (!g || S.busy.rng) return;
+    S.busy.rng = 1;
+    if (btn) btn.disabled = true;
+    /* seen = 이 화면이 들고 있는 강의 목록의 가장 늦은 만든 시각: 화면을 연 뒤 올라온 강의는 체크하지 않아도 학생에게 그대로(마지막 검수 L-2) */
+    L.rngSave(DA.rpc, g, rngIds(g), L.rngSeen(D.lectures)).then(function (r) {
+      S.busy.rng = 0;
+      if (btn) btn.disabled = false;
+      if (r && r.ok) {
+        delete S.rngSel[key];
+        if (S.drawer && S.drawer.t === 'rng') closeDrawer();
+        toast(r.stale ? '범위를 저장했어요. 시험 날짜는 히즈북스 학교 시험 일정대로 두었어요' : '범위를 저장했어요');
+        refresh();
+        return;
+      }
+      if (r && r.err === 'old') { rngOff(); renderAll(); toast('지금 서버에서는 시험 범위를 저장할 수 없어요', true); return; }
+      toast(r && r.err === 'forbidden' ? '저장할 수 없는 계정이에요' : (r && r.err === 'input' ? '입력을 확인해 주세요' :
+        (r && r.err === 'network' ? '인터넷 연결을 확인해 주세요' : '저장하지 못했어요. 잠시 뒤 다시 해 주세요')), true);
+    }, function () {
+      S.busy.rng = 0;
+      if (btn) btn.disabled = false;
+      toast('저장하지 못했어요. 잠시 뒤 다시 해 주세요', true);
+    });
+  }
   function refresh(note) {
-    var my = ++loadGen;
-    return Promise.all([DA.classes(), DA.lectures(), DA.progress(), DA.qna(), DA.consents(), DA.keys(), loadTodo()]).then(function (raw) {
+    var my = ++loadGen, lp = DA.lectures();
+    return Promise.all([DA.classes(), lp, DA.progress(), DA.qna(), DA.consents(), DA.keys(), loadTodo(),
+      lp.then(loadAtt, function () { S.att = null; }), loadRng()]).then(function (raw) {
       if (my !== loadGen) return;
       build(raw);
       S.loadedAt = new Date().getTime();
       S.sess = null;
       renderAll();
       if (note) toast('새로 불러왔어요');
+      rngSyncNow(my);
     }, function (e) {
       if (my !== loadGen) return;
       if (!D) showFail('자료를 불러오지 못했어요. ' + errText(e), function () { app.innerHTML = loadingHtml(); refresh(); });
@@ -1802,6 +2467,13 @@ window.__lecAdminStart = function () {
         openDrawer({ t: 'col', l: l, c: c, f: 'behind' }, false);
         break;
       case 'todoMore': S.open.behind = true; render(); break;
+      case 'rngBandMore': S.open.rngBand = true; render(); break;
+      /* C2 시험 범위 */
+      case 'rngPick': openDrawer({ t: 'rng', s: s }, false); break;
+      case 'rngOpen': openDrawer({ t: 'rng', s: '' }, false); break;
+      case 'rngChip': if (S.drawer && S.drawer.t === 'rng') { S.drawer.s = s; renderDrawer(); refocusIn($('dw'), 'data-s', s); } break;
+      case 'rngMore': S.rngMore[s] = !S.rngMore[s]; renderDrawer(); refocusIn($('dw'), 'data-act', 'rngMore'); break;
+      case 'rngSave': rngSaveNow(el, s); break;
       case 'todoToggle': S.open[v] = !S.open[v]; render(); break;
       case 'unlock':
         r = (D.rmapAll[s] || (S.todo && S.todo.locked || []).filter(function (x) { return x.skey === s; })[0]) || null;
@@ -1824,7 +2496,7 @@ window.__lecAdminStart = function () {
         /* 강의 서랍(열·칸)에서 학생을 열면 학부모 안내 문구도 그 강의로 맞춰 둠(강의를 다시 고르지 않게) */
         if (inDw && S.drawer && S.drawer.l && (S.drawer.t === 'col' || S.drawer.t === 'cell')) {
           r = S.pm[s];
-          if (!r || r.l !== S.drawer.l) { S.pm[s] = { l: S.drawer.l, ab: r ? r.ab : false }; delete S.inputs['pm:' + s]; }
+          if (!r || r.l !== S.drawer.l) { S.pm[s] = { l: S.drawer.l, ab: D.att ? absOn(S.drawer.l, s) : (r ? r.ab : false) }; delete S.inputs['pm:' + s]; }
         }
         openDrawer({ t: 'stu', s: s }, inDw);
         break;
@@ -1884,7 +2556,7 @@ window.__lecAdminStart = function () {
       case 'edChAdd':
         if (!S.ed) break;
         readChs();
-        S.ed.chs.push({ t: '', title: '' });
+        S.ed.chs.push({ t: '', title: '', ri: -1, rb: '', rw: '', rs: '', r0: ['', '', '', ''] });
         $('ed-chs').innerHTML = edChsHtml();
         r = $('ed-chs').querySelector('[data-ci="' + (S.ed.chs.length - 1) + '"]');
         if (r) r.focus();
@@ -1892,10 +2564,49 @@ window.__lecAdminStart = function () {
       case 'edChDel':
         if (!S.ed) break;
         readChs();
-        S.ed.chs.splice(+attr(el, 'data-i'), 1);
+        r = S.ed.chs.splice(+attr(el, 'data-i'), 1)[0];
+        /* 지문 줄이 붙은 목차 줄을 빼면 그 지문 줄도 뺌(판서 쪽·워크북·멈춤) */
+        if (r && r.ri >= 0) {
+          S.ed.run.splice(r.ri, 1);
+          for (i = 0; i < S.ed.chs.length; i += 1) { if (S.ed.chs[i].ri > r.ri) S.ed.chs[i].ri -= 1; }
+          runTouch();
+        }
         $('ed-chs').innerHTML = edChsHtml();
         break;
-      case 'edCls': if (S.ed) { S.ed.cls[c] = !S.ed.cls[c]; $('ed-cls').innerHTML = edClsHtml(); refocus('ed-cls', 'data-c', c); } break;
+      case 'edCls': if (S.ed) { S.ed.cls[c] = !S.ed.cls[c]; S.ed.clsTouched = true; $('ed-cls').innerHTML = edClsHtml(); readDays(); $('ed-days').innerHTML = edDaysHtml(); refocus('ed-cls', 'data-c', c); } break;
+      case 'edDcls':
+        /* C1 고침(11-16) 수업일마다 반: 누른 반을 그날에서 빼거나 넣음 · 한 반은 남김 · 모든 반이면 저장 안 함(= 모든 반) */
+        if (!S.ed || !S.ed.can) break;
+        readDays();
+        i = +attr(el, 'data-i');
+        r = S.ed.days[i];
+        k = edClsIds();
+        if (!isDay(r) || k.indexOf(c) < 0) break;
+        t = dclsOf(r, k) || k.slice();
+        if (t.indexOf(c) >= 0) { if (t.length < 2) break; t.splice(t.indexOf(c), 1); } else t.push(c);
+        S.ed.dclsTouched[r] = 1;
+        if (t.length >= k.length) delete S.ed.dcls[r]; else S.ed.dcls[r] = t;
+        dycRedo(i);
+        r = $('ed-days').querySelector('[data-dyc="' + i + '"]');
+        if (r) refocusIn(r, 'data-c', c);
+        break;
+      case 'edDayAdd':
+        if (!S.ed) break;
+        readDays();
+        if (!S.ed.days.length) S.ed.days.push('');
+        S.ed.days.push('');
+        $('ed-days').innerHTML = edDaysHtml();
+        r = $('ed-days').querySelector('[data-di="' + (S.ed.days.length - 1) + '"]');
+        if (r) r.focus();
+        break;
+      case 'edDayDel':
+        if (!S.ed) break;
+        readDays();
+        S.ed.days.splice(+attr(el, 'data-i'), 1);
+        $('ed-days').innerHTML = edDaysHtml();
+        r = $('ed-days').querySelector('[data-di]');
+        if (r) r.focus();
+        break;
       case 'edHidden': if (S.ed) { S.ed.hidden = !S.ed.hidden; $('ed-hid').innerHTML = edHidHtml(); refocus('ed-hid', 'data-act', 'edHidden'); } break;
       case 'edFile': r = $('ed-file'); if (r) r.click(); break;
       default: return;
@@ -1903,8 +2614,9 @@ window.__lecAdminStart = function () {
     if (el.tagName === 'A') return;
     ev.preventDefault();
   }
-  function refocus(boxId, k, v) {
-    var a = $(boxId).querySelectorAll('[' + k + ']'), i;
+  function refocus(boxId, k, v) { refocusIn($(boxId), k, v); }
+  function refocusIn(box, k, v) {
+    var a = box.querySelectorAll('[' + k + ']'), i;
     for (i = 0; i < a.length; i += 1) { if (a[i].getAttribute(k) === v) { try { a[i].focus(); } catch (e) {} return; } }
   }
   function scrollMain() {
@@ -1921,16 +2633,40 @@ window.__lecAdminStart = function () {
       txtT = setTimeout(function () { var v = $('ed-txt'); if (v && trim(v.value)) txtApply(v.value); }, 350);
     } else if (t.id === 'ed-post' || t.id === 'ed-until') edNotes();
     else if (t.id === 'ed-dur') S.ed.durAuto = false;
+    else if (t.getAttribute && t.getAttribute('data-di') !== null) dayWeek(t);
+    else if (t.getAttribute && (t.getAttribute('data-cb') !== null || t.getAttribute('data-cw') !== null || t.getAttribute('data-cs') !== null)) runTouch();
+  }
+  /* 수업일 칸 옆 요일 다시 쓰기(칸은 그대로 둠 · 고르는 중 흐트러지지 않게) */
+  function dayWeek(t) {
+    var w = t.parentNode ? t.parentNode.querySelector('.dyw') : null, v = trim(t.value), i = +t.getAttribute('data-di'), old = S.ed.days[i];
+    readDays();
+    if (w) w.textContent = isDay(v) ? L.fmtDay(v) : '';
+    /* 날짜를 바꾸면 그날 고른 반도 따라감(새 날에 고른 것이 없을 때 · 옛 날을 다른 줄이 안 쓸 때) */
+    if (isDay(old) && old !== v && isArr(S.ed.dcls[old]) && isDay(v) && !S.ed.dcls[v] && S.ed.days.indexOf(old) < 0) {
+      S.ed.dcls[v] = S.ed.dcls[old];
+      delete S.ed.dcls[old];
+    }
+    dycRedo(i);
   }
   function onChange(ev) {
     var t = ev.target, s;
     if (!t) return;
     if (t.id === 'ed-file') { if (t.files && t.files[0]) readTxtFile(t.files[0]); t.value = ''; return; }
     if (t.id === 'ed-post' || t.id === 'ed-until') { edNotes(); return; }
+    if (S.ed && t.getAttribute && t.getAttribute('data-di') !== null) { dayWeek(t); return; }
+    /* C2 범위 강의 체크: 다시 그리지 않고 고른 수만 고침(누른 자리 · 스크롤 그대로) */
+    if (t.getAttribute && t.getAttribute('data-chg') === 'rngTog') {
+      s = t.getAttribute('data-s');
+      /* 사람이 켜고 끈 것만 적음(켬 true · 끔 false · 바탕은 rngSelOf 가 그때그때 · C2 검수 L6) */
+      if (!S.rngSel[s]) S.rngSel[s] = {};
+      S.rngSel[s][t.getAttribute('data-l')] = !!t.checked;
+      var g9 = rngGrp(s), n9 = $('rng-n');
+      if (g9 && n9) n9.textContent = '고른 강의 ' + rngPickedN(g9) + '개';
+      return;
+    }
     if (t.getAttribute && t.getAttribute('data-chg') === 'pmLec') {
       s = t.getAttribute('data-s');
-      if (!S.pm[s]) S.pm[s] = { l: t.value, ab: false };
-      S.pm[s].l = t.value;
+      S.pm[s] = { l: t.value, ab: D.att ? absOn(t.value, s) : !!(S.pm[s] && S.pm[s].ab) };
       delete S.inputs['pm:' + s];
       renderDrawer();
       var sel = $('pm-sel');
