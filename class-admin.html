@@ -3501,6 +3501,7 @@ window.__lecAdminStart = function () {
       renderAll();
       if (note) toast('새로 불러왔어요');
       rngSyncNow(my);
+      hashOnce();
     }, function (e) {
       if (my !== loadGen) return;
       if (!D) showFail('자료를 불러오지 못했어요. ' + errText(e), function () { app.innerHTML = loadingHtml(); refresh(); });
@@ -3902,6 +3903,40 @@ window.__lecAdminStart = function () {
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && D && S.me && new Date().getTime() - S.loadedAt > 60000) refresh();
   });
+
+  /* ------------------------------------- 히즈북스 «오늘»에서 여는 주소 끝(11-17 · v33.399)
+     #qna = «오늘 할 일» «답을 기다리는 질문»을 누른 것과 같음(질문 탭 · 기다리는 질문 · 칸이 없으면 질문 탭 «기다리는»만) ·
+     #behind = «결석한 날»(출결 없으면 «덜 본 학생») 칸을 누른 것과 같음 — 강의가 하나면 그 칸(시청 현황 · 덜 본 학생) ·
+     여럿이면 다 펼치고 «오늘» 숫자에 든 강의(공개일 · 올린 날이 오늘이 아닌 강의) 중 첫 칸에 초점 · 모르는 값 · 없음 · 칸 없음 = 지금처럼 ·
+     로그인 화면을 거쳐도 처음 연 주소 끝 그대로(첫 불러오기 뒤 한 번 · 다시 불러올 때는 안 함) */
+  var hash0 = String(location.hash || ''), hashDone = false;
+  function hashTap(sel) { var b = app.querySelector(sel); if (b) b.click(); return !!b; }
+  /* «오늘» 숫자에서 뺀 강의(공개일이나 올린 날(한국)이 오늘 · index.html _hcAbs 와 같은 규칙)의 칸인가 */
+  function hashFresh(b) {
+    var l = D && D.lmap ? D.lmap[b.getAttribute('data-l') || ''] : null, td = D && D.attT ? String(D.attT) : '', p, c;
+    if (!l || td.length !== 10) return false;
+    p = String(l.posted_on || '').slice(0, 10);
+    c = Date.parse(String(l.created_at || ''));
+    c = isFinite(c) ? new Date(c + 32400000).toISOString().slice(0, 10) : '';
+    return !!((p && p >= td) || (c && c >= td));
+  }
+  function goHash(h) {
+    var a, i;
+    if (h === '#qna') {
+      if (!hashTap('[data-act="todoQ"]')) { S.tab = 'qna'; S.qf = 'wait'; S.qLec = ''; S.qFocus = ''; render(); }
+    } else if (h === '#behind') {
+      a = app.querySelectorAll('[data-act="todoBehind"]');
+      if (a.length === 1 && !app.querySelector('[data-act="todoMore"]')) { a[0].click(); return; }
+      if (!a.length) return;
+      hashTap('[data-act="todoMore"]');
+      a = app.querySelectorAll('[data-act="todoBehind"]');
+      for (i = 0; i < a.length && hashFresh(a[i]); i += 1) {}
+      a = a[i < a.length ? i : 0];
+      if (a) { try { a.focus(); } catch (e) {} }
+    }
+  }
+  function hashOnce() { if (hashDone) return; hashDone = true; goHash(hash0); }
+  window.addEventListener('hashchange', function () { if (D && S.me) goHash(location.hash); });
 
   /* ------------------------------------------------------------------ 시작 */
   if (demo) {
