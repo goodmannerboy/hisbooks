@@ -1884,7 +1884,7 @@ begin
         left join public.lec_consent cs on cs.sid = ro.skey
        where not l.hidden
          and coalesce(l.posted_on, p_today) <= p_today
-         and not public.lec__ended(l)
+         and not public.lec__ended(l.*)   -- l 만 쓰면 cell.l(uuid) 칸으로 읽힘(운영 Postgres 11-16 오류)
          and coalesce(g.pct, 0) < 90 and g.done_by is null
          and coalesce(cs.choice, '') <> 'none'
     )
