@@ -4,11 +4,13 @@
 -- 1) supabase.com 로그인 → 히즈북스 프로젝트 → 왼쪽 «SQL Editor»
 -- 2) «New query» → 이 파일 전체(Ctrl+A → Ctrl+C)를 붙여 넣고 «Run»
 --    (경고 창이 뜨면 «Run this query»)
--- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 6/6 통과 · 학생 수 · 강의 수 · PDF 저장 곳» 표가 나오면 통과입니다.
---    (스스로 점검 여섯은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
+-- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 7/7 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림» 표가 나오면 통과입니다.
+--    (스스로 점검 일곱은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
 --    빨간 오류가 나오면 아무것도 바뀌지 않은 것입니다(통째로 되돌려짐).
 --    «PDF 저장 곳» 칸이 «됨»이 아니면 강의 필기 PDF 저장 곳(Storage)만 못 만든 것입니다 · 강의실은 그대로 씁니다
 --    (그때는 대시보드 Storage 에서 버킷 · 정책을 만듭니다 · 차례는 맨 아래 P1 절 머리글)
+--    «새 영상 알림» 칸은 알림 상태 한 줄입니다(처음은 «꺼짐 · 열쇠 아직 · 매분 점검 됨 · 켠 폰 0 · 아침 8:00» ·
+--    «매분 점검 됨»이 아니면 매분 점검만 못 건 것 · 켜는 차례는 맨 아래 N1 절 머리글)
 --
 -- 만드는 표
 --   lec_lecture   강의(유튜브 영상 · 목차 · 볼 수 있는 반)
@@ -21,6 +23,8 @@
 --                 선생님이 lec_unlock 으로 풀 수 있음)
 --   lec_consent   학생마다 기록 동의(agree · none)와 안내문 판
 --   (P1) lec_lecture.files = 강의 필기 PDF 칸 · 파일은 Storage 버킷 lec-pdf(누구나 받기 · 목록 보기 없음 · 선생님만 올림)
+--   (N1) lec_push_cfg · lec_push_sub · lec_push_queue · lec_push_log = 새 영상 알림(설정 · 학생 폰 · 보낼 차례 · 보낸 기록 ·
+--        표로는 아무도 못 읽음 · 함수로만 · 처음은 꺼짐)
 -- 학생 구분 = 히즈북스 안의 학생 id + 띄어쓰기 뺀 이름.
 --   (같은 id 를 쓰는 다른 학생이 있을 수 있어 id 만으로 구분하지 않습니다)
 -- 학생은 로그인 계정이 없어서 표를 직접 못 읽습니다. 아래 lec_ 함수로 자기 것만 읽고 씁니다.
@@ -4587,10 +4591,1166 @@ begin
 end
 $$;
 
+-- ---------------------------------------------------------------- N1 (11-17) 새 영상 알림
+-- 원장님 11-17 «업로드 되는 시간에» · «7:30를 8:00알림으로 변경»: 강의를 올리면 그 반 학생 가운데 «알림 받기»를 켠 폰(홈 화면 앱)에 알림 하나
+--   강의 하나당 한 번 · 고쳐 저장해도 다시 안 감 · 숨긴 강의는 안 감(숨김을 풀면 그때 한 번 · 공개일이 3일 안일 때만) ·
+--   반을 더하면 더한 반에만(공개일이 3일 안일 때만) · 아침을 기다리는 동안 숨기거나 지우면 안 감
+--   때(한국 시각): 학생에게 보이게 된 때가 새벽 1시~8:00 이면 그날 아침 8:00 · 공개일이 앞날이면 그날 아침 8:00 · 그 밖은 바로(1분 안)
+--     두 시각은 lec_push_cfg 의 night_from · morning_at 칸(바꿀 때는 아래 «시각 바꿈» 한 줄 · 선생님 서랍 글과 학생 카드 글이 따라 바뀜)
+--   아침으로 미룬 알림은 그 전에 이미 연 학생에게는 안 감(first_at) · 같은 때 한 폰에 둘 이상이면 알림 하나로 묶음
+--   «전체»(*) 강의는 알림 없음(반이 정해진 강의만 · «전체» + 반이면 그 반만) · 학부모 · 영상 없는 반은 아무것도 없음 · 반 카톡 공지는 그대로
+--   알림 글: «새 수업 영상이 올라왔어요» / «11.17(화) {제목}» · 여럿이면 «새 수업 영상 N개가 올라왔어요» / «{첫 편} 외 N-1개»(학생 이름 · 결석 말 없음)
+-- 표
+--   lec_push_cfg    한 줄: mode(off 꺼짐 · test 시험 · on 켬 · 처음은 off) · test_names(시험 학생 이름 · 명단 이름 그대로) ·
+--                   night_from(새벽 시작 01:00) · morning_at(아침 시각 08:00) · VAPID 열쇠(함수 lec-push 가 처음 돌 때 스스로 만들어 넣음)
+--   lec_push_sub    학생 폰 하나 = 한 줄(기기 열쇠 kh · 푸시 주소 · 암호 열쇠 둘) · 기기 열쇠가 지워지면(나가기 · 모두 나가기) 같이 지워짐
+--   lec_push_queue  강의 하나 = 한 줄(wait 기다림 · hold 숨김 · off 꺼진 때 · sent 보냄 · late 늦음 · gone 보낼 반 없음)
+--   lec_push_log    강의 × 폰 보낸 기록(같은 폰에 두 번 안 감 · 90일 지나면 지움)
+--   표는 모두 행 보안만 켜고 정책 없음 = 학생 · 선생님 모두 표로는 못 읽음(아래 함수로만)
+-- 움직임: 강의 표 트리거(lec__push_mark)가 줄을 만들고 고침 · pg_cron «his-lec-push» 가 매분 lec_push_tick 을 부름 →
+--   보낼 것이 있을 때만 Edge Function lec-push 를 부름(열쇠 없이) → 함수가 서버 열쇠로 lec__push_claim → 보냄 → lec__push_done
+--   Edge Function lec-push 는 «Verify JWT» 를 끄고 배포합니다(매분 점검이 열쇠 없이 부름 · 함수는 받은 글을 읽지 않고 개수만 돌려줌)
+-- 끄개 · 바꾸기(SQL Editor 한 줄)
+--   바로 끔(기다리던 알림 모두 안 감 · 학생 카드 · 선생님 줄 숨김): update public.lec_push_cfg set mode = 'off';
+--   시험(시험 학생 폰에만 · 선생님 줄은 관리자만): update public.lec_push_cfg set mode = 'test', test_names = array['학생이름'];
+--   켬: update public.lec_push_cfg set mode = 'on';
+--   시각 바꿈: update public.lec_push_cfg set night_from = '01:00', morning_at = '08:00';
+--   매분 점검 멈춤: select cron.unschedule('his-lec-push');   (이 파일을 다시 넣으면 다시 걸림 · mode 와 열쇠는 그대로)
+create table if not exists public.lec_push_cfg (
+  id          integer primary key default 1 check (id = 1),
+  mode        text not null default 'off' check (mode in ('off', 'test', 'on')),
+  test_names  text[] not null default '{}',
+  night_from  time not null default '01:00',
+  morning_at  time not null default '08:00',
+  vapid_pub   text,
+  vapid_priv  text,
+  jwt         jsonb not null default '{}'::jsonb,
+  mode_at     timestamptz not null default now(),
+  constraint lec_push_cfg_times check (night_from < morning_at)
+);
+insert into public.lec_push_cfg (id) values (1) on conflict (id) do nothing;
+
+create table if not exists public.lec_push_sub (
+  id          bigint generated always as identity primary key,
+  kh          text not null references public.lec_key(kh) on delete cascade,
+  endpoint    text not null unique,
+  p256dh      text not null,
+  auth        text not null,
+  created_at  timestamptz not null default now(),
+  last_ok_at  timestamptz
+);
+create index if not exists lec_push_sub_kh on public.lec_push_sub (kh);
+
+create table if not exists public.lec_push_queue (
+  lecture_id  uuid primary key references public.lec_lecture(id) on delete cascade,
+  status      text not null check (status in ('wait', 'hold', 'off', 'sent', 'late', 'gone')),
+  due_at      timestamptz,
+  cls         text[] not null default '{}',
+  done_cls    text[] not null default '{}',
+  sent_at     timestamptz,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  constraint lec_push_queue_due check (status <> 'wait' or due_at is not null)
+);
+create index if not exists lec_push_queue_wait on public.lec_push_queue (due_at) where status = 'wait';
+
+create table if not exists public.lec_push_log (
+  lecture_id  uuid not null references public.lec_lecture(id) on delete cascade,
+  sub_id      bigint not null,
+  code        integer,
+  at          timestamptz not null default now(),
+  primary key (lecture_id, sub_id)
+);
+create index if not exists lec_push_log_at on public.lec_push_log (at);
+
+revoke all on public.lec_push_cfg, public.lec_push_sub, public.lec_push_queue, public.lec_push_log from public, anon, authenticated;
+alter table public.lec_push_cfg   enable row level security;
+alter table public.lec_push_sub   enable row level security;
+alter table public.lec_push_queue enable row level security;
+alter table public.lec_push_log   enable row level security;
+
+-- 알림 반: 강의의 반에서 «전체»(*) · 빈칸을 뺌(겹침 없이 · 차례대로)
+create or replace function public.lec__push_cls(p text[]) returns text[]
+language sql immutable set search_path = public as $$
+  select array(select distinct t.c from unnest(coalesce(p, '{}'::text[])) as t(c)
+                where coalesce(t.c, '') not in ('', '*') order by t.c)
+$$;
+
+-- 반 빼기 · 더하기(겹침 없이 · 차례대로)
+create or replace function public.lec__push_minus(a text[], b text[]) returns text[]
+language sql immutable set search_path = public as $$
+  select array(select distinct t.x from unnest(coalesce(a, '{}'::text[])) as t(x)
+                where t.x is not null and not (t.x = any (coalesce(b, '{}'::text[]))) order by t.x)
+$$;
+create or replace function public.lec__push_union(a text[], b text[]) returns text[]
+language sql immutable set search_path = public as $$
+  select array(select distinct t.x from unnest(coalesce(a, '{}'::text[]) || coalesce(b, '{}'::text[])) as t(x)
+                where t.x is not null order by t.x)
+$$;
+
+-- 시험 학생 이름(띄어쓰기 빼고 비교 · 학생 화면과 같은 규칙)
+create or replace function public.lec__push_names(p text[]) returns text[]
+language sql immutable set search_path = public as $$
+  select array(select distinct public.lec__norm(t.x) from unnest(coalesce(p, '{}'::text[])) as t(x)
+                where public.lec__norm(t.x) <> '' order by 1)
+$$;
+
+-- 날짜 → «11.17(화)»(학생 화면 fmtDay 와 같은 꼴)
+create or replace function public.lec__push_day(d date) returns text
+language sql immutable set search_path = public as $$
+  select case when d is null then '' else
+    extract(month from d)::int::text || '.' || extract(day from d)::int::text || '(' ||
+    (array['일', '월', '화', '수', '목', '금', '토'])[extract(dow from d)::int + 1] || ')' end
+$$;
+
+-- 시각 → «8시» · «7시 30분»(학생 카드 «새벽에 올라오면 아침 8시에 알려 드려요» 의 시각)
+create or replace function public.lec__push_hm(t time) returns text
+language sql immutable set search_path = public as $$
+  select extract(hour from t)::int::text || '시'
+      || case when extract(minute from t)::int > 0 then ' ' || extract(minute from t)::int::text || '분' else '' end
+$$;
+
+-- 알림 때(순수 함수): 공개일이 앞날 = 그날 아침(p_at) · 한국 시각 p_from 이상 p_at 미만 = 그날 아침(p_at) · 그 밖 = 지금
+create or replace function public.lec_push_due(p_now timestamptz, p_posted date, p_from time default '01:00', p_at time default '08:00')
+returns timestamptz
+language sql immutable set search_path = public as $$
+  select case
+    when p_posted is not null and p_posted > (p_now at time zone 'Asia/Seoul')::date
+      then (p_posted + p_at) at time zone 'Asia/Seoul'
+    when (p_now at time zone 'Asia/Seoul')::time >= p_from and (p_now at time zone 'Asia/Seoul')::time < p_at
+      then ((p_now at time zone 'Asia/Seoul')::date + p_at) at time zone 'Asia/Seoul'
+    else p_now end
+$$;
+
+-- 강의 표 트리거: 올림 · 숨김 · 숨김 풀기 · 반 바꿈 · 공개일 · 공개 끝 → 대기 줄
+--   이 함수에서 무엇이 틀려도 강의 저장은 막지 않음(경고만 남기고 알림 줄만 그대로)
+create or replace function public.lec__push_mark() returns trigger
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  cf       public.lec_push_cfg;
+  qq       public.lec_push_queue;
+  v_has    boolean;
+  v_eff    text[];
+  v_done   text[];
+  v_tg     text[];
+  v_today  date := (now() at time zone 'Asia/Seoul')::date;
+  v_end    boolean;
+  v_fresh  boolean;
+begin
+  begin
+    select * into cf from public.lec_push_cfg where id = 1;
+    if not found then
+      return null;
+    end if;
+    v_eff := public.lec__push_cls(new.class_ids);
+    v_end := public.lec__ended(new);
+
+    -- 새로 올림: 숨김 = hold · 꺼짐 = off(뒤에 켜도 안 감) · 공개 끝 지남 = late · 그 밖 = 기다림
+    if tg_op = 'INSERT' then
+      if cardinality(v_eff) = 0 then
+        return null;
+      end if;
+      insert into public.lec_push_queue (lecture_id, status, due_at, cls)
+      values (new.id,
+              case when new.hidden then 'hold' when cf.mode = 'off' then 'off' when v_end then 'late' else 'wait' end,
+              case when not new.hidden and cf.mode <> 'off' and not v_end
+                   then public.lec_push_due(now(), new.posted_on, cf.night_from, cf.morning_at) end,
+              v_eff)
+      on conflict (lecture_id) do nothing;
+      return null;
+    end if;
+
+    select * into qq from public.lec_push_queue where lecture_id = new.id for update;
+    v_has := found;
+    v_done := case when v_has then qq.done_cls else '{}'::text[] end;
+
+    -- 기다리는 줄: 반 = 지금 반 - 이미 보낸 반 · 때를 다시 셈 · 숨김 = hold · 반 없음 = gone
+    if v_has and qq.status = 'wait' then
+      v_tg := public.lec__push_minus(v_eff, v_done);
+      update public.lec_push_queue set
+        status     = case when new.hidden then 'hold'
+                          when cardinality(v_tg) = 0 then (case when cardinality(v_done) > 0 then 'sent' else 'gone' end)
+                          when v_end then 'late' else 'wait' end,
+        due_at     = case when new.hidden or cardinality(v_tg) = 0 or v_end then null
+                          else public.lec_push_due(now(), new.posted_on, cf.night_from, cf.morning_at) end,
+        cls        = v_tg,
+        updated_at = now()
+       where lecture_id = new.id;
+      return null;
+    end if;
+
+    -- 숨긴 채 고침: 숨김 줄은 반만 맞춤 · 다른 줄은 그대로
+    if new.hidden then
+      if v_has and qq.status = 'hold' then
+        update public.lec_push_queue set cls = public.lec__push_minus(v_eff, v_done), updated_at = now()
+         where lecture_id = new.id;
+      end if;
+      return null;
+    end if;
+
+    -- 보이는 채 고침: 숨김을 풀었으면 아직 안 보낸 반 모두 · 아니면 새로 더한 반만
+    if (v_has and qq.status = 'hold') or old.hidden then
+      v_tg := public.lec__push_minus(v_eff, v_done);
+    else
+      v_tg := public.lec__push_minus(public.lec__push_minus(v_eff, public.lec__push_cls(old.class_ids)), v_done);
+    end if;
+    v_fresh := new.posted_on >= v_today - 3 and not v_end;
+    if cardinality(v_tg) = 0 or cf.mode = 'off' or not v_fresh then
+      if v_has and qq.status = 'hold' then
+        update public.lec_push_queue set
+          status     = case when cardinality(v_tg) = 0 then (case when cardinality(v_done) > 0 then 'sent' else 'gone' end)
+                            when cf.mode = 'off' then 'off'
+                            when cardinality(v_done) > 0 then 'sent' else 'late' end,
+          cls        = case when cf.mode = 'off' and cardinality(v_tg) > 0 then v_tg else '{}'::text[] end,
+          updated_at = now()
+         where lecture_id = new.id;
+      end if;
+      return null;
+    end if;
+    insert into public.lec_push_queue (lecture_id, status, due_at, cls)
+    values (new.id, 'wait', public.lec_push_due(now(), new.posted_on, cf.night_from, cf.morning_at), v_tg)
+    on conflict (lecture_id) do update set
+      status = 'wait', due_at = excluded.due_at, cls = excluded.cls, updated_at = now();
+    return null;
+  exception when others then
+    raise warning 'lec__push_mark: % %', sqlstate, sqlerrm;
+    return null;
+  end;
+end
+$$;
+
+drop trigger if exists lec_lecture_push on public.lec_lecture;
+create trigger lec_lecture_push after insert or update of hidden, class_ids, posted_on, until on public.lec_lecture
+  for each row execute function public.lec__push_mark();
+
+-- 설정 바꿈: mode 가 바뀐 때를 적음 · 끄면 기다리던 알림을 모두 off(다시 켜도 그 알림은 안 감)
+create or replace function public.lec__push_cfg_set() returns trigger
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  if new.mode is distinct from old.mode then
+    new.mode_at := now();
+    if new.mode = 'off' then
+      update public.lec_push_queue set status = 'off', due_at = null, updated_at = now() where status = 'wait';
+    end if;
+  end if;
+  return new;
+end
+$$;
+
+drop trigger if exists lec_push_cfg_set on public.lec_push_cfg;
+create trigger lec_push_cfg_set before update on public.lec_push_cfg
+  for each row execute function public.lec__push_cfg_set();
+
+-- 학생: 알림 카드를 띄울지 · 공개 열쇠 · 이 열쇠에 저장된 푸시 주소 · 아침 시각 글
+--   on = 켬(또는 시험 중 시험 학생) · show = on + 열쇠 있음 + 내 반(«전체» 아님) 강의가 하나라도 있음
+--   at = «8시»(학생 카드 «새벽에 올라오면 아침 8시에 알려 드려요») · 없는 열쇠 = err key
+create or replace function public.lec_push_on(p_key text)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  k     public.lec_key;
+  cf    public.lec_push_cfg;
+  v_ep  text;
+begin
+  select * into k from public.lec_key where kh = public.lec__kh(p_key);
+  if not found then
+    return jsonb_build_object('ok', false, 'err', 'key');
+  end if;
+  select * into cf from public.lec_push_cfg where id = 1;
+  if not found
+     or not (cf.mode = 'on' or (cf.mode = 'test' and public.lec__norm(k.sname) = any (public.lec__push_names(cf.test_names)))) then
+    return jsonb_build_object('ok', true, 'on', false, 'show', false);
+  end if;
+  select s.endpoint into v_ep from public.lec_push_sub s where s.kh = k.kh order by s.id desc limit 1;
+  return jsonb_build_object(
+    'ok', true, 'on', true,
+    'show', cf.vapid_pub is not null
+            and exists (select 1 from public.lec_lecture l where public.lec__open(l, k.cls) and l.class_ids && k.cls),
+    'key', cf.vapid_pub, 'ep', v_ep, 'at', public.lec__push_hm(cf.morning_at));
+end
+$$;
+
+-- 학생: 이 폰의 푸시 주소 저장(열쇠 하나에 폰 하나 · 같은 주소가 다른 열쇠에 있으면 이 열쇠로 옮김)
+--   주소는 알려진 푸시 서버(구글 · 애플 · 모질라 · 마이크로소프트)만 · 암호 열쇠 꼴 검사 · 꺼짐 = err off
+create or replace function public.lec_push_save(p_key text, p_ep text, p_p256dh text, p_auth text)
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  k   public.lec_key;
+  cf  public.lec_push_cfg;
+begin
+  select * into k from public.lec_key where kh = public.lec__kh(p_key);
+  if not found then
+    return jsonb_build_object('ok', false, 'err', 'key');
+  end if;
+  select * into cf from public.lec_push_cfg where id = 1;
+  if not found
+     or not (cf.mode = 'on' or (cf.mode = 'test' and public.lec__norm(k.sname) = any (public.lec__push_names(cf.test_names)))) then
+    return jsonb_build_object('ok', false, 'err', 'off');
+  end if;
+  if coalesce(char_length(p_ep), 0) > 1000
+     or coalesce(p_ep, '') !~ '^https://(fcm\.googleapis\.com|android\.googleapis\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.push\.apple\.com|updates\.push\.services\.mozilla\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.notify\.windows\.com)/[^[:space:]]+$'
+     or coalesce(p_p256dh, '') !~ '^[A-Za-z0-9_-]{87}$'
+     or coalesce(p_auth, '') !~ '^[A-Za-z0-9_-]{22}$' then
+    return jsonb_build_object('ok', false, 'err', 'bad');
+  end if;
+  insert into public.lec_push_sub (kh, endpoint, p256dh, auth)
+  values (k.kh, p_ep, p_p256dh, p_auth)
+  on conflict (endpoint) do update set kh = excluded.kh, p256dh = excluded.p256dh, auth = excluded.auth, created_at = now();
+  delete from public.lec_push_sub where kh = k.kh and endpoint <> p_ep;
+  return jsonb_build_object('ok', true);
+end
+$$;
+
+-- 학생: 이 열쇠의 푸시 주소 지움(폰에서 알림을 막았을 때 · 나가기)
+create or replace function public.lec_push_off(p_key text)
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  v_n integer;
+begin
+  delete from public.lec_push_sub where kh = public.lec__kh(p_key);
+  get diagnostics v_n = row_count;
+  return jsonb_build_object('ok', true, 'n', v_n);
+end
+$$;
+
+-- 알림을 켠 학생 수: 받은 main 명단에서 그 반 학생 가운데 폰을 저장한 학생(폰 둘이어도 한 명 · 시험 중이면 시험 학생만)
+create or replace function public.lec__push_n(p_main jsonb, p_cls text[], p_names text[])
+returns integer
+language sql stable security definer set search_path = public as $$
+  select count(distinct r.skey)::integer
+    from public.lec__ros(p_main) r
+    join public.lec_key k on k.sid = r.skey
+    join public.lec_push_sub s on s.kh = k.kh
+   where r.cls && coalesce(p_cls, '{}'::text[])
+     and (p_names is null or public.lec__norm(r.sname) = any (p_names))
+$$;
+
+-- 선생님: 이 강의의 알림 상태(서랍 줄) · 꺼짐 · 시험 중 관리자 아닌 선생님 · «전체»만인 강의 = show false(줄 없음)
+--   when: now(1분 안) · today(오늘 아침) · day(앞날 아침) · 글은 화면이 due_day · due_hm(서버 시각)으로 씀
+--   again: 숨김을 풀면 알림이 갈지(안 보낸 반이 있고 공개일이 3일 안)
+create or replace function public.lec_push_state(p_lecture uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  st       record;
+  cf       public.lec_push_cfg;
+  ll       public.lec_lecture;
+  qq       public.lec_push_queue;
+  v_has    boolean;
+  v_eff    text[];
+  v_left   text[];
+  v_tg     text[];
+  v_today  date := (now() at time zone 'Asia/Seoul')::date;
+  v_due    timestamp;
+  v_sent   timestamp;
+  v_main   jsonb;
+begin
+  select * into st from public.lec__staff() limit 1;
+  if not found then
+    return jsonb_build_object('ok', false, 'err', 'forbidden');
+  end if;
+  select * into cf from public.lec_push_cfg where id = 1;
+  if not found or cf.mode = 'off' or (cf.mode = 'test' and not st.admin) then
+    return jsonb_build_object('ok', true, 'mode', coalesce(cf.mode, 'off'), 'show', false);
+  end if;
+  select * into ll from public.lec_lecture where id = p_lecture;
+  if not found then
+    return jsonb_build_object('ok', false, 'err', 'none');
+  end if;
+  v_eff := public.lec__push_cls(ll.class_ids);
+  if cardinality(v_eff) = 0 then
+    return jsonb_build_object('ok', true, 'mode', cf.mode, 'show', false);
+  end if;
+  select * into qq from public.lec_push_queue where lecture_id = p_lecture;
+  v_has := found;
+  v_left := public.lec__push_minus(v_eff, case when v_has then qq.done_cls else '{}'::text[] end);
+  v_tg := case when v_has and qq.status = 'wait' then qq.cls else v_left end;
+  select a.data into v_main from public.app_state a where a.id = 'main';
+  v_due := qq.due_at at time zone 'Asia/Seoul';
+  v_sent := qq.sent_at at time zone 'Asia/Seoul';
+  return jsonb_build_object(
+    'ok', true, 'mode', cf.mode, 'show', true,
+    'status', case when v_has then qq.status end,
+    'hidden', ll.hidden,
+    'when', case when not v_has or qq.status <> 'wait' then null
+                 when qq.due_at <= now() + interval '90 seconds' then 'now'
+                 when v_due::date = v_today then 'today' else 'day' end,
+    'due', qq.due_at,
+    'due_day', case when v_due is not null then public.lec__push_day(v_due::date) end,
+    'due_hm', case when v_due is not null then to_char(v_due, 'FMHH24:MI') end,
+    'sent', qq.sent_at,
+    'sent_day', case when v_sent is not null then public.lec__push_day(v_sent::date) end,
+    'sent_hm', case when v_sent is not null then to_char(v_sent, 'FMHH24:MI') end,
+    'cls', to_jsonb(v_tg),
+    'n', public.lec__push_n(coalesce(v_main, '{}'::jsonb), v_tg,
+                            case when cf.mode = 'test' then public.lec__push_names(cf.test_names) end),
+    'again', cardinality(v_left) > 0 and ll.posted_on >= v_today - 3 and not public.lec__ended(ll));
+end
+$$;
+
+-- 함수 lec-push(서버 열쇠)만: 설정 · 열쇠 읽기 · 처음 만든 열쇠 넣기(먼저 넣은 것이 이김)
+create or replace function public.lec__push_keys()
+returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce((select jsonb_build_object('mode', c.mode, 'pub', c.vapid_pub, 'priv', c.vapid_priv, 'jwt', c.jwt)
+                     from public.lec_push_cfg c where c.id = 1),
+                  jsonb_build_object('mode', 'off'))
+$$;
+
+create or replace function public.lec__push_setkeys(p_pub text, p_priv text)
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  if coalesce(p_pub, '') !~ '^[A-Za-z0-9_-]{87}$' or coalesce(p_priv, '') !~ '^[A-Za-z0-9_-]{43}$' then
+    return jsonb_build_object('ok', false, 'err', 'bad');
+  end if;
+  update public.lec_push_cfg set vapid_pub = p_pub, vapid_priv = p_priv, jwt = '{}'::jsonb
+   where id = 1 and vapid_pub is null;
+  return public.lec__push_keys() || jsonb_build_object('ok', true);
+end
+$$;
+
+-- 보낼 것 고르기(받은 main · 받은 «지금» · 스스로 점검이 가짜 main 과 시각으로 돌림)
+--   12시간 넘게 못 보낸 것 = late · 새벽(night_from~morning_at)에는 그 5분 안에 잡힌 것만(새벽 1시 직전에 올린 것)
+--   다시 봄: 숨김 = hold · 공개일 전 = 그대로 · 공개 끝 = late · 반 없음 = gone
+--   받는 폰: 그 반 학생(명단) · 시험 중이면 시험 학생만 · 그 강의를 이미 연 학생 빼고 · 같은 폰에 같은 강의 한 번(lec_push_log)
+--   돌려줌: 폰마다 {sub, endpoint, p256dh, auth, t 제목, b 본문, ids 강의(10개까지)}
+create or replace function public.lec__push_take(p_main jsonb, p_now timestamptz)
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  cf       public.lec_push_cfg;
+  qq       public.lec_push_queue;
+  ll       public.lec_lecture;
+  v_names  text[];
+  v_t      time := (p_now at time zone 'Asia/Seoul')::time;
+  v_day    date := (p_now at time zone 'Asia/Seoul')::date;
+  v_cls    text[];
+  v_pairs  jsonb := '[]'::jsonb;
+  v_one    jsonb;
+  v_items  jsonb;
+  v_rows   integer := 0;
+begin
+  select * into cf from public.lec_push_cfg where id = 1;
+  if not found or cf.mode = 'off' or cf.vapid_pub is null then
+    return jsonb_build_object('ok', true, 'mode', coalesce(cf.mode, 'off'), 'items', '[]'::jsonb, 'rows', 0);
+  end if;
+  v_names := case when cf.mode = 'test' then public.lec__push_names(cf.test_names) end;
+  update public.lec_push_queue set status = 'late', due_at = null, updated_at = now()
+   where status = 'wait' and due_at < p_now - interval '12 hours';
+  for qq in
+    select x.* from public.lec_push_queue x
+     where x.status = 'wait' and x.due_at <= p_now
+       and (v_t < cf.night_from or v_t >= cf.morning_at or x.due_at >= p_now - interval '5 minutes')
+     order by x.due_at, x.lecture_id
+     for update skip locked
+  loop
+    select * into ll from public.lec_lecture where id = qq.lecture_id;
+    if not found or ll.posted_on > v_day then
+      continue;
+    end if;
+    if ll.hidden then
+      update public.lec_push_queue set status = 'hold', due_at = null, updated_at = now() where lecture_id = qq.lecture_id;
+      continue;
+    end if;
+    v_cls := array(select t.x from unnest(qq.cls) as t(x) where t.x = any (public.lec__push_cls(ll.class_ids)) order by t.x);
+    if cardinality(v_cls) = 0 or (ll.until is not null and v_day > ll.until) then
+      update public.lec_push_queue set status = case when cardinality(v_cls) = 0 then 'gone' else 'late' end,
+             due_at = null, updated_at = now()
+       where lecture_id = qq.lecture_id;
+      continue;
+    end if;
+    with ins as (
+      insert into public.lec_push_log (lecture_id, sub_id)
+      select distinct qq.lecture_id, s.id
+        from public.lec_push_sub s
+        join public.lec_key k on k.kh = s.kh
+        join public.lec__ros(p_main) r on r.skey = k.sid
+       where r.cls && v_cls
+         and (v_names is null or public.lec__norm(r.sname) = any (v_names))
+         and not exists (select 1 from public.lec_progress p
+                          where p.sid = k.sid and p.lecture_id = qq.lecture_id and p.first_at is not null)
+      on conflict (lecture_id, sub_id) do nothing
+      returning lecture_id, sub_id)
+    select coalesce(jsonb_agg(jsonb_build_object('lid', ins.lecture_id, 'sub', ins.sub_id)), '[]'::jsonb) into v_one from ins;
+    v_pairs := v_pairs || v_one;
+    update public.lec_push_queue set status = 'sent', sent_at = p_now, cls = '{}'::text[],
+           done_cls = public.lec__push_union(done_cls, v_cls), updated_at = now()
+     where lecture_id = qq.lecture_id;
+    v_rows := v_rows + 1;
+  end loop;
+  select coalesce(jsonb_agg(b.o order by b.sid), '[]'::jsonb) into v_items
+    from (
+      select s.id as sid,
+             jsonb_build_object(
+               'sub', s.id, 'endpoint', s.endpoint, 'p256dh', s.p256dh, 'auth', s.auth,
+               'ids', to_jsonb((array_agg(lt.id order by coalesce(lt.lesson_on, lt.posted_on), lt.created_at, lt.id))[1:10]),
+               't', case when count(*) = 1 then '새 수업 영상이 올라왔어요'
+                         else '새 수업 영상 ' || count(*)::text || '개가 올라왔어요' end,
+               'b', (array_agg(public.lec__push_day(coalesce(lt.lesson_on, lt.posted_on)) || ' '
+                               || left(coalesce(nullif(btrim(lt.title), ''), '수업 영상'), 80)
+                               order by coalesce(lt.lesson_on, lt.posted_on), lt.created_at, lt.id))[1]
+                    || case when count(*) > 1 then ' 외 ' || (count(*) - 1)::text || '개' else '' end) as o
+        from jsonb_to_recordset(v_pairs) as g(lid uuid, sub bigint)
+        join public.lec_push_sub s on s.id = g.sub
+        join public.lec_lecture lt on lt.id = g.lid
+       group by s.id, s.endpoint, s.p256dh, s.auth
+    ) b;
+  return jsonb_build_object('ok', true, 'mode', cf.mode, 'items', v_items, 'rows', v_rows);
+end
+$$;
+
+-- 함수 lec-push 가 부름: 지금 보낼 것(학생 명단 = app_state main)
+create or replace function public.lec__push_claim()
+returns jsonb
+language sql volatile security definer set search_path = public as $$
+  select public.lec__push_take(coalesce((select a.data from public.app_state a where a.id = 'main'), '{}'::jsonb), now())
+$$;
+
+-- 함수 lec-push 가 보낸 결과를 적음: [{sub, code, ids}] · 404 · 410 = 그 폰 줄 지움 · 2xx = 마지막 성공 · VAPID 토큰 묶음 저장
+create or replace function public.lec__push_done(p_res jsonb, p_jwt jsonb default null)
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  x       record;
+  v_ok    integer := 0;
+  v_gone  integer := 0;
+begin
+  for x in
+    select g.sub, g.code, g.ids
+      from jsonb_to_recordset(case when jsonb_typeof(p_res) = 'array' then p_res else '[]'::jsonb end)
+           as g(sub bigint, code integer, ids jsonb)
+  loop
+    update public.lec_push_log set code = x.code
+     where sub_id = x.sub
+       and lecture_id in (select e::uuid
+                            from jsonb_array_elements_text(case when jsonb_typeof(x.ids) = 'array' then x.ids else '[]'::jsonb end) as t(e)
+                           where e ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');
+    if x.code in (404, 410) then
+      delete from public.lec_push_sub where id = x.sub;
+      v_gone := v_gone + 1;
+    elsif x.code between 200 and 299 then
+      update public.lec_push_sub set last_ok_at = now() where id = x.sub;
+      v_ok := v_ok + 1;
+    end if;
+  end loop;
+  if p_jwt is not null and jsonb_typeof(p_jwt) = 'object' then
+    update public.lec_push_cfg set jwt = p_jwt where id = 1;
+  end if;
+  return jsonb_build_object('ok', true, 'sent', v_ok, 'gone', v_gone);
+end
+$$;
+
+-- 매분 점검(pg_cron «his-lec-push»): 꺼짐이면 아무것도 안 함 · 보낼 것이 있을 때(또는 열쇠가 아직 없을 때)만 함수 lec-push 를 부름(열쇠 없이)
+--   열쇠가 아직 없으면 mode 를 바꾼 뒤 30분은 매분 · 그 뒤 10분마다 · 매시 17분에 옛 실행 기록(1일) · 보낸 기록(90일) 정리
+create or replace function public.lec_push_tick()
+returns void
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  cf   public.lec_push_cfg;
+  v_t  time := (now() at time zone 'Asia/Seoul')::time;
+begin
+  select * into cf from public.lec_push_cfg where id = 1;
+  if found and cf.mode <> 'off' then
+    update public.lec_push_queue set status = 'late', due_at = null, updated_at = now()
+     where status = 'wait' and due_at < now() - interval '12 hours';
+    if (cf.vapid_pub is null and (cf.mode_at > now() - interval '30 minutes' or extract(minute from now())::int % 10 = 0))
+       or (cf.vapid_pub is not null
+           and exists (select 1 from public.lec_push_queue x
+                        where x.status = 'wait' and x.due_at <= now()
+                          and (v_t < cf.night_from or v_t >= cf.morning_at or x.due_at >= now() - interval '5 minutes'))) then
+      begin
+        execute 'select net.http_post(url := $1, body := $2, headers := $3, timeout_milliseconds := $4)'
+          using 'https://vcfhttzbzgtszpuahibe.supabase.co/functions/v1/lec-push', '{}'::jsonb,
+                '{"Content-Type": "application/json"}'::jsonb, 30000;
+      exception when others then
+        raise warning 'lec_push_tick: % %', sqlstate, sqlerrm;
+      end;
+    end if;
+  end if;
+  if extract(minute from now())::int = 17 then
+    begin
+      execute 'delete from cron.job_run_details where jobid in (select jobid from cron.job where jobname = $1) '
+           || 'and end_time < now() - interval ''1 day''' using 'his-lec-push';
+    exception when others then
+      null;
+    end;
+    delete from public.lec_push_log where at < now() - interval '90 days';
+  end if;
+end
+$$;
+
+-- 알림 상태 한 줄(맨 아래 표 «새 영상 알림» 칸): «꺼짐 · 열쇠 아직 · 매분 점검 됨 · 켠 폰 0 · 아침 8:00»
+create or replace function public.lec__push_status()
+returns text
+language plpgsql stable security definer set search_path = public as $$
+declare
+  cf     public.lec_push_cfg;
+  v_job  text := '없음';
+  v_n    integer;
+  v_err  text := coalesce(current_setting('his.lec_push_err', true), '');
+begin
+  select * into cf from public.lec_push_cfg where id = 1;
+  if not found then
+    return '설정 줄 없음';
+  end if;
+  begin
+    execute 'select case when bool_or(active) then ''됨'' when count(*) > 0 then ''멈춤'' else ''없음'' end '
+         || 'from cron.job where jobname = $1' into v_job using 'his-lec-push';
+  exception when others then
+    v_job := '못 읽음';
+  end;
+  select count(*) into v_n from public.lec_push_sub;
+  return case cf.mode when 'off' then '꺼짐' when 'test' then '시험(' || cardinality(cf.test_names)::text || '명)' else '켜짐' end
+      || ' · 열쇠 ' || case when cf.vapid_pub is null then '아직' else '있음' end
+      || ' · 매분 점검 ' || coalesce(v_job, '없음')
+      || ' · 켠 폰 ' || v_n::text
+      || ' · 아침 ' || to_char(cf.morning_at, 'FMHH24:MI')
+      || case when v_err <> '' then ' · ' || v_err else '' end;
+end
+$$;
+
+-- 권한: 학생 함수 셋 = 누구나(열쇠로만 열림) · 선생님 함수 = 로그인한 사람(안에서 선생님만) · 함수 lec-push 용 넷 = 서버 열쇠만 · 나머지 = 밖에서 못 부름
+revoke all on function public.lec__push_cls(text[]), public.lec__push_minus(text[], text[]), public.lec__push_union(text[], text[]),
+                       public.lec__push_names(text[]), public.lec__push_day(date), public.lec__push_hm(time),
+                       public.lec_push_due(timestamptz, date, time, time), public.lec__push_mark(), public.lec__push_cfg_set(),
+                       public.lec__push_n(jsonb, text[], text[]), public.lec__push_take(jsonb, timestamptz),
+                       public.lec__push_keys(), public.lec__push_setkeys(text, text), public.lec__push_claim(),
+                       public.lec__push_done(jsonb, jsonb), public.lec_push_tick(), public.lec__push_status()
+  from public, anon, authenticated;
+revoke all on function public.lec_push_on(text), public.lec_push_save(text, text, text, text), public.lec_push_off(text),
+                       public.lec_push_state(uuid)
+  from public;
+grant execute on function public.lec_push_on(text), public.lec_push_save(text, text, text, text), public.lec_push_off(text)
+  to anon, authenticated;
+revoke all on function public.lec_push_state(uuid) from anon;
+grant execute on function public.lec_push_state(uuid) to authenticated;
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant execute on function public.lec__push_keys(), public.lec__push_setkeys(text, text), public.lec__push_claim(),
+                              public.lec__push_done(jsonb, jsonb)
+      to service_role;
+  end if;
+end
+$$;
+
+-- 매분 점검 걸기(pg_net · pg_cron) · 못 하면 이 덩어리만 건너뜀(까닭은 맨 아래 표 «새 영상 알림» 칸 · 그때는 대시보드 Integrations › Cron)
+do $$
+begin
+  begin
+    create extension if not exists pg_net;
+  exception when others then
+    perform set_config('his.lec_push_err', 'pg_net ' || sqlstate, true);
+    raise notice 'N1 · pg_net 을 못 켬(% %)', sqlstate, sqlerrm;
+  end;
+  begin
+    create extension if not exists pg_cron;
+  exception when others then
+    perform set_config('his.lec_push_err',
+                       coalesce(nullif(current_setting('his.lec_push_err', true), '') || ' · ', '') || 'pg_cron ' || sqlstate, true);
+    raise notice 'N1 · pg_cron 을 못 켬(% %)', sqlstate, sqlerrm;
+  end;
+  if to_regnamespace('cron') is null then
+    perform set_config('his.lec_push_err',
+                       coalesce(nullif(current_setting('his.lec_push_err', true), '') || ' · ', '') || 'cron 없음', true);
+    return;
+  end if;
+  begin
+    execute 'select cron.schedule($1, $2, $3)' using 'his-lec-push', '* * * * *', 'select public.lec_push_tick()';
+  exception when others then
+    perform set_config('his.lec_push_err',
+                       coalesce(nullif(current_setting('his.lec_push_err', true), '') || ' · ', '') || '매분 점검 ' || sqlstate, true);
+    raise notice 'N1 · 매분 점검을 못 걺(% %)', sqlstate, sqlerrm;
+  end;
+end
+$$;
+
+-- 스스로 점검(N1 새 영상 알림): 알림 때 표 · 트리거(올림 · 고침 · 숨김 · 풀기 · 반 더함 · 끔/켬) ·
+-- 보낼 것 고르기(가짜 main · 묶음 · 이미 연 학생 · 한 번만 · 새벽 막음 · 12시간 · 시험 학생) · 결과 적기 · 학생 · 선생님 함수 · 권한.
+-- 점검용으로 바꾼 설정 · 넣은 강의 · 열쇠 · 폰은 끝에 되돌려 남지 않습니다(실제로 알림을 보내지 않음)
+do $$
+declare
+  r        jsonb;
+  v_n      integer;
+  v_t      text;
+  v_d      date := (now() at time zone 'Asia/Seoul')::date;
+  v_x      timestamptz;
+  v_y      timestamptz;
+  v_ks     text := replace(gen_random_uuid()::text, '-', '');
+  v_c1     text;
+  v_c2     text;
+  v_c3     text;
+  v_a      uuid;
+  v_b      uuid;
+  v_c      uuid;
+  v_e      uuid;
+  v_f      uuid;
+  v_g      uuid;
+  v_h      uuid;
+  v_i      uuid;
+  v_j      uuid;
+  v_k      uuid;
+  v_m      uuid;
+  v_w      uuid;
+  v_l1     uuid;
+  v_l2     uuid;
+  v_l3     uuid;
+  v_m1     uuid;
+  v_m2     uuid;
+  v_m3     uuid;
+  v_t1     uuid;
+  v_ka1    text;
+  v_ka2    text;
+  v_kb     text;
+  v_kc     text;
+  v_sa1    bigint;
+  v_sa2    bigint;
+  v_sb     bigint;
+  v_sc     bigint;
+  v_main   jsonb;
+  v_p      text := 'B' || repeat('A', 86);
+  v_au     text := 'B' || repeat('A', 21);
+  v_ep     text;
+  v_row    public.lec_push_queue;
+  v_case   record;
+begin
+  begin
+    -- 1) 알림 때(한국 시각 · 원장님 11-17 표): 00:30 · 00:59 바로 · 01:00 · 07:30 · 07:59 아침 8:00 · 08:00 · 23:50 바로 · 공개일 앞날 = 그날 8:00
+    for v_case in
+      select * from (values
+        ('00:30'::time, 0, false), ('00:59'::time, 0, false), ('01:00'::time, 0, true), ('07:30'::time, 0, true),
+        ('07:59'::time, 0, true), ('08:00'::time, 0, false), ('23:50'::time, 0, false), ('15:00'::time, 1, true),
+        ('03:00'::time, 1, true), ('12:00'::time, -1, false), ('03:00'::time, -1, true)
+      ) as t(hm, dp, morning)
+    loop
+      v_x := (v_d + v_case.hm) at time zone 'Asia/Seoul';
+      if public.lec_push_due(v_x, v_d + v_case.dp, '01:00', '08:00')
+         is distinct from (case when v_case.morning then ((v_d + greatest(v_case.dp, 0)) + time '08:00') at time zone 'Asia/Seoul'
+                                else v_x end) then
+        raise exception '점검 실패(N1 알림 때 % · 공개일 %일)', v_case.hm, v_case.dp;
+      end if;
+    end loop;
+    if public.lec_push_due('2026-11-16 17:30:00+00', date '2026-11-17', '01:00', '08:00') is distinct from '2026-11-17 08:00:00+09'::timestamptz
+       or public.lec_push_due('2026-11-20 17:00:00+00', date '2026-11-20', '01:00', '08:00') is distinct from '2026-11-21 08:00:00+09'::timestamptz
+       or public.lec_push_due('2026-11-17 03:00:00+00', null, '01:00', '08:00') is distinct from '2026-11-17 03:00:00+00'::timestamptz
+       or public.lec_push_due('2026-11-17 07:00:00+09', date '2026-11-17', '00:00', '07:30') is distinct from '2026-11-17 07:30:00+09'::timestamptz
+       or public.lec_push_due('2026-11-17 02:00:00+09', date '2026-11-17') is distinct from '2026-11-17 08:00:00+09'::timestamptz then
+      raise exception '점검 실패(N1 알림 때 · 세계시 · 주말 · 빈 공개일 · 시각 바꿈 · 기본값)';
+    end if;
+    if public.lec__push_day(date '2026-11-17') <> '11.17(화)' or public.lec__push_day(date '2027-01-05') <> '1.5(화)'
+       or public.lec__push_hm('08:00') <> '8시' or public.lec__push_hm('07:30') <> '7시 30분'
+       or public.lec__push_cls(array['*', 'b', '', 'a', 'b']) <> array['a', 'b']
+       or public.lec__push_minus(array['a', 'b', 'c'], array['b']) <> array['a', 'c']
+       or public.lec__push_union(array['b'], array['a', 'b']) <> array['a', 'b']
+       or not (public.lec__push_names(array['점검 나', 'AB', '']) @> array['ab', '점검나']
+               and public.lec__push_names(array['점검 나', 'AB', '']) <@ array['ab', '점검나']) then
+      raise exception '점검 실패(N1 도움 함수)';
+    end if;
+
+    -- 2) 점검 설정: 켬 · 01:00 · 08:00 · 열쇠(없으면 점검용 · 끝에 되돌림)
+    update public.lec_push_cfg
+       set mode = 'on', test_names = '{}', night_from = '01:00', morning_at = '08:00',
+           vapid_pub = coalesce(vapid_pub, v_p), vapid_priv = coalesce(vapid_priv, 'B' || repeat('A', 42))
+     where id = 1;
+    v_c1 := 'c-selftest-n1-' || left(v_ks, 8);
+    v_c2 := v_c1 || 'b';
+    v_c3 := v_c1 || 'c';
+
+    -- a) 올림 = 기다림 · 때 = 지금 기준 lec_push_due
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1a', 'selftest000', 100, array[v_c1], v_d) returning id into v_a;
+    select * into v_row from public.lec_push_queue where lecture_id = v_a;
+    if v_row.status is distinct from 'wait' or v_row.cls is distinct from array[v_c1]
+       or v_row.due_at is distinct from public.lec_push_due(now(), v_d, '01:00', '08:00') then
+      raise exception '점검 실패(N1 올림): % % %', v_row.status, v_row.cls, v_row.due_at;
+    end if;
+    -- b) 제목만 고침(저장은 반 · 숨김도 같이 보냄) = 그대로 기다림
+    update public.lec_lecture set title = 'selftest-n1a2', class_ids = array[v_c1], hidden = false where id = v_a;
+    select * into v_row from public.lec_push_queue where lecture_id = v_a;
+    if v_row.status is distinct from 'wait' or v_row.cls is distinct from array[v_c1] then
+      raise exception '점검 실패(N1 고침): % %', v_row.status, v_row.cls;
+    end if;
+    -- c) 숨김 = hold · d) 숨김 풀기 = 다시 기다림
+    update public.lec_lecture set hidden = true where id = v_a;
+    select * into v_row from public.lec_push_queue where lecture_id = v_a;
+    if v_row.status is distinct from 'hold' or v_row.due_at is not null or v_row.cls is distinct from array[v_c1] then
+      raise exception '점검 실패(N1 숨김): % %', v_row.status, v_row.due_at;
+    end if;
+    update public.lec_lecture set hidden = false where id = v_a;
+    select * into v_row from public.lec_push_queue where lecture_id = v_a;
+    if v_row.status is distinct from 'wait' or v_row.due_at is distinct from public.lec_push_due(now(), v_d, '01:00', '08:00') then
+      raise exception '점검 실패(N1 숨김 풀기): % %', v_row.status, v_row.due_at;
+    end if;
+    -- e) 숨긴 채 올림 = hold · f) 공개일이 앞날 = 그날 아침 8:00
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, hidden)
+    values ('selftest-n1b', 'selftest000', 100, array[v_c1], v_d, true) returning id into v_b;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, posted_on)
+    values ('selftest-n1c', 'selftest000', 100, array[v_c1], v_d + 2, v_d + 2) returning id into v_c;
+    if (select status from public.lec_push_queue where lecture_id = v_b) is distinct from 'hold'
+       or (select due_at from public.lec_push_queue where lecture_id = v_c) is distinct from ((v_d + 2) + time '08:00') at time zone 'Asia/Seoul' then
+      raise exception '점검 실패(N1 숨긴 채 올림 · 앞날 공개)';
+    end if;
+    -- g) «전체»만 = 줄 없음 · h) «전체» + 반 = 그 반만
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1e', 'selftest000', 100, array['*'], v_d) returning id into v_e;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1f', 'selftest000', 100, array['*', v_c2], v_d) returning id into v_f;
+    if exists (select 1 from public.lec_push_queue where lecture_id = v_e)
+       or (select cls from public.lec_push_queue where lecture_id = v_f) is distinct from array[v_c2] then
+      raise exception '점검 실패(N1 전체 강의)';
+    end if;
+    -- i) 기다리는 강의에 반 더함 = 두 반 · j) 반을 모두 빼면(전체만) = gone
+    update public.lec_lecture set class_ids = array[v_c2, v_c1] where id = v_a;
+    update public.lec_lecture set class_ids = array['*'] where id = v_f;
+    if (select cls from public.lec_push_queue where lecture_id = v_a) is distinct from array[v_c1, v_c2]
+       or (select status from public.lec_push_queue where lecture_id = v_f) is distinct from 'gone' then
+      raise exception '점검 실패(N1 반 바꿈)';
+    end if;
+    -- k) 보낸 강의(공개일 5일 전)에 반 더함 = 안 감 · l) 공개일 3일 안 = 더한 반에만
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, posted_on)
+    values ('selftest-n1g', 'selftest000', 100, array[v_c1], v_d - 5, v_d - 5) returning id into v_g;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1h', 'selftest000', 100, array[v_c1], v_d) returning id into v_h;
+    update public.lec_push_queue set status = 'sent', due_at = null, cls = '{}', done_cls = array[v_c1], sent_at = now()
+     where lecture_id in (v_g, v_h);
+    update public.lec_lecture set class_ids = array[v_c1, v_c3] where id in (v_g, v_h);
+    if (select status from public.lec_push_queue where lecture_id = v_g) is distinct from 'sent'
+       or (select status from public.lec_push_queue where lecture_id = v_h) is distinct from 'wait'
+       or (select cls from public.lec_push_queue where lecture_id = v_h) is distinct from array[v_c3] then
+      raise exception '점검 실패(N1 보낸 뒤 반 더함)';
+    end if;
+    -- m) 다 보낸 강의를 숨겼다 풀어도 다시 안 감
+    update public.lec_push_queue set status = 'sent', due_at = null, cls = '{}', done_cls = array[v_c1, v_c3] where lecture_id = v_h;
+    update public.lec_lecture set hidden = true where id = v_h;
+    update public.lec_lecture set hidden = false where id = v_h;
+    if (select status from public.lec_push_queue where lecture_id = v_h) is distinct from 'sent' then
+      raise exception '점검 실패(N1 보낸 뒤 숨김 풀기)';
+    end if;
+    -- n) 숨긴 채 올린 지 5일 지나 풀기 = 안 감(late) · o) 공개 끝이 지난 강의 = late
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, posted_on, hidden)
+    values ('selftest-n1i', 'selftest000', 100, array[v_c1], v_d - 5, v_d - 5, true) returning id into v_i;
+    update public.lec_lecture set hidden = false where id = v_i;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, posted_on, until)
+    values ('selftest-n1j', 'selftest000', 100, array[v_c1], v_d - 3, v_d - 3, v_d - 1) returning id into v_j;
+    if (select status from public.lec_push_queue where lecture_id = v_i) is distinct from 'late'
+       or (select status from public.lec_push_queue where lecture_id = v_j) is distinct from 'late' then
+      raise exception '점검 실패(N1 늦은 풀기 · 공개 끝)';
+    end if;
+    -- p) 끔 = 기다리던 것 모두 off · 끈 채 올림 = off · 끈 채 숨김 풀기 = off · 다시 켜도 그대로(쏟아지지 않음)
+    update public.lec_push_cfg set mode = 'off' where id = 1;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1k', 'selftest000', 100, array[v_c1], v_d) returning id into v_k;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, hidden)
+    values ('selftest-n1m', 'selftest000', 100, array[v_c1], v_d, true) returning id into v_m;
+    update public.lec_lecture set hidden = false where id = v_m;
+    update public.lec_push_cfg set mode = 'on' where id = 1;
+    if (select status from public.lec_push_queue where lecture_id = v_a) is distinct from 'off'
+       or (select status from public.lec_push_queue where lecture_id = v_c) is distinct from 'off'
+       or (select status from public.lec_push_queue where lecture_id = v_k) is distinct from 'off'
+       or (select status from public.lec_push_queue where lecture_id = v_m) is distinct from 'off' then
+      raise exception '점검 실패(N1 끔 · 켬)';
+    end if;
+
+    -- 3) 보낼 것 고르기: 앞 점검 강의는 모두 gone 으로 두고 · 가짜 main(점검가 폰 둘 · 점검나 · 다른 반 점검다)
+    update public.lec_push_queue set status = 'gone', due_at = null
+     where lecture_id in (v_a, v_b, v_c, v_f, v_g, v_h, v_i, v_j, v_k, v_m);
+    v_main := jsonb_build_object('classes', jsonb_build_array(
+      jsonb_build_object('id', v_c1, 'name', '점검1', 'students', jsonb_build_array(
+        jsonb_build_object('id', 'selftest-n1a', 'name', '점검가'),
+        jsonb_build_object('id', 'selftest-n1b', 'name', '점검나'))),
+      jsonb_build_object('id', v_c2, 'name', '점검2', 'students', jsonb_build_array(
+        jsonb_build_object('id', 'selftest-n1c', 'name', '점검다')))));
+    v_ka1 := 'selftest' || v_ks || 'a1';
+    v_ka2 := 'selftest' || v_ks || 'a2';
+    v_kb := 'selftest' || v_ks || 'b';
+    v_kc := 'selftest' || v_ks || 'c';
+    insert into public.lec_key (kh, sid, rid, pin, sname, cls) values
+      (public.lec__kh(v_ka1), 'selftest-n1a|점검가', 'selftest-n1a', '', '점검가', array[v_c1]),
+      (public.lec__kh(v_ka2), 'selftest-n1a|점검가', 'selftest-n1a', '', '점검가', array[v_c1]),
+      (public.lec__kh(v_kb), 'selftest-n1b|점검나', 'selftest-n1b', '', '점검나', array[v_c1]),
+      (public.lec__kh(v_kc), 'selftest-n1c|점검다', 'selftest-n1c', '', '점검다', array[v_c2]);
+    v_ep := 'https://fcm.googleapis.com/fcm/send/selftest-' || v_ks;
+    r := public.lec_push_save(v_ka1, v_ep || '-a1', v_p, v_au);
+    if not coalesce((r ->> 'ok')::boolean, false) then raise exception '점검 실패(N1 폰 저장): %', r; end if;
+    r := public.lec_push_save(v_ka2, v_ep || '-a2', v_p, v_au);
+    r := public.lec_push_save(v_kb, 'https://web.push.apple.com/selftest-' || v_ks || '-b', v_p, v_au);
+    r := public.lec_push_save(v_kc, v_ep || '-c', v_p, v_au);
+    select id into v_sa1 from public.lec_push_sub where endpoint = v_ep || '-a1';
+    select id into v_sa2 from public.lec_push_sub where endpoint = v_ep || '-a2';
+    select id into v_sb from public.lec_push_sub where endpoint = 'https://web.push.apple.com/selftest-' || v_ks || '-b';
+    select id into v_sc from public.lec_push_sub where endpoint = v_ep || '-c';
+    if v_sa1 is null or v_sa2 is null or v_sb is null or v_sc is null then
+      raise exception '점검 실패(N1 폰 넷 저장)';
+    end if;
+    if public.lec__push_n(v_main, array[v_c1], null) <> 2 or public.lec__push_n(v_main, array[v_c2], null) <> 1
+       or public.lec__push_n(v_main, array[v_c1], array['점검나']) <> 1 then
+      raise exception '점검 실패(N1 켠 학생 수)';
+    end if;
+
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-L1', 'selftest000', 100, array[v_c1], v_d - 1) returning id into v_l1;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-L2', 'selftest000', 100, array[v_c1], v_d) returning id into v_l2;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-L3', 'selftest000', 100, array[v_c2], v_d) returning id into v_l3;
+    insert into public.lec_progress (sid, lecture_id, first_at) values ('selftest-n1b|점검나', v_l2, now());
+    v_x := ((v_d + 1) + time '12:00') at time zone 'Asia/Seoul';
+    update public.lec_push_queue set due_at = v_x - interval '1 minute' where lecture_id in (v_l1, v_l2, v_l3);
+    r := public.lec__push_take(v_main, v_x);
+    select count(*) into v_n from jsonb_array_elements(r -> 'items') as t(x)
+     where (x ->> 'sub')::bigint not in (v_sa1, v_sa2, v_sb, v_sc);
+    if v_n <> 0 then raise exception '점검 실패(N1 · 점검 아닌 폰 %개가 골라짐)', v_n; end if;
+    if (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
+         is distinct from jsonb_build_array(v_l1, v_l2)
+       or (select x ->> 't' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
+         is distinct from '새 수업 영상 2개가 올라왔어요'
+       or (select x ->> 'b' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
+         is distinct from public.lec__push_day(v_d - 1) || ' selftest-n1-L1 외 1개'
+       or (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa2)
+         is distinct from jsonb_build_array(v_l1, v_l2)
+       or (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
+         is distinct from jsonb_build_array(v_l1)
+       or (select x ->> 't' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
+         is distinct from '새 수업 영상이 올라왔어요'
+       or (select x ->> 'b' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
+         is distinct from public.lec__push_day(v_d - 1) || ' selftest-n1-L1'
+       or (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sc)
+         is distinct from jsonb_build_array(v_l3) then
+      raise exception '점검 실패(N1 묶음 · 이미 연 학생): %', left(r::text, 600);
+    end if;
+    if r::text ~ '(보세요|점검가|점검나|점검다|결석|보강)' then
+      raise exception '점검 실패(N1 알림 글에 학생 이름 · 쓰지 않는 말)';
+    end if;
+    if (select status from public.lec_push_queue where lecture_id = v_l1) is distinct from 'sent'
+       or (select done_cls from public.lec_push_queue where lecture_id = v_l3) is distinct from array[v_c2]
+       or (select sent_at from public.lec_push_queue where lecture_id = v_l2) is distinct from v_x
+       or (select count(*) from public.lec_push_log where lecture_id in (v_l1, v_l2, v_l3)) <> 6 then
+      raise exception '점검 실패(N1 보낸 기록)';
+    end if;
+    r := public.lec__push_take(v_main, v_x);
+    if exists (select 1 from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint in (v_sa1, v_sa2, v_sb, v_sc)) then
+      raise exception '점검 실패(N1 두 번 보냄)';
+    end if;
+
+    -- 결과 적기: 201 = 성공 · 410 = 폰 줄 지움 · 500 = 그대로 · 토큰 묶음 저장
+    r := public.lec__push_done(jsonb_build_array(
+           jsonb_build_object('sub', v_sa1, 'code', 201, 'ids', jsonb_build_array(v_l1, v_l2)),
+           jsonb_build_object('sub', v_sa2, 'code', 410, 'ids', jsonb_build_array(v_l1, v_l2)),
+           jsonb_build_object('sub', v_sb, 'code', 500, 'ids', jsonb_build_array(v_l1))),
+         jsonb_build_object('selftest', v_ks));
+    if exists (select 1 from public.lec_push_sub where id = v_sa2)
+       or (select last_ok_at from public.lec_push_sub where id = v_sa1) is null
+       or (select last_ok_at from public.lec_push_sub where id = v_sb) is not null
+       or (select code from public.lec_push_log where lecture_id = v_l1 and sub_id = v_sa1) is distinct from 201
+       or (select code from public.lec_push_log where lecture_id = v_l1 and sub_id = v_sb) is distinct from 500
+       or (select jwt ->> 'selftest' from public.lec_push_cfg where id = 1) is distinct from v_ks
+       or (r ->> 'sent')::int <> 1 or (r ->> 'gone')::int <> 1 then
+      raise exception '점검 실패(N1 결과 적기): %', r;
+    end if;
+
+    -- 보낸 뒤 반 더함(3일 안) = 더한 반에만 · 이미 받은 폰은 안 받음
+    update public.lec_lecture set class_ids = array[v_c2, v_c1] where id = v_l3;
+    if (select cls from public.lec_push_queue where lecture_id = v_l3) is distinct from array[v_c1] then
+      raise exception '점검 실패(N1 보낸 뒤 반 더함 줄)';
+    end if;
+    update public.lec_push_queue set due_at = v_x - interval '1 minute' where lecture_id = v_l3;
+    r := public.lec__push_take(v_main, v_x);
+    if (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
+         is distinct from jsonb_build_array(v_l3)
+       or (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
+         is distinct from jsonb_build_array(v_l3)
+       or exists (select 1 from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint in (v_sa2, v_sc)) then
+      raise exception '점검 실패(N1 더한 반에만): %', left(r::text, 600);
+    end if;
+
+    -- 새벽 막음: 01:00:30 에는 00:59 에 잡힌 것만 · 00:40 것은 아침 8:00:30 에 · 13시간 지난 것은 late
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-M1', 'selftest000', 100, array[v_c1], v_d) returning id into v_m1;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-M2', 'selftest000', 100, array[v_c1], v_d) returning id into v_m2;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-M3', 'selftest000', 100, array[v_c1], v_d) returning id into v_m3;
+    v_y := ((v_d + 1) + time '08:00:30') at time zone 'Asia/Seoul';
+    update public.lec_push_queue set due_at = ((v_d + 1) + time '00:59') at time zone 'Asia/Seoul' where lecture_id = v_m1;
+    update public.lec_push_queue set due_at = ((v_d + 1) + time '00:40') at time zone 'Asia/Seoul' where lecture_id = v_m2;
+    update public.lec_push_queue set due_at = v_y - interval '13 hours' where lecture_id = v_m3;
+    r := public.lec__push_take(v_main, ((v_d + 1) + time '01:00:30') at time zone 'Asia/Seoul');
+    if (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
+         is distinct from jsonb_build_array(v_m1)
+       or (select status from public.lec_push_queue where lecture_id = v_m2) is distinct from 'wait'
+       or (select status from public.lec_push_queue where lecture_id = v_m3) is distinct from 'wait' then
+      raise exception '점검 실패(N1 새벽 막음): %', left(r::text, 600);
+    end if;
+    r := public.lec__push_take(v_main, v_y);
+    if (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
+         is distinct from jsonb_build_array(v_m2)
+       or (select status from public.lec_push_queue where lecture_id = v_m3) is distinct from 'late' then
+      raise exception '점검 실패(N1 아침 8:00 · 12시간): %', left(r::text, 600);
+    end if;
+
+    -- 시험: 시험 학생(점검나) 폰에만 · 학생 함수도 시험 학생에게만 켜짐
+    update public.lec_push_cfg set mode = 'test', test_names = array['점검 나'] where id = 1;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-T1', 'selftest000', 100, array[v_c1], v_d) returning id into v_t1;
+    update public.lec_push_queue set due_at = v_x - interval '1 minute' where lecture_id = v_t1;
+    r := public.lec__push_take(v_main, v_x);
+    if (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
+         is distinct from jsonb_build_array(v_t1)
+       or exists (select 1 from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1) then
+      raise exception '점검 실패(N1 시험 학생에게만): %', left(r::text, 600);
+    end if;
+    r := public.lec_push_on(v_ka1);
+    if coalesce((r ->> 'on')::boolean, true) or coalesce((r ->> 'show')::boolean, true) then
+      raise exception '점검 실패(N1 시험 중 다른 학생 카드): %', r;
+    end if;
+    r := public.lec_push_on(v_kb);
+    if not coalesce((r ->> 'on')::boolean, false) or not coalesce((r ->> 'show')::boolean, false) then
+      raise exception '점검 실패(N1 시험 학생 카드): %', r;
+    end if;
+    update public.lec_push_cfg set mode = 'on', test_names = '{}' where id = 1;
+
+    -- 4) 학생 함수: 없는 열쇠 · 카드 · 아침 시각 글 · 틀린 주소 · 열쇠 하나에 폰 하나 · 주소 옮김 · 지움 · 꺼짐
+    r := public.lec_push_on('selftest-none-' || v_ks);
+    if (r ->> 'err') is distinct from 'key' then raise exception '점검 실패(N1 없는 열쇠): %', r; end if;
+    r := public.lec_push_on(v_ka1);
+    if not coalesce((r ->> 'show')::boolean, false) or (r ->> 'ep') is distinct from v_ep || '-a1'
+       or (r ->> 'key') is distinct from (select vapid_pub from public.lec_push_cfg where id = 1) or (r ->> 'at') is distinct from '8시' then
+      raise exception '점검 실패(N1 학생 카드): %', r;
+    end if;
+    update public.lec_push_cfg set morning_at = '07:30' where id = 1;
+    r := public.lec_push_on(v_ka1);
+    if (r ->> 'at') is distinct from '7시 30분' then raise exception '점검 실패(N1 아침 시각 글): %', r; end if;
+    update public.lec_push_cfg set morning_at = '08:00' where id = 1;
+    foreach v_t in array array['https://evil.example.com/x', 'http://fcm.googleapis.com/fcm/send/x',
+                               'https://fcm.googleapis.com.evil.example/x', 'https://fcm.googleapis.com/fcm/send/a b',
+                               'https://fcm.googleapis.com/' || repeat('x', 1000)] loop
+      r := public.lec_push_save(v_ka1, v_t, v_p, v_au);
+      if (r ->> 'err') is distinct from 'bad' then raise exception '점검 실패(N1 틀린 주소 받음): %', left(v_t, 60); end if;
+    end loop;
+    r := public.lec_push_save(v_ka1, v_ep || '-z', 'short', v_au);
+    if (r ->> 'err') is distinct from 'bad' then raise exception '점검 실패(N1 틀린 열쇠 p256dh 받음)'; end if;
+    r := public.lec_push_save(v_ka1, v_ep || '-z', v_p, v_au || '=');
+    if (r ->> 'err') is distinct from 'bad' then raise exception '점검 실패(N1 틀린 열쇠 auth 받음)'; end if;
+    r := public.lec_push_save(v_ka1, v_ep || '-a1b', v_p, v_au);
+    if (select count(*) from public.lec_push_sub where kh = public.lec__kh(v_ka1)) <> 1
+       or (select endpoint from public.lec_push_sub where kh = public.lec__kh(v_ka1)) is distinct from v_ep || '-a1b' then
+      raise exception '점검 실패(N1 열쇠 하나에 폰 하나)';
+    end if;
+    r := public.lec_push_save(v_kb, v_ep || '-a1b', v_p, v_au);
+    if (select count(*) from public.lec_push_sub where kh = public.lec__kh(v_ka1)) <> 0
+       or (select count(*) from public.lec_push_sub where kh = public.lec__kh(v_kb)) <> 1 then
+      raise exception '점검 실패(N1 주소 옮김)';
+    end if;
+    r := public.lec_push_off(v_kb);
+    if (r ->> 'n')::int <> 1 or exists (select 1 from public.lec_push_sub where kh = public.lec__kh(v_kb)) then
+      raise exception '점검 실패(N1 지움): %', r;
+    end if;
+    update public.lec_push_cfg set mode = 'off' where id = 1;
+    r := public.lec_push_on(v_ka1);
+    if coalesce((r ->> 'on')::boolean, true) then raise exception '점검 실패(N1 꺼짐 카드): %', r; end if;
+    r := public.lec_push_save(v_ka1, v_ep || '-q', v_p, v_au);
+    if (r ->> 'err') is distinct from 'off' then raise exception '점검 실패(N1 꺼짐 저장): %', r; end if;
+    update public.lec_push_cfg set mode = 'on' where id = 1;
+
+    -- 5) 선생님 함수: 로그인 안 함 = 막힘 · 기다림 · 숨김 · «전체»만 · 보냄 · 시험 중 관리자만
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1w', 'selftest000', 100, array[v_c1], v_d) returning id into v_w;
+    perform set_config('request.jwt.claims', '', true);
+    r := public.lec_push_state(v_w);
+    if (r ->> 'err') is distinct from 'forbidden' then raise exception '점검 실패(N1 선생님 함수 · 학생): %', r; end if;
+    perform set_config('request.jwt.claims', '{"role":"authenticated","email":"joey@his.kr"}', true);
+    r := public.lec_push_state(v_w);
+    select * into v_row from public.lec_push_queue where lecture_id = v_w;
+    if not coalesce((r ->> 'show')::boolean, false) or (r ->> 'status') is distinct from 'wait'
+       or (r -> 'cls') is distinct from jsonb_build_array(v_c1) or jsonb_typeof(r -> 'n') is distinct from 'number'
+       or (r ->> 'when') is distinct from (case when v_row.due_at <= now() + interval '90 seconds' then 'now'
+                                                when (v_row.due_at at time zone 'Asia/Seoul')::date = v_d then 'today' else 'day' end)
+       or (r ->> 'due_hm') is distinct from to_char(v_row.due_at at time zone 'Asia/Seoul', 'FMHH24:MI')
+       or (r ->> 'due_day') is distinct from public.lec__push_day((v_row.due_at at time zone 'Asia/Seoul')::date) then
+      raise exception '점검 실패(N1 선생님 함수 · 기다림): %', r;
+    end if;
+    update public.lec_lecture set hidden = true where id = v_w;
+    r := public.lec_push_state(v_w);
+    if (r ->> 'status') is distinct from 'hold' or not coalesce((r ->> 'hidden')::boolean, false)
+       or not coalesce((r ->> 'again')::boolean, false) then
+      raise exception '점검 실패(N1 선생님 함수 · 숨김): %', r;
+    end if;
+    r := public.lec_push_state(v_i);
+    if coalesce((r ->> 'again')::boolean, true) then raise exception '점검 실패(N1 선생님 함수 · 3일 지남): %', r; end if;
+    r := public.lec_push_state(v_e);
+    if coalesce((r ->> 'show')::boolean, true) then raise exception '점검 실패(N1 선생님 함수 · 전체 강의): %', r; end if;
+    r := public.lec_push_state(v_l1);
+    if (r ->> 'status') is distinct from 'sent' or (r ->> 'sent_day') is distinct from public.lec__push_day(v_d + 1)
+       or (r ->> 'sent_hm') is distinct from '12:00' then
+      raise exception '점검 실패(N1 선생님 함수 · 보냄): %', r;
+    end if;
+    update public.lec_push_cfg set mode = 'test' where id = 1;
+    r := public.lec_push_state(v_w);
+    if coalesce((r ->> 'show')::boolean, true) then raise exception '점검 실패(N1 시험 중 선생님 줄): %', r; end if;
+    perform set_config('request.jwt.claims', '{"role":"authenticated","email":"benjamin@his.kr"}', true);
+    r := public.lec_push_state(v_w);
+    if not coalesce((r ->> 'show')::boolean, false) then raise exception '점검 실패(N1 시험 중 관리자 줄): %', r; end if;
+    update public.lec_push_cfg set mode = 'off' where id = 1;
+    r := public.lec_push_state(v_w);
+    if coalesce((r ->> 'show')::boolean, true) then raise exception '점검 실패(N1 꺼짐 선생님 줄): %', r; end if;
+    perform set_config('request.jwt.claims', '', true);
+
+    -- 6) 권한: 학생 함수 = 누구나 · 선생님 함수 = 로그인한 사람만 · 서버 함수 = 서버 열쇠만 · 표 = 아무도 직접 못 읽음
+    if not has_function_privilege('anon', 'public.lec_push_on(text)', 'execute')
+       or not has_function_privilege('anon', 'public.lec_push_save(text, text, text, text)', 'execute')
+       or not has_function_privilege('anon', 'public.lec_push_off(text)', 'execute')
+       or not has_function_privilege('authenticated', 'public.lec_push_on(text)', 'execute')
+       or has_function_privilege('anon', 'public.lec_push_state(uuid)', 'execute')
+       or not has_function_privilege('authenticated', 'public.lec_push_state(uuid)', 'execute')
+       or has_function_privilege('anon', 'public.lec_push_tick()', 'execute')
+       or has_function_privilege('authenticated', 'public.lec_push_tick()', 'execute')
+       or has_function_privilege('anon', 'public.lec_push_due(timestamptz, date, time, time)', 'execute')
+       or has_function_privilege('authenticated', 'public.lec_push_due(timestamptz, date, time, time)', 'execute') then
+      raise exception '점검 실패(N1 함수 권한)';
+    end if;
+    if exists (select 1 from pg_roles where rolname = 'service_role')
+       and (not has_function_privilege('service_role', 'public.lec__push_claim()', 'execute')
+            or not has_function_privilege('service_role', 'public.lec__push_done(jsonb, jsonb)', 'execute')
+            or not has_function_privilege('service_role', 'public.lec__push_keys()', 'execute')
+            or not has_function_privilege('service_role', 'public.lec__push_setkeys(text, text)', 'execute')) then
+      raise exception '점검 실패(N1 서버 함수 권한)';
+    end if;
+    select string_agg(c.relname || ' ' || u.rl, ', ') into v_t
+      from pg_class c
+     cross join unnest(array['anon', 'authenticated']) as u(rl)
+     where c.relnamespace = 'public'::regnamespace
+       and c.relname in ('lec_push_cfg', 'lec_push_sub', 'lec_push_queue', 'lec_push_log')
+       and (has_table_privilege(u.rl, c.oid, 'select,insert,update,delete') or not c.relrowsecurity);
+    if v_t is not null then
+      raise exception '점검 실패(N1 표 권한): %', v_t;
+    end if;
+    -- 속 함수 전부(이 절이 파일 맨 끝이라 N1 의 lec__push_* 까지): anon · authenticated 가 직접 못 부름
+    select string_agg(p.oid::regprocedure::text, ', ' order by p.oid::regprocedure::text) into v_t
+      from pg_proc p
+     where p.pronamespace = 'public'::regnamespace
+       and left(p.proname, 5) = 'lec__'
+       and p.proname <> 'lec__is_staff'
+       and p.prorettype <> 'trigger'::regtype
+       and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'));
+    if v_t is not null then
+      raise exception '점검 실패(N1 · 속 함수를 밖에서 부를 수 있음): %', v_t;
+    end if;
+
+    raise exception 'LEC_SELFTEST_OK';
+  exception when others then
+    if sqlerrm <> 'LEC_SELFTEST_OK' then raise; end if;
+  end;
+end
+$$;
+
 notify pgrst, 'reload schema';
 
 select '강의실 준비 끝' as "결과",
-       '점검 6/6 통과' as "점검",
+       '점검 7/7 통과' as "점검",
        (select count(*) from public.lec__roster()) as "학생 수",
        (select count(*) from public.lec_lecture) as "강의 수",
-       public.lec__pdf_store() as "PDF 저장 곳";
+       public.lec__pdf_store() as "PDF 저장 곳",
+       public.lec__push_status() as "새 영상 알림";

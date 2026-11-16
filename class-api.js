@@ -2027,3 +2027,137 @@
   };
   for (var name in api) { if (has(api, name)) Lec[name] = api[name]; }
 })(window);
+
+/* ======================================================= N1 (11-17) 새 영상 알림(CLAUDE.md §8-205)
+   - 학생(홈 화면 앱에서만 부름): pushOn(key) = {ok, on, show, key(알림 공개 열쇠), ep(이 열쇠에 저장된 푸시 주소), at('8시')}
+     서버에 없거나(옛 SQL) 실패하면 null = 카드 · 첫 로그인 단계 안 보임 · pushSave(key, sub) · pushOff(key) 는 실패해도 값으로
+   - 선생님: pushState(call, id) = lec_push_state 답(줄이 없거나 실패 · 옛 서버 = null) ·
+     pushLine(r, names) = 올린 뒤 카드 한 줄 {cls, b, t, m} · pushEditLine(r) = 고치기 서랍 숨김 칩 아래 한 줄(글)
+     시각 글은 서버가 준 값(due_day · due_hm · sent_day · sent_hm)만 씀(화면 시계 안 씀)
+   - 글: 학생 카드 = pushCardText(at) · 켠 순간 한 번 = PUSH_ON_TOAST */
+(function (w) {
+  'use strict';
+
+  var Lec = w.Lec;
+  if (!Lec) return;
+
+  function str(v) { return v == null ? '' : String(v); }
+  function isArr(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+  function isObj(v) { return !!v && typeof v === 'object' && !isArr(v); }
+  /* 서버에 함수가 아직 없거나 막힘: 404 · 401 · 403 · PGRST202 · 42883 → 이 화면에서는 다시 묻지 않음 */
+  function gone(e) {
+    return !!e && (e.status === 404 || e.status === 401 || e.status === 403 || e.code === 'PGRST202' || e.code === '42883');
+  }
+  function b64u(buf) {
+    var b = new Uint8Array(buf), s = '', i;
+    for (i = 0; i < b.length; i += 1) s += String.fromCharCode(b[i]);
+    return w.btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function unb64u(s) {
+    var t = str(s).replace(/-/g, '+').replace(/_/g, '/'), bin, o, i;
+    while (t.length % 4) t += '=';
+    bin = w.atob(t);
+    o = new Uint8Array(bin.length);
+    for (i = 0; i < bin.length; i += 1) o[i] = bin.charCodeAt(i);
+    return o;
+  }
+  function call(fn, args) {
+    var p;
+    try { p = Lec.rpc(fn, args); } catch (e0) { return Promise.reject(e0); }
+    return Promise.resolve(p);
+  }
+
+  var onGone = false;
+  function pushOn(key) {
+    if (w.__lecPvIn) return Promise.resolve(null); /* 미리 보기 안쪽 = 부르지 않음 */
+    if (onGone || !key) return Promise.resolve(null);
+    return call('lec_push_on', { p_key: str(key) }).then(function (r) {
+      return isObj(r) && r.ok === true ? r : null;
+    }, function (e) {
+      if (gone(e)) onGone = true;
+      return null;
+    }).then(null, function () { return null; });
+  }
+  function pushSave(key, sub) {
+    if (w.__lecPvIn) return Promise.resolve({ ok: false, err: 'preview' });
+    var ep, p, a;
+    try {
+      ep = str(sub.endpoint);
+      p = b64u(sub.getKey('p256dh'));
+      a = b64u(sub.getKey('auth'));
+    } catch (e0) { return Promise.resolve({ ok: false, err: 'sub' }); }
+    return call('lec_push_save', { p_key: str(key), p_ep: ep, p_p256dh: p, p_auth: a }).then(function (r) {
+      return isObj(r) ? r : { ok: false, err: 'error' };
+    }, function () { return { ok: false, err: 'network' }; });
+  }
+  function pushOff(key) {
+    if (w.__lecPvIn) return Promise.resolve({ ok: false, err: 'preview' });
+    if (!key) return Promise.resolve({ ok: false, err: 'key' });
+    return call('lec_push_off', { p_key: str(key) }).then(function (r) {
+      return isObj(r) ? r : { ok: false, err: 'error' };
+    }, function () { return { ok: false, err: 'network' }; });
+  }
+
+  var stGone = false;
+  function pushState(dcall, id) {
+    var p;
+    if (stGone || typeof dcall !== 'function' || !id) return Promise.resolve(null);
+    try { p = dcall('lec_push_state', { p_lecture: str(id) }); } catch (e0) { return Promise.resolve(null); }
+    return Promise.resolve(p).then(function (r) {
+      return isObj(r) && r.ok === true && r.show === true ? r : null;
+    }, function (e) {
+      if (gone(e)) stGone = true;
+      return null;
+    }).then(null, function () { return null; });
+  }
+  /* 올린 뒤 카드 한 줄 · names(ids) = 반 이름(«·» 로 이은 글) · 보일 줄이 없으면 null
+     바로 «1분 안에 {반} 학생 폰으로 알림이 가요.» + «알림을 켠 학생 N명» ·
+     아침 «오늘 아침 8:00에 …» / 앞날 «11.20(금) 아침 8:00에 …» + «… · 그 전에 숨기거나 지우면 안 가요.» ·
+     숨김 «숨김 강의라 알림이 가지 않아요. 숨김을 풀면 그때 한 번 가요.»(again 거짓 = «숨김을 풀어도 알림은 가지 않아요.») · 0명 «알림을 켠 학생이 아직 없어요. 반 공지는 지금처럼 붙여 주세요.» ·
+     시험 중(관리자만 줄이 옴) = 회색 «시험 중 · 알림을 켠 시험 학생 N명» */
+  function pushLine(r, names) {
+    var who, n, test, m;
+    if (!isObj(r) || r.show !== true) return null;
+    test = r.mode === 'test';
+    if (r.hidden === true || r.status === 'hold') {
+      /* 풀면 가는지는 서버의 again(pushEditLine 과 같음 · 공개일 4일 넘음 · 끝난 강의 · 남은 반 없음 = 거짓) */
+      return { cls: 'off', b: '숨김 강의라 알림이 가지 않아요.', t: '', m: r.again === true ? '숨김을 풀면 그때 한 번 가요.' : '숨김을 풀어도 알림은 가지 않아요.' };
+    }
+    if (r.status !== 'wait') return null;
+    n = Math.max(0, Math.floor(+r.n || 0));
+    if (!test && n === 0) return { cls: 'off', b: '', t: '알림을 켠 학생이 아직 없어요. 반 공지는 지금처럼 붙여 주세요.', m: '' };
+    who = typeof names === 'function' ? str(names(isArr(r.cls) ? r.cls : [])) : '';
+    who = (who ? who + ' ' : '') + '학생 폰으로 알림이 가요.';
+    m = (test ? '시험 중 · 알림을 켠 시험 학생 ' : '알림을 켠 학생 ') + n + '명';
+    if (r.when === 'now' || !r.due_hm) return { cls: '', b: '1분 안에', t: ' ' + who, m: m };
+    return { cls: '', b: (r.when === 'today' ? '오늘' : str(r.due_day)) + ' 아침 ' + str(r.due_hm), t: '에 ' + who, m: m + ' · 그 전에 숨기거나 지우면 안 가요.' };
+  }
+  /* 고치기 서랍 숨김 칩 아래 한 줄: 보냄 · 아침 대기 · 숨김(풀면 감 / 안 감) · 그 밖은 '' */
+  function pushEditLine(r) {
+    var pre;
+    if (!isObj(r) || r.show !== true) return '';
+    pre = r.mode === 'test' ? '시험 중 · ' : '';
+    if (r.hidden === true) return pre + (r.again === true ? '숨김을 풀면 그때 한 번 알림이 가요' : '숨김을 풀어도 알림은 가지 않아요');
+    if (r.status === 'wait') {
+      return pre + (r.when === 'now' || !r.due_hm ? '알림이 1분 안에 가요'
+        : '알림 ' + str(r.due_day) + ' 아침 ' + str(r.due_hm) + '에 가요 · 그 전에 숨기거나 지우면 안 가요');
+    }
+    if (r.sent_day && r.sent_hm) return pre + '알림 ' + str(r.sent_day) + ' ' + str(r.sent_hm) + '에 보냄 · 고쳐 저장해도 다시 안 가요';
+    return '';
+  }
+  /* 학생 카드 · 첫 로그인 단계 글(at = 서버가 준 «8시» · 없으면 «아침 8시») */
+  function pushCardText(at) {
+    var a = str(at);
+    if (!/^\d{1,2}시( \d{1,2}분)?$/.test(a)) a = '8시';
+    return '수업 영상이 올라오면 이 폰으로 바로 알려 드려요. 새벽에 올라오면 아침 ' + a + '에 알려 드려요.';
+  }
+
+  Lec.LS.seen = 'lec-seen';
+  Lec.LS.alstep = 'lec-alstep';   /* 첫 로그인 «새 영상 알림» 단계를 이 기기에서 띄웠음(기기당 한 번 · 나가기에도 안 지움) */
+  var api = {
+    pushOn: pushOn, pushSave: pushSave, pushOff: pushOff, pushState: pushState, pushLine: pushLine, pushEditLine: pushEditLine,
+    pushCardText: pushCardText, b64u: b64u, unb64u: unb64u,
+    PUSH_TITLE: '새 수업 영상 알림', PUSH_ON_TOAST: '새 영상이 올라오면 알려 드릴게요.'
+  };
+  for (var name in api) { if (Object.prototype.hasOwnProperty.call(api, name)) Lec[name] = api[name]; }
+})(window);

@@ -507,6 +507,14 @@ b,strong,.bandn strong{font-weight:700}
 .ntc textarea{margin-top:12px;resize:vertical}
 .ntc .ntf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:12px}
 .ntc .ntf .mut{flex:1 1 220px;min-width:0;font-size:13px}
+/* N1 새 영상 알림(11-17): 공지 카드 머리 아래 한 줄 · 고치기 서랍 숨김 칩 아래 한 줄 · 꺼짐 · 서버에 없으면 안 보임 */
+.ntal{display:flex;align-items:flex-start;gap:8px;margin:10px 0 0;font-size:13.5px;line-height:1.5;color:#1E5A3E}
+.ntal svg{flex:0 0 auto;width:18px;height:18px;margin-top:1px;color:#7A5410}
+.ntal.off{color:#5C5A52}.ntal.off svg{color:#8A8D80}
+.ntal .mut{font-size:13px}
+.hidal{margin:6px 0 0;font-size:13px;color:#5C5A52;display:flex;align-items:center;gap:6px}
+.hidal svg{flex:0 0 auto;width:16px;height:16px;color:#7A5410}
+.ntal[hidden],.hidal[hidden]{display:none}
 /* 설치 안내 결론안(11-16): 공지 카드 «설치 안내» 테두리 단추 → 아래 작은 줄(TV 전체 화면 · 그림 복사 · 종이 인쇄 + 같이 설치 때) */
 .ntc .btn.insb{border:1px solid #0C4631;color:#0C4631;font-weight:400}
 .insr{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}
@@ -1395,7 +1403,8 @@ window.__lecAdminStart = function () {
       check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
       copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
       pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9.5 14.5L12 17l2.5-2.5"/>',
-      ext: '<path d="M13.5 4.5h6v6"/><path d="M19.5 4.5L11 13"/><path d="M17.5 13.5v4a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h4"/>'
+      ext: '<path d="M13.5 4.5h6v6"/><path d="M19.5 4.5L11 13"/><path d="M17.5 13.5v4a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h4"/>',
+      bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'
     };
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">' + (p[n] || '') + '</svg>';
   }
@@ -2172,6 +2181,7 @@ window.__lecAdminStart = function () {
     $('ed').scrollTop = 0;
     edNotes();
     chLive();
+    if (l) edPushEdit(l.id);
     if (trim(edVal('ed-yt'))) ytCheck();
     var f = S.ed.can ? $('ed-yt') : $('ed').querySelector('[data-act="edClose"]');
     if (f) { try { f.focus(); } catch (e) {} }
@@ -2358,7 +2368,8 @@ window.__lecAdminStart = function () {
       (S.ed.can ? '<button type="button" class="btn sm" data-act="edChAdd">목차 줄 더하기</button>' : '') +
       '<p id="ed-run" class="msg mut sm">' + esc(edRunText()) + '</p>' +
       (runOn() ? '<p class="mut sm">멈춤 = 학생 영상이 잠깐 서고 «워크북 풀어 보고 계속 봐요»가 뜨는 시각 · 시작에서 1분이 안 되면 멈추지 않아요</p>' : '') + '</div>';   /* 검수 A L10 · M2 */
-    h += '<div class="fld"><span class="fl">숨김</span><div id="ed-hid">' + edHidHtml() + '</div></div>';
+    h += '<div class="fld"><span class="fl">숨김</span><div id="ed-hid">' + edHidHtml() + '</div>' +
+      (l ? '<p class="hidal" id="ed-hidal" hidden></p>' : '') + '</div>';   /* N1 알림 한 줄(서버 답이 오면) */
     h += '</div><div class="edfoot"><p id="ed-msg" class="msg bad" role="alert"></p><div class="edrow" id="ed-foot">' + edFootHtml() + '</div></div>';
     return h;
   }
@@ -2986,10 +2997,10 @@ window.__lecAdminStart = function () {
     var pdfOld = S.ed.pdfOrig || '', pc = pdfCur(), pdfDropped = false;
     if (pdfOn() && (pc ? pc.p : '') !== pdfOld) row.files = pc ? [pdfItem(pc)] : [];
     var isNew = !S.ed.id, edId = S.ed.id;
-    function done(rw) {
+    function done(rw, saved) {
       S.busy.ed = 0;
-      /* K: 새 강의는 같은 자리(서랍)에 반 공지 카드 · 고친 저장은 지금처럼 닫음 */
-      if (isNew && rw) edNotice(rw);
+      /* K: 새 강의는 같은 자리(서랍)에 반 공지 카드 · 고친 저장은 지금처럼 닫음 · N1: 저장된 줄의 id 로 알림 한 줄 */
+      if (isNew && rw) edNotice(rw, saved && saved.id);
       else closeEditor();
       toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : '') + (pdfDropped ? ' · 필기 PDF는 저장되지 않았어요' : ''));
       /* PDF 를 바꾸거나 뺐으면 옛 파일은 저장이 된 뒤에 · 다른 강의가 안 쓸 때만 지움 */
@@ -2998,7 +3009,7 @@ window.__lecAdminStart = function () {
     }
     /* 새 칸이 아직 없는 DB(PGRST204) → 말한 칸이 files · lesson_cls 면 그것만, 다른 칸이면 C1 칸 셋, 모르면 넷 다 빼고 한 번 더(세 번까지) */
     function attempt(rw, n) {
-      return DA.saveLecture(edId, rw).then(function () { done(rw); }, function (e) {
+      return DA.saveLecture(edId, rw).then(function (saved) { done(rw, saved); }, function (e) {
         var m, drop, r2 = {}, k2, cut = false;
         if (!(e && e.code === 'PGRST204') || n > 2) throw e;
         m = /'([A-Za-z_]+)' column/.exec(str(e.message) + ' ' + str(e.detail));
@@ -3024,15 +3035,16 @@ window.__lecAdminStart = function () {
     });
   }
   /* K 올린 뒤 반 공지: 서랍 안 같은 자리에 카드 «방금 올렸어요 · {반} 반 공지 문구» · 복사 단추로 초점 · 학생 이름 없음 */
-  function edNotice(rw) {
+  function edNotice(rw, sid) {
     var ids = isArr(rw.class_ids) ? rw.class_ids : [], el = $('ed'), b;
     ytDestroy();
     clearTimeout(ytT); clearTimeout(txtT);
-    S.ed = { notice: true, can: false, id: '', chs: null, other: [], cls: {} };
+    S.ed = { notice: true, can: false, id: '', chs: null, other: [], cls: {}, pushId: sid ? str(sid) : '' };
     el.innerHTML = '<div class="dh"><div class="dt"><h2 id="ed-t">' + esc(str(rw.title)) + '</h2><p class="mut">강의를 올렸어요</p></div>' +
       '<button type="button" class="x" data-act="edClose" aria-label="닫기">×</button></div>' +
       '<section class="ntc" aria-labelledby="ed-ntt"><div class="nth"><span class="tag t-sage">방금 올렸어요</span><b id="ed-ntt">' +
       esc((ids.indexOf('*') >= 0 ? '전체' : clsNames(ids)) + ' 반 공지 문구') + '</b></div>' +
+      '<p class="ntal" id="ed-ntal" hidden></p>' +
       '<label class="sr" for="ed-nt">반 공지 문구</label><textarea id="ed-nt" rows="' + noticeRows(rw) + '">' + esc(noticeText(rw)) + '</textarea>' +
       '<div class="ntf"><button type="button" class="btn fill" data-act="ntCopy" data-t="ed-nt">' + kIcon('copy') + '반 공지 문구 복사</button>' +
       '<button type="button" class="btn insb" data-act="insTog" aria-expanded="false" aria-controls="ed-ins">' + insIcon('qr') + '설치 안내</button>' +
@@ -3041,6 +3053,32 @@ window.__lecAdminStart = function () {
     el.scrollTop = 0;
     b = el.querySelector('[data-act=ntCopy]');
     if (b) { try { b.focus(); } catch (e) {} }
+    if (sid) edPushNew(str(sid));
+  }
+  /* N1 새 영상 알림(11-17 · §8-205): 서버 lec_push_state 답으로만 한 줄(꺼짐 · 시험 중 관리자 아님 · 옛 서버 · 실패 = 아무것도 안 보임)
+     반 이름은 «·» 로 이음 · 시각은 서버가 준 값 그대로 */
+  function pushNames(ids) {
+    var out = [], i;
+    for (i = 0; i < ids.length; i += 1) if (ids[i] !== '*') out.push(D.cname[ids[i]] || '지워진 반');
+    return out.join('·');
+  }
+  function edPushNew(id) {
+    L.pushState(DA.rpc, id).then(function (r) {
+      var el = $('ed-ntal'), x = L.pushLine(r, pushNames);
+      if (!el || !x || !S.ed || S.ed.pushId !== id) return;
+      el.className = 'ntal' + (x.cls ? ' ' + x.cls : '');
+      el.innerHTML = kIcon('bell') + '<span>' + (x.b ? '<b>' + esc(x.b) + '</b>' : '') + esc(x.t) +
+        (x.m ? ' <span class="mut">' + esc(x.m) + '</span>' : '') + '</span>';
+      el.hidden = false;
+    });
+  }
+  function edPushEdit(id) {
+    L.pushState(DA.rpc, id).then(function (r) {
+      var el = $('ed-hidal'), t = L.pushEditLine(r);
+      if (!el || !t || !S.ed || S.ed.id !== id) return;
+      el.innerHTML = kIcon('bell') + '<span>' + esc(t) + '</span>';
+      el.hidden = false;
+    });
   }
   /* ------------------------------------------------------------------ 설치 안내 결론안(11-16)
      공지 카드 «설치 안내»(테두리 단추) → 아래 작은 줄: TV 전체 화면(QR + 큰 글) · 그림 복사(학부모 카톡 그림 · QR 없음) · 종이 인쇄(A5 흑백) · 새 화면 없음

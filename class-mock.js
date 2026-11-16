@@ -2774,4 +2774,398 @@
   w.LecMock.c2ids = C2ID;
   /* 시험용: C2 함수만 없는 서버 켜기·끄기 */
   w.LecMock.noRange = function (on) { if (on !== undefined) NORANGE = !!on; return NORANGE; };
+
+  /* ======================================================= N1 (11-17) 새 영상 알림(CLAUDE.md §8-205)
+     class-setup.sql N1 절(lec_push_cfg · lec_push_sub · lec_push_queue · 트리거 lec__push_mark · lec_push_on · lec_push_save ·
+     lec_push_off · lec_push_state)과 같은 규칙을 줄여서. 보내기(lec-push 함수)는 흉내만(LecMock.push.tick).
+     주소로 고르기(연습용 · 이 파일에서만 · 페이지를 열 때마다 주소대로):
+       ?push=on|test|off|none   알림 설정(없으면 off = 운영 처음과 같음) · none = N1 SQL 을 안 넣은 서버(함수 404 · ?oldsql=1 도)
+       ?pushn=0                 알림을 켠 학생 수를 그 수로(0 = 서랍 «아직 없어요» 줄)
+       ?pushclock=02:30         알림 때를 셀 서울 시각(새벽 1시~8:00 = 아침 8:00 · 날짜는 오늘 그대로)
+       ?pushsent=1              사흘 안에 올라온 보이는 강의를 오늘 아침에 보낸 것으로(고치기 서랍 «보냄» 줄)
+       ?pushtest=김하늘,이바다   시험 학생 이름(시험 중 · 없으면 김하늘 · 이바다)
+       ?pwa=1                   홈 화면 앱 흉내(display-mode standalone · Notification · 구독 · 알림 일꾼 모두 가짜)
+                                &perm=grant|deny = 처음 허락 상태(없으면 아직 안 물음) · &ask=grant|deny|close = 허락 창에서 누를 답(없으면 grant)
+                                &ask=hang = 대답 없는 허락 창(LecMock.pwa.answer(p) 로 대답) · &pwaep=bad = 허용 목록 밖 푸시 주소(저장 'bad')
+     알림을 켠 학생(흉내): 이바다 · 최새봄(고1 A반) · 한겨울(고2 B반) · 학생 화면에서 켜면 그 열쇠도 더해짐
+     시험용: LecMock.push = {mode(m), tick(), queue(), subs(), clock('HH:MM'|null), none(on)} ·
+             LecMock.pwa = {on, perm(), setPerm(p), sub(), asked(), subN(), answer(p), reg(), post(ids), drop()} */
+  var PQS = '';
+  try { PQS = String(w.location.search || ''); } catch (e) { PQS = ''; }
+  function pq(k) {
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(PQS);
+    if (!m) return null;
+    try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; }
+  }
+  var PMODE0 = pq('push');
+  var PNONE = PMODE0 === 'none';
+  var PN = /^\d+$/.test(pq('pushn') || '') ? +pq('pushn') : null;
+  var PCLOCK = /^\d{1,2}:\d{2}$/.test(pq('pushclock') || '') ? pq('pushclock') : null;
+  var PSENT = pq('pushsent') === '1';
+  var PTEST = pq('pushtest') ? pq('pushtest').split(',').map(trimWs).filter(function (x) { return x !== ''; }) : ['김하늘', '이바다'];
+  var PKEY = 'B' + new Array(22).join('Mock') + 'Mo';   /* 공개 열쇠 흉내(87자 · 첫 바이트 04) */
+  var PEP = /^https:\/\/(fcm\.googleapis\.com|android\.googleapis\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.push\.apple\.com|updates\.push\.services\.mozilla\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.notify\.windows\.com)\/\S+$/;
+  var pPage = false;
+
+  function pGone() { if (PNONE || OLD) throw httpErr(404, 'PGRST202', 'Could not find the function'); }
+  function pCls(ids) {
+    var o = [], i, c;
+    ids = isArr(ids) ? ids : [];
+    for (i = 0; i < ids.length; i += 1) { c = ids[i]; if (c != null && c !== '*' && o.indexOf(c) < 0) o.push(c); }
+    return o;
+  }
+  function pMinus(a, b) { return a.filter(function (x) { return b.indexOf(x) < 0; }); }
+  function pUnion(a, b) { var o = a.slice(); b.forEach(function (x) { if (o.indexOf(x) < 0) o.push(x); }); return o; }
+  function pNow() {
+    if (!PCLOCK) return nowMs();
+    var p = PCLOCK.split(':');
+    return atMs(0, +p[0], +p[1]);
+  }
+  function pKst(ms) {
+    var t = new Date(ms + SEOUL);
+    return { day: t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1, 2) + '-' + pad(t.getUTCDate(), 2), min: t.getUTCHours() * 60 + t.getUTCMinutes() };
+  }
+  function pAt(day, min) { var p = day.split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2], 0, min) - SEOUL; }
+  function pHm(min) { return Math.floor(min / 60) + '시' + (min % 60 ? ' ' + (min % 60) + '분' : ''); }
+  function pClock(min) { return Math.floor(min / 60) + ':' + pad(min % 60, 2); }
+  /* lec_push_due: 공개일이 앞날 = 그날 아침 · 서울 1시~8시 = 그날 아침 8시 · 그 밖 = 지금 */
+  function pDue(cf, posted) {
+    var now = pNow(), k = pKst(now);
+    if (posted && posted > k.day) return pAt(posted, cf.at);
+    if (k.min >= cf.from && k.min < cf.at) return pAt(k.day, cf.at);
+    return now;
+  }
+  function pSetMode(P, m) {
+    if (m !== 'on' && m !== 'test' && m !== 'off') return;
+    if (P.cfg.mode === m) return;
+    P.cfg.mode = m;
+    if (m === 'off') {
+      Object.keys(P.q).forEach(function (id) { var q = P.q[id]; if (q.status === 'wait') { q.status = 'off'; q.due = null; } });
+    }
+  }
+  function pEnsure(d) {
+    var P = d.push && typeof d.push === 'object' ? d.push : null, rs, i;
+    if (!P) {
+      P = d.push = { cfg: { mode: 'off', test: PTEST.slice(), from: 60, at: 480 }, sub: [], q: {} };
+      rs = roster(d);
+      for (i = 0; i < rs.length; i += 1) {
+        if (['이바다', '최새봄', '한겨울'].indexOf(rs[i].sname) >= 0) P.sub.push({ kh: null, sid: rs[i].skey, ep: 'https://fcm.googleapis.com/fcm/send/seed-' + i });
+      }
+    }
+    if (!pPage) {   /* 페이지마다 한 번 = 주소대로 */
+      pPage = true;
+      pSetMode(P, PMODE0 === 'on' || PMODE0 === 'test' ? PMODE0 : 'off');
+      P.cfg.test = PTEST.slice();
+      if (PSENT) {
+        d.lecture.forEach(function (l) {
+          var eff = pCls(l.class_ids);
+          if (l.hidden || !eff.length || P.q[l.id] || l.posted_on > today() || l.posted_on < dayStr(-3)) return;
+          P.q[l.id] = { status: 'sent', due: null, cls: [], done: eff, sent: Math.min(nowMs(), atMs(0, 8, 0)) };
+        });
+      }
+    }
+    return P;
+  }
+  /* 트리거 lec__push_mark 와 같은 차례(old = 고치기 전 줄 · 없으면 새로 올림) */
+  function pMark(d, old, nw) {
+    var P = pEnsure(d), cf = P.cfg, eff = pCls(nw.class_ids), end = ended(nw), q = P.q[nw.id] || null, done, tg, fresh;
+    if (!old) {
+      if (!eff.length || q) return;
+      P.q[nw.id] = {
+        status: nw.hidden ? 'hold' : (cf.mode === 'off' ? 'off' : (end ? 'late' : 'wait')),
+        due: !nw.hidden && cf.mode !== 'off' && !end ? pDue(cf, nw.posted_on) : null,
+        cls: eff, done: [], sent: null
+      };
+      return;
+    }
+    done = q ? q.done : [];
+    if (q && q.status === 'wait') {
+      tg = pMinus(eff, done);
+      q.status = nw.hidden ? 'hold' : (!tg.length ? (done.length ? 'sent' : 'gone') : (end ? 'late' : 'wait'));
+      q.due = nw.hidden || !tg.length || end ? null : pDue(cf, nw.posted_on);
+      q.cls = tg;
+      return;
+    }
+    if (nw.hidden) {
+      if (q && q.status === 'hold') q.cls = pMinus(eff, done);
+      return;
+    }
+    tg = (q && q.status === 'hold') || old.hidden ? pMinus(eff, done) : pMinus(pMinus(eff, pCls(old.class_ids)), done);
+    fresh = nw.posted_on >= dayStr(-3) && !end;
+    if (!tg.length || cf.mode === 'off' || !fresh) {
+      if (q && q.status === 'hold') {
+        q.status = !tg.length ? (done.length ? 'sent' : 'gone') : (cf.mode === 'off' ? 'off' : (done.length ? 'sent' : 'late'));
+        q.cls = cf.mode === 'off' && tg.length ? tg : [];
+      }
+      return;
+    }
+    if (!q) q = P.q[nw.id] = { done: [], sent: null };
+    q.status = 'wait';
+    q.due = pDue(cf, nw.posted_on);
+    q.cls = tg;
+  }
+  function pOnFor(P, k) { return P.cfg.mode === 'on' || (P.cfg.mode === 'test' && P.cfg.test.indexOf(trimWs(k.sname)) >= 0); }
+  /* 알림을 켠 학생 수(lec__push_n): 그 반 학생 가운데 폰을 저장한 학생 · 시험 중이면 시험 학생만 */
+  function pCount(d, P, tg) {
+    if (PN != null) return PN;
+    var rs = roster(d), sids = {}, n = 0, i, j, s, k;
+    for (i = 0; i < P.sub.length; i += 1) {
+      s = P.sub[i];
+      if (s.sid) sids[s.sid] = 1;
+      else if (s.kh) { for (j = 0; j < d.key.length; j += 1) { k = d.key[j]; if (k.kh === s.kh) sids[k.sid] = 1; } }
+    }
+    for (i = 0; i < rs.length; i += 1) {
+      if (!sids[rs[i].skey]) continue;
+      if (!(rs[i].cls || []).some(function (c) { return tg.indexOf(c) >= 0; })) continue;
+      if (P.cfg.mode === 'test' && P.cfg.test.indexOf(trimWs(rs[i].sname)) < 0) continue;
+      sids[rs[i].skey] = 0;
+      n += 1;
+    }
+    return n;
+  }
+  function lec_push_on(d, a) {
+    pGone();
+    var k = findKey(d, a.p_key), P, ep = null, show = false, i, l;
+    if (!k) return { ok: false, err: 'key' };
+    P = pEnsure(d);
+    if (!pOnFor(P, k)) return { ok: true, on: false, show: false };
+    for (i = P.sub.length - 1; i >= 0; i -= 1) { if (P.sub[i].kh === k.kh) { ep = P.sub[i].ep; break; } }
+    for (i = 0; i < d.lecture.length; i += 1) {
+      l = d.lecture[i];
+      if (isOpen(l, k.cls) && pCls(l.class_ids).some(function (c) { return (k.cls || []).indexOf(c) >= 0; })) { show = true; break; }
+    }
+    return { ok: true, on: true, show: show, key: PKEY, ep: ep, at: pHm(P.cfg.at) };
+  }
+  function lec_push_save(d, a) {
+    pGone();
+    var k = findKey(d, a.p_key), P;
+    if (!k) return { ok: false, err: 'key' };
+    P = pEnsure(d);
+    if (!pOnFor(P, k)) return { ok: false, err: 'off' };
+    if (str(a.p_ep).length > 1000 || !PEP.test(str(a.p_ep)) || !/^[A-Za-z0-9_-]{87}$/.test(str(a.p_p256dh)) || !/^[A-Za-z0-9_-]{22}$/.test(str(a.p_auth))) {
+      return { ok: false, err: 'bad' };
+    }
+    P.sub = P.sub.filter(function (s) { return s.ep !== a.p_ep && s.kh !== k.kh; });
+    P.sub.push({ kh: k.kh, sid: null, ep: a.p_ep });
+    return { ok: true };
+  }
+  function lec_push_off(d, a) {
+    pGone();
+    var h = kh(a.p_key), P = pEnsure(d), before = P.sub.length;
+    P.sub = P.sub.filter(function (s) { return s.kh !== h; });
+    return { ok: true, n: before - P.sub.length };
+  }
+  function lec_push_state(d, a) {
+    pGone();
+    if (!ME) return { ok: false, err: 'forbidden' };
+    var P = pEnsure(d), cf = P.cfg, l, eff, q, left, tg, now, dk, sk, X = L();
+    if (cf.mode === 'off' || (cf.mode === 'test' && !ME.admin)) return { ok: true, mode: cf.mode, show: false };
+    l = findLecture(d, a.p_lecture);
+    if (!l) return { ok: false, err: 'none' };
+    eff = pCls(l.class_ids);
+    if (!eff.length) return { ok: true, mode: cf.mode, show: false };
+    q = P.q[l.id] || null;
+    left = pMinus(eff, q ? q.done : []);
+    tg = q && q.status === 'wait' ? q.cls : left;
+    now = pNow();
+    dk = q && q.due != null ? pKst(q.due) : null;
+    sk = q && q.sent != null ? pKst(q.sent) : null;
+    return {
+      ok: true, mode: cf.mode, show: true,
+      status: q ? q.status : null,
+      hidden: !!l.hidden,
+      when: !q || q.status !== 'wait' ? null : (q.due <= now + 90000 ? 'now' : (dk.day === pKst(now).day ? 'today' : 'day')),
+      due: dk ? pgts(q.due) : null,
+      due_day: dk ? X.fmtDay(dk.day) : null,
+      due_hm: dk ? pClock(dk.min) : null,
+      sent: sk ? pgts(q.sent) : null,
+      sent_day: sk ? X.fmtDay(sk.day) : null,
+      sent_hm: sk ? pClock(sk.min) : null,
+      cls: tg,
+      n: pCount(d, P, tg),
+      again: left.length > 0 && l.posted_on >= dayStr(-3) && !ended(l)
+    };
+  }
+  IMPL.lec_push_on = lec_push_on;
+  IMPL.lec_push_save = lec_push_save;
+  IMPL.lec_push_off = lec_push_off;
+  SIG.lec_push_on = { p_key: 'text' };
+  SIG.lec_push_save = { p_key: 'text', p_ep: 'text', p_p256dh: 'text', p_auth: 'text' };
+  SIG.lec_push_off = { p_key: 'text' };
+  SIG.lec_push_state = { p_lecture: 'uuid' };
+  STAFF.lec_push_state = lec_push_state;
+
+  /* 강의 저장 · 지우기 뒤 트리거 흉내(트리거가 틀려도 저장은 그대로 · SQL 과 같음) */
+  var pSave0 = staff.saveLecture, pDel0 = staff.deleteLecture;
+  staff.saveLecture = function (o) {
+    var before = null;
+    try { if (o && o.id) before = clone(findLecture(load(), o.id)); } catch (e) { before = null; }
+    return pSave0(o).then(function (row) {
+      try {
+        if (!PNONE && !OLD && row && row.id) {
+          var d = load(), l = findLecture(d, row.id);
+          if (l) { pMark(d, before, l); save(d); }
+        }
+      } catch (e2) { /* 없음 */ }
+      return row;
+    });
+  };
+  staff.deleteLecture = function (id) {
+    return pDel0(id).then(function (had) {
+      try {
+        var d = load(), P = pEnsure(d);
+        if (P.q[id]) { delete P.q[id]; save(d); }
+      } catch (e) { /* 없음 */ }
+      return had;
+    });
+  };
+  staff.pushState = function (id) { return staffRpc('lec_push_state', { p_lecture: id }); };
+
+  w.LecMock.push = {
+    mode: function (m) { var d = load(), P = pEnsure(d); if (m !== undefined) { pSetMode(P, m); save(d); } return P.cfg.mode; },
+    /* 보내기 흉내: 때가 된 대기 줄 = 보냄(보낸 반을 done 에) · 보낸 수 */
+    tick: function () {
+      var d = load(), P = pEnsure(d), now = pNow(), n = 0;
+      Object.keys(P.q).forEach(function (id) {
+        var q = P.q[id];
+        if (q.status !== 'wait' || q.due > now) return;
+        q.status = 'sent'; q.sent = now; q.done = pUnion(q.done || [], q.cls || []); q.cls = []; q.due = null; n += 1;
+      });
+      save(d);
+      return n;
+    },
+    queue: function () { return clone(pEnsure(load()).q); },
+    subs: function () { return clone(pEnsure(load()).sub); },
+    clock: function (c) { if (c !== undefined) PCLOCK = c; return PCLOCK; },
+    none: function (on) { if (on !== undefined) PNONE = !!on; return PNONE; }
+  };
+
+  /* ?pwa=1 홈 화면 앱 흉내(화면 코드는 진짜 API 처럼 씀 · 실제 알림 · 구독 · 일꾼 등록은 하지 않음)
+     허락 상태 · 구독 주소 · 등록은 이 탭의 sessionStorage 에 남김(다시 열어도 실제 폰처럼 그대로 · &perm= 은 처음 한 번만) */
+  var PWA = pq('pwa') === '1';
+  var PWS_KEY = 'lecmock-pwa';
+  var PWS = {
+    perm: pq('perm') === 'grant' ? 'granted' : (pq('perm') === 'deny' ? 'denied' : 'default'),
+    ask: pq('ask') === 'deny' || pq('ask') === 'close' || pq('ask') === 'hang' ? pq('ask') : 'grant',
+    bad: pq('pwaep') === 'bad', /* 허용 목록 밖 푸시 주소(저장하면 'bad') */
+    asked: 0, sub: null, reg: null, regs: 0, url: '', scope: '', lis: [], n: 0, readyRes: null, subN: 0, hang: []
+  };
+  var pwsKeep = function () {};
+  if (PWA) {
+    (function () {
+      var st0 = null;
+      try { st0 = JSON.parse(w.sessionStorage.getItem(PWS_KEY) || 'null'); } catch (e0) { st0 = null; }
+      pwsKeep = function () {
+        try {
+          w.sessionStorage.setItem(PWS_KEY, JSON.stringify({ perm: PWS.perm, ep: PWS.sub ? PWS.sub.endpoint : null, regd: !!PWS.reg, n: PWS.n }));
+        } catch (e1) { /* 없음 */ }
+      };
+      var mm0 = w.matchMedia;
+      w.matchMedia = function (q) {
+        if (/display-mode\s*:\s*standalone/.test(String(q))) {
+          return { matches: true, media: String(q), onchange: null, addListener: function () {}, removeListener: function () {},
+            addEventListener: function () {}, removeEventListener: function () {}, dispatchEvent: function () { return false; } };
+        }
+        return mm0.call(w, q);
+      };
+      function FakeNotification(t, o) { this.title = t; this.options = o; }
+      try { Object.defineProperty(FakeNotification, 'permission', { get: function () { return PWS.perm; } }); } catch (e) { FakeNotification.permission = PWS.perm; }
+      FakeNotification.requestPermission = function (cb) {
+        PWS.asked += 1;
+        if (PWS.ask === 'hang' && PWS.perm === 'default') { /* 조용한 권한 창 흉내: LecMock.pwa.answer(p) 를 부를 때까지 대답 없음 */
+          return new Promise(function (res) { PWS.hang.push(function (r) { if (typeof cb === 'function') cb(r); res(r); }); });
+        }
+        if (PWS.perm === 'default') PWS.perm = PWS.ask === 'deny' ? 'denied' : (PWS.ask === 'close' ? 'default' : 'granted');
+        var r = PWS.perm;
+        pwsKeep();
+        if (typeof cb === 'function') setTimeout(function () { cb(r); }, 0);
+        return new Promise(function (res) { setTimeout(function () { res(r); }, 20); });
+      };
+      w.Notification = FakeNotification;
+      if (!w.PushManager) w.PushManager = function () {};
+      function bytes(n, first) {
+        var a = new Uint8Array(n), i;
+        for (i = 0; i < n; i += 1) a[i] = (i * 37 + 11 + PWS.n) & 255;
+        if (first != null) a[0] = first;
+        return a.buffer;
+      }
+      function mkSub(key, ep) {
+        if (!ep) PWS.n += 1;
+        var s = {
+          endpoint: ep || (PWS.bad ? 'https://push.example.com/send/mock-' : 'https://fcm.googleapis.com/fcm/send/mock-') + PWS.n + '-' + Math.floor(Math.random() * 1e9).toString(36),
+          expirationTime: null,
+          options: { userVisibleOnly: true, applicationServerKey: key && key.buffer ? key.buffer.slice(0) : key },
+          getKey: function (nm) { return nm === 'p256dh' ? bytes(65, 4) : (nm === 'auth' ? bytes(16) : null); },
+          unsubscribe: function () { if (PWS.sub === s) PWS.sub = null; pwsKeep(); return Promise.resolve(true); }
+        };
+        return s;
+      }
+      var pm = {
+        getSubscription: function () { return Promise.resolve(PWS.sub); },
+        subscribe: function (o) {
+          PWS.subN += 1;
+          if (PWS.perm !== 'granted') return Promise.reject(new Error('NotAllowedError'));
+          if (!PWS.sub) PWS.sub = mkSub(o && o.applicationServerKey);
+          pwsKeep();
+          return Promise.resolve(PWS.sub);
+        }
+      };
+      var reg = { scope: '', active: { state: 'activated' }, pushManager: pm, unregister: function () { PWS.reg = null; pwsKeep(); return Promise.resolve(true); } };
+      var swc = {
+        controller: null,
+        ready: new Promise(function (res) { PWS.readyRes = res; }),
+        register: function (u, o) {
+          PWS.regs += 1; PWS.url = String(u); PWS.scope = String((o && o.scope) || ''); reg.scope = PWS.scope; PWS.reg = reg;
+          if (PWS.readyRes) PWS.readyRes(reg);
+          pwsKeep();
+          return Promise.resolve(reg);
+        },
+        getRegistration: function () { return Promise.resolve(PWS.reg || undefined); },
+        getRegistrations: function () { return Promise.resolve(PWS.reg ? [PWS.reg] : []); },
+        addEventListener: function (t, f) { if (t === 'message' && typeof f === 'function') PWS.lis.push(f); },
+        removeEventListener: function () {}
+      };
+      try { Object.defineProperty(w.navigator, 'serviceWorker', { configurable: true, get: function () { return swc; } }); } catch (e2) { /* 없음 */ }
+      /* 다시 열기: 앞서 남긴 허락 · 등록 · 구독 그대로 */
+      if (st0 && typeof st0 === 'object') {
+        if (st0.perm === 'granted' || st0.perm === 'denied' || st0.perm === 'default') PWS.perm = st0.perm;
+        PWS.n = +st0.n || 0;
+        if (st0.regd) {
+          PWS.url = 'class-sw.js'; PWS.scope = './class.html'; reg.scope = PWS.scope; PWS.reg = reg;
+          if (PWS.readyRes) PWS.readyRes(reg);
+        }
+        if (st0.ep && PWS.reg) {
+          var kb = w.atob(PKEY.replace(/-/g, '+').replace(/_/g, '/') + '='), ka = new Uint8Array(kb.length), ki;
+          for (ki = 0; ki < kb.length; ki += 1) ka[ki] = kb.charCodeAt(ki);
+          PWS.sub = mkSub(ka, st0.ep);
+        }
+      }
+    })();
+  }
+  w.LecMock.pwa = {
+    on: PWA,
+    perm: function () { return PWS.perm; },
+    setPerm: function (p) { PWS.perm = p; pwsKeep(); return PWS.perm; },
+    sub: function () { return PWS.sub ? { endpoint: PWS.sub.endpoint } : null; },
+    asked: function () { return PWS.asked; },
+    subN: function () { return PWS.subN; },
+    /* &ask=hang 일 때 기다리는 허락 창에 대답(granted|denied|default) · 돌려줌 = 대답한 창 수 */
+    answer: function (p) {
+      var a = PWS.hang, i;
+      PWS.hang = [];
+      if (p === 'granted' || p === 'denied') PWS.perm = p;
+      pwsKeep();
+      for (i = 0; i < a.length; i += 1) a[i](PWS.perm);
+      return a.length;
+    },
+    reg: function () { return PWS.reg ? { url: PWS.url, scope: PWS.scope, n: PWS.regs } : null; },
+    /* 앱이 열려 있을 때 알림을 누름(일꾼이 보내는 것과 같은 말) */
+    post: function (ids) {
+      var e = { data: { type: 'lec-open', ids: ids } }, i;
+      for (i = 0; i < PWS.lis.length; i += 1) { try { PWS.lis[i](e); } catch (x) { /* 없음 */ } }
+      return PWS.lis.length;
+    },
+    /* 시험용: 이 폰 구독이 사라짐(푸시 서버가 지움 · 앱 데이터 지움) */
+    drop: function () { PWS.sub = null; pwsKeep(); }
+  };
 })(window);

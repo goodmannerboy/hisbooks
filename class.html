@@ -108,6 +108,16 @@ h1,h2,.tt{text-wrap:balance}
 .pwab svg{display:block}
 .login .pwab{margin-top:-4px}
 .pwab.l{margin-top:16px}
+/* 새 영상 알림(N1 · 11-17 · 홈 화면 앱에서만): 목록 카드(«이어서 보기» 아래 · 단추 하나) · 첫 로그인 뒤 한 단계 · 켠 순간 한 줄 */
+.alc{margin:0 0 16px}
+.alh{display:flex;align-items:center;gap:8px;color:var(--gold)}
+.alh h1,.alh h2{margin:0;font-size:16px;font-weight:700;line-height:1.3;color:var(--ink);letter-spacing:-.01em}
+.als{margin:6px 0 0;font-size:14px;line-height:1.55;color:var(--ink2);text-align:justify;word-break:keep-all}
+.alb{display:flex;align-items:center;gap:8px;margin-top:14px}
+.alb .btn-fill{flex:1 1 auto;width:auto;min-height:44px;font-size:15px}
+.alst .alh h1{font-size:20px;letter-spacing:-.02em}
+.alst .als{margin-top:10px;font-size:15px}
+.altoast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));z-index:70;transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);padding:12px 16px;border-radius:12px;background:var(--fillB);color:var(--fillT);font-size:14px;font-weight:700;line-height:1.4;text-align:center;word-break:keep-all;box-shadow:0 6px 20px rgba(12,70,49,.18)}
 html.pwon,html.pwon body{overflow:hidden}
 .pwa{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:12px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));padding-bottom:max(12px,env(safe-area-inset-bottom))}
 .pwbg{position:absolute;left:0;top:0;right:0;bottom:0;background:var(--ink);opacity:.4}
@@ -465,6 +475,11 @@ window.__lecStart = function () {
     rng: null, /* C2 lec_range_me 답(학교 시험 범위) · 없거나 옛 서버면 null = 시험 카드 없음 */
     pdf: null, /* P1 lec_pdf 답({강의 id: [{p, b}]}) · 없거나 옛 서버면 null = 필기 PDF 단추 없음 */
     absAt: 0, /* «N편 더»를 누른 수(누를 때마다 다음 결석 강의로 · 검수 A L19) */
+    al: null, /* N1 lec_push_on 답(홈 화면 앱 · 알림 되는 폰에서만 부름) · 없거나 옛 서버면 null = 알림 카드 · 단계 · 줄 없음 */
+    alFresh: false, /* 홈 화면 앱에서 방금 처음 로그인함 → 목록 앞에 «새 영상 알림» 한 단계(기기당 한 번 · lec-alstep) */
+    alBad: '', /* 이 열쇠로 저장했더니 서버가 'bad' → 이 화면에서는 다시 구독 · 저장 안 함 */
+    alBusy: false, nIds: null, /* 알림으로 연 강의(목록이면 그 줄을 잠깐 칠함) */
+    homeAt: 0, /* 마지막으로 집 정보를 받은 때(홈 화면 앱으로 돌아왔을 때 1분이 넘었으면 다시 받음) */
     loginErr: '', nav: false, view: '', tab: 'toc',
     q: null
   };
@@ -520,18 +535,18 @@ window.__lecStart = function () {
      ?i=1(교실 QR · 카톡에서 밖으로 넘긴 주소) = 첫 화면을 그린 뒤 판을 저절로 엶 · 읽자마자 주소에서 i 를 지움 · 홈 화면 앱으로 열었으면 안 엶
      첫 영상 끝 한 번 = 영상 끝 띠에 «다음부터 한 번에 열기» 한 줄 + 닫기(띄운 순간 localStorage 표시 · 다시 안 나옴) */
   var PW = window.__hisPwa || { e: null, done: false, cb: null };
-  var pwa = { el: null, from: null, ok: false, busy: false, auto: false };
+  var pwa = { el: null, from: null, ok: false, busy: false, auto: false, kind: '' };
   var PW_SEEN = 'lec-pwa-end';
   function pwaStandalone() {
     try { if (window.navigator.standalone === true) return true; } catch (e) { /* 없음 */ }
     try { if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true; } catch (e2) { /* 없음 */ }
     return false;
   }
-  /* ?i=1 읽고 바로 지움(홈 화면에 추가할 때 깨끗한 주소가 되게 · demo 같은 다른 값과 #은 그대로) */
+  /* ?i=1 읽고 바로 지움(홈 화면에 추가할 때 깨끗한 주소가 되게 · demo 같은 다른 값과 #은 그대로) · 알림을 눌러 연 주소의 ?n=1 도 같이 지움 */
   (function () {
     var q = String(location.search || '').replace(/^\?/, ''), a = q ? q.split('&') : [], b = [], on = false, i;
     for (i = 0; i < a.length; i += 1) {
-      if (/^i(=|$)/.test(a[i])) { if (a[i] === 'i=1') on = true; } else b.push(a[i]);
+      if (/^i(=|$)/.test(a[i])) { if (a[i] === 'i=1') on = true; } else if (!/^n(=|$)/.test(a[i])) b.push(a[i]);
     }
     if (b.length !== a.length) {
       try { history.replaceState(history.state, '', location.pathname + (b.length ? '?' + b.join('&') : '') + location.hash); } catch (e) { /* 없음 */ }
@@ -636,13 +651,14 @@ window.__lecStart = function () {
   }
   /* 판 안 전체: 설치가 끝났으면(받아들임 · appinstalled) 실제 아이콘 + «홈 화면에 추가했어요» + [확인] */
   function pwaCardHTML() {
+    if (pwa.kind === 'al') return alHowHTML();
     if (pwa.ok) {
       return '<div class="pwdone" role="status"><img src="icon-192.png" width="64" height="64" alt="">' +
         '<h2 id="pwaH">홈 화면에 추가했어요</h2><p>이제 홈 화면의 히즈 클래스를 누르세요</p>' +
         '<button class="btn-fill" type="button" data-act="pwaclose">확인</button></div>';
     }
     return '<h2 id="pwaH">홈 화면에 앱으로 추가</h2>' +
-      '<p class="pwsb">추가하면 주소창 없이 앱처럼 열려요.</p>' +
+      '<p class="pwsb">추가하면 주소창 없이 앱처럼 열리고, 새 영상 알림도 받을 수 있어요.</p>' +
       '<div class="pwbd" id="pwaBd">' + pwaBodyHTML(pwaCase()) + '</div>' +
       '<div class="btns"><button class="btn-line" type="button" data-act="pwaclose">닫기</button></div>';
   }
@@ -650,10 +666,11 @@ window.__lecStart = function () {
     var r = document.documentElement;
     r.className = (' ' + r.className + ' ').replace(/ pwon /g, ' ').replace(/^\s+|\s+$/g, '') + (on ? ' pwon' : '');
   }
-  function pwaOpen(btn) {
+  function pwaOpen(btn, kind) {
     if (pwa.el) return;
     pwa.from = btn || null;
     pwa.ok = false;
+    pwa.kind = kind || ''; /* 'al' = 새 영상 알림 켜는 법(같은 판 모양) */
     var d = document.createElement('div');
     d.className = 'pwa';
     d.id = 'pwaSheet';
@@ -677,6 +694,7 @@ window.__lecStart = function () {
       if (b) { try { b.focus(); } catch (e) { /* 없음 */ } }
     }
     pwa.from = null;
+    pwa.kind = '';
   }
   /* 시트 안만 다시 그림(설치 이벤트가 늦게 왔을 때 · 설치 창을 닫았을 때) */
   function pwaPaint() {
@@ -713,7 +731,7 @@ window.__lecStart = function () {
     if (k === 'installed') {
       var b = $('pwaBtn');
       if (b && b.parentNode) b.parentNode.removeChild(b);
-      if (pwa.el) pwa.ok = true;
+      if (pwa.el && pwa.kind !== 'al') pwa.ok = true;
     }
     if (pwa.el && !pwa.busy) pwaPaint();
   };
@@ -739,6 +757,260 @@ window.__lecStart = function () {
     } else if (a === f[f.length - 1] || !pwa.el.contains(a)) { e.preventDefault(); f[0].focus(); }
   });
 
+  /* ------------------------------------------------------------ 새 영상 알림(N1 · 11-17 · CLAUDE.md §8-205)
+     폰 · 태블릿 홈 화면 앱 + 알림 되는 폰 + 서버가 «켬»(시험 중이면 시험 학생)이라고 할 때만: 그 밖(사파리 탭 · 카카오톡 안 · PC 탭 · PC 설치 앱 · 영상 없는 반 · 옛 서버)은 예전 화면 그대로
+     폰 허락 전(default) = 목록 카드 [알림 받기] 하나(«이어서 보기» 아래) · 홈 화면 앱 첫 로그인(동의 바로 뒤) 한 단계(건너뛰기 없음 · 기기당 한 번 · 누르면 허락 창 → 어느 답이든 목록)
+     허락 대답이 AL_WAIT(8초) 안에 안 오면(크롬 조용한 권한 창 등) 목록으로 넘어감 · 카드는 default 동안 남고 · 늦게 허락되면 그때 구독
+     저장이 'bad'(허용 목록 밖 푸시 주소 등)면 이 화면에서는 다시 구독 · 저장하지 않음(S.alBad)
+     미리 보기 안쪽(window.__lecPvIn · class.html?preview=…&in=1 · 선생님 세션 읽기 전용) = 들머리마다 막음: 단계 · 카드 · 켜는 법 줄 · 일꾼 등록 · lec_push_on/save/off · 허락 창 · 조용한 다시 구독 · 1분 넘음 다시 받기 · 일꾼 말 · #n= · «연 강의» 적기 모두 없음
+     막음(denied) = 목록 맨 아래 «새 영상 알림 켜는 법» 줄 + 판 · 켬(granted) = 아무것도 안 보임(구독이 없거나 주소가 바뀌었으면 조용히 다시 저장)
+     허락 창은 누른 그 자리에서 바로 띄움(아이폰은 누름 안에서만 뜸) · 켠 순간 한 줄 «새 영상이 올라오면 알려 드릴게요.» */
+  var AL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  function alCan() {
+    if (window.__lecPvIn) return false; /* 미리 보기 안쪽 = 알림 단계 · 카드 · 켜는 법 줄 · lec_push_on 모두 없음 */
+    try {
+      /* 폰 · 태블릿(아이폰 · 아이패드 · 안드로이드)의 홈 화면 앱만 · PC 설치 앱(크롬 · 엣지 standalone)은 PC 그대로 */
+      return pwaStandalone() && pwaOs() !== '' && !!navigator.serviceWorker && typeof navigator.serviceWorker.register === 'function' &&
+        !!window.PushManager && !!window.Notification && typeof window.Notification.requestPermission === 'function';
+    } catch (e) { return false; }
+  }
+  function alPerm() { try { return String(window.Notification.permission || ''); } catch (e) { return ''; } }
+  function alOk() { return !!(S.al && S.al.on === true && S.al.show === true && S.al.key) && alCan(); }
+  function alIds(a) {
+    var o = [], i;
+    if (Object.prototype.toString.call(a) !== '[object Array]') return o;
+    for (i = 0; i < a.length && o.length < 10; i += 1) { if (typeof a[i] === 'string' && AL_UUID.test(a[i])) o.push(a[i]); }
+    return o;
+  }
+  function alCardHTML() {
+    if (!alOk() || alPerm() !== 'default') return '';
+    return '<section class="card alc" id="alCard" aria-labelledby="alT"><div class="alh">' + icon('bell', 20) + '<h2 id="alT">' + esc(L.PUSH_TITLE) + '</h2></div>' +
+      '<p class="als">' + esc(L.pushCardText(S.al.at)) + '</p>' +
+      '<div class="alb"><button class="btn-fill" type="button" data-act="alon"' + (S.alBusy ? ' disabled' : '') + '>알림 받기</button></div></section>';
+  }
+  function alHowRowHTML() {
+    if (!alOk() || alPerm() !== 'denied') return '';
+    return '<button id="alHow" class="pwab l" type="button" data-act="alhow" aria-haspopup="dialog">' + icon('bell', 18) + '<span>새 영상 알림 켜는 법</span></button>';
+  }
+  /* 첫 로그인 뒤 한 단계(동의 화면과 같은 틀 · 카드와 같은 제목 · 글 · 단추 하나) */
+  function showAlStep() {
+    S.view = 'alstep';
+    app.innerHTML = '<div class="wrap"><div class="top">' + fishSVG() + '<span class="brand">히즈 클래스</span><span class="sp"></span></div>' +
+      '<div class="cons"><section class="card alst" aria-labelledby="alT"><div class="alh">' + icon('bell', 22) + '<h1 id="alT">' + esc(L.PUSH_TITLE) + '</h1></div>' +
+      '<p class="als">' + esc(L.pushCardText(S.al.at)) + '</p>' +
+      '<div class="btns"><button class="btn-fill" type="button" data-act="alstep">알림 받기</button></div></section></div></div>';
+  }
+  /* 막은 뒤 판: 아이폰 = 설정 → 알림 → 히즈 클래스 → 알림 허용 · 안드로이드 = 아이콘 길게 → 앱 정보 → 알림 */
+  function alHowHTML() {
+    var os = pwaOs(), b;
+    if (os === 'android') {
+      b = '<ol class="pwol">' + pwaStep(1, '홈 화면의 히즈 클래스 아이콘을 길게 누르세요', '') +
+        pwaStep(2, kyw(ky('', '앱 정보'), '를') + ' 누르세요', '') + pwaStep(3, kyw(ky('', '알림'), '을') + ' 켜세요', '') + '</ol>';
+    } else if (os === 'ios') {
+      b = '<ol class="pwol">' + pwaStep(1, kyw(ky('', '설정'), ' 앱을 여세요'), '') + pwaStep(2, kyw(ky('', '알림'), '을') + ' 누르세요', '') +
+        pwaStep(3, kyw(ky('', '히즈 클래스'), '를') + ' 누르고 ' + kyw(ky('', '알림 허용'), '을') + ' 켜세요', '') + '</ol>';
+    } else {
+      b = '<p class="pwld">브라우저 설정에서 히즈 클래스 알림을 허용으로 바꿔 주세요.</p>';
+    }
+    return '<h2 id="pwaH">새 영상 알림 켜는 법</h2><p class="pwsb">폰 설정에서 켜야 해요. 한 번 켜면 다시 안 해도 돼요.</p>' +
+      '<div class="pwbd">' + b + '</div>' +
+      '<div class="btns"><button class="btn-line" type="button" data-act="pwaclose">닫기</button></div>';
+  }
+  var alTm = null;
+  function alToast(t) {
+    var e = $('alToast');
+    if (!e) {
+      e = document.createElement('div');
+      e.id = 'alToast';
+      e.className = 'altoast';
+      e.setAttribute('role', 'status');
+      document.body.appendChild(e);
+    }
+    e.textContent = t;
+    if (alTm) clearTimeout(alTm);
+    alTm = setTimeout(function () { alTm = null; if (e.parentNode) e.parentNode.removeChild(e); }, 2800);
+  }
+  /* 알림 일꾼 등록(범위 = 이 화면만) → 켜진 일꾼이 있는 등록 · 10초 안에 안 켜지면 실패 */
+  function alReg() {
+    if (window.__lecPvIn) return Promise.reject(new Error('preview'));
+    var sw = navigator.serviceWorker;
+    return sw.register('class-sw.js', { scope: './class.html' }).then(function (reg) {
+      if (reg && reg.active) return reg;
+      return new Promise(function (res, rej) {
+        var t = setTimeout(function () { rej(new Error('sw')); }, 10000);
+        sw.ready.then(function (r) { clearTimeout(t); res(r); }, function (e) { clearTimeout(t); rej(e); });
+      });
+    });
+  }
+  function alSameKey(sub, key) {
+    var a, i;
+    try {
+      a = sub.options && sub.options.applicationServerKey;
+      if (!a) return true; /* 모르면 그대로 씀 */
+      a = new Uint8Array(a);
+      if (a.length !== key.length) return false;
+      for (i = 0; i < a.length; i += 1) { if (a[i] !== key[i]) return false; }
+      return true;
+    } catch (e) { return true; }
+  }
+  /* 구독 → 서버에 저장 · loud = 켠 순간 한 줄 · 결과 true/false(실패해도 화면은 그대로) */
+  function alSub(k, loud) {
+    if (window.__lecPvIn) return Promise.resolve(false);
+    var key;
+    if (S.alBad && S.alBad === k) return Promise.resolve(false); /* 이 화면에서 서버가 'bad' 를 줌 = 다시 안 함 */
+    try { key = L.unb64u(S.al.key); } catch (e0) { return Promise.resolve(false); }
+    return alReg().then(function (reg) {
+      var pm = reg.pushManager;
+      return pm.getSubscription().then(function (old) {
+        if (old && !alSameKey(old, key)) return old.unsubscribe().then(function () { return null; }, function () { return null; });
+        return old;
+      }).then(function (old) {
+        return old || pm.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+      });
+    }).then(function (sub) {
+      if (k !== S.key || !sub) return false;
+      return L.pushSave(k, sub).then(function (r) {
+        if (r && r.err === 'bad') S.alBad = k;
+        if (!(r && r.ok)) return false;
+        if (S.al && k === S.key) S.al.ep = String(sub.endpoint || '');
+        if (loud) alToast(L.PUSH_ON_TOAST);
+        return true;
+      });
+    }).then(null, function () { return false; });
+  }
+  /* [알림 받기](목록 카드 · 첫 로그인 단계): 허락 창을 이 누름 안에서 바로 → 허락 = 구독 · 저장 → 어느 답이든 목록
+     AL_WAIT 안에 끝나지 않으면(조용한 권한 창 · 구독이 늦음) 먼저 목록으로 · 늦게 온 대답은 그때 처리(허락 = 구독 · 목록을 조용히 다시 그림) */
+  var AL_WAIT = 8000;
+  function alOn(btn, step) {
+    if (window.__lecPvIn) return;
+    var N = window.Notification, k = S.key, fin = false, done = false, tm = null, p;
+    if (S.alBusy || !alOk()) { if (step) route(); return; }
+    S.alBusy = true;
+    if (btn) btn.disabled = true;
+    function after() {
+      if (done) return;
+      done = true;
+      if (tm) { clearTimeout(tm); tm = null; }
+      S.alBusy = false;
+      if (k !== S.key) return;
+      if (step) { if (S.view === 'alstep') route(); }
+      else if (S.view === 'list') quietList();
+    }
+    function end() {
+      if (!done) { after(); return; }
+      if (k === S.key && S.view === 'list') quietList(); /* 한도 뒤 늦게 끝남: 카드 · 켜는 법 줄을 지금 상태로 */
+    }
+    function got(perm) {
+      if (fin) return;
+      fin = true;
+      if (String(perm || alPerm()) === 'granted' && k === S.key && alOk()) alSub(k, true).then(end, end);
+      else end();
+    }
+    tm = setTimeout(function () { tm = null; after(); }, AL_WAIT);
+    try {
+      p = N.requestPermission(function (x) { got(x); }); /* 옛 사파리 = 부름 꼴 · 지금 = 약속 꼴(둘 다 오면 처음 것만) */
+      if (p && typeof p.then === 'function') p.then(got, function () { got(alPerm()); });
+    } catch (e) { got(alPerm()); }
+  }
+  /* 화면을 열 때 · 앱으로 돌아올 때: 허락됨인데 구독이 없거나 저장된 주소와 다름 = 조용히 다시 · 막았는데 저장된 주소가 있음 = 서버에서 지움 */
+  function alQuiet() {
+    if (window.__lecPvIn) return;
+    if (!alOk() || S.alBusy) return;
+    var p = alPerm(), k = S.key, sw = navigator.serviceWorker;
+    if (p === 'granted') {
+      Promise.resolve().then(function () {
+        return typeof sw.getRegistration === 'function' ? sw.getRegistration('./class.html') : null;
+      }).then(function (reg) {
+        return reg && reg.pushManager ? reg.pushManager.getSubscription() : null;
+      }).then(function (sub) {
+        if (k !== S.key || !S.al) return;
+        if (!sub || String(sub.endpoint || '') !== String(S.al.ep || '')) alSub(k, false);
+      }).then(null, function () { /* 없음 */ });
+    } else if (p === 'denied' && S.al.ep) {
+      S.al.ep = null;
+      L.pushOff(k);
+    }
+  }
+  /* 나가기: 이 폰의 구독을 풀고 서버 주소도 지움(열쇠가 지워지면 서버도 같이 지움) */
+  function alDrop(k) {
+    if (window.__lecPvIn) return;
+    var sw = navigator.serviceWorker;
+    try {
+      Promise.resolve(typeof sw.getRegistration === 'function' ? sw.getRegistration('./class.html') : null).then(function (reg) {
+        return reg && reg.pushManager ? reg.pushManager.getSubscription() : null;
+      }).then(function (sub) { if (sub) return sub.unsubscribe(); }).then(null, function () { /* 없음 */ });
+    } catch (e) { /* 없음 */ }
+    L.pushOff(k);
+  }
+  /* 알림으로 연 목록: 그 강의 줄을 잠깐 칠함(한 번) */
+  function alFlash() {
+    if (window.__lecPvIn) { S.nIds = null; return; }
+    var ids = S.nIds, rs, hit = [], i;
+    S.nIds = null;
+    if (!ids || !ids.length || S.view !== 'list') return;
+    rs = app.querySelectorAll('.row[data-id]');
+    for (i = 0; i < rs.length; i += 1) { if (ids.indexOf(rs[i].getAttribute('data-id')) >= 0) hit.push(rs[i]); }
+    if (!hit.length) return;
+    try { hit[0].scrollIntoView({ block: 'center' }); } catch (e) { hit[0].scrollIntoView(); }
+    for (i = 0; i < hit.length; i += 1) hit[i].className += ' flash';
+    setTimeout(function () {
+      for (var j = 0; j < hit.length; j += 1) hit[j].className = hit[j].className.replace(/(^|\s)flash(?=\s|$)/g, '');
+    }, 1600);
+  }
+  /* 앱이 열려 있을 때 알림을 누름(일꾼이 알려 줌): 집 정보를 다시 받고 · 강의 하나 = 그 강의 · 여럿 = 목록에서 칠함 */
+  function alOpen(ids) {
+    if (window.__lecPvIn) return;
+    if (!S.key) return;
+    var k = S.key;
+    function go() {
+      if (k !== S.key) return;
+      var l = ids.length === 1 ? findLec(ids[0]) : null;
+      if (l && !l.ended) {
+        if (S.view === 'player' && T && T.lec.id === l.id) return;
+        location.hash = '#v=' + encodeURIComponent(l.id);
+        return;
+      }
+      S.nIds = ids.length ? ids : null;
+      if (String(location.hash || '').replace(/^#/, '')) clearHash();
+      route();
+    }
+    if (!S.home) { S.nIds = ids; loadHome(); return; }
+    loadHome(true, go);
+  }
+  /* 홈 화면 앱으로 돌아옴: 알림 허락이 바뀌었을 수 있음(설정에서 켬) · 1분이 넘었으면 목록을 조용히 다시 받음 */
+  function alState() { return alOk() ? alPerm() : ''; }
+  var alShown = ''; /* 목록을 그릴 때의 알림 상태(돌아왔을 때 달라졌으면 목록을 다시 그림) */
+  function alBack() {
+    if (window.__lecPvIn) return; /* 미리 보기 = 돌아와도 조용한 다시 구독 · 1분 넘음 다시 받기 없음 */
+    if (!S.key || !S.home || !pwaStandalone()) return;
+    alQuiet();
+    if ((S.view === 'list' || S.view === 'rng') && Date.now() - S.homeAt > 60000) { loadHome(true); return; }
+    if (S.view === 'list' && alShown !== alState()) quietList();
+  }
+  /* «기록 없이 보기»는 서버에 처음 연 때가 안 남음 → 이 폰에서 연 강의 id 를 남겨 «새 강의» 꼬리표를 뗌(200개까지) */
+  var SEEN = null;
+  function seenMap() {
+    var a, i;
+    if (!SEEN) {
+      SEEN = {};
+      a = L.lsGet(LS.seen, []);
+      if (Object.prototype.toString.call(a) === '[object Array]') { for (i = 0; i < a.length; i += 1) SEEN['i' + a[i]] = 1; }
+    }
+    return SEEN;
+  }
+  function seenAdd(id) {
+    if (window.__lecPvIn) return; /* 미리 보기 = 이 브라우저에 «연 강의» 안 적음 */
+    var m = seenMap(), a;
+    id = String(id || '');
+    if (!id || m['i' + id]) return;
+    m['i' + id] = 1;
+    a = L.lsGet(LS.seen, []);
+    if (Object.prototype.toString.call(a) !== '[object Array]') a = [];
+    a.push(id);
+    if (a.length > 200) a = a.slice(a.length - 200);
+    L.lsSet(LS.seen, a);
+  }
+
   /* 결론안 K: 진도 고리 36 · 진행 = 딥그린 · 교실에서 들은 강의 복습 = 회색(rv) · 끝남 = 끝남 색 고리 + 체크 */
   function ring(pct, done, rv) {
     var c = 2 * Math.PI * 15, p = Math.max(0, Math.min(100, pct || 0));
@@ -763,6 +1035,7 @@ window.__lecStart = function () {
       book: '<path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1m3 0v16"/><path d="M13 8h2"/><path d="M13 12h2"/>',
       clock: '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M12 7v5l3 3"/>',
       check: '<path d="M5 12l5 5L20 7"/>',
+      bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
       back: '<path d="M4.05 11a8 8 0 1 1 .5 4"/><path d="M4 20v-5h5"/>',
       phone: '<path d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2"/><path d="M11 18h2"/>',
       /* 설치 안내(11-16): 폰 단추 그림 · 같은 선 굵기 */
@@ -840,6 +1113,7 @@ window.__lecStart = function () {
       b.disabled = false;
       if (r && r.ok) {
         S.key = r.key; S.name = r.name || name; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
+        S.alFresh = pwaStandalone(); /* N1: 홈 화면 앱 첫 로그인 = 목록 앞에 알림 한 단계(조건이 맞을 때만) */
         L.lsSet(LS.key, r.key);
         loadHome();
         return;
@@ -859,6 +1133,7 @@ window.__lecStart = function () {
   function reLogin() {
     L.lsDel(LS.key); L.lsDel(LS.sess);
     S.key = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
+    S.al = null; S.alFresh = false;
     clearHash();
     showLogin(M.again);
   }
@@ -877,7 +1152,8 @@ window.__lecStart = function () {
   }
 
   /* ------------------------------------------------------------ 집 정보 */
-  function loadHome(quiet) {
+  /* quiet = 목록만 조용히 다시 그림 · then(N1 알림으로 엶) = 다시 그리는 대신 부를 일(받기에 실패해도 부름) */
+  function loadHome(quiet, then) {
     if (!S.key) { showLogin(''); return; }
     var k = S.key;
     var side = quiet ? null : sideStart(k);
@@ -889,13 +1165,15 @@ window.__lecStart = function () {
         return;
       }
       S.home = r;
+      S.homeAt = Date.now();
       S.name = (r.me && r.me.name) || S.name;
       S.lectures = r.lectures || [];
       S.consent = r.consent || null;
       if (r.consent_ver) S.cver = r.consent_ver;
-      if (quiet) { quietList(); return; }
+      if (quiet) { if (then) then(); else quietList(); return; }
       sideWait(side, k, route);
     }, function () {
+      if (k === S.key && then) { then(); return; }
       if (quiet || k !== S.key) return;
       showNet();
     });
@@ -915,6 +1193,20 @@ window.__lecStart = function () {
     L.rngMe(k).then(function (r) { if (k === S.key) S.rng = r; one(); }, one);
     loadPaper(k);
     loadPdf(k);
+    /* N1 새 영상 알림: 홈 화면 앱 + 알림 되는 폰에서만 부름(사파리 탭 · 카카오톡 · PC 탭은 안 부름 = 예전 그대로) ·
+       늦게 오면(목록을 이미 그림) 카드가 생길 때만 목록을 조용히 다시 그림 · 첫 로그인 단계는 늦으면 건너뜀(카드로) */
+    S.al = null;
+    if (alCan()) {
+      sd.n += 1;
+      L.pushOn(k).then(function (r) {
+        var late = S.view === 'list';
+        if (k === S.key) S.al = r;
+        one();
+        if (k !== S.key) return;
+        alQuiet();
+        if (late && S.view === 'list' && alState() !== alShown) quietList();
+      }, one);
+    }
     return sd;
   }
   function sideWait(sd, k, f) {
@@ -988,6 +1280,10 @@ window.__lecStart = function () {
     if (!S.key) { showLogin(S.loginErr); return; }
     if (!S.home) { loadHome(); return; }
     if (recMode() === 'pending') { teardown(); showConsent(false); return; }
+    if (S.alFresh) { /* N1: 홈 화면 앱 첫 로그인 · 옛 «기록 없이» 학생의 다시 동의(둘 다 동의 바로 뒤) · 알림을 띄울 수 있고 아직 안 물었을 때만 · 기기당 한 번 */
+      S.alFresh = false;
+      if (alOk() && alPerm() === 'default' && !L.lsGet(LS.alstep, 0)) { L.lsSet(LS.alstep, 1); teardown(); showAlStep(); return; }
+    }
     if (hs === 'rec') { teardown(); showConsent(true); return; }
     var m = hs.match(/^v=([^&]+)/);
     if (m) {
@@ -1046,6 +1342,7 @@ window.__lecStart = function () {
       if (r && r.ok) {
         S.consent = { choice: r.choice, ver: r.ver, at: r.at };
         if (again) clearHash();
+        else if (pwaStandalone()) S.alFresh = true; /* N1: 동의 판에서 동의한 바로 뒤 = 알림 단계 자리(옛 «기록 없이» 학생 포함 · 기기당 한 번은 route 가 셈) */
         route();
         return;
       }
@@ -1166,6 +1463,7 @@ window.__lecStart = function () {
       h += '<a class="cont tc card" href="#v=' + encodeURIComponent(best.id) + '" data-act="go" data-play="1" data-top="cont">' +
         cardBody(best, rec, M.contLab, '', '') + '</a>';
     }
+    h += alCardHTML(); /* N1 새 영상 알림 카드(홈 화면 앱 · 폰 허락 전에만) */
     if (!arr.length) {
       h += '<div class="rows"><div class="empty">아직 올라온 강의가 없어요.<br>수업 영상이 올라오면 여기에 보여요.</div></div>';
     } else {
@@ -1182,9 +1480,11 @@ window.__lecStart = function () {
         h += '</div></section>';
       }
     }
-    h += pwaBtnHTML('l') + footHTML() + '</div>';
+    h += pwaBtnHTML('l') + alHowRowHTML() + footHTML() + '</div>';
+    alShown = alState();
     app.innerHTML = h;
     pwaAuto();
+    if (S.nIds) alFlash();
   }
   /* 머리줄(목록 · 범위 · PC 보기 같음): 물고기 24 · «히즈 클래스» · 학생 이름 · «나가기» 44×44 */
   function topHTML(cls) {
@@ -1337,7 +1637,7 @@ window.__lecStart = function () {
   }
   function rowHTML(l, rec, today, a) {
     var pct = +l.pct || 0, st = statusOf(l), done = isDone(l, pct);
-    var isNew = !l.first_at && l.posted_on && dayDiff(today, l.posted_on) <= 3 && dayDiff(today, l.posted_on) >= 0;
+    var isNew = !l.first_at && !seenMap()['i' + l.id] && l.posted_on && dayDiff(today, l.posted_on) <= 3 && dayDiff(today, l.posted_on) >= 0;
     var tags = '';
     if (isNew && !l.ended) tags += '<span class="tag new">새 강의</span>';
     if (+l.ans_new > 0) tags += '<span class="tag ans">새 답변 ' + (+l.ans_new) + '</span>';
@@ -1486,6 +1786,7 @@ window.__lecStart = function () {
   function showPlayer(l) {
     S.view = 'player';
     S.tab = 'toc';
+    seenAdd(l.id); /* N1: 이 폰에서 연 강의 = «새 강의» 꼬리표 뗌(«기록 없이 보기»도) */
     S.q = { kind: 'content', at: null, frozen: false, useAt: true, priv: false, items: null, reply: null, del: null, busy: false };
     var rec = recMode() === 'agree';
     /* 결론안 K 보기 화면(무대 색): 폰 = «‹ 목록»·제목 → 영상(폭 끝까지 · 고정) → 영상 끝 띠 → 지문 띠 → «지금 05번» 줄 → 10초·배속 → 멈추고 풀기 판
@@ -2326,8 +2627,11 @@ window.__lecStart = function () {
     var k = S.key, a = L.lsGet(LS.pend, []), i, n, sent = false;
     teardown();
     var w = fly.slice();
-    L.lsDel(LS.key); L.lsDel(LS.sess); L.lsDel(LS.pend); L.lsDel(LS.rate);
+    if (S.al && alCan()) alDrop(k); /* N1: 이 폰 알림 구독 풀기 */
+    L.lsDel(LS.key); L.lsDel(LS.sess); L.lsDel(LS.pend); L.lsDel(LS.rate); L.lsDel(LS.seen);
+    SEEN = null;
     S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
+    S.al = null; S.alFresh = false; S.nIds = null;
     clearHash();
     showLogin('');
     if (Object.prototype.toString.call(a) === '[object Array]') {
@@ -2442,6 +2746,9 @@ window.__lecStart = function () {
     else if (act === 'delno') { S.q.del = null; keepReply(); drawQList(); }
     else if (act === 'delyes') { keepReply(); delQ(attr(el, 'data-id')); }
     else if (act === 'pwa') { pwaOpen(el); }
+    else if (act === 'alon') { alOn(el, false); }   /* N1 목록 카드 [알림 받기] */
+    else if (act === 'alstep') { alOn(el, true); }  /* N1 첫 로그인 단계 [알림 받기] */
+    else if (act === 'alhow') { pwaOpen(el, 'al'); }
     else if (act === 'pwaclose') { pwaClose(true); }
     else if (act === 'pwainstall') { pwaInstall(el); }
     else if (act === 'pwakakao') { pwaKakao(); }
@@ -2514,7 +2821,17 @@ window.__lecStart = function () {
   window.addEventListener('hashchange', function () { pwaClose(false); S.nav = true; route(); });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden' && T) { sample(); sendBeat(true); }
+    if (document.visibilityState === 'visible') alBack(); /* N1: 홈 화면 앱으로 돌아옴 */
   });
+  /* N1: 앱이 열려 있을 때 알림을 누름 → 일꾼이 {type: 'lec-open', ids} 를 보냄 */
+  try {
+    if (!window.__lecPvIn && navigator.serviceWorker && typeof navigator.serviceWorker.addEventListener === 'function') {
+      navigator.serviceWorker.addEventListener('message', function (e) {
+        var d = e && e.data;
+        if (d && d.type === 'lec-open') alOpen(alIds(d.ids));
+      });
+    }
+  } catch (eSw) { /* 없음 */ }
   window.addEventListener('pagehide', function () { if (T) { sample(); sendBeat(true); } });
 
   if (L.TEST) {
@@ -2533,6 +2850,12 @@ window.__lecStart = function () {
     var m = String(location.hash || '').match(/^#k=([^&]+)/), hk = '';
     if (m) {
       try { hk = decodeURIComponent(m[1]); } catch (e) { hk = ''; } /* 깨진 개인 링크 = 없는 것으로 */
+      clearHash();
+    }
+    /* N1: 강의 여럿을 알린 알림을 눌러 앱이 새로 열림 = #n=id,id → 목록에서 그 줄을 잠깐 칠함 */
+    var nm = String(location.hash || '').match(/^#n=([0-9a-f,-]+)$/);
+    if (nm) {
+      if (!window.__lecPvIn) S.nIds = alIds(nm[1].split(','));
       clearHash();
     }
     if (hk) {

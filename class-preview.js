@@ -348,6 +348,9 @@
     A.pdf = function () { return ok(json(P.pdf)); };
     A.qna = function () { return ok({ ok: true, items: [] }); };
     A.ask = no; A.qdel = no; A.beat = no; A.login = no; A.consent = no;
+    /* 새 영상 알림(§8-205): pushOn = null(서버 없음과 같음 → 단계 · 카드 · 켜는 법 줄 없음) · 저장 · 끄기 = 보내지 않음 */
+    A.pushOn = function () { return ok(null); };
+    A.pushSave = no; A.pushOff = no;
     A.logout = function () { return ok({ ok: true }); };
     w.Lec = A;
     w.__lecPvIn = true;
