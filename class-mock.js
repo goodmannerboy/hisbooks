@@ -774,7 +774,7 @@
         v: {
           id: l.id, title: l.title, book: l.book, yt: l.yt, dur: l.dur, chapters: l.chapters,
           lesson_on: l.lesson_on, posted_on: l.posted_on,
-          until: l.until == null ? null : l.until, ended: ended(l),
+          until: l.until == null ? null : extUntil(d, l, k), ended: endedK(d, l, k),
           pct: p ? p.pct : 0, pos: p ? p.pos : 0, watched: p ? p.watched : 0, seen: p ? p.seen : '',
           first_at: p ? p.first_at : null, last_at: p ? p.last_at : null, done_at: p ? p.done_at : null,
           confirmed: !!p && p.done_by != null,
@@ -822,7 +822,7 @@
     if (!k) return { ok: false, err: 'key' };
     var l = findLecture(d, a.p_lecture);
     if (!l || !isOpen(l, k.cls)) return { ok: false, err: 'lecture' };
-    if (ended(l)) return { ok: false, err: 'ended' };
+    if (endedK(d, l, k)) return { ok: false, err: 'ended' };
     if (!agreed(d, k.sid)) return { ok: false, err: 'no_consent' };
     if (a.p_session == null) return { ok: false, err: 'input' };
 
@@ -950,7 +950,7 @@
     if (!k) return { ok: false, err: 'key' };
     var l = findLecture(d, a.p_lecture);
     if (!l || !isOpen(l, k.cls)) return { ok: false, err: 'lecture' };
-    if (ended(l)) return { ok: false, err: 'ended' };
+    if (endedK(d, l, k)) return { ok: false, err: 'ended' };
     if (!agreed(d, k.sid)) return { ok: false, err: 'no_consent' };
     var body = X.btrim(str(a.p_body)), bn = X.clen(body);
     var kind = a.p_kind == null ? 'content' : a.p_kind;
@@ -1399,7 +1399,7 @@
     for (i = 0; i < d.lecture.length; i += 1) {
       l = d.lecture[i];
       if (!isOpen(l, k.cls)) continue;
-      if (ended(l)) continue;   // 끝난 강의는 플레이어를 열지 않으므로 지문 줄도 안 보냄(검수 B2 L-8 · SQL 과 같음)
+      if (endedK(d, l, k)) continue;   // 끝난 강의는 플레이어를 열지 않으므로 지문 줄도 안 보냄(검수 B2 L-8 · SQL 과 같음) · 시험 범위 강의는 끝 날까지(M2)
       ri = l.runner && isArr(l.runner.items) ? l.runner.items : [];
       if (!ri.length) continue;
       p = [];
@@ -2342,6 +2342,31 @@
     return !!(g && g.saved_at && isFinite(tms(l.created_at)) && isFinite(tms(g.saved_at)) && tms(l.created_at) > tms(g.saved_at) &&
       (l.class_ids || []).indexOf('*') < 0 && day && day >= c2Add(g.exam_on, -70) && day < g.end_on);
   }
+  /* M2(11-16 원장님 «6·9 바꿔» · 서버 lec__ext_to 와 같음): 시험 범위 강의는 시험 끝 날까지(한국 날짜 · 그날 포함)
+     내 rid(또는 학생 열쇠)가 든 꺼지지 않은 줄 가운데 오늘 <= 끝 날인 줄(같은 이름 · 같은 날짜면 나중에 저장한 줄 하나)에
+     강의가 들었거나 저장한 뒤 올라온 강의(c2New)면 그 줄의 끝 날 · 여럿이면 가장 늦은 날 · 없으면 null
+     강의의 until 은 고치지 않음 · 숨김 · 공개 전 · 남의 반은 부르는 쪽(isOpen)이 그대로 막음 */
+  function extTo(d, l, k) {
+    var t = today(), rid = str(k.rid) !== '' ? str(k.rid) : str(k.sid).split('|')[0], pick = {}, key, g, best = null;
+    (d.range || []).forEach(function (r) {
+      var rids = r && r.rids ? r.rids : [], cur, kk;
+      if (!r || r.off || !(t <= r.end_on)) return;
+      if (!((rid !== '' && rids.indexOf(rid) >= 0) || rids.indexOf(k.sid) >= 0)) return;
+      kk = str(r.name) + '|' + r.exam_on + '|' + r.end_on;
+      cur = pick[kk];
+      if (!cur || c2Ts(r.saved_at, cur.saved_at) > 0 || (c2Ts(r.saved_at, cur.saved_at) === 0 && cmpC(r.id, cur.id) < 0)) pick[kk] = r;
+    });
+    for (key in pick) {
+      if (!has(pick, key)) continue;
+      g = pick[key];
+      if (((g.lecture_ids || []).indexOf(l.id) >= 0 || c2New(g, l)) && (best == null || g.end_on > best)) best = g.end_on;
+    }
+    return best;
+  }
+  /* lec__ended_k: 공개 끝이 지났고 늘어난 끝 날도 없음 */
+  function endedK(d, l, k) { return ended(l) && extTo(d, l, k) == null; }
+  /* lec_home 의 until: 늘어난 끝 날이 더 늦으면 그 날(학생 화면이 지난 날짜를 보지 않게 · until 이 없으면 부르지 않음) */
+  function extUntil(d, l, k) { var e = extTo(d, l, k); return e != null && e > l.until ? e : l.until; }
   function c2Meets(a, b) {
     var i;
     a = isArr(a) ? a : []; b = isArr(b) ? b : [];
@@ -2497,7 +2522,7 @@
     order.forEach(function (key) {
       var g = pick[key], ls = [], done = 0;
       d.lecture.forEach(function (l) {
-        if (((g.lecture_ids || []).indexOf(l.id) >= 0 || c2New(g, l)) && isOpen(l, k.cls) && !ended(l)) ls.push(l);
+        if (((g.lecture_ids || []).indexOf(l.id) >= 0 || c2New(g, l)) && isOpen(l, k.cls) && !endedK(d, l, k)) ls.push(l);
       });
       if (!ls.length) return;
       ls.sort(function (x, y) {
@@ -2554,7 +2579,7 @@
     /* 이 선생님이 못 보는 강의는 줄에 있던 대로 · 줄 저장 뒤 올라와 받는 학생에게 저절로 들어가던 강의(M1 · L-1)는
        못 보는 강의면 그대로 · 볼 수 있는 강의면 화면이 본 적 없는 강의(만든 시각이 p_seen 뒤)만 그대로(L-2) */
     d.lecture.forEach(function (l) {
-      var m1 = !!row && !l.hidden && !ended(l) && c2New(row, l) && c2Meets(l.class_ids, rc);
+      var m1 = !!row && !l.hidden && (!ended(l) || today() <= row.end_on) && c2New(row, l) && c2Meets(l.class_ids, rc);
       if (((lecs || []).indexOf(l.id) >= 0 && vis(l)) || (old.indexOf(l.id) >= 0 && !vis(l)) ||
           (m1 && (!vis(l) || Math.floor(tms(l.created_at)) > seen))) lv.push(l.id);
     });

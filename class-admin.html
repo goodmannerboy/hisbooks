@@ -222,6 +222,19 @@ textarea{resize:vertical}
 .rgl .t{flex:1 1 auto;min-width:0;font-size:14px;font-weight:650}
 .rgl .b{font-size:12.5px;color:#5C5A52;white-space:nowrap}
 .rgl .u{white-space:nowrap;font-variant-numeric:tabular-nums}
+/* 공개 끝 꼬리가 있는 줄(.ux · 검수 2차 B H1 · L2): 꼬리는 제목 아래 자기 줄 · 제목 왼쪽 끝에 맞춤 · 모든 너비 같은 꼴 ·
+   제목 · 모든 반 · 교재가 한 줄에 안 들어가면 교재(또는 모든 반)가 제목 왼쪽 끝 아래로 내려감(제목이 눌려 낱말 중간에서 끊기지 않게) ·
+   꼬리 없는 줄은 .tw 가 상자를 안 만들어(display:contents) PC 에서 1차와 같은 한 줄 */
+.rgl .tw{display:contents}
+.rgl .ux{align-items:flex-start}
+.rgl .ux input[type=checkbox]{margin-top:6px}
+.rgl .ux .d{line-height:30px}
+.rgl .ux .tw{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px}
+.rgl .ux .t{padding:4.5px 0}
+.rgl .ux .b{white-space:normal;min-width:0}
+.rgl .ux .u{flex:0 0 100%;white-space:normal;margin-top:-2px}
+.rgl .u .k{white-space:nowrap}
+.rgl .u .g{color:#1E5A3E;font-weight:700}
 .rgm{margin-top:10px}
 /* 편집 칸 */
 .fld{margin-top:14px}
@@ -387,6 +400,15 @@ b,strong,.bandn strong{font-weight:700}
 .pbar{background:#E8DFC4}
 .pbar i{background:#2F7A55}
 .pl{font-size:13px}
+/* 할 일 6(L18): 완료 셈 두 줄 «결석 2명 중 완료 1» / «복습 3명» · 강의 표 단추 · 시청 현황 아래 줄 */
+.cq{position:relative;display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.3;text-align:left}
+.cq b{font-size:13px;font-weight:700}
+.cq small{font-size:12px;font-weight:400;color:#5F6256}
+/* 시청 현황 표 아래 줄은 덩어리마다 한 줄(폰 390 에서 «결석 1명 중 / 완료 0» 으로 갈리던 것 · 검수 2차 B L1 · 표는 가로로 밀림) */
+.mt tfoot .cq b,.mt tfoot .cq small{white-space:nowrap}
+/* 서랍 머리 작은 줄의 덩어리(dHead 덩어리 목록 · 검수 2차 B L5) */
+.dh .nw{white-space:nowrap}
+.btn.cqb{white-space:normal;justify-content:flex-start;padding-top:4px;padding-bottom:4px}
 /* 질문: 머리 «답변 대기 · 내용 · 이름 · 반 · 시각 … 장면 보기» · 본문 15 · 선생님 답은 왼쪽 초록 줄 */
 .th{background:#FFFDF7;border-color:#E6DCBF;border-radius:16px;padding:16px}
 .th.focus{border-color:#9E7C14;box-shadow:none}
@@ -480,6 +502,14 @@ b,strong,.bandn strong{font-weight:700}
   .chx .cl{position:static;width:auto;height:auto;margin:0 0 2px;overflow:visible;clip:auto;display:block;font-size:12px;color:#5F6256}
   .chp{grid-row:3;grid-column:1/-1}
   .cht input[type=text],.chx .cxb input,.chx .cxw input,.chx .cxs input{height:44px;font-size:15px}
+  /* 할 일 9 · 검수 2차 B L2: 폰은 꼬리 없는 줄도 같은 꼴(1차 폰은 교재가 제목 칸을 눌러 글자마다 끊겼음) ·
+     둘째 · 셋째 줄(모든 반 · 교재 · 꼬리)은 모두 제목 왼쪽 끝에 맞춤 */
+  .rgl label{align-items:flex-start}
+  .rgl input[type=checkbox]{margin-top:6px}
+  .rgl .d{line-height:30px}
+  .rgl .tw{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px}
+  .rgl .t{padding:4.5px 0}
+  .rgl .b{white-space:normal;min-width:0}
 }
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
 </style>
@@ -904,7 +934,7 @@ window.__lecAdminStart = function () {
     return str(g.school_nm || g.k) + ' ' + str(g.g) + '학년 ' + str(g.label || g.name) + ' · 시험 ' + rngWhen(g) + ' · 받는 학생 ' + g.rids.length + '명' + (u ? ' · 학년 모름 ' + u + '명' : '');
   }
   /* 고른 강의: 후보 가운데 체크한 것(후보 차례) + 저장한 줄에 있던 강의 가운데 이 화면 후보에 없는 것(숨김 · 공개 끝 · 남의 반 강의 · 그대로 둠) */
-  function rngCandsOf(g) { return L.rngCands(D.vis, g.cids, g.exam_on, D.rg.today, g.end_on); }
+  function rngCandsOf(g) { return L.rngCands(D.vis, g.cids, g.exam_on, D.rg.today, g.end_on, rngRow(g)); }
   /* 체크 = 바탕(L.rngBase: 저장한 줄 + 저장 뒤 올라온 강의 · 줄이 없으면 처음부터 체크) 위에 사람이 켜고 끈 것(S.rngSel[key] = {id: true|false})
      S.rngSel 에는 사람이 바꾼 것만 둠 · 그래서 서랍을 연 뒤 강의가 올라오거나 저장이 바뀌어도 바탕이 따라감(C2 검수 M1 · L6) */
   function rngSelOf(g, cands) {
@@ -920,6 +950,19 @@ window.__lecAdminStart = function () {
     for (i = 0; i < cands.length; i += 1) { seen[cands[i].id] = 1; if (sel[cands[i].id]) out.push(cands[i].id); }
     if (row && isArr(row.lecture_ids)) { for (i = 0; i < row.lecture_ids.length; i += 1) { if (!seen[row.lecture_ids[i]]) out.push(row.lecture_ids[i]); } }
     return out;
+  }
+  /* 공개 끝이 시험 끝 날 전인 강의(M2 · 11-16 원장님 «6·9 바꿔»): 고르면 학생에게 시험 끝 날까지(그날 포함) 보임.
+     꼬리(제목 아래 자기 줄 · 검수 2차 B H1 · A 낮음 1) — MM.DD = 강의의 공개 끝 날 · 지남 = x.ext(공개 끝이 지났는데 범위로 남은 강의):
+     고름 «MM.DD까지 → 시험 끝까지 공개» / 고름 · 지남 «MM.DD에 끝남 → 시험 끝까지 공개»(날짜 회색 · 뒤 초록) ·
+     안 고름 «MM.DD까지» / 안 고름 · 지남 «MM.DD에 끝남 · 저장하면 닫혀요»(빼고 저장하면 후보에서도 사라짐) ·
+     덩어리(.k) 안에서는 줄을 안 바꿈 · 체크를 켜고 끌 때 그 줄만 고침(rngTog · data-u) */
+  function rngTail(x, g) { var en = str(g.end_on) || str(g.exam_on); return !!(x.until && en && x.until < en); }
+  function rngUntil(x, g, on) {
+    var a = '" data-u="' + esc(x.id) + '">', md;
+    if (!rngTail(x, g)) return '<span class="u sm' + a.slice(0, -1) + ' hidden></span>';
+    md = esc(L.fmtMD(x.until)) + (x.ext ? '에 끝남' : '까지');
+    if (on) return '<span class="u sm ext' + a + '<span class="k mut">' + md + '</span> <span class="k g"><span aria-hidden="true">→ </span>시험 끝까지 공개</span></span>';
+    return '<span class="u mut sm' + a + '<span class="k">' + md + '</span>' + (x.ext ? ' <span class="k">· 저장하면 닫혀요</span>' : '') + '</span>';
   }
   function rngPickedN(g) {
     var cands = rngCandsOf(g), sel = rngSelOf(g, cands), n = 0, i;
@@ -1118,10 +1161,32 @@ window.__lecAdminStart = function () {
     }
     return out;
   }
-  function compl(l, cid) {
-    var t = targets(l, cid), n = 0, i;
-    for (i = 0; i < t.length; i += 1) { if (isDone(stat(l, t[i].skey))) n += 1; }
-    return { n: n, m: t.length };
+  function compl(l, cid) { return complRows(l, targets(l, cid)); }
+  /* 할 일 6(11-16 원장님 «6·9 바꿔» · 검수 L18): 완료 셈의 분모 = 결석한 학생.
+     출결을 아는 강의 = «결석 2명 중 완료 1» + «복습 3명»(교실 학생 중 영상을 본 기록이 있는 학생 · hasWatch) · 결석이 없으면 «결석 없음 · 복습 n명» ·
+     출결을 모르면 지금 그대로 «완료 n/전체». 결석 = C1 칸과 같은 attOf(여러 수업일 강의 · 보강도 결석) · 완료 = isDone */
+  /* 판단 2(11-16 리더): 본 기록 = 진도 1% 이상(반올림 · «일부»와 같은 문턱) · 기록 안 함 아님.
+     선생님 확인만 있고 본 기록이 없으면 «복습»에 안 셈 · 본 기록이 있으면 확인이 같이 있어도 셈 */
+  function hasWatch(s) { return s.rec !== 'none' && !!s.p && Math.round(+s.p.pct || 0) > 0; }
+  function complRows(l, rows) {
+    var o = { known: false, abs: 0, absDone: 0, rev: 0, n: 0, m: rows.length }, i, s, x;
+    for (i = 0; i < rows.length; i += 1) {
+      s = stat(l, rows[i].skey);
+      if (isDone(s)) o.n += 1;
+      x = attOf(l.id, rows[i].skey);
+      if (!x) continue;
+      o.known = true;
+      if (x.a === 'abs') { o.abs += 1; if (isDone(s)) o.absDone += 1; }
+      else if (x.a === 'in' && hasWatch(s)) o.rev += 1;
+    }
+    o.big = !o.known ? '완료 ' + o.n + '/' + o.m : (o.abs ? '결석 ' + o.abs + '명 중 완료 ' + o.absDone : '결석 없음');
+    o.small = o.known ? '복습 ' + o.rev + '명' : '';
+    o.text = o.big + (o.small ? ' · ' + o.small : '');
+    return o;
+  }
+  /* 좁은 칸은 두 줄(큰 줄 «결석 2명 중 완료 1» · 작은 줄 «복습 3명») · 읽는 글은 « · »로 이어짐 */
+  function complCell(c) {
+    return c.known ? '<span class="cq"><b>' + esc(c.big) + '</b><span class="sr"> · </span><small>' + esc(c.small) + '</small></span>' : esc(c.big);
   }
   /* 이 강의를 보는 내 반(목록 차례) */
   function colClasses(l) {
@@ -1334,8 +1399,8 @@ window.__lecAdminStart = function () {
       '<td data-l="반">' + esc(clsNames(l.class_ids) || '–') + '</td>' +
       '<td data-l="길이" class="num">' + (l.dur > 0 ? esc(L.fmtDur(l.dur)) : '–') + '</td>' +
       '<td data-l="공개 상태">' + pubHtml(l) + '</td>' +
-      '<td data-l="완료">' + (dc ? '<button type="button" class="btn sm" data-act="colOpen" data-l="' + lid + '" data-c="' + esc(dc) + '">완료 ' + c.n + '/' + c.m + '</button>' :
-        '<span class="mut">완료 ' + c.n + '/' + c.m + '</span>') + '</td>' +
+      '<td data-l="완료">' + (dc ? '<button type="button" class="btn sm' + (c.known ? ' cqb' : '') + '" data-act="colOpen" data-l="' + lid + '" data-c="' + esc(dc) + '">' + complCell(c) + '</button>' :
+        '<span class="mut">' + complCell(c) + '</span>') + '</td>' +
       '<td data-l="질문">' + (q.all ? '<button type="button" class="btn sm" data-act="qLec" data-l="' + lid + '">질문 ' + q.all +
         (q.wait ? ' <span class="tag t-honey">대기 ' + q.wait + '</span>' : '') + '</button>' : '<span class="mut">질문 0</span>') + '</td></tr>';
   }
@@ -1384,11 +1449,7 @@ window.__lecAdminStart = function () {
       h += '</tr>';
     }
     h += '</tbody><tfoot><tr><th class="nm" scope="row">완료</th>';
-    for (j = 0; j < cols.length; j += 1) {
-      n = 0;
-      for (i = 0; i < rows.length; i += 1) { if (isDone(stat(cols[j], rows[i].skey))) n += 1; }
-      h += '<td>완료 ' + n + '/' + rows.length + '</td>';
-    }
+    for (j = 0; j < cols.length; j += 1) h += '<td>' + complCell(complRows(cols[j], rows)) + '</td>';
     h += '</tr></tfoot></table></div>';
     h += '<p class="legend"><span><i class="c-done"></i>90% 넘게 봄(완료)</span><span><i class="c-conf"></i>선생님 확인 완료</span>' +
       '<span><i class="c-part"></i>보는 중</span><span><i class="c-zero"></i>0%</span><span><i class="c-none"></i>기록 안 함 · 동의 전</span>' +
@@ -1499,9 +1560,12 @@ window.__lecAdminStart = function () {
     if (sig !== S.dSig) { dw.scrollTop = 0; S.dSig = sig; }
     if (wasHidden) { var c = dw.querySelector('[data-act="dClose"]'); if (c) c.focus(); }
   }
+  /* sub = 글 하나 또는 덩어리 목록(덩어리 안에서는 줄을 안 바꾸고 « · »로 이음 · 폰 열 서랍 «복습 / 3명» 갈림 · 검수 2차 B L5) */
   function dHead(title, sub) {
+    if (isArr(sub)) sub = sub.filter(function (x) { return !!x; }).map(function (x) { return '<span class="nw">' + esc(x) + '</span>'; }).join(' · ');
+    else sub = sub ? esc(sub) : '';
     return '<div class="dh">' + (S.stack.length ? '<button type="button" class="btn sm txt" data-act="dBack">← 뒤로</button>' : '') +
-      '<div class="dt"><h2 id="dw-t">' + esc(title) + '</h2>' + (sub ? '<p class="mut">' + esc(sub) + '</p>' : '') + '</div>' +
+      '<div class="dt"><h2 id="dw-t">' + esc(title) + '</h2>' + (sub ? '<p class="mut">' + sub + '</p>' : '') + '</div>' +
       '<button type="button" class="x" data-act="dClose" aria-label="닫기">×</button></div>';
   }
 
@@ -1555,12 +1619,12 @@ window.__lecAdminStart = function () {
       }
     }
     function item(x) {
-      return '<li><label><input type="checkbox" data-chg="rngTog" data-s="' + esc(key) + '" data-l="' + esc(x.id) + '"' + (sel[x.id] ? ' checked' : '') + '>' +
-        '<span class="d">' + esc(x.day ? L.fmtDay(x.day) : '–') + '</span><span class="t">' + esc(x.title || '(제목 없음)') + '</span>' +
+      /* .tw = 제목 · 모든 반 · 교재 · 꼬리(꼬리 있는 줄 .ux 와 폰에서만 상자 · 꼬리는 맨 끝 = 제목 아래 자기 줄) */
+      return '<li><label' + (rngTail(x, g) ? ' class="ux"' : '') + '><input type="checkbox" data-chg="rngTog" data-s="' + esc(key) + '" data-l="' + esc(x.id) + '"' + (sel[x.id] ? ' checked' : '') + '>' +
+        '<span class="d">' + esc(x.day ? L.fmtDay(x.day) : '–') + '</span><span class="tw"><span class="t">' + esc(x.title || '(제목 없음)') + '</span>' +
         (x.all ? '<span class="tag t-neutral">모든 반</span>' : '') +
-        /* 공개가 시험 첫날 전에 끝나는 강의: 회색 «MM.DD까지»(강의 목록과 같은 꼴 · 공개는 늘리지 않음 · C2 검수 M2) */
-        (x.until && x.until < str(g.exam_on) ? '<span class="u mut sm">' + esc(L.fmtMD(x.until)) + '까지</span>' : '') +
-        (x.book ? '<span class="b">' + esc(x.book) + '</span>' : '') + '</label></li>';
+        (x.book ? '<span class="b">' + esc(x.book) + '</span>' : '') +
+        rngUntil(x, g, !!sel[x.id]) + '</span></label></li>';
     }
     h += '<div class="sec"><h3>범위 강의</h3>';
     if (!cands.length) {
@@ -1717,7 +1781,8 @@ window.__lecAdminStart = function () {
       if (isDone(s)) nD += 1; else if (x) nB += 1;
       if (f === 'all' || (f === 'done' && isDone(s)) || (f === 'behind' && x)) list.push({ r: rows[i], s: s });
     }
-    h = dHead(l.title, (L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업 · ' : '') + (cid ? D.cname[cid] + ' · ' : '') + '완료 ' + nD + '/' + rows.length);
+    x = complRows(l, rows);
+    h = dHead(l.title, [L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업' : '', cid ? D.cname[cid] : '', x.big, x.small]);
     h += '<div class="db">';
     if (cls.length > 1) {
       h += '<div class="chips" role="group" aria-label="반 고르기">';
@@ -3058,8 +3123,19 @@ window.__lecAdminStart = function () {
       /* 사람이 켜고 끈 것만 적음(켬 true · 끔 false · 바탕은 rngSelOf 가 그때그때 · C2 검수 L6) */
       if (!S.rngSel[s]) S.rngSel[s] = {};
       S.rngSel[s][t.getAttribute('data-l')] = !!t.checked;
-      var g9 = rngGrp(s), n9 = $('rng-n');
+      var g9 = rngGrp(s), n9 = $('rng-n'), l9 = t.getAttribute('data-l'), c9, u9, i9, w9;
       if (g9 && n9) n9.textContent = '고른 강의 ' + rngPickedN(g9) + '개';
+      /* 공개 끝 꼬리(M2): 켜면 «MM.DD까지 → 시험 끝까지 공개» · 끄면 회색 «MM.DD까지»(지난 강의는 «… · 저장하면 닫혀요») — 꼬리 글만 바꿔 끼움(줄 높이 그대로) */
+      if (g9 && t.parentNode && t.parentNode.querySelector) {
+        u9 = t.parentNode.querySelector('[data-u]');
+        c9 = rngCandsOf(g9);
+        for (i9 = 0; i9 < c9.length && c9[i9].id !== l9; i9 += 1) {}
+        if (u9 && i9 < c9.length) {
+          w9 = document.createElement('span');
+          w9.innerHTML = rngUntil(c9[i9], g9, !!t.checked);
+          if (w9.firstChild) u9.parentNode.replaceChild(w9.firstChild, u9);
+        }
+      }
       return;
     }
     if (t.getAttribute && t.getAttribute('data-chg') === 'pmLec') {

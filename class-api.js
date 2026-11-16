@@ -1587,23 +1587,37 @@
   /* 범위 고르기 후보: 그 묶음 반의 강의(전체 강의 포함 · 숨김 · 공개 끝 뺌) · 수업일 늦은 차례
      → [{id, title, book, day, all, near, checked, until, at}]
      near = 수업일이 시험 첫날 70일 전 ~ 시험 끝 날 전(endOn 을 주면) · checked = near 이면서 «모든 반»이 아님(처음부터 체크 · C2 검수 L7)
-     until = 공개 끝 날(없으면 null · 서랍의 «MM.DD까지») · at = 올린 시각(created_at · 저장 뒤 올린 강의 고르기 · M1) */
-  function rngCands(lectures, cids, examOn, today, endOn) {
+     until = 공개 끝 날(없으면 null · 서랍의 «MM.DD까지») · at = 올린 시각(created_at · 저장 뒤 올린 강의 고르기 · M1)
+     row = 저장한 줄(주면 · M2): 공개 끝이 지난 강의도 줄의 시험 끝 날까지(그날 포함)는 남김 — 줄에 든 강의이거나 저장 뒤 올라온
+     처음부터 체크 강의(M1 · 서버 lec__ext_to 와 같은 뜻) · 남긴 것은 ext = true(서버가 학생에게 시험 끝 날까지 보여 주는 강의) */
+  function rngCands(lectures, cids, examOn, today, endOn, row) {
     var td = isoOf(today == null ? Lec.isoDay() : today), ex = isoOf(examOn), en = isoOf(endOn), from = ex ? addDays(ex, -70) : '',
-      out = [], i, l, ids, all, day, near;
+      out = [], i, l, ids, all, day, near, ext, keep = {}, rex = '', ren = '', st = NaN, at;
     if (!isArr(lectures)) return out;
     cids = isArr(cids) ? cids : [];
+    if (isObj(row) && isArr(row.lecture_ids)) {
+      for (i = 0; i < row.lecture_ids.length; i += 1) keep[row.lecture_ids[i]] = 1;
+      rex = isoOf(row.exam_on) || ex;
+      ren = isoOf(row.end_on) || en || rex;
+      st = Lec.ts(row.saved_at);
+    }
     for (i = 0; i < lectures.length; i += 1) {
       l = lectures[i];
       if (!isObj(l) || l.hidden || !l.id) continue;
-      if (l.until != null && td && td > str(l.until)) continue;
       ids = isArr(l.class_ids) ? l.class_ids : [];
       all = ids.indexOf('*') >= 0;
       if (!all && !meets(ids, cids)) continue;
       day = lecDay(l);
       near = !!(ex && day && day >= from && (!en || day < en));
+      ext = false;
+      if (l.until != null && td && td > str(l.until)) {
+        at = Lec.ts(l.created_at);
+        if (!(ren && td <= ren && (has(keep, l.id) ||
+            (!all && rex && day && day >= addDays(rex, -70) && day < ren && isFinite(st) && isFinite(at) && at > st)))) continue;
+        ext = true;
+      }
       out.push({ id: l.id, title: str(l.title), book: str(l.book), day: day, all: all, near: near, checked: near && !all,
-        until: isoOf(l.until) || null, at: l.created_at == null ? null : l.created_at });
+        until: isoOf(l.until) || null, at: l.created_at == null ? null : l.created_at, ext: ext });
     }
     out.sort(function (a, b) {
       var ta = Lec.ts(a.at), tb = Lec.ts(b.at);
