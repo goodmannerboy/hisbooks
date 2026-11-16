@@ -298,6 +298,191 @@ textarea{resize:vertical}
   .edfoot{padding:10px 14px}
 }
 </style>
+<style id="k-adm">
+/* K 결론안(11-16) 선생님 화면 · 위 규칙은 그대로 두고 여기서만 덮음
+   크림 토큰: 바탕 #F4ECD7 · 카드 #FFFDF7 · 줄 #E6DCBF · 점선 #CBBF9A · 보조 글자 #5F6256 · 금색 #9E7C14 은 초점 테두리에만
+   굵기 400 · 700 · 가장 작은 글자 12 · 간격 4의 배수 · 움직임 160 · 240ms */
+body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:14px}
+.mut,.who,.addr label,.empty,.none,.sub h3,.lt th,.mt thead .nm,.colh .d,.legend,.hlab,.ax,.hleg,.hl,.lb,.llb .d,.chl .ct,.rgl .d,.rgl .b,.chip .cnt,.dyw,.dyc .dyl,.lg .hint,.tab{color:#5F6256}
+.sm,.who,.addr label,.lt th,.mt thead .nm,.legend,.llb .d,.rgl .d,.rgl .b,.dyc .dyl,.dyw,.lb,.hl,.dh p,.rgi.mut{font-size:13px}
+.mt .nm .tag,.colh .tag,.cell small,.hlab,.ax,.crm .tag,.colh .d,.hleg{font-size:12px}
+.hlab{overflow:visible}
+.num,.lt td.dt,.cell,.colh .d,.pl,.mt tfoot td,.chl .ct,.chl .cp,.llb .d,.rgl .d,.rgl .u,.dyw,.edsum,.cht input{font-variant-numeric:tabular-nums}
+.brand h1,.bar h2,.dh h2,.lg h1,.ti .tn{letter-spacing:-.02em}
+.todo h2,.sec h3,.colh .t,.ti .tx,.ntc .nth b,.th>.pb{letter-spacing:-.01em}
+.todo h2,.bar h2,.dh h2,.sec h3,.lg h1,.ntc .nth b{text-wrap:balance}
+/* 질문 본문 .th>.pb 는 양쪽 정렬(.pb)이라 balance 를 주면 짧아진 줄이 늘어나 낱말 사이가 벌어짐(K 마지막 검사 · 폰 390 에서 75px) → 빼 둠 */
+/* 굵기: 650 · 750 · 800 → 700 / 500 · 600 · 650(보조) → 400 */
+.brand h1,.todo h2,.bar h2,.colh .t,.cell b,.mt tfoot td,.mt tfoot th,.pl,.pw,.dh h2,.sec h3,.lg h1,.lg label,.rgl .t,.bandn{font-weight:700}
+.btn,.chip,.chip .cnt,.ti.more,.tab,.bar h2 .mut,.colh .d,.cfd,.llb .t,.dyc .dyl,.edfoot .msg,.toast,.fld>label,.fl,.fld .req{font-weight:400}
+/* 단추 · 칩 · 칸 */
+.btn{min-height:40px;padding:8px 16px;border-color:#E6DCBF;background:#FFFDF7;font-size:14px}
+.btn.sm{min-height:32px;padding:4px 12px;font-size:13px}
+.btn.fill{background:#0C4631;border-color:#0C4631;color:#FFFDF7;font-weight:700}
+.btn.strong{border:1px solid #0C4631;background:#FFFDF7;font-weight:700}
+.btn.txt{border-color:transparent;background:transparent;padding:8px}
+.btn.warn{color:#9A3F33;border-color:#E3B4A8;background:#FBE9E3}
+.btn:hover,.chip:hover,.ti:hover,.cell:hover,.colh:hover,.crp:hover,.x:hover{border-color:#CBBF9A}
+.btn.fill:hover{border-color:#0F5A3F}
+.btn.txt:hover{border-color:transparent}
+.x{border-color:#E6DCBF;background:#FFFDF7}
+.btn:focus-visible,.chip:focus-visible,.tab:focus-visible,.ti:focus-visible,.lnk:focus-visible,.cell:focus-visible,.colh:focus-visible,.crp:focus-visible,.llb:focus-visible,.x:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.mx:focus-visible{outline-color:#9E7C14}
+.lnk{text-decoration-color:#CBBF9A}
+.chip{min-height:36px;padding:4px 12px;font-size:14px;border-color:#E6DCBF;background:#FFFDF7;color:#5F6256}
+.chip.on{background:#0C4631;border-color:#0C4631;color:#FFFDF7;font-weight:700}
+.chip.on .cnt{color:#FFFDF7}
+.t-neutral{background:#EFEDE5;color:#5F6256}
+.t-line{background:#FFFDF7;color:#5F6256;box-shadow:inset 0 0 0 1px #E6DCBF}
+.tag{padding:4px 8px;line-height:1.25}
+.card{background:#FFFDF7;border-color:#E6DCBF;border-radius:16px;padding:16px 20px}
+.msg{font-size:13px}
+input[type=text],input[type=date],input[type=password],input:not([type]),textarea,select{border-color:#E6DCBF;background:#F4ECD7;font-size:14px;padding:8px 12px}
+input[disabled],textarea[disabled]{background:#EFEDE5;color:#5F6256}
+.btn,.chip,.ti,.cell,.colh,.tab,.crp,.llb,.x,input,textarea,select{transition:border-color .16s,background-color .16s,color .16s}
+.toast{transition:opacity .24s,transform .24s;font-weight:400}
+/* 머리 · 탭 */
+.brand h1{font-size:18px}
+.tabs{gap:4px;margin:20px 0 12px;border-bottom:1px solid #E6DCBF}
+.tab{min-height:44px;padding:8px 16px;border-radius:8px 8px 0 0;border:0;font-size:15px}
+.tab.on{background:transparent;color:#0C4631;font-weight:700;box-shadow:inset 0 -2px 0 #0C4631}
+.bar h2{font-size:18px}
+/* 오늘 할 일 타일: 아이콘 32 · 제목 14/700 · 작은 줄 · 큰 숫자 22/700 · › (1280 이상 넷 · 아래는 둘) */
+.todo h2{font-size:16px;margin-bottom:8px}
+.tgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ti{gap:12px;padding:12px;min-height:64px;border-radius:14px;border-color:#E6DCBF;background:#FFFDF7;font-size:14px}
+.ti .tic{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex:none;border-radius:8px}
+.ti .tic svg{width:18px;height:18px;display:block}
+.tic.i-am{background:#FBF0C9;color:#7A5410}
+.tic.i-gy{background:#EFEDE5;color:#5F6256}
+.tic.i-co{background:#FBE9E3;color:#9A3F33}
+.ti .tcx{flex:1 1 auto;min-width:0}
+.ti .tx{display:block;font-size:14px;font-weight:700;line-height:1.35}
+.ti .ts{display:block;margin-top:2px;font-size:12px;line-height:1.4;color:#5F6256}
+.ti .tn{flex:none;font-size:22px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.ti .go{color:#5F6256;font-weight:400;font-size:18px}
+.ti.more{justify-content:center;color:#5F6256}
+.bandn{font-size:14px;margin:0 0 8px}
+b,strong,.bandn strong{font-weight:700}
+@media (min-width:1280px){.tgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:560px){.tgrid{grid-template-columns:minmax(0,1fr)}}
+.sub{border-left-color:#E6DCBF}
+.ask{background:#FBE9E3;border-color:#E3B4A8}
+/* 강의 표 · 시청 현황 */
+.lt td{border-bottom-color:#EFE7D2}
+.lt .ttl .lnk{font-size:15px}
+.mx{border-color:#E6DCBF;background:#FFFDF7;border-radius:16px}
+.mt{font-size:13px}
+.mt thead th,.mt thead .nm,.mt .nm,.mt tfoot td,.mt tfoot th{background:#FFFDF7}
+.mt .nm{border-right-color:#E6DCBF}
+.mt .nm .lnk{font-size:14px}
+.colh .t{font-size:13px}
+.cell{min-height:44px;padding:4px 10px;font-size:13px;line-height:1.3}
+.cell b{font-size:13px}
+.c-in{background:transparent;border-color:transparent;color:#5F6256;font-size:12px}
+.c-abs{background:#FBF0C9;color:#7A5410;font-weight:700}
+.c-done{background:#DDF0E5;color:#1E5A3E}
+.c-zero{background:#EFEDE5;color:#5F6256}
+.c-conf{background:#FFFDF7}
+.c-none,.c-pend{background:transparent;color:#5F6256;border:1px dashed #5F6256}
+.pbar{background:#E8DFC4}
+.pbar i{background:#2F7A55}
+.pl{font-size:13px}
+/* 질문: 머리 «답변 대기 · 내용 · 이름 · 반 · 시각 … 장면 보기» · 본문 15 · 선생님 답은 왼쪽 초록 줄 */
+.th{background:#FFFDF7;border-color:#E6DCBF;border-radius:16px;padding:16px}
+.th.focus{border-color:#9E7C14;box-shadow:none}
+.thh{gap:4px 8px}
+.thh .qw{font-size:13px;color:#5F6256}
+.thh .qr{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px}
+.thh .qr .lnk{font-weight:400}
+.th>.pb{margin-top:8px;font-size:15px;line-height:1.55}
+.post{background:#F4ECD7;border-radius:12px;padding:8px 12px}
+.post.tch{background:transparent;border-left:3px solid #2F7A55;border-radius:0;margin-left:0;padding:2px 0 2px 12px}
+.pb{font-size:14px}
+.ans textarea{min-height:64px}
+.ans .row{margin-top:8px}
+/* 서랍 */
+.dw{background:#FFFDF7;border-left-color:#E6DCBF;border-radius:16px 0 0 16px}
+#ed{width:min(800px,100%)}
+.dh{background:#FFFDF7;border-bottom-color:#E6DCBF;padding:16px 20px 12px;border-radius:16px 0 0 0}
+.dh h2{font-size:20px}
+.db{padding:16px 20px 28px}
+.sec h3{font-size:14px}
+.sec.danger{border-top-color:#E6DCBF}
+.box.neutral{background:#EFEDE5}
+.nt textarea,.ntc textarea{background:#F4ECD7;border-color:transparent;border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.65}
+.cfbox{background:#FFFDF7;border-color:#E6DCBF}
+/* 새 강의: 편집 칸 */
+.fld{margin-top:16px}
+.fld>label,.fl{font-size:13px;color:#5F6256;margin-bottom:4px}
+.fld .req{color:#7A5410;margin-left:6px}
+.g2{gap:0 16px}
+.prev{max-width:320px;border-radius:12px}
+.fl .mut,.fld>label .mut{margin-left:8px;font-size:12px}
+.btn svg{width:16px;height:16px;flex:none;display:block}
+.legend i.c-in{border:1px solid #E6DCBF}
+.txc{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 4px 0 12px;border-radius:12px;background:#F4ECD7;color:#1E5A3E;font-size:13px}
+.txc[hidden]{display:none}
+.txc svg{width:16px;height:16px;flex:none;display:block}
+.txc .sp{flex:1 1 auto}
+.txc .btn{color:inherit;font-size:13px}
+.txc.bad{background:#FBE9E3;color:#9A3F33}
+#ed-txtw{margin-top:8px}
+#ed-txt{border:1.5px dashed #CBBF9A;border-radius:12px;min-height:96px;font-size:13px;line-height:1.6}
+.fold #ed-txtmsg.ok{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+#ed.dg{outline:2px dashed #0C4631;outline-offset:-8px}
+.ok2{display:flex;align-items:center;gap:4px;margin:8px 0 0;font-size:12px;color:#1E5A3E}
+.ok2 svg{width:14px;height:14px;flex:none}
+.ok2.nb{color:#7A5410}
+.ok2.mut{color:#5F6256}
+/* 목차 표: 번호 · 시작 · 멈춤 · 판서 · 워크북 · 학생 화면 지문 줄 (틀린 칸만 코랄 · 표 아래 까닭 한 줄) */
+.cht{margin-top:4px}
+.chh,.chr{display:grid;grid-template-columns:minmax(0,1.15fr) 76px 76px 56px 84px minmax(0,1.25fr) 36px;gap:6px;align-items:center}
+.chh{padding:0 2px 4px;font-size:12px;color:#5F6256}
+.cht.old .chh,.cht.old .chr{grid-template-columns:minmax(0,1fr) 76px 36px}
+.chr{margin-bottom:6px}
+.chx{display:contents}
+.chx label{display:block;min-width:0;margin:0}
+.chx .cl{display:none;font-weight:400}
+.cht input[type=text],.chx .cxb input,.chx .cxw input,.chx .cxs input{width:100%;height:36px;min-height:0;padding:0 8px;border-radius:8px;font-size:14px;text-align:left}
+.cht input.bad{border-color:#9A3F33;background:#FBE9E3;color:#9A3F33}
+.chp{min-width:0;font-size:13px;line-height:1.35;color:#5F6256}
+.chp b{margin-right:4px;color:#0C4631;font-weight:700}
+.cherr{margin:4px 0 0;font-size:13px;font-weight:700;color:#9A3F33}
+.cherr:empty{display:none}
+.edfoot{background:#FFFDF7;border-top-color:#E6DCBF;padding:12px 20px}
+.edrow{gap:8px}
+.edsum{flex:1 1 240px;min-width:0;font-size:13px;color:#5F6256}
+.edrow .ask{order:9}
+/* 올린 뒤 반 공지 카드 */
+.ntc{margin:16px 20px 24px;padding:16px 20px;background:#FFFDF7;border:1px solid #E6DCBF;border-radius:16px}
+.ntc .nth{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.ntc .nth b{font-size:15px}
+.ntc textarea{margin-top:12px;resize:vertical}
+.ntc .ntf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:12px}
+.ntc .ntf .mut{flex:1 1 220px;min-width:0;font-size:13px}
+@media (max-width:760px){
+  .btn,.btn.sm,.chip,.tab,.ti,.x,.x.sm,.dyc .chip.sm{min-height:44px}
+  .x,.x.sm{width:44px;height:44px}
+  .lnk{min-height:44px}
+  input[type=text],input[type=date],input[type=password],input:not([type]),select{min-height:44px;font-size:15px}
+  .colh,.cell{width:112px}
+  .cell{min-height:52px}
+  .dh{padding:12px 16px 8px}
+  .db{padding:12px 16px 24px}
+  .edfoot{padding:8px 16px}
+  .ntc{margin:12px 16px 20px;padding:16px}
+  .chh{display:none}
+  .chr,.cht.old .chr{grid-template-columns:repeat(3,minmax(0,1fr)) 44px;gap:4px 8px;padding:8px 0;margin:0;border-bottom:1px solid #EFE7D2}
+  .chr>[data-cn]{grid-row:1;grid-column:1/3}
+  .chr>[data-ci]{grid-row:1;grid-column:3/4}
+  .chr>.x,.chr>.xs{grid-row:1;grid-column:4/5}
+  .chx label{grid-row:2}
+  .chx .cl{position:static;width:auto;height:auto;margin:0 0 2px;overflow:visible;clip:auto;display:block;font-size:12px;color:#5F6256}
+  .chp{grid-row:3;grid-column:1/-1}
+  .cht input[type=text],.chx .cxb input,.chx .cxw input,.chx .cxs input{height:44px;font-size:15px}
+}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -472,7 +657,7 @@ window.__lecAdminStart = function () {
       try { el.focus(); el.select(); if (el.setSelectionRange) el.setSelectionRange(0, str(el.value).length); } catch (e) {}
       try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
     }
-    toast(ok ? '복사했어요' : '글이 선택됐어요. 복사해 주세요');
+    toast(ok ? '복사했어요' : '여기서는 복사가 막혀 있어요 · 글을 끌어 골라 복사해 주세요');
   }
   function copyText(text, getEl) {
     var cb = navigator.clipboard;
@@ -861,11 +1046,13 @@ window.__lecAdminStart = function () {
       if (p && p.last_at) sub.push(md(p.last_at));
     }
     if (x.mk) sub.push('보강');
-    return cellMake(isDone(s) ? s.k : 'abs', head, sub);
+    /* K: 결석 · 기록 안 함 = 회색 점선(덜 본 학생으로 세지 않는 칸 · 세는 셈은 그대로) */
+    return cellMake(isDone(s) ? s.k : (s.k === 'none' ? 'none' : 'abs'), head, sub);
   }
+  /* K: 칸 글은 한 줄 «결석 · 23% · 11.15» (좁으면 줄 바꿈) */
   function cellMake(cls, head, sub) {
     var t = sub.join(' · ');
-    return { cls: cls, inner: '<b>' + esc(head) + '</b>' + (t ? '<small>' + esc(t) + '</small>' : ''), text: head + (t ? ' · ' + t : '') };
+    return { cls: cls, inner: '<span>' + esc(head + (t ? ' · ' + t : '')) + '</span>', text: head + (t ? ' · ' + t : '') };
   }
   function pillHtml(s) {
     if (s.k === 'conf') return '<span class="pl c-conf">확인 완료</span>';
@@ -1026,9 +1213,37 @@ window.__lecAdminStart = function () {
   }
 
   /* -------------------------------------------------------------- 할 일 띠(E1) */
-  function ti(act, attrs, tc, tag, text) {
-    return '<button type="button" class="ti" data-act="' + act + '"' + attrs + '><span class="tag ' + tc + '">' + tag + '</span>' +
-      '<span class="tx">' + esc(text) + '</span><span class="go" aria-hidden="true">›</span></button>';
+  /* K 타일: 아이콘 칸(호박 · 회색 · 코랄) · 제목 · 작은 줄 · 큰 숫자 · › — o = {t: 제목, s: 작은 줄, n: 숫자, ic: 'am'|'gy'|'co', i: 그림 이름}
+     o 가 없으면(시험 범위 띠) 제목 = text · 작은 줄 = tag(«시험 D-9» · «시험 중») · 회색 달력 */
+  function ti(act, attrs, tc, tag, text, o) {
+    o = o || { t: text, s: tag, ic: 'gy', i: 'cal' };
+    var al = o.n != null ? ' aria-label="' + esc(o.t + ' ' + o.n + (o.u || '') + (o.s ? ' · ' + o.s : '')) + '"' : '';
+    return '<button type="button" class="ti" data-act="' + act + '"' + attrs + al + '><span class="tic i-' + o.ic + '" aria-hidden="true">' + kIcon(o.i) + '</span>' +
+      '<span class="tcx"><span class="tx">' + esc(o.t) + '</span>' + (o.s ? '<span class="ts">' + esc(o.s) + '</span>' : '') + '</span>' +
+      (o.n != null ? '<span class="tn">' + esc(String(o.n)) + '</span>' : '') + '<span class="go" aria-hidden="true">›</span></button>';
+  }
+  /* 줄 그림(인라인 SVG · 바깥 아이콘 글꼴 없음) */
+  function kIcon(n) {
+    var p = {
+      clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+      msg: '<path d="M5 18.5V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8.5z"/>',
+      cal: '<rect x="4.5" y="6" width="15" height="13.5" rx="2"/><path d="M4.5 10.5h15M9 4v4M15 4v4"/>',
+      lock: '<rect x="5.5" y="11" width="13" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/>',
+      box: '<path d="M4.5 7.5h15v12h-15zM3.5 4.5h17v3h-17zM10 11.5h4"/>',
+      check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+      copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>'
+    };
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">' + (p[n] || '') + '</svg>';
+  }
+  /* 타일 작은 줄(지금 받는 자료로만): 질문 = 가장 최근 «이름 · 강의» 외 N · 잠금 = «이름 · 12분 남음» 외 N명 */
+  function waitSub(w) {
+    var a = isArr(w.items) ? w.items : [], x = a[0];
+    if (!x) return '';
+    return str(x.sname || '학생') + ' · ' + str(x.title) + (w.count > 1 ? ' 외 ' + (w.count - 1) : '');
+  }
+  function lockSub(lk) {
+    var x = lk[0];
+    return str(x.sname) + ' · ' + leftTime(x.secs) + ' 남음' + (lk.length > 1 ? ' 외 ' + (lk.length - 1) + '명' : '');
   }
   function todoHtml() {
     var t = S.todo, items = [], subs = '', i, b, lim;
@@ -1038,14 +1253,15 @@ window.__lecAdminStart = function () {
     }
     if (!t) return '';
     var w = t.waiting || { count: 0 }, band = D && D.band, bandN = '';
-    if (w.count > 0) items.push(ti('todoQ', '', 't-honey', '질문', '답을 기다리는 질문 ' + w.count));
+    if (w.count > 0) items.push(ti('todoQ', '', 't-honey', '질문', '답을 기다리는 질문 ' + w.count, { t: '답을 기다리는 질문', s: waitSub(w), n: w.count, u: '개', ic: 'am', i: 'msg' }));
     /* C1: 출결이 있으면 «결석한 날 수업 덜 본 학생»(서버 띠) · 없으면 지금처럼 lec_todo 의 덜 본 학생 */
     var bh = band ? band.items : (isArr(t.behind) ? t.behind : []);
     lim = S.open.behind ? bh.length : 4;
     for (i = 0; i < bh.length && i < lim; i += 1) {
       b = bh[i];
       items.push(ti('todoBehind', ' data-l="' + esc(b.lecture) + '" data-c="' + esc(b.cls) + '" title="' + esc((b.names || []).join(', ')) + '"',
-        band ? 't-coral' : 't-sky', band ? '결석한 날' : '덜 본 학생', b.cname + ' · ' + b.title + ' · ' + b.n + '명'));
+        band ? 't-coral' : 't-sky', band ? '결석한 날' : '덜 본 학생', b.cname + ' · ' + b.title + ' · ' + b.n + '명',
+        { t: b.title, s: b.cname + (band ? ' · 결석한 날 수업 덜 봄' : ' · 덜 본 학생'), n: b.n, u: '명', ic: 'am', i: 'clock' }));   /* 강의마다 한 칸 · 제목 = 강의 */
     }
     if (bh.length > lim) {
       items.push('<button type="button" class="ti more" data-act="todoMore">' + (band ? '결석한 날 수업 ' : '덜 본 강의 ') + (bh.length - lim) + '개 더 보기</button>');
@@ -1063,9 +1279,11 @@ window.__lecAdminStart = function () {
       items.push('<button type="button" class="ti more" data-act="rngBandMore">시험 범위 ' + (rb.length - rlim) + '개 더 고르기</button>');
     }
     var lf = S.me.admin && isArr(t.left) ? t.left : [];
-    if (lf.length) items.push(ti('todoToggle', ' data-v="left" aria-expanded="' + (S.open.left ? 'true' : 'false') + '"', 't-neutral', '기록 정리', '그만둔 학생 기록 ' + lf.length + '명 · 지우기'));
+    if (lf.length) items.push(ti('todoToggle', ' data-v="left" aria-expanded="' + (S.open.left ? 'true' : 'false') + '"', 't-neutral', '기록 정리', '그만둔 학생 기록 ' + lf.length + '명 · 지우기',
+      { t: '그만둔 학생 기록', s: '누르면 지울 수 있어요', n: lf.length, u: '명', ic: 'gy', i: 'box' }));
     var lk = isArr(t.locked) ? t.locked : [];
-    if (lk.length) items.push(ti('todoToggle', ' data-v="locked" aria-expanded="' + (S.open.locked ? 'true' : 'false') + '"', 't-coral', '잠금', '로그인이 잠긴 학생 ' + lk.length));
+    if (lk.length) items.push(ti('todoToggle', ' data-v="locked" aria-expanded="' + (S.open.locked ? 'true' : 'false') + '"', 't-coral', '잠금', '로그인이 잠긴 학생 ' + lk.length,
+      { t: '로그인이 잠긴 학생', s: lockSub(lk), n: lk.length, u: '명', ic: 'co', i: 'lock' }));
     if (!items.length) return head + '<p class="none">오늘 할 일이 없어요</p></section>';
     if (S.open.left && lf.length) subs += leftListHtml(lf);
     if (S.open.locked && lk.length) subs += lockedListHtml(lk);
@@ -1180,7 +1398,7 @@ window.__lecAdminStart = function () {
   }
 
   /* ---------------------------------------------------------------- 질문 탭 */
-  function kindTag(k) { return k === 'tech' ? '<span class="tag t-sky">영상·진도 문제</span>' : '<span class="tag t-neutral">내용</span>'; }
+  function kindTag(k) { return k === 'tech' ? '<span class="tag t-neutral">영상·진도 문제</span>' : '<span class="tag t-neutral">내용</span>'; }   /* K: 하늘색은 새로 온 것에만 */
   function delCtl(p) {
     if (S.ask.qdel === p.id) {
       return '<span class="row"><span class="sm">정말 지울까요?</span><button type="button" class="btn sm warn" data-act="qdelYes" data-q="' + esc(p.id) + '">지우기</button>' +
@@ -1201,20 +1419,23 @@ window.__lecAdminStart = function () {
   }
   function thHtml(x) {
     var r = x.root, l = x.l, st = qState(x.k), h, i, rid = esc(r.id);
+    /* K 머리: «답변 대기» · «내용» · «김민준 · 고1 A반 · 오늘 21:53» … 오른쪽 «강의 · 05번 · 18:10 장면 보기» · 첫 글은 상자 없이 본문만 */
+    var who = [r.sname || '학생'];
+    if (stuCls(r.sid)) who.push(stuCls(r.sid));
+    who.push(L.fmtWhen(r.created_at));
     h = '<article class="th' + (S.qFocus === r.id ? ' focus' : '') + '" data-th="' + rid + '">';
     h += '<div class="thh"><span class="tag" style="background:' + st.bg + ';color:' + st.fg + '">' + st.label + '</span>' + kindTag(x.kind) +
-      (r['private'] ? '<span class="tag t-line">선생님만 보기</span>' : '') + '<span class="sp"></span></div>';
-    h += '<div class="thl"><button type="button" class="lnk" data-act="qLec" data-l="' + esc(l.id) + '">' + esc(l.title) + '</button>' +
-      '<span class="mut"> · ' + esc(L.fmtDay(dayOf(l))) + ' 수업</span>';
+      (r['private'] ? '<span class="tag t-line">선생님만 보기</span>' : '') + '<span class="qw">' + esc(who.join(' · ')) + '</span><span class="sp"></span>' +
+      '<span class="qr"><button type="button" class="lnk" data-act="qLec" data-l="' + esc(l.id) + '" title="' + esc(L.fmtDay(dayOf(l)) + ' 수업 · 이 강의 질문만 보기') + '">' + esc(l.title) + '</button>';
     if (r.at_s != null && isFinite(+r.at_s) && l.yt) {
-      h += '<span class="mut"> · </span><a class="lnk" href="https://youtu.be/' + encodeURIComponent(l.yt) + '?t=' + Math.max(0, Math.floor(+r.at_s)) +
+      h += '<a class="lnk" href="https://youtu.be/' + encodeURIComponent(l.yt) + '?t=' + Math.max(0, Math.floor(+r.at_s)) +
         '" target="_blank" rel="noopener">' + esc(L.sceneLabel(+r.at_s, l.chapters)) + ' 장면 보기</a>';
     }
-    h += '</div>' + postHtml(r);
+    h += '</span>' + delCtl(r) + '</div><div class="pb">' + esc(r.body) + '</div>';
     for (i = 0; i < x.posts.length; i += 1) h += postHtml(x.posts[i]);
     h += '<div class="ans"><label class="sr" for="ans-' + rid + '">' + esc((r.sname || '학생') + ' 학생 질문에 답 적기') + '</label>' +
       '<textarea id="ans-' + rid + '" data-k="ans:' + rid + '" rows="2" maxlength="1000" placeholder="답을 적어 주세요" aria-keyshortcuts="Control+Enter Meta+Enter"></textarea><div class="row">' +
-      (r['private'] ? '<span class="mut sm">이 답도 선생님만 보기로 남아요</span>' : '') + '<span class="sp"></span>' +
+      '<span class="mut sm">' + (r['private'] ? '이 답도 선생님만 보기로 남아요 · ' : '') + 'Ctrl+Enter로 바로 달려요</span><span class="sp"></span>' +
       '<button type="button" class="btn sm strong" data-act="answer" data-q="' + rid + '" title="Ctrl+Enter 로도 달 수 있어요">답 달기</button></div></div>';
     return h + '</article>';
   }
@@ -1404,16 +1625,48 @@ window.__lecAdminStart = function () {
   }
   /* 반 공지: 머리 한 줄 → (워크북 번호가 다른 지문이 있을 때만) «워크북: 03번 → 5~6번 · 07번 → 9번» 한 줄 → 복습 안내 · 주소(검수 A M1)
      C3: 판서 쪽 번호 · 시간 · 인증샷은 넣지 않음 */
+  /* K(11-16) 반 공지 네 줄: 머리 · (지문 줄이 있으면) «지문 04~08번 · 판서와 워크북을 펴 두고 보세요. …» · 질문 · 공개 끝 · 주소
+     주소와 공개 끝 날짜를 만드는 방식은 그대로 · 지문 번호 목록 줄은 뺌 · 학생 이름 없음 */
   function noticeText(l) {
-    var d = L.fmtDay(dayOf(l)), head = (d ? d + ' ' : '') + '수업 영상(' + str(l.title) + ')', a, list = noticeList(l);
-    if (isPosted(l)) a = head + '이 히즈 온라인에 올라왔어요.';
-    else a = head + '은 ' + L.fmtDay(l.posted_on) + '부터 히즈 온라인에서 볼 수 있어요.';
-    a += (list ? '\n' + list + '\n' : ' ') + '복습할 때 보세요. 궁금한 곳은 히즈 온라인에서 질문으로 남겨 주세요.';
-    if (l.until) a += ' ' + L.fmtMD(l.until) + '까지 볼 수 있어요.';
-    return a + '\n히즈 온라인 주소 ' + STU_URL;
+    var d = L.fmtDay(dayOf(l)), head = (d ? d + ' ' : '') + '수업 영상(' + str(l.title) + ')', a, p = noticePaper(l), c;
+    if (isPosted(l)) a = head + '이 히즈 온라인에 올라왔어요. 복습할 때 보세요.';
+    else a = head + '은 ' + L.fmtDay(l.posted_on) + '부터 히즈 온라인에서 볼 수 있어요. 복습할 때 보세요.';
+    if (p) a += '\n' + p;
+    c = '궁금한 곳은 히즈 온라인에서 질문으로 남겨 주세요.';
+    if (l.until) c += ' ' + L.fmtMD(l.until) + '까지 볼 수 있어요.';
+    return a + '\n' + c + '\n히즈 온라인 주소 ' + STU_URL;
   }
-  function noticeList(l) { return l && l.runner && isArr(l.runner.items) ? L.paperNotice(l.runner.items) : ''; }
-  function noticeRows(l) { var t = noticeList(l); return t ? Math.min(16, 5 + t.split('\n').length) : 5; }
+  /* 둘째 줄: 워크북이 있는 지문이 없으면 «판서를 펴 두고 보세요.» · 번호가 다 같으면 «워크북 번호는 지문과 같아요.»
+     · 다른 곳만 «워크북 번호가 다른 곳: 05번은 워크북 5~6번 · …»(빈 워크북은 적지 않음) */
+  function noticePaper(l) {
+    var it = l && l.runner && isArr(l.runner.items) ? L.paperItems(l.runner.items) : [], i, has = 0, df = [], lab, rg;
+    if (!it.length) return '';
+    for (i = 0; i < it.length; i += 1) {
+      if (!trim(it[i].wb)) continue;
+      has = 1;
+      if (L.wbDiff(it[i].no, it[i].wb)) { lab = L.noLabel(it[i].no); df.push(lab + (batchim(lab) ? '은' : '는') + ' 워크북 ' + L.noLabel(it[i].wb)); }
+    }
+    rg = noticeRange(it, str(l.title));
+    if (!has) return (rg ? rg + ' · ' : '') + '판서를 펴 두고 보세요.';
+    return (rg ? rg + ' · ' : '') + '판서와 워크북을 펴 두고 보세요. ' + (df.length ? '워크북 번호가 다른 곳: ' + df.join(' · ') : '워크북 번호는 지문과 같아요.');
+  }
+  /* «지문 04~08번»: 지문 이름이 모두 숫자 번호(같은 강)일 때만 · 제목에 그 범위가 이미 있으면 '' */
+  function noticeRange(it, title) {
+    var g0 = null, a = null, z = null, i, m, lab, nt = title.replace(/\s+/g, '');
+    for (i = 0; i < it.length; i += 1) {
+      m = str(it[i].no).replace(/\s+$/, '').match(/^(?:(\d{1,3})\s*강\s*)?(\d{1,3})(?:\s*[~\-]\s*(\d{1,3}))?\s*번?$/);
+      if (!m) return '';
+      if (g0 === null) g0 = m[1] || '';
+      else if (g0 !== (m[1] || '')) return '';
+      if (a === null) a = m[2];
+      z = m[3] || m[2];
+    }
+    if (a === null) return '';
+    lab = (g0 ? (+g0) + '강 ' : '') + a + (+z !== +a ? '~' + z : '') + '번';
+    if (nt.indexOf(lab.replace(/\s+/g, '')) >= 0 || nt.indexOf(lab.replace(/^\d+강\s*/, '')) >= 0) return '';
+    return '지문 ' + lab;
+  }
+  function noticeRows(l) { return Math.min(12, noticeText(l).split('\n').length + 2); }
   function confLine(p) {
     var a = ['선생님 확인'];
     if (trim(p.done_note)) a.push(trim(p.done_note));
@@ -1720,6 +1973,7 @@ window.__lecAdminStart = function () {
     $('ed').hidden = false; $('edb').hidden = false;
     $('ed').scrollTop = 0;
     edNotes();
+    chLive();
     if (trim(edVal('ed-yt'))) ytCheck();
     var f = S.ed.can ? $('ed-yt') : $('ed').querySelector('[data-act="edClose"]');
     if (f) { try { f.focus(); } catch (e) {} }
@@ -1881,25 +2135,30 @@ window.__lecAdminStart = function () {
       (l ? '<p class="mut">' + esc('올린 사람 ' + (l.created_by || '모름') + (l.created_at ? ' · ' + whenFull(l.created_at) : '')) + '</p>' : '') +
       '</div><button type="button" class="x" data-act="edClose" aria-label="닫기">×</button></div><div class="db">';
     if (!S.ed.can) h += '<p class="box neutral">올린 선생님과 원장님만 고칠 수 있어요.</p>';
-    h += '<div class="fld"><label for="ed-yt">유튜브 링크<span class="req">꼭</span></label><input id="ed-yt" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://youtu.be/영상 주소" value="' +
-      esc(l ? ytShowUrl(l.yt) : '') + '"' + dis + '><div id="ed-prev" class="prev"></div><p id="ed-ytmsg" class="msg" role="status"></p></div>';
     if (S.ed.can) {
-      h += '<div class="fld"><label for="ed-txt">«수업 영상 만들기» txt</label><textarea id="ed-txt" rows="3" placeholder="txt 내용을 붙여 넣거나 파일을 여기에 끌어다 놓으세요. 제목 · 교재 · 수업일 · 목차가 채워져요."></textarea>' +
-        '<div class="row" style="margin-top:6px"><button type="button" class="btn sm" data-act="edFile">txt 파일 고르기</button><input id="ed-file" class="sr" type="file" accept=".txt,text/plain" tabindex="-1" aria-hidden="true"></div>' +
+      /* K: 읽고 나면 한 줄로 접힘 «✓ txt 읽음 · 목차 5줄» + «다시 놓기»(펼치면 «접기») · 서랍 어디에 끌어 놓아도 읽음 */
+      h += '<div class="fld" id="ed-txf"><label for="ed-txt">«수업 영상 만들기» txt<span class="mut">끌어 놓거나 붙여 넣기</span></label>' +
+        '<div id="ed-txc" class="txc" hidden>' + kIcon('check') + '<span id="ed-txs"></span><span class="sp"></span>' +
+        '<button type="button" class="btn sm txt" data-act="edTxtFold" aria-expanded="false" aria-controls="ed-txtw">다시 놓기</button></div>' +
+        '<div id="ed-txtw"><textarea id="ed-txt" rows="3" placeholder="txt 내용을 붙여 넣거나 파일을 서랍에 끌어다 놓으세요. 제목 · 교재 · 수업일 · 목차가 채워져요."></textarea>' +
+        '<div class="row" style="margin-top:8px"><button type="button" class="btn sm" data-act="edFile">txt 파일 고르기</button><input id="ed-file" class="sr" type="file" accept=".txt,text/plain" tabindex="-1" aria-hidden="true"></div></div>' +
         '<p id="ed-txtmsg" class="msg" role="status"></p></div>';
     }
-    h += '<div class="fld"><label for="ed-title">제목<span class="req">꼭</span></label><input id="ed-title" type="text" maxlength="120" value="' + esc(l ? l.title : '') + '"' + dis + '></div>';
-    h += '<div class="fld"><label for="ed-book">교재</label><input id="ed-book" type="text" maxlength="120" value="' + esc(l ? l.book : '') + '"' + dis + '></div>';
+    h += '<div class="fld"><label for="ed-yt">유튜브 링크<span class="req">꼭</span></label><input id="ed-yt" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://youtu.be/영상 주소" value="' +
+      esc(l ? ytShowUrl(l.yt) : '') + '"' + dis + '><div id="ed-prev" class="prev"></div><p id="ed-ytmsg" class="msg" role="status"></p></div>';
+    h += '<div class="g2"><div class="fld"><label for="ed-title">제목<span class="req">꼭</span></label><input id="ed-title" type="text" maxlength="120" value="' + esc(l ? l.title : '') + '"' + dis + '></div>';
+    h += '<div class="fld"><label for="ed-book">교재</label><input id="ed-book" type="text" maxlength="120" value="' + esc(l ? l.book : '') + '"' + dis + '></div></div>';
     h += '<div class="fld"><span class="fl" id="ed-days-l">수업일(교실에서 이 수업을 한 날)</span><div id="ed-days" role="group" aria-labelledby="ed-days-l">' + edDaysHtml() + '</div></div>';
     h += '<div class="g2"><div class="fld"><label for="ed-dur">길이<span class="req">꼭</span></label><input id="ed-dur" type="text" inputmode="numeric" placeholder="예: 47:00" value="' + esc(l && l.dur > 0 ? L.fmtDur(l.dur) : '') + '"' + dis + '>' +
       '<p class="msg mut sm">영상을 열면 저절로 채워져요.</p></div><div></div></div>';
     h += '<div class="g2"><div class="fld"><label for="ed-post">공개일</label><input id="ed-post" type="date" value="' + esc(l ? str(l.posted_on) : today()) + '"' + dis + '><p id="ed-postnote" class="msg" role="status"></p></div>' +
       '<div class="fld"><label for="ed-until">공개 끝 날짜(선택)</label><input id="ed-until" type="date" value="' + esc(l && l.until ? l.until : '') + '"' + dis + '><p id="ed-untilnote" class="msg" role="status"></p></div></div>';
     h += '<div class="fld"><span class="fl" id="ed-cls-l">볼 반<span class="req">꼭</span></span><div id="ed-cls">' + edClsHtml() + '</div></div>';
-    h += '<div class="fld"><span class="fl">목차</span><div id="ed-chs">' + edChsHtml() + '</div>' +
+    h += '<div class="fld"><span class="fl">목차' + (runOn() ? '<span class="mut">판서 쪽은 선생님만 봐요 · 워크북 칸이 비면 멈추지 않아요</span>' : '') + '</span><div id="ed-chs">' + edChsHtml() + '</div>' +
+      '<p id="ed-cherr" class="cherr" role="status"></p>' +
       (S.ed.can ? '<button type="button" class="btn sm" data-act="edChAdd">목차 줄 더하기</button>' : '') +
       '<p id="ed-run" class="msg mut sm">' + esc(edRunText()) + '</p>' +
-      (runOn() ? '<p class="mut sm">멈춤 = 학생 영상이 잠깐 서고 «워크북 풀어 보고 계속 봐요»가 뜨는 시각 · 워크북 칸이 비면 멈추지 않아요</p>' : '') + '</div>';   /* 검수 A L10 · M2 */
+      (runOn() ? '<p class="mut sm">멈춤 = 학생 영상이 잠깐 서고 «워크북 풀어 보고 계속 봐요»가 뜨는 시각 · 시작에서 1분이 안 되면 멈추지 않아요</p>' : '') + '</div>';   /* 검수 A L10 · M2 */
     h += '<div class="fld"><span class="fl">숨김</span><div id="ed-hid">' + edHidHtml() + '</div></div>';
     h += '</div><div class="edfoot"><p id="ed-msg" class="msg bad" role="alert"></p><div class="edrow" id="ed-foot">' + edFootHtml() + '</div></div>';
     return h;
@@ -1954,30 +2213,93 @@ window.__lecAdminStart = function () {
     for (i = 0; i < D.my.length; i += 1) { if (cd.indexOf(D.my[i].id) < 0) order.push(D.my[i]); }
     for (i = 0; i < order.length; i += 1) { c = order[i]; h += chip(c.id, c.name); }
     h += '</div>';
-    if (S.ed.pickNote) h += '<p class="mut sm" id="ed-picknote">' + esc(S.ed.pickNote) + '</p>';
+    if (S.ed.pickNote && !(S.ed.pickTone === 'nb' && edPicked())) {
+      h += '<p class="ok2' + (S.ed.pickTone === 'nb' ? ' nb' : (S.ed.pickTone === 'ok' ? '' : ' mut')) + '" id="ed-picknote">' + (S.ed.pickTone === 'ok' ? kIcon('check') : '') + esc(S.ed.pickNote) + '</p>';
+    }
     if (!D.my.length && !S.me.admin) h += '<p class="mut sm">맡은 반이 없어요.</p>';
     if (S.ed.other.length) h += '<p class="mut sm">' + esc('다른 선생님 반 ' + clsNames(S.ed.other) + '도 함께 봐요.') + '</p>';
     return h;
   }
+  /* K 목차 표: 번호 · 시작 · 멈춤 · 판서 · 워크북 · 학생 화면 지문 줄(미리 보기) · × — 한 목차 줄 = 한 줄 */
   function edChsHtml() {
-    var h = '', i, c, dis = S.ed.can ? '' : ' disabled';
+    var h = '', i, c, dis = S.ed.can ? '' : ' disabled', on = runOn();
     if (!S.ed.chs.length) return '<p class="mut sm">목차가 없어요. txt를 넣으면 저절로 채워져요.</p>';
+    h = '<div class="cht' + (on ? '' : ' old') + '"><div class="chh" aria-hidden="true"><span>번호</span><span>시작</span>' +
+      (on ? '<span>멈춤</span><span>판서</span><span>워크북</span><span>학생 화면 지문 줄</span>' : '') + '<span></span></div>';
     for (i = 0; i < S.ed.chs.length; i += 1) {
       c = S.ed.chs[i];
-      h += '<div class="chr"><input type="text" data-ci="' + i + '" value="' + esc(c.t) + '" placeholder="0:00" aria-label="' + (i + 1) + '번째 목차 시각"' + dis + '>' +
-        '<input type="text" data-cn="' + i + '" value="' + esc(c.title) + '" placeholder="01번 · 지문 이름" aria-label="' + (i + 1) + '번째 목차 이름"' + dis + '>' +
-        (S.ed.can ? '<button type="button" class="x sm" data-act="edChDel" data-i="' + i + '" aria-label="' + (i + 1) + '번째 목차 줄 빼기">×</button>' : '<span></span>') + '</div>';
-      if (runOn()) h += chxHtml(c, i, dis);
+      h += '<div class="chr" data-row="' + i + '"><input type="text" data-cn="' + i + '" value="' + esc(c.title) + '" placeholder="01번 · 지문 이름" aria-label="' + (i + 1) + '번째 목차 이름"' + dis + '>' +
+        '<input type="text" data-ci="' + i + '" value="' + esc(c.t) + '" placeholder="0:00" aria-label="' + (i + 1) + '번째 목차 시각"' + dis + '>' +
+        (on ? chxHtml(c, i, dis) + '<span class="chp" data-cp="' + i + '">' + chPrevHtml(i) + '</span>' : '') +
+        (S.ed.can ? '<button type="button" class="x sm" data-act="edChDel" data-i="' + i + '" aria-label="' + (i + 1) + '번째 목차 줄 빼기">×</button>' : '<span class="xs"></span>') + '</div>';
     }
-    return h;
+    return h + '</div>';
   }
-  /* C3 목차 줄 아래 한 줄: 판서 쪽 · 워크북 번호 · 멈춤 시각(선생님 화면에만 · 학생에겐 판서 쪽을 보내지 않음) */
+  /* C3 목차 줄의 칸: 멈춤 시각 · 판서 쪽 · 워크북 번호(선생님 화면에만 · 학생에겐 판서 쪽을 보내지 않음) · 좁은 화면에선 칸 이름이 보임 */
   function chxHtml(c, i, dis) {
     var n = (i + 1) + '번째 목차 ';
     return '<div class="chx" data-rx="' + i + '">' +
-      '<label class="cxb">판서<input type="text" inputmode="numeric" maxlength="4" data-cb="' + i + '" value="' + esc(str(c.rb)) + '" aria-label="' + n + '판서 쪽"' + dis + '>쪽</label>' +
-      '<label class="cxw">워크북<input type="text" maxlength="40" data-cw="' + i + '" value="' + esc(str(c.rw)) + '" placeholder="없음" aria-label="' + n + '워크북 번호"' + dis + '></label>' +
-      '<label class="cxs">멈춤<input type="text" inputmode="numeric" maxlength="8" data-cs="' + i + '" value="' + esc(str(c.rs)) + '" placeholder="분:초" aria-label="' + n + '멈춤 시각"' + dis + '></label></div>';
+      '<label class="cxs"><span class="cl">멈춤</span><input type="text" inputmode="numeric" maxlength="8" data-cs="' + i + '" value="' + esc(str(c.rs)) + '" placeholder="분:초" aria-label="' + n + '멈춤 시각"' + dis + '></label>' +
+      '<label class="cxb"><span class="cl">판서 쪽</span><input type="text" inputmode="numeric" maxlength="4" data-cb="' + i + '" value="' + esc(str(c.rb)) + '" aria-label="' + n + '판서 쪽"' + dis + '></label>' +
+      '<label class="cxw"><span class="cl">워크북</span><input type="text" maxlength="40" data-cw="' + i + '" value="' + esc(str(c.rw)) + '" placeholder="없음" aria-label="' + n + '워크북 번호"' + dis + '></label></div>';
+  }
+  /* 학생 화면 지문 줄 미리 보기: «04번» + 다를 때만 «워크북 5~6번» + 멈춤이 서지 않으면 까닭 */
+  function chItem(i) {
+    var c = S.ed.chs[i], x, st;
+    if (!c) return null;
+    x = c.ri >= 0 ? S.ed.run[c.ri] : null;
+    st = trim(c.rs);
+    return { no: x && trim(str(x.no)) ? str(x.no) : runNo(c.title), at: parseT(c.t), stop: st ? parseT(st) : null, wb: trim(c.rw), b: trim(c.rb) };
+  }
+  function chPrevHtml(i) {
+    var it = chItem(i), lab, tag, h;
+    if (!it || (!it.b && !it.wb && it.stop == null && S.ed.chs[i].ri < 0)) return '';
+    lab = L.noLabel(it.no);
+    tag = L.paperTag(it);
+    h = lab ? '<b>' + esc(lab) + '</b>' : '';
+    if (tag) h += esc(tag);
+    if (it.stop != null && isFinite(it.stop) && isFinite(it.at) && it.stop > it.at && !L.canStop({ at: it.at, stop: it.stop, wb: it.wb })) {
+      h += (tag ? ' · ' : '') + esc(it.stop - it.at < 60 ? '멈추지 않음(1분 안 됨)' : '멈추지 않음(워크북 없음)');
+    }
+    return h;
+  }
+  /* 틀린 칸만 코랄 · 표 아래 까닭 한 줄(«05번 멈춤(9:00)이 시작(9:40)보다 앞이에요 외 1곳») · 저장할 때 검사는 그대로 */
+  function chErrs() {
+    var out = [], dur = parseT(edVal('ed-dur')), i, c, t, b, s, st, nm, on = runOn();
+    for (i = 0; i < S.ed.chs.length; i += 1) {
+      c = S.ed.chs[i];
+      nm = runNo(c.title) || (i + 1) + '번째 줄';
+      t = parseT(c.t);
+      if (trim(c.t) && !isFinite(t)) out.push(['ci', i, nm + ' 시작(' + trim(c.t) + ')을 읽지 못했어요']);
+      else if (isFinite(t) && isFinite(dur) && dur > 0 && t >= dur) out.push(['ci', i, nm + ' 시작(' + L.fmtDur(t) + ')이 영상 길이(' + L.fmtDur(dur) + ')보다 뒤예요']);
+      if (!on) continue;
+      b = trim(c.rb); s = trim(c.rs);
+      if (b && (!/^\d{1,4}$/.test(b) || +b < 1)) out.push(['cb', i, nm + ' 판서 쪽(' + b + ')은 1 이상의 숫자로 적어 주세요']);
+      if (!s) continue;
+      st = parseT(s);
+      if (!isFinite(st)) out.push(['cs', i, nm + ' 멈춤(' + s + ')을 읽지 못했어요']);
+      else if (isFinite(t) && st < t) out.push(['cs', i, nm + ' 멈춤(' + s + ')이 시작(' + L.fmtDur(t) + ')보다 앞이에요']);
+      else if (isFinite(t) && st === t) out.push(['cs', i, nm + ' 멈춤(' + s + ')이 시작(' + L.fmtDur(t) + ')과 같아요']);
+      else if (isFinite(dur) && dur > 0 && st > dur) out.push(['cs', i, nm + ' 멈춤(' + s + ')이 영상 길이(' + L.fmtDur(dur) + ')보다 뒤예요']);
+    }
+    return out;
+  }
+  /* 목차 칸을 고칠 때마다: 미리 보기 · 코랄 칸 · 까닭 줄 · 아래 요약 */
+  function chLive() {
+    var box = $('ed-chs'), a, i, e, er, k;
+    if (!box || !S.ed || !S.ed.chs) return;
+    a = box.querySelectorAll('[data-cp]');
+    for (i = 0; i < a.length; i += 1) a[i].innerHTML = chPrevHtml(+a[i].getAttribute('data-cp'));
+    a = box.querySelectorAll('input.bad');
+    for (i = 0; i < a.length; i += 1) { a[i].className = ''; a[i].removeAttribute('aria-invalid'); }
+    er = S.ed.can ? chErrs() : [];
+    for (i = 0; i < er.length; i += 1) {
+      k = box.querySelector('[data-' + er[i][0] + '="' + er[i][1] + '"]');
+      if (k) { k.className = 'bad'; k.setAttribute('aria-invalid', 'true'); }
+    }
+    e = $('ed-cherr');
+    if (e) e.textContent = er.length ? er[0][2] + (er.length > 1 ? ' 외 ' + (er.length - 1) + '곳' : '') : '';
+    edSum();
   }
   function readChs() {
     var box = $('ed-chs'), a, i, k;
@@ -1996,16 +2318,39 @@ window.__lecAdminStart = function () {
   }
   function edFootHtml() {
     if (!S.ed.can) return '<button type="button" class="btn" data-act="edClose">닫기</button>';
-    var h = '<button type="button" class="btn strong" data-act="edSave">' + (S.ed.id ? '고친 내용 저장' : '강의 올리기') + '</button>' +
-      '<button type="button" class="btn txt" data-act="edClose">그만두기</button>';
+    /* K 아래 줄: 요약 «목차 5 · 멈춤 5 · 길이 52:11 · 고1 A반 · Ctrl+Enter로 올리기» · 그만두기 · 강의 올리기(굵은 단추 하나) */
+    var h = '<span id="ed-sum" class="edsum">' + esc(edSumText()) + '</span>';
     if (S.ed.id) {
-      h += '<span class="sp"></span>' + (S.ed.delAsk ?
+      h += S.ed.delAsk ?
         '<div class="ask" role="group" aria-label="강의 지우기 확인"><p>정말 지울까요? 시청 기록과 질문도 함께 지워져요</p><div class="row">' +
         '<button type="button" class="btn sm warn" data-act="edDelYes">지우기</button><button type="button" class="btn sm txt" data-act="edDelNo">그만두기</button></div></div>' :
-        '<button type="button" class="btn sm warn" data-act="edDelAsk">강의 지우기</button>');
+        '<button type="button" class="btn sm warn" data-act="edDelAsk">강의 지우기</button>';
     }
+    h += '<button type="button" class="btn" data-act="edClose">그만두기</button>' +
+      '<button type="button" class="btn fill" data-act="edSave" aria-keyshortcuts="Control+Enter Meta+Enter">' + (S.ed.id ? '고친 내용 저장' : '강의 올리기') + '</button>';
     return h;
   }
+  function edSumText() {
+    var n = 0, st = 0, i, c, it, dur, ids = [], k, a = [];
+    if (!S.ed || !S.ed.chs) return '';
+    for (i = 0; i < S.ed.chs.length; i += 1) {
+      c = S.ed.chs[i];
+      if (!trim(c.t) && !trim(c.title)) continue;
+      n += 1;
+      it = runOn() ? chItem(i) : null;
+      if (it && it.stop != null && isFinite(it.stop) && isFinite(it.at) && L.canStop({ at: it.at, stop: it.stop, wb: it.wb })) st += 1;
+    }
+    a.push('목차 ' + n);
+    if (runOn()) a.push('멈춤 ' + st);
+    dur = parseT(edVal('ed-dur'));
+    if (isFinite(dur) && dur > 0) a.push('길이 ' + L.fmtDur(dur));
+    for (k in S.ed.cls) { if (has(S.ed.cls, k) && S.ed.cls[k]) ids.push(k); }
+    for (i = 0; i < S.ed.other.length; i += 1) { if (ids.indexOf(S.ed.other[i]) < 0) ids.push(S.ed.other[i]); }
+    if (ids.length) a.push(ids.indexOf('*') >= 0 ? '전체 반' : clsNames(ids));
+    a.push('Ctrl+Enter로 ' + (S.ed.id ? '저장' : '올리기'));
+    return a.join(' · ');
+  }
+  function edSum() { var e = $('ed-sum'); if (e && S.ed && S.ed.chs) e.textContent = edSumText(); }
   function edNotes() {
     if (!S.ed) return;
     var post = trim(edVal('ed-post')), until = trim(edVal('ed-until')), t = today();
@@ -2051,7 +2396,7 @@ window.__lecAdminStart = function () {
     if (d > 0) {
       f = $('ed-dur');
       cur = f ? parseT(f.value) : NaN;
-      if (f && S.ed.can && (!trim(f.value) || S.ed.durAuto)) { f.value = L.fmtDur(d); S.ed.durAuto = true; cur = d; got = true; }
+      if (f && S.ed.can && (!trim(f.value) || S.ed.durAuto)) { f.value = L.fmtDur(d); S.ed.durAuto = true; cur = d; got = true; chLive(); }
       if (isFinite(cur) && Math.abs(cur - d) > 2) setMsg('ed-ytmsg', '영상 길이는 ' + L.fmtDur(d) + '예요. 적힌 길이와 달라요', 'bad');
       else setMsg('ed-ytmsg', '영상 길이(' + L.fmtDur(d) + ')를 ' + (got ? '가져왔어요' : '확인했어요'), 'ok');
       return;
@@ -2100,12 +2445,15 @@ window.__lecAdminStart = function () {
         pc = L.pickClass(D.myRaw, pd, o.start);
         for (i = 0; i < pc.cands.length; i += 1) { if (D.myIds.indexOf(pc.cands[i]) >= 0) cands.push(pc.cands[i]); }
         S.ed.cands = cands;
-        S.ed.pickNote = '';
+        S.ed.pickNote = ''; S.ed.pickTone = '';
         if (!S.ed.id && !S.ed.clsTouched && pc.pick && D.myIds.indexOf(pc.pick) >= 0) {
           S.ed.cls = {};
           S.ed.cls[pc.pick] = true;
-          S.ed.pickNote = L.fmtDay(pd) + ' ' + o.start + ' 녹화 · ' + (D.cname[pc.pick] || pc.pick) + ' 수업 시간이라 골라 두었어요';
+          /* K: 고른 반 아래 초록 줄 · 못 고르면(고른 반도 없으면) 호박 «볼 반을 골라 주세요» */
+          S.ed.pickNote = '녹화 시작(' + o.start + ')에 맞춰 골랐어요'; S.ed.pickTone = 'ok';
           got.push('볼 반');
+        } else if (!edPicked()) {
+          S.ed.pickNote = '볼 반을 골라 주세요'; S.ed.pickTone = 'nb';
         } else if (cands.length) {
           S.ed.pickNote = L.fmtDay(pd) + '에 수업이 있는 반을 앞에 두었어요';
         }
@@ -2121,6 +2469,32 @@ window.__lecAdminStart = function () {
     if (!got.length) { setMsg('ed-txtmsg', '읽을 내용을 찾지 못했어요. «수업 영상 만들기»가 만든 txt인지 확인해 주세요', 'bad'); return; }
     last = got[got.length - 1];
     setMsg('ed-txtmsg', got.join(' · ') + eul(last) + ' 채웠어요', 'ok');
+    /* K: 읽으면 한 줄로 접음 · 유튜브 설명 글만(시각 줄뿐 · 머리줄도 묶음도 없음)이면 코랄 줄 */
+    txtFold(true, r.chapters.length ? '목차 ' + r.chapters.length + '줄' : got.join(' · '),
+      r.chapters.length > 0 && !o.has && !/^\s*\[\s*(제\s*목|설\s*명)\s*\]/m.test(str(text)));
+    chLive();
+  }
+  /* 볼 반을 하나라도 골랐나(다른 선생님 반 포함) */
+  function edPicked() {
+    var k;
+    if (S.ed.other.length) return true;
+    for (k in S.ed.cls) { if (has(S.ed.cls, k) && S.ed.cls[k]) return true; }
+    return false;
+  }
+  /* txt 칸 접기(on = 접음) · desc = 유튜브 설명 글만 붙인 것 같음 */
+  function txtFold(on, sum, desc) {
+    var c = $('ed-txc'), w = $('ed-txtw'), f = $('ed-txf'), b, s;
+    if (!c || !w) return;
+    s = $('ed-txs');
+    if (sum != null) {
+      c.className = 'txc' + (desc ? ' bad' : '');
+      if (s) s.textContent = desc ? '유튜브 설명 글만 붙인 것 같아요 · 멈춤 · 판서 · 워크북이 빠져요 · 실행기 txt를 끌어 놓아 주세요' : 'txt 읽음 · ' + sum;
+      c.hidden = false;
+    }
+    w.hidden = !!on;
+    if (f) f.className = 'fld' + (on ? ' fold' : '');
+    b = c.querySelector('[data-act=edTxtFold]');
+    if (b) { b.textContent = on ? '다시 놓기' : '접기'; b.setAttribute('aria-expanded', on ? 'false' : 'true'); }
   }
   function readTxtFile(file) {
     if (!file || !S.ed) return;
@@ -2192,15 +2566,17 @@ window.__lecAdminStart = function () {
     }
     if (D.lcls === true || (D.lcls !== false && c1 !== false && lcn)) row.lesson_cls = lco;
     var isNew = !S.ed.id, edId = S.ed.id;
-    function done() {
+    function done(rw) {
       S.busy.ed = 0;
-      closeEditor();
+      /* K: 새 강의는 같은 자리(서랍)에 반 공지 카드 · 고친 저장은 지금처럼 닫음 */
+      if (isNew && rw) edNotice(rw);
+      else closeEditor();
       toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : ''));
       refresh();
     }
     /* 새 칸이 아직 없는 DB(PGRST204) → 말한 칸이 lesson_cls 면 그것만, 아니면 새 칸 셋 다 빼고 한 번 더(두 번까지) */
     function attempt(rw, n) {
-      return DA.saveLecture(edId, rw).then(done, function (e) {
+      return DA.saveLecture(edId, rw).then(function () { done(rw); }, function (e) {
         var m, drop, r2 = {}, k2, cut = false;
         if (!(e && e.code === 'PGRST204') || n > 1) throw e;
         m = /'([A-Za-z_]+)' column/.exec(str(e.message) + ' ' + str(e.detail));
@@ -2223,6 +2599,24 @@ window.__lecAdminStart = function () {
       if (btn) btn.disabled = false;
       setMsg('ed-msg', '저장하지 못했어요. ' + errText(e), 'bad');
     });
+  }
+  /* K 올린 뒤 반 공지: 서랍 안 같은 자리에 카드 «방금 올렸어요 · {반} 반 공지 문구» · 복사 단추로 초점 · 학생 이름 없음 */
+  function edNotice(rw) {
+    var ids = isArr(rw.class_ids) ? rw.class_ids : [], el = $('ed'), b;
+    ytDestroy();
+    clearTimeout(ytT); clearTimeout(txtT);
+    S.ed = { notice: true, can: false, id: '', chs: null, other: [], cls: {} };
+    el.innerHTML = '<div class="dh"><div class="dt"><h2 id="ed-t">' + esc(str(rw.title)) + '</h2><p class="mut">강의를 올렸어요</p></div>' +
+      '<button type="button" class="x" data-act="edClose" aria-label="닫기">×</button></div>' +
+      '<section class="ntc" aria-labelledby="ed-ntt"><div class="nth"><span class="tag t-sage">방금 올렸어요</span><b id="ed-ntt">' +
+      esc((ids.indexOf('*') >= 0 ? '전체' : clsNames(ids)) + ' 반 공지 문구') + '</b></div>' +
+      '<label class="sr" for="ed-nt">반 공지 문구</label><textarea id="ed-nt" rows="' + noticeRows(rw) + '">' + esc(noticeText(rw)) + '</textarea>' +
+      '<div class="ntf"><button type="button" class="btn fill" data-act="ntCopy" data-t="ed-nt">' + kIcon('copy') + '반 공지 문구 복사</button>' +
+      '<span class="mut">반 단톡방에 그대로 붙여 넣을 수 있어요. 학생 이름은 들어가지 않아요.</span>' +
+      '<button type="button" class="btn" data-act="edClose">닫기</button></div></section>';
+    el.scrollTop = 0;
+    b = el.querySelector('[data-act=ntCopy]');
+    if (b) { try { b.focus(); } catch (e) {} }
   }
   function edDelete(btn) {
     if (!S.ed || !S.ed.id || S.busy.ed) return;
@@ -2518,7 +2912,7 @@ window.__lecAdminStart = function () {
           function () { S.cf = null; delete S.inputs.cfnote; });
         break;
       case 'unconf': act('uncf', el, DA.rpc('lec_unconfirm', { p_lecture: l, p_skey: s }), '되돌렸어요'); break;
-      case 'ntCopy': t = $('nt-txt'); copyText(t ? t.value : '', function () { return $('nt-txt'); }); break;
+      case 'ntCopy': t = el.getAttribute('data-t') || 'nt-txt'; copyText($(t) ? $(t).value : '', function () { return $(t); }); break;   /* K: 올린 뒤 카드는 data-t="ed-nt" */
       case 'pmAbsent':
         if (S.pm[s]) { S.pm[s].ab = !S.pm[s].ab; delete S.inputs['pm:' + s]; renderDrawer(); }
         break;
@@ -2558,7 +2952,8 @@ window.__lecAdminStart = function () {
         readChs();
         S.ed.chs.push({ t: '', title: '', ri: -1, rb: '', rw: '', rs: '', r0: ['', '', '', ''] });
         $('ed-chs').innerHTML = edChsHtml();
-        r = $('ed-chs').querySelector('[data-ci="' + (S.ed.chs.length - 1) + '"]');
+        chLive();
+        r = $('ed-chs').querySelector('[data-cn="' + (S.ed.chs.length - 1) + '"]');
         if (r) r.focus();
         break;
       case 'edChDel':
@@ -2572,8 +2967,9 @@ window.__lecAdminStart = function () {
           runTouch();
         }
         $('ed-chs').innerHTML = edChsHtml();
+        chLive();
         break;
-      case 'edCls': if (S.ed) { S.ed.cls[c] = !S.ed.cls[c]; S.ed.clsTouched = true; $('ed-cls').innerHTML = edClsHtml(); readDays(); $('ed-days').innerHTML = edDaysHtml(); refocus('ed-cls', 'data-c', c); } break;
+      case 'edCls': if (S.ed) { S.ed.cls[c] = !S.ed.cls[c]; S.ed.clsTouched = true; $('ed-cls').innerHTML = edClsHtml(); readDays(); $('ed-days').innerHTML = edDaysHtml(); refocus('ed-cls', 'data-c', c); edSum(); } break;
       case 'edDcls':
         /* C1 고침(11-16) 수업일마다 반: 누른 반을 그날에서 빼거나 넣음 · 한 반은 남김 · 모든 반이면 저장 안 함(= 모든 반) */
         if (!S.ed || !S.ed.can) break;
@@ -2609,6 +3005,7 @@ window.__lecAdminStart = function () {
         break;
       case 'edHidden': if (S.ed) { S.ed.hidden = !S.ed.hidden; $('ed-hid').innerHTML = edHidHtml(); refocus('ed-hid', 'data-act', 'edHidden'); } break;
       case 'edFile': r = $('ed-file'); if (r) r.click(); break;
+      case 'edTxtFold': if (S.ed && $('ed-txtw')) { txtFold(!$('ed-txtw').hidden); if (!$('ed-txtw').hidden && $('ed-txt')) { try { $('ed-txt').focus(); } catch (e3) {} } } break;
       default: return;
     }
     if (el.tagName === 'A') return;
@@ -2632,9 +3029,10 @@ window.__lecAdminStart = function () {
       clearTimeout(txtT);
       txtT = setTimeout(function () { var v = $('ed-txt'); if (v && trim(v.value)) txtApply(v.value); }, 350);
     } else if (t.id === 'ed-post' || t.id === 'ed-until') edNotes();
-    else if (t.id === 'ed-dur') S.ed.durAuto = false;
+    else if (t.id === 'ed-dur') { S.ed.durAuto = false; chLive(); }
     else if (t.getAttribute && t.getAttribute('data-di') !== null) dayWeek(t);
-    else if (t.getAttribute && (t.getAttribute('data-cb') !== null || t.getAttribute('data-cw') !== null || t.getAttribute('data-cs') !== null)) runTouch();
+    else if (t.getAttribute && (t.getAttribute('data-cb') !== null || t.getAttribute('data-cw') !== null || t.getAttribute('data-cs') !== null)) { runTouch(); readChs(); chLive(); }
+    else if (t.getAttribute && (t.getAttribute('data-ci') !== null || t.getAttribute('data-cn') !== null)) { readChs(); chLive(); }
   }
   /* 수업일 칸 옆 요일 다시 쓰기(칸은 그대로 둠 · 고르는 중 흐트러지지 않게) */
   function dayWeek(t) {
@@ -2685,6 +3083,12 @@ window.__lecAdminStart = function () {
   }
   function onKey(ev) {
     var t = ev.target, k = t && t.getAttribute ? t.getAttribute('data-k') : '';
+    /* K: 새 강의 서랍 안 어디서나 Ctrl+Enter(Cmd+Enter) = 올리기 · 저장 */
+    if ((ev.key === 'Enter' || ev.keyCode === 13) && (ev.ctrlKey || ev.metaKey) && !ev.isComposing && ev.keyCode !== 229 && S.ed && S.ed.can && inEd(t)) {
+      ev.preventDefault();
+      edSave(($('ed') || document).querySelector('[data-act=edSave]'));
+      return;
+    }
     if ((ev.key === 'Enter' || ev.keyCode === 13) && !ev.isComposing && ev.keyCode !== 229 && k) {
       if ((ev.ctrlKey || ev.metaKey) && k.indexOf('ans:') === 0) { if (keyAct(t, 'answer', 'ans')) ev.preventDefault(); return; }
       if (k === 'cfnote' && !ev.shiftKey) { if (keyAct(t, 'cfSave', 'cfbox')) ev.preventDefault(); return; }
@@ -2695,15 +3099,31 @@ window.__lecAdminStart = function () {
     }
   }
   function inTxt(ev) { var t = ev.target; return !!(t && t.id === 'ed-txt'); }
+  /* K: 서랍(새 강의 · 고치기) 안이면 어디에 끌어 놓아도 txt 를 읽음 */
+  function inEd(t) { var e = $('ed'); return !!(e && !e.hidden && t && t.nodeType === 1 && e.contains(t)); }
+  function edDropOk(ev) { return S.ed && S.ed.can && (inTxt(ev) || inEd(ev.target)) && ev.dataTransfer && ev.dataTransfer.types && String(ev.dataTransfer.types).indexOf('Files') >= 0; }
+  function edDragMark(on) { var e = $('ed'); if (e) { if (on) { if (!/\bdg\b/.test(e.className)) e.className += ' dg'; } else e.className = e.className.replace(/\s*\bdg\b/g, ''); } }
   document.addEventListener('click', onClick);
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
   document.addEventListener('keydown', onKey);
-  document.addEventListener('dragover', function (ev) { if (inTxt(ev) && ev.dataTransfer && ev.dataTransfer.types && String(ev.dataTransfer.types).indexOf('Files') >= 0) ev.preventDefault(); });
+  document.addEventListener('dragover', function (ev) { if (edDropOk(ev)) { ev.preventDefault(); edDragMark(true); } });
+  document.addEventListener('dragleave', function (ev) { if (!ev.relatedTarget || !inEd(ev.relatedTarget)) edDragMark(false); });
   document.addEventListener('drop', function (ev) {
-    if (!inTxt(ev) || !ev.dataTransfer || !ev.dataTransfer.files || !ev.dataTransfer.files.length) return;
+    edDragMark(false);
+    if (!(S.ed && S.ed.can && (inTxt(ev) || inEd(ev.target))) || !ev.dataTransfer || !ev.dataTransfer.files || !ev.dataTransfer.files.length) return;
     ev.preventDefault();
     readTxtFile(ev.dataTransfer.files[0]);
+  });
+  /* K: 서랍 안 글 칸 밖에서 붙여 넣어도 실행기 txt 면 읽음(머리줄 [제목] · [히즈 온라인] · [온라인 클래스] · [설명]) */
+  document.addEventListener('paste', function (ev) {
+    var t = ev.target, d = ev.clipboardData, v;
+    if (!S.ed || !S.ed.can || !inEd(t) || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || !d) return;
+    v = str(d.getData('text'));
+    if (!/\[\s*(제\s*목|히즈\s*온라인|온라인\s*클래스|설\s*명)\s*\]/.test(v)) return;
+    ev.preventDefault();
+    setEl('ed-txt', v);
+    txtApply(v);
   });
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && D && S.me && new Date().getTime() - S.loadedAt > 60000) refresh();
