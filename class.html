@@ -68,7 +68,6 @@ h1,h2,.tt{text-wrap:balance}
 .btn-sm{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--sl);border-radius:12px;background:transparent;color:var(--ink);font-size:15px;font-weight:700;padding:0 16px}
 .sub{font-size:13px;color:var(--ink2)}
 .err{font-size:13px;font-weight:700;color:var(--cT);min-height:20px;margin:8px 0 0}
-.norec{margin:0 0 12px;padding:8px 12px;border-radius:8px;background:var(--nB);color:var(--nT);font-size:13px}
 .foot{margin:28px 0 0;text-align:center;font-size:13px;color:var(--ink2)}
 .foot a{font-weight:700;color:var(--ink)}
 .foot a.hit:after{top:-14px;bottom:-14px}
@@ -406,7 +405,6 @@ window.__lecStart = function () {
     net: '인터넷 연결을 확인해 주세요.',
     again: '다시 들어와 주세요',
     gone: '학원 명단에서 찾을 수 없어요. 선생님께 여쭤 주세요',
-    norec: '기록 없이 보는 중이에요 · 진도와 질문이 남지 않아요',
     qnorec: '질문을 남기려면 기록에 동의해 주세요',
     ended: '공개 기간이 끝난 영상이에요',
     endedChip: '공개 기간이 끝난 영상',
@@ -455,11 +453,11 @@ window.__lecStart = function () {
     for (i = 0; i < S.lectures.length; i += 1) { if (S.lectures[i].id === id) return S.lectures[i]; }
     return null;
   }
+  /* 기록 동의(원장님 11-17 «기록 없이 보기 버튼은 빼»): 'agree' 만 들어감 · 예전에 고른 «기록 없이 보기»(서버 값 none)도
+     동의 전처럼 기록 안내 판을 다시 띄움 → 동의해야 봄(동의 없이 영상에 들어가는 길 없음) */
   function recMode() {
     var c = S.consent;
-    if (!c || c.ver !== S.cver) return 'pending';
-    if (c.choice === 'agree') return 'agree';
-    if (c.choice === 'none') return 'none';
+    if (c && c.ver === S.cver && c.choice === 'agree') return 'agree';
     return 'pending';
   }
   function isDone(l, pct) { return !!l.confirmed || pct >= L.DONE; }
@@ -472,11 +470,9 @@ window.__lecStart = function () {
   function footHTML() {
     var m = recMode(), line = '';
     if (m === 'agree') line = '지금: 기록함 · ' + esc(L.fmtMD(S.consent.at)) + ' 동의';
-    else if (m === 'none') line = '지금: 기록 안 함';
     return '<div class="foot"><a href="#rec" class="hit">기록 안내</a>' +
            (line ? '<span class="now">' + line + '</span>' : '') + '</div>';
   }
-  function norecHTML() { return recMode() === 'none' ? '<p class="norec">' + M.norec + '</p>' : ''; }
 
   /* ------------------------------------------------------------ 홈 화면에 앱으로 추가(PWA · 11-16)
      단추 = 들어오기 «들어가기» 아래 · 목록 맨 아래(홈 화면 앱으로 열었으면 둘 다 안 보임)
@@ -770,7 +766,7 @@ window.__lecStart = function () {
     if (L.DEMO) {
       h += '<div class="demo"><p>연습용 화면이에요. 학생을 누르면 이름과 번호가 채워져요.</p><div class="chips">' +
         '<button class="dchip" type="button" data-act="dfill" data-n="김하늘" data-p="1234">김하늘 <small>동의 전</small></button>' +
-        '<button class="dchip" type="button" data-act="dfill" data-n="박구름" data-p="3456">박구름 <small>기록 안 함</small></button>' +
+        '<button class="dchip" type="button" data-act="dfill" data-n="박구름" data-p="3456">박구름 <small>옛 기록 안 함</small></button>' +
         '<button class="dchip" type="button" data-act="dfill" data-n="이바다" data-p="2345">이바다 <small>선생님 확인</small></button>' +
         '<button class="dchip" type="button" data-act="dfill" data-n="최새봄" data-p="4567">최새봄 <small>답변 대기</small></button>' +
         '<button class="dchip" type="button" data-act="dgone">오가을 <small>명단에서 빠짐</small></button>' +
@@ -978,11 +974,11 @@ window.__lecStart = function () {
   }
 
   /* ------------------------------------------------------------ 동의 */
+  /* again = 맨 아래 «기록 안내»로 다시 읽기만(단추 없음 · 기록 끄기 길 없음 · 원장님 11-17) · 처음 = «동의하고 들어가기» 하나 */
   function showConsent(again) {
     S.view = again ? 'rec' : 'consent';
     var m = recMode(), cur = '';
     if (again && m === 'agree') cur = '지금: 기록함 · ' + esc(L.fmtMD(S.consent.at)) + ' 동의';
-    else if (again && m === 'none') cur = '지금: 기록 안 함';
     var h = '<div class="wrap"><div class="top">' +
       (again ? '<button class="backb" type="button" data-act="recback"><span class="ar" aria-hidden="true">‹</span>돌아가기</button>' : fishSVG() + '<span class="brand">히즈 클래스</span>') +
       '<span class="sp"></span></div><div class="cons"><div class="card">' +
@@ -990,18 +986,18 @@ window.__lecStart = function () {
       '<li>기록하는 것: 영상을 어디까지 봤는지(재생 위치·본 칸), 남긴 질문과 받은 답</li>' +
       '<li>보는 사람: 원장 선생님과 담당 선생님</li>' +
       '<li>보관: 강의가 내려가면 그 강의 기록도 함께 지우고, 학원을 그만두면 30일 안에 지웁니다</li>' +
-      '<li>지우기: 지워 달라고 하면 30일 안에 지웁니다. 동의는 맨 아래 ‘기록 안내’에서 언제든 바꿀 수 있어요</li>' +
+      '<li>지우기: 지워 달라고 하면 30일 안에 지웁니다</li>' +
       '</ol>' + (cur ? '<p class="cur">' + cur + '</p>' : '') +
-      '<div class="btns"><button class="btn-fill" type="button" data-act="agree">동의하고 들어가기</button>' +
-      '<button class="btn-line" type="button" data-act="none">기록 없이 보기</button></div>' +
-      '<p id="cErr" class="err" role="alert"></p>' +
+      (again ? '' : '<div class="btns"><button class="btn-fill" type="button" data-act="agree">동의하고 들어가기</button></div>' +
+      '<p id="cErr" class="err" role="alert"></p>') +
       '</div></div></div>';
     app.innerHTML = h;
     pwaAuto();
   }
 
   function choose(choice, btn) {
-    var again = S.view === 'rec';
+    /* #rec 주소로 와서 동의했으면 같은 안내를 또 띄우지 않고 목록으로(영상 주소 #v= 는 그대로 그 영상으로) */
+    var again = S.view === 'rec' || String(location.hash || '') === '#rec';
     var bs = app.querySelectorAll('.cons button');
     var i;
     for (i = 0; i < bs.length; i += 1) bs[i].disabled = true;
@@ -1010,7 +1006,6 @@ window.__lecStart = function () {
       if (k !== S.key) return;
       if (r && r.ok) {
         S.consent = { choice: r.choice, ver: r.ver, at: r.at };
-        if (r.choice === 'none') pendDropKey(S.key);
         if (again) clearHash();
         route();
         return;
@@ -1114,7 +1109,6 @@ window.__lecStart = function () {
     var arr = S.lectures.slice().reverse(); /* 서버는 오래된 차례 → 새것부터 */
     var today = L.isoDay();
     var h = '<div class="wrap">' + topHTML();
-    h += norecHTML();
     var am = attMap(), ab = absList(arr, am, today), i;
     /* 맨 위 카드는 두 장까지 · 차례 결석한 날 수업 › 학교 시험 범위 › 이어서 보기(C2 정한 것 · 검수 A M6)
        결석 카드가 있으면 «이어서 보기»와 «결석한 날 수업 N편 더»는 그 카드 안의 줄(카드 장수에 안 셈) */
@@ -1273,7 +1267,7 @@ window.__lecStart = function () {
     }
     var h = '<div class="wrap"><div class="top">' +
       '<button class="backb" type="button" data-act="list"><span class="ar" aria-hidden="true">‹</span>목록</button><span class="sp"></span>' +
-      '<span class="me">' + esc(S.name) + '</span></div>' + norecHTML() +
+      '<span class="me">' + esc(S.name) + '</span></div>' +
       '<div class="rhead"><h1>' + esc(ex.c.title) + '</h1><p>' + esc(examSub(ex.c, rec)) + (rec ? ' · 덜 본 영상부터' : '') + '</p></div>' +
       '<section class="grp"><div class="rows">';
     for (i = 0; i < ls.length; i += 1) h += rowHTML(ls[i], rec, today, am['i' + ls[i].id]);
@@ -1465,7 +1459,6 @@ window.__lecStart = function () {
       '<button class="backb" type="button" data-act="list"><span class="ar" aria-hidden="true">‹</span>목록</button>' +
       '<div class="pt"><b>' + esc(l.title) + '</b>' + (sub.length ? '<span>' + esc(sub.join(' · ')) + '</span>' : '') + '</div>' + pdfBtnHTML(l) + '</div>' +
       (lecPdf(l.id) ? '<p class="pdfm" id="pdfM" role="status"></p>' : '') +
-      norecHTML() +
       '<div class="pgrid" id="pgrid"><div class="pl">' +
       '<div class="vid" id="vid"><div class="yt" id="ytbox"></div></div>' +
       '<div class="card verr" id="verr" hidden><p id="verrT"></p><button class="btn-line" type="button" data-act="list">목록으로</button></div>' +
@@ -1864,13 +1857,6 @@ window.__lecStart = function () {
       out.push(x);
     }
     if (!ch) return;
-    if (out.length) L.lsSet(LS.pend, out); else L.lsDel(LS.pend);
-  }
-  /* 기록 안 하기로 바꾸면 이 열쇠로 못 보낸 기록도 버림 */
-  function pendDropKey(k) {
-    var a = L.lsGet(LS.pend, []), out = [], i;
-    if (Object.prototype.toString.call(a) !== '[object Array]' || !a.length) return;
-    for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].key !== k) out.push(a[i]); }
     if (out.length) L.lsSet(LS.pend, out); else L.lsDel(LS.pend);
   }
   function pendFlush() {
@@ -2353,7 +2339,6 @@ window.__lecStart = function () {
       L.lsDel(LS.key); L.lsDel(LS.sess); L.lsDel(LS.pend);
       showLogin('');
     } else if (act === 'agree') { choose('agree', el); }
-    else if (act === 'none') { choose('none', el); }
     else if (act === 'recback') { goList(); }
     else if (act === 'logout') { logout(); }
     else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; clearHash(); showLogin(''); }
