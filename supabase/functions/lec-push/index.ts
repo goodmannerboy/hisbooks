@@ -148,7 +148,7 @@ async function sendOne(it, k, jwt, changed, ms) {
       method: 'POST',
       headers: {
         TTL: '86400',
-        Urgency: 'normal',
+        Urgency: 'high', // 11-17 «안 떴어»: normal 은 잠든 폰(안드로이드 절전 · 아이폰 우선순위 5)에서 늦게 옴 → high = 바로
         Topic: String(ids[0] || 'new').replace(/[^A-Za-z0-9_]/g, '').slice(0, 32),
         'Content-Encoding': 'aes128gcm',
         'Content-Type': 'application/octet-stream',
