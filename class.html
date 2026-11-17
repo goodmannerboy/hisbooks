@@ -19,9 +19,9 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:alt" content="히즈어학원 물고기 로고와 HIS CLASS · 앱으로 설치">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/png" sizes="32x32" href="his-icon-32.png?v=4">
-<link rel="icon" href="favicon.ico?v=4">
-<link rel="apple-touch-icon" href="his-icon-180.png?v=4">
+<link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
+<link rel="icon" href="app-favicon.ico">
+<link rel="apple-touch-icon" href="app-icon-180.png">
 <link rel="manifest" href="class.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -653,7 +653,7 @@ window.__lecStart = function () {
   function pwaCardHTML() {
     if (pwa.kind === 'al') return alHowHTML();
     if (pwa.ok) {
-      return '<div class="pwdone" role="status"><img src="icon-192.png" width="64" height="64" alt="">' +
+      return '<div class="pwdone" role="status"><img src="app-icon-192.png" width="64" height="64" alt="">' +
         '<h2 id="pwaH">홈 화면에 추가했어요</h2><p>이제 홈 화면의 히즈클래스를 누르세요</p>' +
         '<button class="btn-fill" type="button" data-act="pwaclose">확인</button></div>';
     }

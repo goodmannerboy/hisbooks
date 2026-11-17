@@ -38,7 +38,7 @@ self.addEventListener('push', function (e) {
   var b = typeof d.b === 'string' ? d.b.slice(0, 200) : '';
   e.waitUntil(self.registration.showNotification(t, {
     body: b,
-    icon: 'icon-192.png',
+    icon: 'app-icon-192.png',
     badge: 'class-badge.png',
     tag: 'lec-' + (ids[0] || 'new'),
     lang: 'ko',
