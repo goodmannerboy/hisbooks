@@ -4599,7 +4599,7 @@ $$;
 --     두 시각은 lec_push_cfg 의 night_from · morning_at 칸(바꿀 때는 아래 «시각 바꿈» 한 줄 · 선생님 서랍 글과 학생 카드 글이 따라 바뀜)
 --   아침으로 미룬 알림은 그 전에 이미 연 학생에게는 안 감(first_at) · 같은 때 한 폰에 둘 이상이면 알림 하나로 묶음
 --   «전체»(*) 강의는 알림 없음(반이 정해진 강의만 · «전체» + 반이면 그 반만) · 학부모 · 영상 없는 반은 아무것도 없음 · 반 카톡 공지는 그대로
---   알림 글: «새 수업 영상이 올라왔어요» / «11.17(화) {제목}» · 여럿이면 «새 수업 영상 N개가 올라왔어요» / «{첫 편} 외 N-1개»(학생 이름 · 결석 말 없음)
+--   알림 글(11-17 원장님 A안): 굵은 첫 줄 «{교재} {제목}»(교재 칸이 비었거나 제목에 이미 들었으면 제목만) · 둘째 줄 «새 수업 영상이 올라왔어요» · 여럿이면 «{첫 편} 외 N-1개» / «새 수업 영상 N개가 올라왔어요» · 날짜 없음(학생 이름 · 결석 말 없음)
 -- 표
 --   lec_push_cfg    한 줄: mode(off 꺼짐 · test 시험 · on 켬 · 처음은 off) · test_names(시험 학생 이름 · 명단 이름 그대로) ·
 --                   night_from(새벽 시작 01:00) · morning_at(아침 시각 08:00) · VAPID 열쇠(함수 lec-push 가 처음 돌 때 스스로 만들어 넣음)
@@ -5087,12 +5087,13 @@ begin
              jsonb_build_object(
                'sub', s.id, 'endpoint', s.endpoint, 'p256dh', s.p256dh, 'auth', s.auth,
                'ids', to_jsonb((array_agg(lt.id order by coalesce(lt.lesson_on, lt.posted_on), lt.created_at, lt.id))[1:10]),
-               't', case when count(*) = 1 then '새 수업 영상이 올라왔어요'
-                         else '새 수업 영상 ' || count(*)::text || '개가 올라왔어요' end,
-               'b', (array_agg(public.lec__push_day(coalesce(lt.lesson_on, lt.posted_on)) || ' '
+               't', (array_agg(case when btrim(lt.book) <> '' and strpos(lower(btrim(lt.title)), lower(btrim(lt.book))) = 0
+                                    then left(btrim(lt.book), 40) || ' ' else '' end
                                || left(coalesce(nullif(btrim(lt.title), ''), '수업 영상'), 80)
                                order by coalesce(lt.lesson_on, lt.posted_on), lt.created_at, lt.id))[1]
-                    || case when count(*) > 1 then ' 외 ' || (count(*) - 1)::text || '개' else '' end) as o
+                    || case when count(*) > 1 then ' 외 ' || (count(*) - 1)::text || '개' else '' end,
+               'b', case when count(*) = 1 then '새 수업 영상이 올라왔어요'
+                         else '새 수업 영상 ' || count(*)::text || '개가 올라왔어요' end) as o
         from jsonb_to_recordset(v_pairs) as g(lid uuid, sub bigint)
         join public.lec_push_sub s on s.id = g.sub
         join public.lec_lecture lt on lt.id = g.lid
@@ -5490,12 +5491,12 @@ begin
       raise exception '점검 실패(N1 켠 학생 수)';
     end if;
 
-    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
-    values ('selftest-n1-L1', 'selftest000', 100, array[v_c1], v_d - 1) returning id into v_l1;
+    insert into public.lec_lecture (title, book, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-L1', ' 점검책 ', 'selftest000', 100, array[v_c1], v_d - 1) returning id into v_l1;
     insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
     values ('selftest-n1-L2', 'selftest000', 100, array[v_c1], v_d) returning id into v_l2;
-    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
-    values ('selftest-n1-L3', 'selftest000', 100, array[v_c2], v_d) returning id into v_l3;
+    insert into public.lec_lecture (title, book, yt, dur, class_ids, lesson_on)
+    values ('selftest-n1-L3', 'SELFTEST-N1', 'selftest000', 100, array[v_c2], v_d) returning id into v_l3;
     insert into public.lec_progress (sid, lecture_id, first_at) values ('selftest-n1b|점검나', v_l2, now());
     v_x := ((v_d + 1) + time '12:00') at time zone 'Asia/Seoul';
     update public.lec_push_queue set due_at = v_x - interval '1 minute' where lecture_id in (v_l1, v_l2, v_l3);
@@ -5506,19 +5507,21 @@ begin
     if (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
          is distinct from jsonb_build_array(v_l1, v_l2)
        or (select x ->> 't' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
-         is distinct from '새 수업 영상 2개가 올라왔어요'
+         is distinct from '점검책 selftest-n1-L1 외 1개'
        or (select x ->> 'b' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa1)
-         is distinct from public.lec__push_day(v_d - 1) || ' selftest-n1-L1 외 1개'
+         is distinct from '새 수업 영상 2개가 올라왔어요'
        or (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sa2)
          is distinct from jsonb_build_array(v_l1, v_l2)
        or (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
          is distinct from jsonb_build_array(v_l1)
        or (select x ->> 't' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
-         is distinct from '새 수업 영상이 올라왔어요'
+         is distinct from '점검책 selftest-n1-L1'
        or (select x ->> 'b' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
-         is distinct from public.lec__push_day(v_d - 1) || ' selftest-n1-L1'
+         is distinct from '새 수업 영상이 올라왔어요'
        or (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sc)
-         is distinct from jsonb_build_array(v_l3) then
+         is distinct from jsonb_build_array(v_l3)
+       or (select x ->> 't' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sc)
+         is distinct from 'selftest-n1-L3' then
       raise exception '점검 실패(N1 묶음 · 이미 연 학생): %', left(r::text, 600);
     end if;
     if r::text ~ '(보세요|점검가|점검나|점검다|결석|보강)' then
