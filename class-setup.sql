@@ -1262,6 +1262,8 @@ alter table public.lec_lecture add column if not exists lesson_more date[] not n
 alter table public.lec_lecture add column if not exists runner jsonb not null default '{}'::jsonb;
 -- 수업일마다 그날 이 수업을 한 반(11-16 검수 뒤 고침): {"2026-11-11": ["반 id", …]}
 --   적힌 날은 그 반 학생만 그날 출결로 봄 · 안 적힌 날(또는 빈 목록)은 강의의 모든 반
+--   «전체»(*) 강의는 반이 적힌 날만 그 반의 수업일 · 안 적힌 날은 어느 반의 수업일도 아님
+--     («전체»와 실제 반을 함께 고른 강의는 안 적힌 날 그 실제 반 · 11-17 결석 카드 고침)
 alter table public.lec_lecture add column if not exists lesson_cls jsonb not null default '{}'::jsonb;
 
 -- C1 · C3C7 에서 새로 만든 함수만 정확한 모양으로 먼저 지우고 새로 만듭니다
@@ -1411,6 +1413,7 @@ language sql immutable set search_path = public as $$
 $$;
 
 -- 그 수업일에 이 수업을 한 반(lesson_cls 에 적힌 반 · 안 적혔거나 빈 목록이면 null = 강의의 모든 반)
+--   null 이면 부르는 쪽이 강의의 실제 반(class_ids)으로 읽음 · «전체»(*)만 고른 강의는 어느 반도 아님(11-17)
 create or replace function public.lec__lcls(p_lc jsonb, p_d date) returns text[]
 language sql immutable set search_path = public as $$
   select case when cardinality(x.v) > 0 then x.v end
@@ -1676,6 +1679,7 @@ $$;
 --     2주 넘은 강의가 «교실에서 들음» 없이 보임) · 달 줄은 수업일이 든 달만 풀므로 창을 줄여도 읽는 줄 수는 거의 같음
 --   한 날 안에서는 학생의 반(강의 반과 겹치는 반)마다 읽어 «출석» 이 하나라도 있으면 들음. 못 읽으면 목록에서 뺌(= 모름)
 --   수업일에 반이 적혀 있으면(lesson_cls) 그날은 그 반으로만 읽음 · 그 반이 아닌 학생에게는 그날이 수업일이 아님
+--   «전체»(*) 강의는 반이 적힌 날만 그 반의 수업일 · 안 적힌 날은 강의의 실제 반만(«전체»만이면 아무 반도 아님 · 11-17)
 --   계산하는 날은 학생의 반마다 그 반이 수업한 날만(반마다 다른 날을 넘김)
 create or replace function public.lec__att_one(p_main jsonb, p_sid text, p_today date, p_now text)
 returns jsonb
@@ -1699,8 +1703,8 @@ begin
       select distinct c.cid, lday.day
         from lday
        cross join lateral unnest(v_cls) as c(cid)
-       where (c.cid = any (lday.class_ids) or '*' = any (lday.class_ids))
-         and (lday.lc is null or c.cid = any (lday.lc))
+       where c.cid = any (coalesce(lday.lc, lday.class_ids))
+         and (c.cid = any (lday.class_ids) or '*' = any (lday.class_ids))
     )
     select coalesce((select jsonb_object_agg(g.cid, g.ds)
                        from (select cd.cid, jsonb_agg(to_char(cd.day, 'YYYY-MM-DD') order by cd.day) as ds
@@ -1720,7 +1724,7 @@ begin
     ), lec as (
       select lday.id, array_agg(lday.day order by lday.day) as days
         from lday
-       where lday.lc is null or lday.lc && v_cls
+       where coalesce(lday.lc, lday.class_ids) && v_cls
        group by lday.id
     ), per as (
       select lday.id, lday.day,
@@ -1728,8 +1732,8 @@ begin
              bool_or(a.o_mk) as mk
         from lday
         join a on a.o_day = lday.day
+              and a.o_cid = any (coalesce(lday.lc, lday.class_ids))
               and (a.o_cid = any (lday.class_ids) or '*' = any (lday.class_ids))
-              and (lday.lc is null or a.o_cid = any (lday.lc))
        group by lday.id, lday.day
     ), agg as (
       select per.id,
@@ -1776,6 +1780,7 @@ $$;
 --     결석한 날이 오늘~13일 전 · 진도 90% 미만 · 선생님 확인 전 · 기록 안 함 아님 · 시작 전 아님 · 결석 보강이 잡히지 않음 ·
 --     숨기지 않았고 공개됐고 공개 끝 전인 강의(lec_todo 의 behind 와 같은 강의 거름)
 --   수업일에 반이 적혀 있으면(lesson_cls) 그날은 그 반 학생만 출결로 보고, 띠의 반도 그날 적힌 반으로만 묶음
+--   «전체»(*) 강의는 반이 적힌 날만 그 반의 수업일 · 안 적힌 날은 강의의 실제 반만(«전체»만이면 아무 반도 아님 · 11-17)
 --   (학생, 반)마다 그 반이 수업한 날만 계산(반마다 다른 날을 넘김)
 create or replace function public.lec__att_staff_one(p_main jsonb, p_scope text[], p_cln jsonb, p_today date, p_now text)
 returns jsonb
@@ -1813,8 +1818,8 @@ begin
     ), cd as (
       select distinct pc.cid, lday.day
         from lday
-        join pc on (pc.cid = any (lday.class_ids) or '*' = any (lday.class_ids))
-               and (lday.lc is null or pc.cid = any (lday.lc))
+        join pc on pc.cid = any (coalesce(lday.lc, lday.class_ids))
+               and (pc.cid = any (lday.class_ids) or '*' = any (lday.class_ids))
     )
     select coalesce((select jsonb_object_agg(g.cid, g.ds)
                        from (select cd.cid, jsonb_agg(to_char(cd.day, 'YYYY-MM-DD') order by cd.day) as ds
@@ -1847,8 +1852,8 @@ begin
         join ro on exists (select 1 from unnest(ro.cls) as c(cid)
                             where c.cid = any (v_scope) and (c.cid = any (lday.class_ids) or '*' = any (lday.class_ids)))
         join a on a.o_rid = ro.rid and a.o_day = lday.day and a.o_cid = any (ro.cls)
+              and a.o_cid = any (coalesce(lday.lc, lday.class_ids))
               and (a.o_cid = any (lday.class_ids) or '*' = any (lday.class_ids))
-              and (lday.lc is null or a.o_cid = any (lday.lc))
        group by lday.id, ro.skey, lday.day
     ), agg as (
       select per.lid, per.skey,
@@ -1889,8 +1894,8 @@ begin
         join public.lec_lecture l on l.id = cell.l
        cross join lateral (select public.lec__lcls(l.lesson_cls, cell.d) as lc) z
         join ro on ro.skey = cell.s
-        join cl on cl.id = any (ro.cls) and (cl.id = any (l.class_ids) or '*' = any (l.class_ids))
-               and (z.lc is null or cl.id = any (z.lc))
+        join cl on cl.id = any (ro.cls) and cl.id = any (coalesce(z.lc, l.class_ids))
+               and (cl.id = any (l.class_ids) or '*' = any (l.class_ids))
         left join public.lec_progress g on g.sid = ro.skey and g.lecture_id = l.id
         left join public.lec_consent cs on cs.sid = ro.skey
        where not l.hidden
@@ -2363,6 +2368,9 @@ declare
   v_l1  uuid;
   v_l2  uuid;
   v_l3  uuid;
+  v_l4  uuid;
+  v_l5  uuid;
+  v_l6  uuid;
   v_ka  text;
   v_kb  text;
   v_u   text;
@@ -2554,6 +2562,60 @@ begin
     r := public.lec__att_staff_one(v_m, '{}', '{}', '2026-11-16', '20:00');
     if r -> 'lectures' is distinct from '[]'::jsonb or r -> 'band' ->> 'n' is distinct from '0' then
       raise exception '점검 실패(선생님 · 반 없음): %', left(r::text, 200);
+    end if;
+
+    -- «전체»(*) 강의(11-17 결석 카드 고침): 학생 카드 · 선생님 칸 · 띠가 같은 규칙
+    --   L4 = «전체»만 · 반 안 적음 → 어느 반의 수업일도 아님(가 · 나 · 선생님 칸 · 띠 모두 없음)
+    --   L5 = «전체»만 · 11.10 A반 · 11.11 B반 적음 → 적힌 반만 / L6 = «전체» + A반 · 반 안 적음 → 실제 반(A반)만
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, lesson_more, posted_on)
+    values ('selftest-m4', 'selftest000', 100, '{*}', '2026-11-10', '{2026-11-11}', '2026-11-01')
+    returning id into v_l4;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, lesson_more, posted_on, lesson_cls)
+    values ('selftest-m5', 'selftest000', 100, '{*}', '2026-11-10', '{2026-11-11}', '2026-11-01',
+            '{"2026-11-10":["selftest-cA"],"2026-11-11":["selftest-cB"]}')
+    returning id into v_l5;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, lesson_more, posted_on)
+    values ('selftest-m6', 'selftest000', 100, '{*,selftest-cA}', '2026-11-10', '{2026-11-11}', '2026-11-01')
+    returning id into v_l6;
+    v_u := '';
+    foreach v_t in array array[v_ka, v_kb] loop
+      r := public.lec__att_one(v_m, v_t, '2026-11-16', '20:00');
+      v_u := v_u || '|' || coalesce((select string_agg(y.s, ' ' order by y.s collate "C")
+                                       from (select case x.value ->> 'id' when v_l4::text then 'L4' when v_l5::text then 'L5' else 'L6' end
+                                                    || '=' || coalesce(x.value ->> 'att', '?') || '@' || coalesce(x.value ->> 'day', '?')
+                                                    || coalesce((x.value -> 'days')::text, '?')
+                                                    || case when coalesce((x.value ->> 'mk')::boolean, false) then '+' else '' end as s
+                                               from jsonb_array_elements(r -> 'items') as x
+                                              where x.value ->> 'id' in (v_l4::text, v_l5::text, v_l6::text)) y), '');
+    end loop;
+    if v_u is distinct from '|L5=in@2026-11-10["2026-11-10"] L6=abs@2026-11-11["2026-11-10", "2026-11-11"]'
+                         || '|L5=abs@2026-11-11["2026-11-11"]' then
+      raise exception '점검 실패(학생 출결 · «전체» 강의): %', v_u;
+    end if;
+    r := public.lec__att_staff_one(v_m, array['selftest-cA', 'selftest-cB'],
+                                   '{"selftest-cA":"점검A반","selftest-cB":"점검B반"}', '2026-11-16', '20:00');
+    select coalesce(string_agg(y.s, ' ' order by y.s collate "C"), '') into v_t
+      from (select case x.value ->> 'l' when v_l4::text then 'L4' when v_l5::text then 'L5' else 'L6' end
+                   || ':in=' || coalesce((x.value -> 'in')::text, '?')
+                   || ':abs=' || coalesce((select string_agg((z.value ->> 's') || '@' || (z.value ->> 'd')
+                                                             || case when coalesce((z.value ->> 'mk')::boolean, false) then '+' else '' end,
+                                                             ',' order by z.value ->> 's' collate "C")
+                                             from jsonb_array_elements(x.value -> 'abs') as z), '') as s
+              from jsonb_array_elements(r -> 'lectures') as x
+             where x.value ->> 'l' in (v_l4::text, v_l5::text, v_l6::text)) y;
+    v_t := replace(replace(v_t, v_ka, 'ga'), v_kb, 'na');
+    if v_t is distinct from 'L5:in=["ga"]:abs=na@2026-11-11 L6:in=[]:abs=ga@2026-11-11' then
+      raise exception '점검 실패(선생님 칸 · «전체» 강의): %', v_t;
+    end if;
+    select coalesce(string_agg(y.s, ' ' order by y.s collate "C"), '') into v_t
+      from (select case x.value ->> 'lecture' when v_l4::text then 'L4' when v_l5::text then 'L5' else 'L6' end
+                   || ':' || coalesce(x.value ->> 'cname', '?') || ':' || coalesce(x.value ->> 'day', '?')
+                   || ':' || coalesce(x.value ->> 'n', '?') || ':' || coalesce((x.value -> 'names')::text, '?') as s
+              from jsonb_array_elements(r -> 'band' -> 'items') as x
+             where x.value ->> 'lecture' in (v_l4::text, v_l5::text, v_l6::text)) y;
+    if v_t is distinct from 'L5:점검B반:2026-11-11:1:["점검나"] L6:점검A반:2026-11-11:1:["점검가"]'
+       or (r -> 'band' ->> 'n') is distinct from '2' then
+      raise exception '점검 실패(선생님 띠 · «전체» 강의): % / %', v_t, r -> 'band' ->> 'n';
     end if;
 
     -- 새 칸(여러 수업일 · 실행기 묶음)
