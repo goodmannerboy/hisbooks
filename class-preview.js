@@ -353,8 +353,8 @@
     A.pushSave = no; A.pushOff = no;
     /* 단어 · 구문 · 문법(S1 · §10): setHome = null(묶음 없음 · 픽셀 0) · 나머지 읽기 · 쓰기 · 녹음 · 올리기 = 보내지 않음 */
     A.setHome = function () { return ok(null); };
-    A.setAgree = no; A.setItems = no; A.setCard = no; A.setTest = no; A.setDue = no; A.setAns = no;
-    A.recAgree = no; A.recOff = no; A.recBegin = no; A.recDone = no; A.recPut = no; A.recSend = no;
+    A.setItems = no; A.setCard = no; A.setTest = no; A.setDue = no; A.setAns = no;
+    A.recBegin = no; A.recDone = no; A.recPut = no; A.recSend = no;
     A.logout = function () { return ok({ ok: true }); };
     w.Lec = A;
     w.__lecPvIn = true;

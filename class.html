@@ -386,13 +386,6 @@ button.row:active{background:var(--press)}
 .sst .s2r + .s2r:before{left:14px}
 .absln.off{cursor:default}
 .absln.off::after{content:none}
-.scons h3{margin:0 0 8px;font-size:16px;font-weight:700;line-height:1.35;letter-spacing:-.01em}
-.scons ol{margin:0;padding:0;list-style:none;counter-reset:c}
-.scons li{position:relative;padding:10px 0 10px 32px;border-top:1px solid var(--line);text-align:justify;font-size:14px;line-height:1.55;word-break:keep-all;line-break:strict}
-.scons li:first-child{border-top:0;padding-top:4px}
-.scons li:before{counter-increment:c;content:counter(c);position:absolute;left:0;top:10px;width:22px;height:22px;border-radius:50%;border:1px solid var(--dash);font-size:12px;font-weight:700;line-height:20px;text-align:center}
-.scons li:first-child:before{top:4px}
-.scons .btn-fill{margin-top:12px}
 .sw{max-width:480px;margin:0 auto}
 .shd{display:flex;align-items:center;gap:8px;min-height:48px}
 .shd .sc{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -404,7 +397,6 @@ button.row:active{background:var(--press)}
 .smt{margin:2px 0 14px;font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
 .slab{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--ink)}
 .snote{margin:0 0 12px;font-size:13px;line-height:1.6;color:var(--ink2);text-align:justify}
-.snote.c{margin:12px 0 0;font-weight:700;color:var(--ink)}
 .sst .s2r{display:flex;align-items:center;gap:10px;min-height:56px}
 .sst .s2r .mn{flex:1 1 auto;min-width:0}
 .sst .s2r .tt{font-size:15px}
@@ -615,7 +607,7 @@ window.__lecStart = function () {
     alBusy: false, nIds: null, /* 알림으로 연 강의(목록이면 그 줄을 잠깐 칠함) */
     homeAt: 0, /* 마지막으로 집 정보를 받은 때(홈 화면 앱으로 돌아왔을 때 1분이 넘었으면 다시 받음) */
     set: null, /* S1 lec_set_home 답(단어 · 구문 · 문법 묶음) · 없거나 옛 서버 · 미리 보기면 null = 묶음 없음 */
-    setDirty: false, /* 공부 화면에서 쓰기(카드 · 답 · 녹음 · 동의)를 함 → 목록으로 돌아올 때만 한 번 더 받음 */
+    setDirty: false, /* 공부 화면에서 쓰기(카드 · 답 · 녹음)를 함 → 목록으로 돌아올 때만 한 번 더 받음 */
     setMore: false, setY: 0, /* «지난 n개 더»를 펼침 · 공부 화면에 들어갈 때의 목록 스크롤 자리 */
     loginErr: '', nav: false, view: '', tab: 'toc',
     q: null
@@ -1891,7 +1883,7 @@ window.__lecStart = function () {
   /* ------------------------------------------------------------ 단어 · 구문 · 문법(S1 · 11-17) */
   /* 여덟 기능 결론안(원장님 «결론안대로») · 계약서 §9-1 · §9-2 · §10 · lead2_design S1~S8 · lead2_tech T3 · T4 · 학생 글은 위젯 cc8 그대로
      목록: 집 정보 답 뒤 setHome 한 번 → 맨 위 카드 아래 묶음 · null · 공부 자료 0 이고 쌓인 오답 0 = 묶음 없음(픽셀 0 · 띠 0)
-           늦게 오면 묶음이 생길 때만 조용히 다시 그림 · 쓰기(카드 · 답 · 녹음 · 동의)를 한 뒤 목록으로 돌아올 때만 한 번 더(반복 확인 0)
+           늦게 오면 묶음이 생길 때만 조용히 다시 그림 · 쓰기(카드 · 답 · 녹음)를 한 뒤 목록으로 돌아올 때만 한 번 더(반복 확인 0)
      공부 화면: 주소(#) 안 바꿈(S6 · 아이폰이 마이크 허락을 다시 물음) · «‹ 목록» · «‹ 그만»으로 목록(들어갈 때의 스크롤 자리)
      정답: 답한 뒤 그 문항 것만 받음 · 시험에 들어가면 들고 있던 단어 문항을 버림 · localStorage 에 문항 · 정답 0(§9-2)
      미리 보기 안쪽(window.__lecPvIn) = 부름 · 쓰기 · 녹음 0(class-preview.js 갈음 목록 · 마이크 거절과 두 겹 · §8-204) */
@@ -1905,7 +1897,6 @@ window.__lecStart = function () {
     tomorrow: '내일 다시 볼 수 있어요.',
     pass: '이미 통과했어요.',
     none: '지금은 열 수 없어요.', kind: '지금은 열 수 없어요.', 'try': '지금은 열 수 없어요.', done: '지금은 열 수 없어요.',
-    rec_ok: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.', level: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.',
     size: '45초 안으로 다시 녹음해 주세요.',
     mime: '이 폰에서는 녹음을 보낼 수 없어요.',
     upload: '보내지 못했어요.', file: '보내지 못했어요.', late: '보내지 못했어요.', network: '보내지 못했어요.',
@@ -1982,16 +1973,12 @@ window.__lecStart = function () {
     return o.concat(d);
   }
   function setGrpHTML() {
-    var s = S.set, rows, due, show, h, i, c;
+    var s = S.set, rows, due, show, h, i;
     if (setPv() || !s || !s.ok) return '';
     rows = setRows();
-    due = s.agree && s.due && +s.due.n > 0 ? s.due : null;
+    due = s.due && +s.due.n > 0 ? s.due : null;
     if (!rows.length && !due) return '';
     h = '<section class="grp sgrp" id="setGrp" aria-labelledby="setGrpT"><h2 id="setGrpT">단어 · 구문 · 문법</h2>';
-    if (!s.agree) { /* 동의 전 = 묶음 안 카드 한 장(단추 하나 · 건너뛰기 없음) · 묶음 밖은 그대로 */
-      c = noteHTML(L.SET_NOTE, 's1agree', 'sAgErr');
-      return rows.length && c ? h + c + '</section>' : '';
-    }
     show = S.setMore ? rows.length : Math.min(3, rows.length);
     h += '<div class="rows">';
     for (i = 0; i < show; i += 1) h += setRowHTML(rows[i]);
@@ -2049,41 +2036,6 @@ window.__lecStart = function () {
       (rs ? '<span class="rs">' + rs + '</span>' : '') + (un ? '<span class="un">' + esc(un) + '</span>' : '') + '</span>' +
       (m ? ring(pct, ok) : '') + '</button>';
   }
-  /* 안내 카드(SET_NOTE · REC_NOTE 같은 꼴 · 번호 목록 + 단추 하나 + 오류 한 줄) */
-  function noteHTML(N, act, eid) {
-    var it = N && N.items, h, i;
-    if (!it || !it.length) return '';
-    h = '<div class="card scons"><h3>' + esc(N.title || '') + '</h3><ol>';
-    for (i = 0; i < it.length; i += 1) h += '<li>' + esc(it[i]) + '</li>';
-    if (!act) return h + '</ol></div>'; /* 동의한 뒤 다시 읽기만(단추 없음 · 끄기 단추도 없음) */
-    return h + '</ol><button class="btn-fill" type="button" data-act="' + act + '">' + esc(N.btn || '') + '</button><p class="err" id="' + eid + '" role="alert"></p></div>';
-  }
-  function setAgreeGo(btn) {
-    var k = S.key;
-    if (setPv()) { pvNo(); return; }
-    if (!S.set || !btn || btn.disabled) return;
-    btn.disabled = true;
-    setHTML('sAgErr', '');
-    L.setAgree(k).then(function (r) {
-      if (k !== S.key) return;
-      if (r && r.ok) {
-        L.setHome(k).then(function (h) {
-          if (k !== S.key) return;
-          if (h && h.ok) S.set = h; else if (S.set) S.set.agree = true;
-          S.setDirty = false;
-          quietList();
-        }, function () { if (k !== S.key) return; if (S.set) S.set.agree = true; quietList(); });
-        return;
-      }
-      if (setGoneBy(r)) return;
-      btn.disabled = false;
-      setHTML('sAgErr', esc(setTx(r && r.err, 'open')));
-    }, function () {
-      if (k !== S.key) return;
-      btn.disabled = false;
-      setHTML('sAgErr', esc(M.net));
-    });
-  }
 
   /* 공부 화면 틀 · 거두기 · 목록으로 */
   function setStop() {
@@ -2130,12 +2082,11 @@ window.__lecStart = function () {
     setPage(setHead('목록') + (title ? '<h1 class="sh1">' + esc(title) + '</h1>' : '') +
       '<div class="sres"><p class="sr2">' + esc(msg) + '</p><button class="btn-fill" type="button" data-act="s1back">목록으로</button></div>');
   }
-  /* 실패 공통: key = 다시 들어오기 · consent = 기록 안내 · agree = 목록의 동의 카드 · old(옛 서버) = 묶음 없앰 → true(이 화면을 떠남) */
+  /* 실패 공통: key = 다시 들어오기 · consent = 기록 안내 · old(옛 서버) = 묶음 없앰 → true(이 화면을 떠남) */
   function setGoneBy(r) {
     var e = r && r.err;
     if (e === 'key') { reLogin(); return true; }
     if (e === 'consent') { setStop(); S.consent = null; route(); return true; }
-    if (e === 'agree') { if (S.set) S.set.agree = false; setBack(false); return true; }
     if (e === 'old') { S.set = null; setBack(false); return true; }
     if (e === 'preview') { setBack(false); return true; }
     return false;
@@ -2191,7 +2142,6 @@ window.__lecStart = function () {
     if (a === 'open') { setOpen(attr(el, 'data-id')); return; }
     if (a === 'due') { setOpen(null); return; }
     if (a === 'more') { S.setMore = true; showList(); return; }
-    if (a === 'agree') { setAgreeGo(el); return; }
     if (!W) return;
     if (a === 'back') { setLeave(); return; }
     if (W.busy) return;
@@ -2224,9 +2174,6 @@ window.__lecStart = function () {
       else if (a === 'me') audPlay(attr(el, 'data-k'));
       else if (a === 'or') { it = g.byK[attr(el, 'data-k')]; if (it) { audStop(); sayRun(L.sayParts(String(it.e || '')) || []); } }
       else if (a === 'send') recSendAll();
-      else if (a === 'note') { if (g.R) { g.R.note = true; recDraw(); } }
-      else if (a === 'noteno') { if (g.R) { g.R.note = false; recDraw(); } }
-      else if (a === 'recok') recAgreeGo(el);
       else if (a === 'out') recOut();
     }
   }
@@ -2698,7 +2645,7 @@ window.__lecStart = function () {
       if (my !== WRUN || !W) return;
       W.busy = false;
       if (!r || !r.ok) { if (setGoneBy(r)) return; setInfo(W.s.title, setTx(r && r.err, 'open')); return; }
-      g = { items: r.items || [], pick: r.pick || [], recs: {}, rec: r.rec || {}, byK: {}, i: 0, ph: 'a', hl: -1, busy: false, done: false, show: false, cue: '',
+      g = { items: r.items || [], pick: r.pick || [], recs: {}, byK: {}, i: 0, ph: 'a', hl: -1, busy: false, done: false, show: false, cue: '',
             marks: {}, run: 0, R: null, direct: false, wait: false, j: 0, man: false };
       rc = r.recs || [];
       for (j = 0; j < g.items.length; j += 1) { if (g.items[j] && g.items[j].k) g.byK[g.items[j].k] = g.items[j]; }
@@ -2816,7 +2763,7 @@ window.__lecStart = function () {
     setPage(setHead('목록') + '<div class="sres">' + icon('check', 36) + '<p class="sr1">다 했어요</p><button class="btn-fill" type="button" data-act="s1back">목록으로</button></div>');
   }
 
-  /* ★ 녹음(T3): rec.ok 면 녹음 → 폰에서 먼저 들어 봄 → «원장 선생님께 내기»(recSend) · 아니면 고등학생 = «녹음 제출 안내 보기»(REC_NOTE → recAgree) · 그 밖 = 보호자 동의 한 줄
+  /* ★ 녹음(T3): 녹음 → 폰에서 먼저 들어 봄 → «원장 선생님께 내기»(recSend) · 모든 학생(S1-b 11-17 원장님 «동의서 필요없어» · 녹음 동의 · 학교급 없음)
      띠 · 알림 없음 · 녹음은 이 화면을 닫을 때까지 폰 메모리 안(localStorage 0) */
   function recPick() {
     var g = W.g, p = g.pick || [], o = [], i;
@@ -2828,7 +2775,7 @@ window.__lecStart = function () {
     W.mode = 'rec';
     if (!g.R) {
       for (k in g.recs) { if (g.recs.hasOwnProperty(k) && g.recs[k] && g.recs[k].st) any = true; }
-      g.R = { intro: !any, b: {}, on: null, msg: '', msg2: '', err: '', retry: false, busy: false, sent: false, note: false, done: {}, big: {} };
+      g.R = { intro: !any, b: {}, on: null, msg: '', msg2: '', err: '', retry: false, busy: false, sent: false, done: {}, big: {} };
     }
     recDraw();
   }
@@ -2853,26 +2800,18 @@ window.__lecStart = function () {
     return (KO_N[n] ? KO_N[n] + ' 문장' : n + '문장') + '을 다 녹음하면 낼 수 있어요';
   }
   function guZeroHTML() { return '<div class="stxtw"><button class="stxt" type="button" data-act="s1gu0">따라 말하기 처음부터</button></div>'; }
-  /* 녹음 제출 끄기 길은 학생 화면에 두지 않음(원장님 11-17 · 원장 선생님이 선생님 화면에서 끔) → Lec.recOff 는 이 화면이 부르지 않음 */
   function recDraw() {
-    var g = W.g, R = g.R, rc = g.rec || {}, p = recPick(), need = recNeed(), can = recCan(), live = !!rc.ok && can === 'ok', os = pwaOs(),
-        h = setHead('목록'), i, k, it, st, tag, ctl, all, wy, nt;
-    /* 동의한 뒤에도 녹음 칸 아래 «녹음 제출 안내»로 여덟 줄을 다시 읽음(검수 11-17 · 단추 없이 «돌아가기»만) */
-    nt = rc.ok ? '<div class="stxtw"><button class="stxt" type="button" data-act="s1note">녹음 제출 안내</button></div>' : '';
-    if (R.note) {
-      setPage(h + '<p class="sh2">★ 녹음 ' + p.length + '문장</p>' + noteHTML(L.REC_NOTE, rc.ok ? '' : 's1recok', 'rAgErr') +
-        '<div class="stxtw"><button class="stxt" type="button" data-act="s1noteno">돌아가기</button></div>');
-      return;
-    }
+    var g = W.g, R = g.R, p = recPick(), need = recNeed(), can = recCan(), live = can === 'ok', os = pwaOs(),
+        h = setHead('목록'), i, k, it, st, tag, ctl, all, wy;
     if (R.sent) {
       setPage(h + '<div class="sres">' + icon('check', 36) + '<p class="sr1">냈어요</p><p class="sr3">원장 선생님이 듣기 전</p><p class="sr3">원장 선생님이 «다시»를 보내면 그 문장만 다시 녹음해요.</p>' +
-        '<button class="btn-fill" type="button" data-act="s1back">목록으로</button></div>' + nt);
+        '<button class="btn-fill" type="button" data-act="s1back">목록으로</button></div>');
       return;
     }
     h += '<p class="sh2">★ 녹음 ' + p.length + '문장</p>';
     if (live && R.intro && need.length) {
       setPage(h + '<div class="sintro">' + icon('mic', 30) + '<p>해석을 보고 외워서 말해요.</p><p class="sub">녹음은 원장 선생님만 들어요 · 30일 뒤 지워요</p></div>' +
-        '<button class="btn-fill" type="button" data-act="s1mic">마이크 켜고 녹음</button>' + (g.direct ? guZeroHTML() : '') + nt);
+        '<button class="btn-fill" type="button" data-act="s1mic">마이크 켜고 녹음</button>' + (g.direct ? guZeroHTML() : ''));
       return;
     }
     h += '<p class="snote">해석을 보고 외워서 말해요</p>';
@@ -2901,10 +2840,7 @@ window.__lecStart = function () {
     }
     if (R.msg) h += '<p class="smsg" role="alert">' + esc(R.msg) + '</p>' + (R.msg2 ? '<p class="smsg2">' + esc(R.msg2) + '</p>' : '');
     h += '<div class="sbot">';
-    if (!rc.ok) {
-      h += rc.lvl === 'h' ? '<button class="btn-line" type="button" data-act="s1note">녹음 제출 안내 보기</button>' :
-        '<p class="snote c">' + esc((L.REC_NOTE && L.REC_NOTE.guard) || SET_TX.rec_ok) + '</p>';
-    } else if (can === 'kakao') {
+    if (can === 'kakao') {
       h += '<p class="smsg">' + esc(REC_TX.kakao) + '</p><button class="btn-fill" type="button" data-act="s1out">' + (os === 'ios' ? '사파리로 열기' : '다른 브라우저로 열기') + '</button>';
     } else if (can === 'none') {
       h += '<p class="smsg">' + esc(REC_TX.none) + '</p>';
@@ -2917,13 +2853,13 @@ window.__lecStart = function () {
     } else {
       h += '<button class="btn-fill" type="button" data-act="s1back">목록으로</button>';
     }
-    setPage(h + '</div>' + (g.direct ? guZeroHTML() : '') + nt);
+    setPage(h + '</div>' + (g.direct ? guZeroHTML() : ''));
   }
   /* 녹음: 누른 그 자리에서 마이크(에코 캔슬 끔) · 32kbps · 45초에 저절로 멈춤 · 멈추면 바로 track.stop */
   function recStart(k) {
     var g = W.g, R = g.R, md = navigator.mediaDevices, MR = window.MediaRecorder, my = WRUN, on, pr = null;
     if (setPv()) { pvNo(); return; }
-    if (!R || R.on || R.busy || !(g.rec && g.rec.ok) || !k) return;
+    if (!R || R.on || R.busy || !k) return;
     if (!md || typeof md.getUserMedia !== 'function' || !MR) { R.msg = REC_TX.none; R.msg2 = ''; recDraw(); return; }
     sayStop(); audStop();
     R.msg = ''; R.msg2 = ''; R.err = ''; R.retry = false;
@@ -3033,7 +2969,6 @@ window.__lecStart = function () {
       R.busy = false;
       R.err = setTx(e, 'rec');
       R.retry = e === 'upload' || e === 'file' || e === 'late' || e === 'network' || e === 'error';
-      if (e === 'rec_ok' || e === 'level') g.rec.ok = false;
       recDraw();
     }
     function one() {
@@ -3047,30 +2982,11 @@ window.__lecStart = function () {
       L.recSend(S.key, W.id, k, b.blob, base, b.ms).then(function (r) {
         if (my !== WRUN || !W) return;
         if (r && r.ok) { R.done[k] = 1; j += 1; one(); return; }
-        if (r && (r.err === 'key' || r.err === 'consent' || r.err === 'agree' || r.err === 'old' || r.err === 'preview')) { setGoneBy(r); return; }
+        if (r && (r.err === 'key' || r.err === 'consent' || r.err === 'old' || r.err === 'preview')) { setGoneBy(r); return; }
         fail(r && r.err ? r.err : 'error');
       }, function () { fail('network'); });
     }
     one();
-  }
-  function recAgreeGo(btn) {
-    var g = W.g, my = WRUN;
-    if (setPv()) { pvNo(); return; }
-    if (!btn || btn.disabled) return;
-    btn.disabled = true;
-    setHTML('rAgErr', '');
-    S.setDirty = true;
-    L.recAgree(S.key).then(function (r) {
-      if (my !== WRUN || !W) return;
-      if (r && r.ok) { g.rec.ok = true; g.rec.how = r.how || 'self'; g.R.note = false; g.R.intro = true; recDraw(); return; }
-      if (setGoneBy(r)) return;
-      btn.disabled = false;
-      setHTML('rAgErr', esc(setTx(r && r.err, 'open')));
-    }, function () {
-      if (my !== WRUN || !W) return;
-      btn.disabled = false;
-      setHTML('rAgErr', esc(M.net));
-    });
   }
   /* 카톡 안 = 밖의 브라우저로(설치 안내와 같은 kakaoOut · 지금 주소 그대로 · 설치 판은 안 엶) */
   function recOut() { kakaoOut(location.origin + location.pathname + location.search); }
@@ -4247,7 +4163,7 @@ window.__lecStart = function () {
         paper: S.paper, rng: S.rng, absAt: S.absAt,
         set: S.set, setDirty: S.setDirty, W: W ? { mode: W.mode, kind: W.kind, id: W.id, ph: W.t ? W.t.ph : '', rec: !!(W.g && W.g.R && W.g.R.on),
           tid: W.t ? W.t.id : '', ti: W.t ? tIdx(W.t) : -1, step: W.t ? W.t.step : 0, fb: !!(W.t && W.t.fb), busy: !!(W.t && W.t.busy), fr: tFresh(W.t),
-          g: W.g ? { i: W.g.i, ph: W.g.ph, busy: W.g.busy, wait: !!W.g.wait, done: W.g.done, man: !!W.g.man, j: W.g.j || 0, ok: !!(W.g.rec && W.g.rec.ok) } : null,
+          g: W.g ? { i: W.g.i, ph: W.g.ph, busy: W.g.busy, wait: !!W.g.wait, done: W.g.done, man: !!W.g.man, j: W.g.j || 0 } : null,
           q: W.q ? W.q.length : 0, tot: W.tot || 0 } : null
       };
     };

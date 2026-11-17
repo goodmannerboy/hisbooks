@@ -2164,10 +2164,12 @@
 
 /* ======================================================= S1 (11-17) 단어 · 구문 · 문법
    - 학생(첫 인자 key · 모두 Promise · throw 없음): setHome(key) = 공부 묶음 목록(서버에 함수가 없거나 실패 = null ·
-     함수가 없으면 이 화면에서 다시 안 부름) · setAgree · setItems · setCard · setTest · setDue · setAns · recAgree · recOff ·
+     함수가 없으면 이 화면에서 다시 안 부름) · setItems · setCard · setTest · setDue · setAns ·
      recBegin · recDone · recPut · recSend(실패 = {ok:false, err})
    - 선생님(관리자 · 첫 인자 call = 화면의 서버 부르기): setListStaff · setGet · setPut · setHide · setDel · setStaff ·
-     recMark · recGuard · recLvl · recClean
+     recMark · recClean
+   - S1-b(11-17 원장님 «동의서 필요없어»): 세트 동의 · 녹음 동의 · 학교급 갈래 없음(setAgree · recAgree · recOff · recGuard · recLvl ·
+     SET_NOTE · REC_NOTE · stuLevel · levelsFrom 뺌) · 히즈클래스 기록 동의(lec_consent)는 그대로
    - 판정(class-setup.sql S1 절과 같은 셈 · 같은 값 표 _check/class_set_vectors.json): setNorm · setMatch · setNeed · setMark …
    - 미리 보기 안쪽(w.__lecPvIn) = 학생 함수는 서버도 가짜 서버도 부르지 않음(setHome null · 나머지 {ok:false, err:'preview'}) */
 (function (w) {
@@ -2176,7 +2178,6 @@
   var Lec = w.Lec;
   if (!Lec) return;
 
-  var SET_VER = 's1-2026-11', REC_VER = 'r1-2026-11';
   var SET_LIM = { voc: 300, gu: 30, gram: 50 };
   var REC_MAX_BYTES = 1048576, REC_MAX_MS = 45000;
   var REC_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg'];
@@ -2200,8 +2201,6 @@
     kind: '지금은 열 수 없어요.',
     'try': '지금은 열 수 없어요.',
     done: '지금은 열 수 없어요.',
-    rec_ok: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.',
-    level: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.',
     size: '45초 안으로 다시 녹음해 주세요.',
     mime: '이 폰에서는 녹음을 보낼 수 없어요.',
     upload: '보내지 못했어요.',
@@ -2209,31 +2208,6 @@
     late: '보내지 못했어요.',
     network: '보내지 못했어요.',
     other: '잠시 뒤 다시 해 주세요.'
-  };
-  var SET_NOTE = {
-    title: '단어 · 구문 · 문법 기록 안내',
-    items: [
-      '기록하는 것: 단어 카드에서 누른 알아요 · 다시, 시험과 문법 문제에서 고르거나 쓴 답과 맞고 틀린 것, 푼 날짜와 시각',
-      '보는 사람: 원장 선생님',
-      '보관: 선생님이 공부 자료를 지우면 그 기록도 함께 지우고, 학원을 그만두면 30일 안에 지웁니다',
-      '지우기: 지워 달라고 하면 30일 안에 지웁니다'
-    ],
-    btn: '동의하고 시작'
-  };
-  var REC_NOTE = {
-    title: '녹음 제출 안내',
-    items: [
-      '녹음하는 것: 구문을 외워서 말한 목소리와 보낸 시각',
-      '왜: 선생님이 끊어 읽기와 발음을 듣고 알려 주려고',
-      '듣는 사람: 원장 선생님',
-      '보관: 보낸 날부터 30일 뒤 지웁니다',
-      '저장하는 곳: Supabase(클라우드 저장소)',
-      '안 해도 됩니다: 동의하지 않아도 공부는 그대로 하고, 녹음 제출 단추가 보이지 않습니다',
-      '만 14세 미만은 보호자 동의서를 내야 열립니다',
-      '끄기: 원장 선생님께 말하면 바로 끄고, 보낸 녹음도 지웁니다'
-    ],
-    btn: '동의하고 녹음 열기',
-    guard: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.'
   };
 
   function str(v) { return v == null ? '' : String(v); }
@@ -2756,65 +2730,8 @@
     return { label: label, count: q.length, q: q, a: a };
   }
 
-  /* ------------------------------------------------------------- 학교급 · 소리 · 녹음 꼴 */
+  /* ------------------------------------------------------------- 소리 · 녹음 꼴 */
 
-  /* 학교 칸(줄인 이름 끝 글자) → 학년 칸 → 반 이름(초가 하나라도 있으면 e · 중 m · 고 h) · 모르면 '' */
-  function stuLevel(stu, clsNames) {
-    var k = '', last, g, i, ch, re, m, x, e = false, mm = false, h = false, nm;
-    try { k = Lec.schoolKey && Lec.stuSchool ? str(Lec.schoolKey(Lec.stuSchool(stu))) : ''; } catch (e0) { k = ''; }
-    last = k ? k.charAt(k.length - 1) : '';
-    if (last === '고') return 'h';
-    if (last === '중') return 'm';
-    if (last === '초') return 'e';
-    try { g = str(stu && (stu.grade || (isObj(stu.intake) ? stu.intake.grade : ''))); } catch (e1) { g = ''; }
-    for (i = 0; i < g.length; i += 1) {
-      ch = g.charAt(i);
-      if (ch === '고') return 'h';
-      if (ch === '중') return 'm';
-      if (ch === '초') return 'e';
-    }
-    clsNames = isArr(clsNames) ? clsNames : [];
-    for (i = 0; i < clsNames.length; i += 1) {
-      nm = str(clsNames[i]);
-      re = /([HME])\s*[1-6]|(고|중|초)\s*[1-6]/g;
-      while ((m = re.exec(nm)) !== null) {
-        x = m[1] || m[2];
-        if (x === 'E' || x === '초') e = true;
-        else if (x === 'M' || x === '중') mm = true;
-        else h = true;
-      }
-    }
-    return e ? 'e' : (mm ? 'm' : (h ? 'h' : ''));
-  }
-  /* 명단(rosterFrom 과 같은 거름 · 퇴원 · 대기 뺌 · 같은 학생 열쇠 한 사람) → [{skey, lvl}](열쇠 차례) */
-  function levelsFrom(classes) {
-    var map = {}, list = [], out = [], i, j, c, studs, s, rid, nn, sk, e, cname, gr;
-    if (!isArr(classes)) return out;
-    for (i = 0; i < classes.length; i += 1) {
-      c = classes[i];
-      if (!isObj(c)) continue;
-      studs = isArr(c.students) ? c.students : [];
-      cname = Lec.jtext(c.name);
-      for (j = 0; j < studs.length; j += 1) {
-        s = studs[j];
-        if (!isObj(s)) continue;
-        rid = Lec.jtext(s.id);
-        if (rid === null || rid === '') continue;
-        nn = Lec.norm(Lec.jtext(s.name));
-        if (nn === '') continue;
-        if (Lec.truthy(s.withdrawn) || Lec.truthy(s.pending)) continue;
-        sk = rid + '|' + nn;
-        e = map['#' + sk];
-        if (!e) { e = { skey: sk, school: '', grade: '', names: [] }; map['#' + sk] = e; list.push(e); }
-        if (!e.school) { try { e.school = str(Lec.stuSchool(s)); } catch (e2) { e.school = ''; } }
-        if (!e.grade) { gr = s.grade || (isObj(s.intake) ? s.intake.grade : ''); e.grade = str(gr); }
-        if (cname && e.names.indexOf(cname) < 0) e.names.push(cname);
-      }
-    }
-    list.sort(function (x, y) { return x.skey < y.skey ? -1 : (x.skey > y.skey ? 1 : 0); });
-    for (i = 0; i < list.length; i += 1) out.push({ skey: list[i].skey, lvl: stuLevel({ school: list[i].school, grade: list[i].grade }, list[i].names) });
-    return out;
-  }
   /* 소리: en-US 먼저 → en-* → null(소리 단추 숨김) · 말 빠르기 0.9 는 화면 */
   function sayVoice(voices) {
     var en = [], i, v, n;
@@ -2876,7 +2793,6 @@
       return null;
     }).then(null, function () { return null; });
   }
-  function setAgree(key) { return stuCall('lec_set_agree', { p_key: k0(key), p_ver: SET_VER }); }
   function setItems(key, id) { return stuCall('lec_set_items', { p_key: k0(key), p_set: id || null }); }
   function setCard(key, id, marks) { return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: isObj(marks) ? marks : {} }); }
   function setTest(key, id) { return stuCall('lec_set_test', { p_key: k0(key), p_set: id || null }); }
@@ -2884,8 +2800,6 @@
   function setAns(key, tryId, i, v) {
     return stuCall('lec_set_ans', { p_key: k0(key), p_try: tryId || null, p_i: Math.floor(+i || 0), p_v: str(v) });
   }
-  function recAgree(key) { return stuCall('lec_rec_agree', { p_key: k0(key), p_ver: REC_VER }); }
-  function recOff(key) { return stuCall('lec_rec_off', { p_key: k0(key) }); }
   function recBegin(key, id, k, mime, bytes, ms) {
     return stuCall('lec_rec_begin', {
       p_key: k0(key), p_set: id || null, p_k: str(k), p_mime: str(mime),
@@ -2978,31 +2892,6 @@
   function recMark(call, id, mark, why) {
     return staffCall(call, 'lec_rec_mark', { p_id: id || null, p_mark: str(mark), p_why: Math.floor(+why || 0) });
   }
-  function recGuard(call, skey, how, on) { return staffCall(call, 'lec_rec_guard', { p_skey: str(skey), p_how: str(how), p_on: !!on }); }
-  /* 학교급 맞춤: levelsFrom 의 [{skey, lvl}] 을 그대로 받아 서버 꼴 [{s, l}] 로 · 1000줄씩 차례로 → {ok, n: 바뀐 수 합} */
-  function recLvl(call, rows) {
-    var out = [], parts = [], n = 0, i, r, s, l;
-    rows = isArr(rows) ? rows : [];
-    for (i = 0; i < rows.length; i += 1) {
-      r = rows[i];
-      if (!isObj(r)) continue;
-      s = str(r.skey);
-      if (sp(s) === '') continue;
-      l = str(r.lvl);
-      out.push({ s: s, l: l === 'e' || l === 'm' || l === 'h' ? l : '' });
-    }
-    if (!out.length) return Promise.resolve({ ok: true, n: 0 });
-    for (i = 0; i < out.length; i += 1000) parts.push(out.slice(i, i + 1000));
-    function step(j) {
-      if (j >= parts.length) return Promise.resolve({ ok: true, n: n });
-      return staffCall(call, 'lec_rec_lvl', { p_rows: parts[j] }).then(function (x) {
-        if (!x.ok) return { ok: false, err: x.err || 'error' };
-        n += +x.n || 0;
-        return step(j + 1);
-      });
-    }
-    return step(0).then(null, function () { return { ok: false, err: 'error' }; });
-  }
   /* 지난 녹음 정리(원장님이 선생님 화면을 열 때 한 번): 지울 목록 → 파일 100개씩 del → del 이 돌려준 이름(지운 파일)의 줄만 gone ·
      이름이 없거나 f false(파일이 이미 없음) = 지울 파일 없이 줄만 · del 실패(reject) · 빈손([]) = 그 줄은 두고 다음에 ·
      del(paths) = 지운 것 [{name}] 또는 [이름] 으로 풀림 · 오류면 reject(class-admin DA.recDel = rq) · 서버도 파일이 남은 줄은 둠(keep) */
@@ -3051,18 +2940,18 @@
   }
 
   var api = {
-    SET_VER: SET_VER, REC_VER: REC_VER, SET_LIM: SET_LIM, REC_MAX_BYTES: REC_MAX_BYTES, REC_MAX_MS: REC_MAX_MS, REC_WHY: REC_WHY,
-    SET_RS: SET_RS, SET_ERR: SET_ERR, SET_NOTE: SET_NOTE, REC_NOTE: REC_NOTE,
+    SET_LIM: SET_LIM, REC_MAX_BYTES: REC_MAX_BYTES, REC_MAX_MS: REC_MAX_MS, REC_WHY: REC_WHY,
+    SET_RS: SET_RS, SET_ERR: SET_ERR,
     setParse: setParse, setDetect: setDetect, setOpts: setOpts, gramParts: gramParts, setWarn: setWarn, setItemsFrom: setItemsFrom,
     setKeys: setKeys, setNeed: setNeed, setNorm: setNorm, setVars: setVars, setAlts: setAlts, setMatch: setMatch,
     setFm: setFm, setFirst: setFirst, setRetake: setRetake, setChoices: setChoices,
     setMark: setMark, setMemo: setMemo, setInDue: setInDue, setDueOn: setDueOn, setDeck: setDeck, setNextQ: setNextQ,
-    setPrint: setPrint, stuLevel: stuLevel, levelsFrom: levelsFrom, sayParts: sayParts, sayText: sayText, sayVoice: sayVoice,
+    setPrint: setPrint, sayParts: sayParts, sayText: sayText, sayVoice: sayVoice,
     recMime: recMime, recBase: recBase,
-    setHome: setHome, setAgree: setAgree, setItems: setItems, setCard: setCard, setTest: setTest, setDue: setDue, setAns: setAns,
-    recAgree: recAgree, recOff: recOff, recBegin: recBegin, recDone: recDone, recPut: recPut, recSend: recSend,
+    setHome: setHome, setItems: setItems, setCard: setCard, setTest: setTest, setDue: setDue, setAns: setAns,
+    recBegin: recBegin, recDone: recDone, recPut: recPut, recSend: recSend,
     setListStaff: setListStaff, setGet: setGet, setPut: setPut, setHide: setHide, setDel: setDel, setStaff: setStaff,
-    recMark: recMark, recGuard: recGuard, recLvl: recLvl, recClean: recClean
+    recMark: recMark, recClean: recClean
   };
   for (var name in api) { if (has(api, name)) Lec[name] = api[name]; }
 })(window);

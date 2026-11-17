@@ -646,8 +646,6 @@ html.tvon,html.tvon body{overflow:hidden}
 .sxt td.dt{white-space:nowrap;color:#5F6256}
 .sxt .nm b{font-weight:700}
 .sxt .nm .tag{margin-left:6px}
-.sxt .gd{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
-.sxt .gd .sx-row{gap:4px}
 .sx-ft{margin:10px 0 0;font-size:13px;color:#5F6256}
 .sx-pp{position:absolute;right:0;top:calc(100% + 6px);z-index:6;width:460px;max-width:calc(100vw - 32px);background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;box-shadow:0 12px 32px rgba(12,70,49,.14);padding:14px 16px;text-align:left;white-space:normal}
 .sx-pr{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
@@ -795,10 +793,10 @@ window.__lecAdminStart = function () {
        rngSel = 묶음마다 고른 강의 {강의 id: true} · rngMore = 묶음마다 «이전 강의» 펼침 */
     rng: null, rngOld: false, rngSel: {}, rngMore: {},
     /* S1 세트(관리자만): set = 목록 답 {today, unheard, items}(못 받으면 null) · setOld = 서버에 세트 함수가 없음(이 화면에서 다시 안 부름) ·
-       setInit = 학교급 맞춤 · 30일 지난 녹음 정리를 한 번 했음 · setSel = 고른 세트 · setSt = 결과 표 답 {id, r} · setFull = 문항까지 받은 세트 ·
-       setAsk = 지우기 묻는 세트 · setGd · setGx = 보호자 동의 찍기 · 녹음 끄기 묻는 학생 · pp = 인쇄 작은 창 · sd = 세트 서랍(붙여 넣기 · 녹음 듣기) */
+       setInit = 30일 지난 녹음 정리를 한 번 했음 · setSel = 고른 세트 · setSt = 결과 표 답 {id, r} · setFull = 문항까지 받은 세트 ·
+       setAsk = 지우기 묻는 세트 · pp = 인쇄 작은 창 · sd = 세트 서랍(붙여 넣기 · 녹음 듣기) */
     set: null, setOld: false, setErr: false, setInit: false, setSel: '', setSt: null, setStErr: '', setFull: {},
-    setAsk: '', setGd: '', setGx: '', pp: null, sd: null, sxDraft: null
+    setAsk: '', pp: null, sd: null, sxDraft: null
   };
   var D = null;
   var sb = null;
@@ -3475,7 +3473,8 @@ window.__lecAdminStart = function () {
   /* ------------------------------------------------------- S1 세트(11-17 · 원장님 계정만)
      어휘 · 주요구문 · 문법 세트: 왼쪽 목록 · 오른쪽 결과 표 · 붙여 넣기 서랍(새로 · 고치기) · 녹음 듣기 서랍 · 시험지 인쇄(새 창 · A4 흑백).
      Joey · Dana = 탭 · 줄 · 부름 0. 관리자가 열 때 한 번 setListStaff → 'old' 면 세트 탭 안 한 줄(그 밖 화면 그대로) ·
-     아니면 한 번만 조용히 recLvl(학교급) → recClean(30일 지난 녹음 지우기 · 띠 · 알림 없음). 반복 확인 · 실시간 0 */
+     아니면 한 번만 조용히 recClean(30일 지난 녹음 지우기 · 띠 · 알림 없음). 반복 확인 · 실시간 0 ·
+     S1-b(11-17 원장님 «동의서 필요없어»): 녹음 동의 칸 · 보호자 동의 찍기 · 끄기 · 학교급 없음(모든 학생이 ★ 녹음) */
   var SX_KIND = { voc: '어휘', gu: '주요구문', gram: '문법' };
   var SX_LIM = { voc: 300, gu: 30, gram: 50 };
   var SX_RS = {
@@ -3488,8 +3487,6 @@ window.__lecAdminStart = function () {
     gram: [['gram', '괄호 고르기 · 고쳐 쓰기']]
   };
   var SX_WHY = ['', '끊어 읽기', '강세 · 억양', '빠진 말 · 틀린 말', '소리'];
-  var SX_LV = { h: '고', m: '중', e: '초' };
-  var SX_HOW = { self: '본인', paper: '종이', sms: '문자', phone: '전화' };
   var SX_ITEM = { w: '단어', m: '뜻', e: '영어 문장', t: '해석', s: '문제', a: '답', blank: '빈 칸', opt: '보기', len: '글자 수' };
   function sxOn() { return !!(S.me && S.me.admin); }
   function sxLim(k) { return +((L.SET_LIM && L.SET_LIM[k]) || SX_LIM[k] || 0); }
@@ -3516,7 +3513,7 @@ window.__lecAdminStart = function () {
   function sxFix() {
     if (!S.set || sxItem(S.setSel)) return;
     S.setSel = S.set.items.length ? S.set.items[0].id : '';
-    S.setSt = null; S.pp = null; S.setAsk = ''; S.setGd = ''; S.setGx = '';
+    S.setSt = null; S.pp = null; S.setAsk = '';
   }
   function sxLast(v) {
     var d = v ? L.isoDay(v) : '';
@@ -3565,27 +3562,14 @@ window.__lecAdminStart = function () {
       S.setErr = false;
     }, function () { if (!S.set) S.setErr = true; });
   }
-  /* 처음 한 번: 세트 반 학생의 학교급 맞춤(서버 꼴 · 1000줄 자르기는 recLvl 몫) → 30일 지난 녹음 정리 · 모두 조용히(실패 · 'old' = 다음 열 때 다시) */
+  /* 처음 한 번: 30일 지난 녹음 정리 · 조용히(실패 · 'old' = 다음 열 때 다시) */
   function sxInit() {
-    var want = {}, rows = [], lv, i, j, ids, r;
     if (S.setInit || !sxOn() || S.setOld || !S.set || !D) return;
     S.setInit = true;
-    for (i = 0; i < S.set.items.length; i += 1) {
-      ids = (S.set.items[i] && S.set.items[i].class_ids) || [];
-      for (j = 0; j < ids.length; j += 1) want[ids[j]] = 1;
-    }
-    try { lv = L.levelsFrom ? L.levelsFrom(D.classes) : []; } catch (e) { lv = []; }
-    for (i = 0; isArr(lv) && i < lv.length; i += 1) {
-      r = lv[i] ? D.rmapAll[lv[i].skey] : null;
-      if (!r) continue;
-      for (j = 0; j < r.cls.length; j += 1) { if (want[r.cls[j]]) { rows.push(lv[i]); break; } }
-    }
-    Promise.resolve().then(function () {
-      return L.recLvl && rows.length ? L.recLvl(DA.rpc, rows) : null;
-    }).then(null, function () { return null; }).then(sxClean);
+    sxClean();
   }
   /* 녹음 파일 정리(lec_rec_expired → 저장 곳에서 지움(실패 = reject → 그 묶음은 다음에) → lec_rec_gone) · 원장님만 ·
-     열 때 한 번 · 녹음 끈 뒤 · 학생 기록 지운 뒤(서버가 그 학생 녹음을 old 로 바꿈) · 실패해도 다음에 다시 */
+     열 때 한 번 · 학생 기록 지운 뒤(서버가 그 학생 녹음을 old 로 바꿈) · 실패해도 다음에 다시 */
   function sxClean() {
     if (!sxOn() || S.setOld || !L.recClean || !DA.recDel) return Promise.resolve(null);
     return Promise.resolve().then(function () { return L.recClean(DA.rpc, DA.recDel); }).then(null, function () { return null; });
@@ -3644,10 +3628,10 @@ window.__lecAdminStart = function () {
     if (e === 'cls') return '볼 반을 골라 주세요';
     if (e === 'limit') return '한 번에 넣을 수 있는 수를 넘었어요';
     if (e === 'pick') return '★ 문장을 다시 골라 주세요';
-    if (e === 'input' || e === 'mark' || e === 'how') return '입력을 확인해 주세요';
+    if (e === 'input' || e === 'mark') return '입력을 확인해 주세요';
     return '하지 못했어요. 잠시 뒤 다시 해 주세요';
   }
-  /* 숨기기 · 지우기 · 보호자 동의: 끝나면 목록 · 표만 다시 읽음 */
+  /* 숨기기 · 지우기: 끝나면 목록 · 표만 다시 읽음 */
   function sxCall(key, btn, fn, ok, after) {
     if (S.busy[key]) return;
     S.busy[key] = 1;
@@ -3689,7 +3673,7 @@ window.__lecAdminStart = function () {
   }
   /* 결과 표 한 장: 종류에 맞는 칸만 · 덜 한 학생이 위(순위 · 색 차례 없음) */
   function sxResHtml(it) {
-    var st = S.setSt && S.setSt.id === it.id ? S.setSt.r : null, k = it.kind, id = esc(it.id), h, rows, i, j, n, pk, cols, d, a, un = 0, all = 0, okm = {}, often;
+    var st = S.setSt && S.setSt.id === it.id ? S.setSt.r : null, k = it.kind, id = esc(it.id), h, rows, i, j, n, pk, cols, d, a, un = 0, all = 0, often;
     /* 녹음 듣기 수 = 지금 ★ 문장마다 학생의 최신 낸 녹음(지운 것 뺌) · 새 녹음 = 그 가운데 표시가 빈 것(서버 unheard 와 같은 셈) */
     if (st && k === 'gu') {
       rows = isArr(st.rows) ? st.rows : [];
@@ -3719,11 +3703,10 @@ window.__lecAdminStart = function () {
     rows = sxRows(it, st);
     n = +(st.set && st.set.n) || +it.n || 0;
     pk = sxPk(it, st);
-    a = isArr(st.recok) ? st.recok : [];
-    for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].sid) okm[a[i].sid] = a[i]; }
     h += '<p class="sx-sum">' + esc(sxSumText(k, rows, pk)) + '</p>';
+    /* 구문 네 칸(S1-b · «녹음 동의» 칸 뺌): 문법 표와 같은 나눔(학생 22 · 가운데 넓은 칸 43 · 마지막 20) */
     cols = k === 'voc' ? [['학생', '22%'], ['외움', '13%'], ['시험', '34%'], ['쌓인 오답', '13%'], ['마지막', '18%']]
-      : (k === 'gu' ? [['학생', '17%'], ['따라 말하기', '13%'], ['녹음 ★' + pk.length, '30%'], ['녹음 동의', '24%'], ['마지막', '16%']]
+      : (k === 'gu' ? [['학생', '22%'], ['따라 말하기', '15%'], ['녹음 ★' + pk.length, '43%'], ['마지막', '20%']]
         : [['학생', '22%'], ['시험', '43%'], ['쌓인 오답', '15%'], ['마지막', '20%']]);
     h += '<table class="sxt"><colgroup>';
     for (i = 0; i < cols.length; i += 1) h += '<col style="width:' + cols[i][1] + '">';
@@ -3731,7 +3714,7 @@ window.__lecAdminStart = function () {
     for (i = 0; i < cols.length; i += 1) h += '<th scope="col">' + esc(cols[i][0]) + '</th>';
     h += '</tr></thead><tbody>';
     if (!rows.length) h += '<tr><td colspan="' + cols.length + '" class="mut">이 반에 학생이 없어요.</td></tr>';
-    for (i = 0; i < rows.length; i += 1) h += sxTr(k, rows[i], n, pk, okm);
+    for (i = 0; i < rows.length; i += 1) h += sxTr(k, rows[i], n, pk);
     h += '</tbody></table>';
     if (k === 'gu') return h + '<p class="sx-ft">녹음은 30일 뒤 저절로 지워져요</p>';
     often = [];
@@ -3789,7 +3772,7 @@ window.__lecAdminStart = function () {
     if (k === 'gu') return '낸 학생 ' + sent + ' / ' + T + (nw ? ' · 새 녹음 ' + nw + '명' : '');
     return '통과 ' + pass + ' / ' + T + ' · 아직 ' + (did - pass) + ' · 안 함 ' + (T - did);
   }
-  function sxTr(k, w, n, pk, okm) {
+  function sxTr(k, w, n, pk) {
     var d = w.x ? w.x[k] : null, h;
     h = '<tr><td data-l="학생" class="nm"><b>' + esc(w.name) + '</b>' + (!w.mine ? '<span class="tag t-line">지금 반 밖</span>' : (w.r ? stuTags(w.r) : '')) + '</td>';
     if (k === 'voc') {
@@ -3798,8 +3781,7 @@ window.__lecAdminStart = function () {
     } else if (k === 'gram') {
       h += '<td data-l="시험">' + sxTest(k, d) + '</td><td data-l="쌓인 오답" class="num">' + (d ? esc(String(+d.due || 0)) : '–') + '</td>';
     } else {
-      h += '<td data-l="따라 말하기" class="num">' + (d ? esc((+d.said || 0) + ' / ' + n) : '–') + '</td><td data-l="녹음">' + sxRecs(d, pk) + '</td>' +
-        '<td data-l="녹음 동의">' + sxGdHtml(w, okm) + '</td>';
+      h += '<td data-l="따라 말하기" class="num">' + (d ? esc((+d.said || 0) + ' / ' + n) : '–') + '</td><td data-l="녹음">' + sxRecs(d, pk) + '</td>';
     }
     return h + '<td data-l="마지막" class="dt">' + esc(w.x ? sxLast(w.x.last) : '–') + '</td></tr>';
   }
@@ -3836,39 +3818,6 @@ window.__lecAdminStart = function () {
       else h += sxPill('nw', s + '새 녹음');
     }
     return h;
-  }
-  /* 학교급: 히즈북스 학생 칸으로 셈(Lec.levelsFrom) · 못 셈 → 서버 줄(recok.lvl) */
-  var sxLvD = null, sxLvM = null;
-  function sxLvMap() {
-    var a, i;
-    if (sxLvD === D && sxLvM) return sxLvM;
-    sxLvD = D; sxLvM = {};
-    try { a = L.levelsFrom ? L.levelsFrom(D.classes) : []; } catch (e) { a = []; }
-    for (i = 0; isArr(a) && i < a.length; i += 1) { if (a[i] && a[i].skey) sxLvM[a[i].skey] = str(a[i].lvl); }
-    return sxLvM;
-  }
-  /* 녹음 동의 칸: 학교급 · 본인 동의 / 보호자 동의 · 종이 · 날짜 — 어느 쪽이든 «끄기»(학생 화면엔 끄는 단추가 없고 원장 선생님께 말하면 여기서 끔)
-     / 동의 전(+ 보호자 동의 찍기) */
-  function sxGdHtml(w, okm) {
-    var o = okm[w.sid] || null, m = sxLvMap(), lv = has(m, w.sid) ? m[w.sid] : (o ? str(o.lvl) : ''), lt = SX_LV[lv] || '모름',
-      how = o ? str(o.how) : '', id = esc(w.sid), h = '<div class="gd">';
-    if (o && o.ok) {
-      h += '<span>' + esc(how === 'self' ? lt + ' · 본인 동의' : lt + ' · 보호자 동의 · ' + (SX_HOW[how] || how) + (o.at ? ' · ' + md(o.at) : '')) + '</span>';
-      if (S.setGx === w.sid) {
-        h += '<span class="mut sm">끄면 이 학생이 보낸 녹음도 지워요.</span><span class="sx-row"><button type="button" class="btn sm warn" data-act="sxGxYes" data-s="' + id + '">끄기</button>' +
-          '<button type="button" class="btn sm" data-act="sxGxNo">그대로 두기</button></span>';
-      } else h += '<button type="button" class="btn sm txt" data-act="sxGx" data-s="' + id + '">끄기</button>';
-      return h + '</div>';
-    }
-    if (lv === 'h') return h + '<span class="mut">' + esc(lt + ' · 앱에서 본인 동의 전') + '</span></div>';
-    h += '<span class="mut">' + esc(lt + ' · 보호자 동의 전') + '</span>';
-    if (S.setGd === w.sid) {
-      h += '<span class="sx-row"><button type="button" class="btn sm" data-act="sxGdOn" data-s="' + id + '" data-v="paper">종이</button>' +
-        '<button type="button" class="btn sm" data-act="sxGdOn" data-s="' + id + '" data-v="sms">문자</button>' +
-        '<button type="button" class="btn sm" data-act="sxGdOn" data-s="' + id + '" data-v="phone">전화</button>' +
-        '<button type="button" class="btn sm txt" data-act="sxGxNo">그만두기</button></span>';
-    } else h += '<button type="button" class="btn sm" data-act="sxGd" data-s="' + id + '">보호자 동의 찍기</button>';
-    return h + '</div>';
   }
 
   /* ---- 시험지 인쇄 작은 창(단추 아래): 형식 · 번호(전부 · 범위) · 순서(섞기) → 새 창에 그려 인쇄 · 대상 0 이어도 거절 안 함 */
@@ -4708,7 +4657,7 @@ window.__lecAdminStart = function () {
       if (note) toast('새로 불러왔어요');
       rngSyncNow(my);
       hashOnce();
-      /* S1 세트: 처음 한 번 학교급 · 녹음 정리(조용히) · 세트 탭이면 결과 표도 새로 */
+      /* S1 세트: 처음 한 번 녹음 정리(조용히) · 세트 탭이면 결과 표도 새로 */
       sxInit();
       if (S.tab === 'set') sxStaff(true);
     }, function (e) {
@@ -4979,7 +4928,7 @@ window.__lecAdminStart = function () {
       case 'sxNew': sxOpenPut(''); break;
       case 'sxEdit': sxOpenPut(s); break;
       case 'sxSel':
-        if (S.setSel !== s) { S.setSel = s; S.setSt = null; S.setStErr = ''; S.pp = null; S.setAsk = ''; S.setGd = ''; S.setGx = ''; }
+        if (S.setSel !== s) { S.setSel = s; S.setSt = null; S.setStErr = ''; S.pp = null; S.setAsk = ''; }
         render();
         sxFocus('sxSel', s);
         sxStaff(true);
@@ -5014,18 +4963,6 @@ window.__lecAdminStart = function () {
       case 'sxPgo': sxPrintGo(el, s); break;
       case 'sxPx': r = S.pp ? S.pp.id : ''; S.pp = null; render(); if (r) sxFocus('sxPrint', r); break;
       case 'sxRec': rvOpen(s); break;
-      case 'sxGd': S.setGd = s; S.setGx = ''; render(); sxFocus('sxGdOn', s); break;
-      case 'sxGx': S.setGx = s; S.setGd = ''; render(); sxFocus('sxGxNo', null); break;
-      case 'sxGxNo': S.setGd = ''; S.setGx = ''; render(); break;
-      case 'sxGdOn':
-        sxCall('sxGd', el, function () { return L.recGuard(DA.rpc, s, v, true); }, '보호자 동의를 적었어요 · 이 학생도 녹음할 수 있어요', function () { S.setGd = ''; });
-        break;
-      case 'sxGxYes':
-        sxCall('sxGd', el, function () { return L.recGuard(DA.rpc, s, '', false); }, '녹음을 껐어요 · 이 학생이 보낸 녹음도 지워요', function () {
-          S.setGx = '';
-          sxClean();   /* 끈 학생의 녹음 파일도 바로 정리(서버가 old 로 바꾼 줄) */
-        });
-        break;
       case 'sdClose': sxClose(); break;
       case 'sxKind':
         if (!S.sd || S.sd.t !== 'put' || S.sd.id) break;

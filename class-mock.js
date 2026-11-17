@@ -3176,21 +3176,22 @@
   };
 
   /* ======================================================= S1 (11-17) 단어 · 구문 · 문법
-     class-setup.sql S1 절(lec_set · lec_set_prog · lec_set_try · lec_set_rec · lec_rec_ok · lec_consent.sv)과 같은 규칙 · 둘이 다르면 SQL 이 기준.
+     class-setup.sql S1 절(lec_set · lec_set_prog · lec_set_try · lec_set_rec)과 같은 규칙 · 둘이 다르면 SQL 이 기준.
+     S1-b(11-17 원장님 «동의서 필요없어»): 세트 동의 · 녹음 동의 · 학교급 없음 → 히즈클래스 기록 동의만 보고 세트가 바로 열리고 ★ 녹음도 바로 ·
+       옛 화면이 읽던 lec_set_home 의 agree · rec.ok 와 lec_set_items 의 rec.ok 는 늘 true(서버와 같음) · lec_rec_ok · lec_consent.sv 흉내 없음
      판정(맞춤 글 · 채점 · 카드 · 열쇠 · 문항 짜기)은 class-api.js 순수 함수(L().setNorm …)를 그대로 씀.
      ?noset=1 또는 LecMock.noSet(true) = S1 함수가 없는 서버(?oldsql=1 도 같음 · 위 checkArgs 의 한 줄이 404 PGRST202 로)
      녹음 저장 곳(Storage 버킷 lec-rec) 흉내: LecMock.recPut(path, size, mime) · staff.recUrl(path) · staff.recDel(paths) ·
        LecMock.recFail(true) = 버킷이 없는 서버 · 파일은 d.recobj · 소리는 LecMock.tone(path)(8 kHz · 16비트 · 1.2초 WAV)
      시연 자료(s1Ensure · 저장소에 한 번만 · d.s1 표시 · 반 c-g1a 고1 A반 · 지어낸 글):
        단어 «고1 11월 모의 18~24번» 42개(그제) · 구문 «11월 주요 구문» 8문장 ★ k1 k2(어제) · 문법 «분사 · 수일치 드릴» 12문항(어제)
-       이바다 = 세트 동의 · 녹음 본인 동의(h) · 단어 tn 2 f1 74 kn 35 · 어제 쌓인 오답 4 · 구문 말하기 5 · k1 낸 것(안 들음) · k2 다시(끊어 읽기) ·
+       이바다 = 단어 tn 2 f1 74 kn 35 · 어제 쌓인 오답 4 · 구문 말하기 5 · k1 낸 것(안 들음) · k2 다시(끊어 읽기) ·
                 문법 tn 1 f1 83 last_sc 10(쌓인 오답 2)
-       최새봄 = 세트 동의 · 녹음 본인 동의(h) · 단어 통과(tn 1 f1 93 kn 40 · 쌓인 오답 2) · 구문 k1 좋아요 · k2 낸 것(안 들음)
+       최새봄 = 단어 통과(tn 1 f1 93 kn 40 · 쌓인 오답 2) · 구문 k1 좋아요 · k2 낸 것(안 들음)
        김하늘 · 정단비 = 기록 동의 전 · 박구름 = 기록 안 함('consent') */
   var NOSET = false;
   try { NOSET = /[?&]noset=1(&|$)/.test(w.location.search); } catch (e) { NOSET = false; }
   var RECFAIL = false;
-  var S_VER = 's1-2026-11', R_VER = 'r1-2026-11';
   var S_LIM = { voc: 300, gu: 30, gram: 50 };
   var R_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg'];
   var S1ID = {
@@ -3218,7 +3219,7 @@
     return o;
   }
   function sTabs(d) {
-    var a = ['set', 'sprog', 'stry', 'srec', 'recok'], i;
+    var a = ['set', 'sprog', 'stry', 'srec'], i;
     for (i = 0; i < a.length; i += 1) { if (!isArr(d[a[i]])) d[a[i]] = []; }
     if (!d.recobj || typeof d.recobj !== 'object' || isArr(d.recobj)) d.recobj = {};
     return d;
@@ -3248,20 +3249,6 @@
     if (!isArr(cls) || !cls.length) return false;
     for (i = 0; i < cls.length; i += 1) { if (cls[i] != null && s.class_ids.indexOf(cls[i]) >= 0) return true; }
     return false;
-  }
-  /* lec__set_ok · lec__rec_can */
-  function sOk(d, sid) {
-    var c = findConsent(d, sid);
-    return agreed(d, sid) && !!c && c.sv === S_VER;
-  }
-  function rOk(d, sid) {
-    var o = rRow(d, sid);
-    return !!o && o.how !== '' && o.ver === R_VER && (o.how !== 'self' || o.lvl === 'h');
-  }
-  function rRow(d, sid) {
-    var i;
-    for (i = 0; i < d.recok.length; i += 1) { if (d.recok[i].sid === sid) return d.recok[i]; }
-    return null;
   }
   function sProg(d, sid, setId) {
     var i;
@@ -3463,52 +3450,34 @@
     }
     return best;
   }
-  /* 학생 함수 공통 시작: 열쇠 · v1 동의 · (세트 동의) */
-  function sStart(d, key, needAgree) {
+  /* 학생 함수 공통 시작: 열쇠 · 히즈클래스 기록 동의(세트 동의는 S1-b 에서 뺌) */
+  function sStart(d, key) {
     var k = findKey(d, key);
     if (!k) return { e: { ok: false, err: 'key' } };
     if (!agreed(d, k.sid)) return { e: { ok: false, err: 'consent' } };
-    if (needAgree && !sOk(d, k.sid)) return { e: { ok: false, err: 'agree' } };
     return { k: k };
-  }
-  function rInfo(d, sid, ver) {
-    var o = rRow(d, sid), r = { lvl: o ? o.lvl : '', how: o ? o.how : '', ok: rOk(d, sid) };
-    if (ver) r.ver = R_VER;
-    return r;
   }
 
   /* ---------------------------------------------------------- S1 학생 함수 */
 
+  /* agree · rec.ok 는 늘 true(옛 화면이 동의 단계 없이 바로 열게 · 새 화면은 안 읽음) */
   function lec_set_home(d, a) {
     sGone(); sTabs(d);
-    var st = sStart(d, a.p_key, false), k, day = today(), ag, list, sets = [], i, s;
+    var st = sStart(d, a.p_key), k, day = today(), list, sets = [], i, s;
     if (st.e) return st.e;
     k = st.k;
-    ag = sOk(d, k.sid);
     list = d.set.filter(function (x) { return sOpen(x, k.cls); }).sort(sOrd).slice(0, 40);
     for (i = 0; i < list.length; i += 1) {
       s = list[i];
       sets.push({ id: s.id, kind: s.kind, title: s.title, n: s.n, need: L().setNeed(s.n), on: s.posted_on, pick: s.pick.length,
-                  me: ag ? sMe(d, s, k.sid, day) : null });
+                  me: sMe(d, s, k.sid, day) });
     }
-    return { ok: true, today: day, agree: ag, ver: S_VER, sets: sets, due: ag ? sDueN(d, k.sid, k.cls, day) : null,
-             rec: rInfo(d, k.sid, true) };
-  }
-
-  function lec_set_agree(d, a) {
-    sGone(); sTabs(d);
-    var st = sStart(d, a.p_key, false), c;
-    if (st.e) return st.e;
-    if (a.p_ver !== S_VER) return { ok: false, err: 'ver', ver: S_VER };
-    c = findConsent(d, st.k.sid);
-    c.sv = a.p_ver;
-    c.sv_at = sNow();
-    return { ok: true, ver: a.p_ver, at: c.sv_at };
+    return { ok: true, today: day, agree: true, sets: sets, due: sDueN(d, k.sid, k.cls, day), rec: { ok: true } };
   }
 
   function lec_set_items(d, a) {
     sGone(); sTabs(d);
-    var st = sStart(d, a.p_key, true), k, s, p, items = [], i, it, me;
+    var st = sStart(d, a.p_key), k, s, p, items = [], i, it, me;
     if (st.e) return st.e;
     k = st.k;
     s = sFind(d, a.p_set);
@@ -3527,12 +3496,12 @@
     }
     me = sMe(d, s, k.sid, today());
     return { ok: true, id: s.id, kind: s.kind, title: s.title, n: s.n, items: items, pick: s.pick, cards: p ? p.cards : {},
-             recs: me.recs, rec: rInfo(d, k.sid, false) };
+             recs: me.recs, rec: { ok: true } };
   }
 
   function lec_set_card(d, a) {
     sGone(); sTabs(d);
-    var st = sStart(d, a.p_key, true), k, s, p, day = today(), m = a.p_marks, keys, kk, n = 0, bad = false, me, c;
+    var st = sStart(d, a.p_key), k, s, p, day = today(), m = a.p_marks, keys, kk, n = 0, bad = false, me, c;
     if (st.e) return st.e;
     k = st.k;
     s = sFind(d, a.p_set);
@@ -3564,7 +3533,7 @@
 
   function lec_set_test(d, a) {
     sGone(); sTabs(d);
-    var X = L(), st = sStart(d, a.p_key, true), k, s, p, t, day = today(), kn, cnt, qs;
+    var X = L(), st = sStart(d, a.p_key), k, s, p, t, day = today(), kn, cnt, qs;
     if (st.e) return st.e;
     k = st.k;
     s = sFind(d, a.p_set);
@@ -3594,7 +3563,7 @@
 
   function lec_set_due(d, a) {
     sGone(); sTabs(d);
-    var X = L(), st = sStart(d, a.p_key, true), k, t, day = today(), cnt, rows = [], i, j, s, p, it, c, o, qs;
+    var X = L(), st = sStart(d, a.p_key), k, t, day = today(), cnt, rows = [], i, j, s, p, it, c, o, qs;
     if (st.e) return st.e;
     k = st.k;
     t = sOpenTry(d, k.sid, function (x) { return x.kind === 'due'; });
@@ -3636,7 +3605,7 @@
 
   function lec_set_ans(d, a) {
     sGone(); sTabs(d);
-    var X = L(), st = sStart(d, a.p_key, true), k, t = null, s, p, day = today(), q, an, r, sid2, kk, kn, i, now = sNow(), v = a.p_v;
+    var X = L(), st = sStart(d, a.p_key), k, t = null, s, p, day = today(), q, an, r, sid2, kk, kn, i, now = sNow(), v = a.p_v;
     if (st.e) return st.e;
     k = st.k;
     for (i = 0; i < d.stry.length; i += 1) { if (d.stry[i].id === a.p_try && d.stry[i].sid === k.sid) t = d.stry[i]; }
@@ -3682,38 +3651,14 @@
              end: sEnd(d, t, k.sid, k.cls) };
   }
 
-  function lec_rec_agree(d, a) {
-    sGone(); sTabs(d);
-    var st = sStart(d, a.p_key, true), o;
-    if (st.e) return st.e;
-    if (a.p_ver !== R_VER) return { ok: false, err: 'ver', ver: R_VER };
-    o = rRow(d, st.k.sid);
-    if (!o || o.lvl !== 'h') return { ok: false, err: 'level' };
-    o.how = 'self'; o.ver = a.p_ver; o.ok_at = sNow(); o.ok_by = 'self';
-    return { ok: true, how: 'self', at: o.ok_at };
-  }
-
-  function lec_rec_off(d, a) {
-    sGone(); sTabs(d);
-    var k = findKey(d, a.p_key), o, n = 0, i;
-    if (!k) return { ok: false, err: 'key' };
-    o = rRow(d, k.sid);
-    if (o) { o.how = ''; o.ok_at = null; o.ok_by = ''; }
-    for (i = 0; i < d.srec.length; i += 1) {
-      if (d.srec[i].sid === k.sid && (d.srec[i].st === 'wait' || d.srec[i].st === 'done')) { d.srec[i].st = 'old'; n += 1; }
-    }
-    return { ok: true, n: n };
-  }
-
   function lec_rec_begin(d, a) {
     sGone(); sTabs(d);
-    var st = sStart(d, a.p_key, true), k, s, n, i, hex = '', path, r, mid = atMs(0, 0, 0), ms = nowMs();
+    var st = sStart(d, a.p_key), k, s, n, i, hex = '', path, r, mid = atMs(0, 0, 0), ms = nowMs();
     if (st.e) return st.e;
     k = st.k;
     s = sFind(d, a.p_set);
     if (!s || s.kind !== 'gu' || !sOpen(s, k.cls)) return { ok: false, err: 'none' };
     if (a.p_k == null || s.pick.indexOf(a.p_k) < 0) return { ok: false, err: 'pick' };
-    if (!rOk(d, k.sid)) return { ok: false, err: 'rec_ok' };
     if (a.p_mime == null || R_TYPES.indexOf(a.p_mime) < 0) return { ok: false, err: 'mime' };
     if (a.p_bytes == null || a.p_bytes < 1 || a.p_bytes > 1048576 || a.p_ms == null || a.p_ms < 0 || a.p_ms > 46000) {
       return { ok: false, err: 'size' };
@@ -3957,7 +3902,7 @@
   function lec_set_staff(d, a) {
     sGone(); sTabs(d);
     if (!sAdmin()) return { ok: false, err: 'forbidden' };
-    var s = sFind(d, a.p_set), day = today(), sids = [], rows = [], often = [], recok = [], i, j, sid, me, last, nm, kk, best, x, rs, r, cnt, p;
+    var s = sFind(d, a.p_set), day = today(), sids = [], rows = [], often = [], i, j, sid, me, last, nm, kk, best, x, rs, r, cnt, p;
     if (!s) return { ok: false, err: 'none' };
     function add(v) { if (sids.indexOf(v) < 0) sids.push(v); }
     for (i = 0; i < d.sprog.length; i += 1) { if (d.sprog[i].set_id === s.id) add(d.sprog[i].sid); }
@@ -4008,12 +3953,7 @@
       x = x.slice(0, 5);
       for (i = 0; i < x.length; i += 1) { if (x[i].n > 0) often.push({ k: x[i].k, w: x[i].w, n: x[i].n }); }
     }
-    for (i = 0; i < d.recok.length; i += 1) {
-      r = d.recok[i];
-      recok.push({ sid: r.sid, lvl: r.lvl, how: r.how, ok: rOk(d, r.sid), at: r.ok_at });
-    }
-    recok.sort(function (u, v) { return cmpC(u.sid, v.sid); });
-    return { ok: true, today: day, set: sSetOut(s, 'gu'), rows: rows, often: often, recok: recok };
+    return { ok: true, today: day, set: sSetOut(s, 'gu'), rows: rows, often: often };
   }
 
   function lec_rec_mark(d, a) {
@@ -4028,57 +3968,6 @@
     if (!r) return { ok: false, err: 'none' };
     r.mark = m; r.why = y; r.heard_by = m === '' ? '' : 'Benjamin'; r.heard_at = m === '' ? null : sNow();
     return { ok: true, mark: m, why: y };
-  }
-
-  function lec_rec_guard(d, a) {
-    sGone(); sTabs(d);
-    if (!sAdmin()) return { ok: false, err: 'forbidden' };
-    var sk = a.p_skey, o, i;
-    if (sk == null || sp(sk) === '' || a.p_on == null) return { ok: false, err: 'input' };
-    if (a.p_on) {
-      if (a.p_how == null || ['paper', 'sms', 'phone'].indexOf(a.p_how) < 0) return { ok: false, err: 'how' };
-      o = rRow(d, sk);
-      if (!o) { o = { sid: sk, lvl: '', lvl_at: null, how: '', ver: '', ok_at: null, ok_by: '' }; d.recok.push(o); }
-      o.how = a.p_how; o.ver = R_VER; o.ok_at = sNow(); o.ok_by = 'Benjamin';
-      return { ok: true, how: a.p_how, at: o.ok_at };
-    }
-    o = rRow(d, sk);
-    if (o) { o.how = ''; o.ok_at = null; o.ok_by = ''; }
-    for (i = 0; i < d.srec.length; i += 1) {
-      if (d.srec[i].sid === sk && (d.srec[i].st === 'wait' || d.srec[i].st === 'done')) d.srec[i].st = 'old';
-    }
-    return { ok: true, how: '', at: null };
-  }
-
-  function lec_rec_lvl(d, a) {
-    sGone(); sTabs(d);
-    if (!sAdmin()) return { ok: false, err: 'forbidden' };
-    var rows = a.p_rows, i, e, last = {}, order = [], n = 0, o, s, l, now = sNow();
-    if (!isArr(rows)) return { ok: false, err: 'input' };
-    if (rows.length > 1000) return { ok: false, err: 'input' };
-    for (i = 0; i < rows.length; i += 1) {
-      e = rows[i];
-      if (!isObj(e) || typeof e.s !== 'string' || sp(e.s) === '' || typeof e.l !== 'string' || ['', 'e', 'm', 'h'].indexOf(e.l) < 0) {
-        return { ok: false, err: 'input' };
-      }
-    }
-    for (i = 0; i < rows.length; i += 1) {
-      if (!has(last, '#' + rows[i].s)) order.push(rows[i].s);
-      last['#' + rows[i].s] = rows[i].l;
-    }
-    for (i = 0; i < order.length; i += 1) {
-      s = order[i];
-      l = last['#' + s];
-      o = rRow(d, s);
-      if (!o && l !== '') {
-        d.recok.push({ sid: s, lvl: l, lvl_at: now, how: '', ver: '', ok_at: null, ok_by: '' });
-        n += 1;
-      } else if (o && o.lvl !== l) {
-        o.lvl = l; o.lvl_at = now;
-        n += 1;
-      }
-    }
-    return { ok: true, n: n };
   }
 
   function lec_rec_expired(d) {
@@ -4126,17 +4015,13 @@
   /* ---------------------------------------------------------- 이름 옮김 · 동의 지움(트리거 lec__set_move · lec__set_gone) */
 
   function s1Move(d, oldSid, newSid) {
-    var i, o, n;
+    var i;
     if (oldSid == null || newSid == null || oldSid === newSid || oldSid === '' || newSid === '') return;
     sTabs(d);
     d.sprog = d.sprog.filter(function (x) { return !(x.sid === oldSid && sProg(d, newSid, x.set_id)); });
     for (i = 0; i < d.sprog.length; i += 1) { if (d.sprog[i].sid === oldSid) d.sprog[i].sid = newSid; }
     for (i = 0; i < d.stry.length; i += 1) { if (d.stry[i].sid === oldSid) d.stry[i].sid = newSid; }
     for (i = 0; i < d.srec.length; i += 1) { if (d.srec[i].sid === oldSid) d.srec[i].sid = newSid; }
-    n = rRow(d, newSid);
-    o = rRow(d, oldSid);
-    if (n) d.recok = d.recok.filter(function (x) { return x.sid !== oldSid; });
-    else if (o) o.sid = newSid;
   }
   function s1Gone(d, sid) {
     var i, x;
@@ -4150,7 +4035,6 @@
       if (x.st === 'wait' || x.st === 'done') x.st = 'old';
       x.sid = '';
     }
-    d.recok = d.recok.filter(function (y) { return y.sid !== sid; });
   }
   /* move() 앞뒤(lec__move: 열쇠 sid 바꿈 → 동의 줄 옮김 또는 옛 줄 지움 · 트리거가 그때마다 부름) */
   function s1Before(d, oldSid, newSid) {
@@ -4286,41 +4170,25 @@
     rec(S1ID.R2, 2, BD, 'k2', -1, 21, 24, 'again', 1);
     rec(S1ID.R3, 3, SB, 'k1', -1, 20, 10, 'ok', 0);
     rec(S1ID.R4, 4, SB, 'k2', -1, 20, 14, '', 0);
-    /* 세트 동의 · 녹음 본인 동의(고등) */
-    function ok(sid, off, hh) {
-      var cs = findConsent(d, sid), o;
-      if (cs) { cs.sv = S_VER; cs.sv_at = pgts(atMs(off, hh, 0)); }
-      d.recok = d.recok.filter(function (x) { return x.sid !== sid; });
-      o = { sid: sid, lvl: 'h', lvl_at: pgts(atMs(off, hh, 0)), how: 'self', ver: R_VER, ok_at: pgts(atMs(off, hh, 5)), ok_by: 'self' };
-      d.recok.push(o);
-    }
-    ok(BD, -2, 20);
-    ok(SB, -2, 19);
     d.s1 = 1;
     return true;
   }
 
   IMPL.lec_set_home = lec_set_home;
-  IMPL.lec_set_agree = lec_set_agree;
   IMPL.lec_set_items = lec_set_items;
   IMPL.lec_set_card = lec_set_card;
   IMPL.lec_set_test = lec_set_test;
   IMPL.lec_set_due = lec_set_due;
   IMPL.lec_set_ans = lec_set_ans;
-  IMPL.lec_rec_agree = lec_rec_agree;
-  IMPL.lec_rec_off = lec_rec_off;
   IMPL.lec_rec_begin = lec_rec_begin;
   IMPL.lec_rec_done = lec_rec_done;
   IMPL.lec_rec_slot = lec_rec_slot;
   SIG.lec_set_home = { p_key: 'text' };
-  SIG.lec_set_agree = { p_key: 'text', p_ver: 'text' };
   SIG.lec_set_items = { p_key: 'text', p_set: 'uuid' };
   SIG.lec_set_card = { p_key: 'text', p_set: 'uuid', p_marks: 'json' };
   SIG.lec_set_test = { p_key: 'text', p_set: 'uuid' };
   SIG.lec_set_due = { p_key: 'text' };
   SIG.lec_set_ans = { p_key: 'text', p_try: 'uuid', p_i: 'int', p_v: 'text' };
-  SIG.lec_rec_agree = { p_key: 'text', p_ver: 'text' };
-  SIG.lec_rec_off = { p_key: 'text' };
   SIG.lec_rec_begin = { p_key: 'text', p_set: 'uuid', p_k: 'text', p_mime: 'text', p_bytes: 'int', p_ms: 'int' };
   SIG.lec_rec_done = { p_key: 'text', p_id: 'uuid' };
   SIG.lec_rec_slot = { p_name: 'text' };
@@ -4332,8 +4200,6 @@
   SIG.lec_set_del = { p_set: 'uuid' };
   SIG.lec_set_staff = { p_set: 'uuid' };
   SIG.lec_rec_mark = { p_id: 'uuid', p_mark: 'text', p_why: 'int' };
-  SIG.lec_rec_guard = { p_skey: 'text', p_how: 'text', p_on: 'bool' };
-  SIG.lec_rec_lvl = { p_rows: 'json' };
   SIG.lec_rec_expired = {};
   SIG.lec_rec_gone = { p_ids: 'uuidarr' };
   STAFF.lec_set_is_admin = lec_set_is_admin;
@@ -4344,8 +4210,6 @@
   STAFF.lec_set_del = lec_set_del;
   STAFF.lec_set_staff = lec_set_staff;
   STAFF.lec_rec_mark = lec_rec_mark;
-  STAFF.lec_rec_guard = lec_rec_guard;
-  STAFF.lec_rec_lvl = lec_rec_lvl;
   STAFF.lec_rec_expired = lec_rec_expired;
   STAFF.lec_rec_gone = lec_rec_gone;
 

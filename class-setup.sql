@@ -5822,8 +5822,12 @@ $$;
 --   lec_set_prog  학생 × 세트 진도(카드 · 누적 맞힘 · 첫 시도 % · 최고 % · 통과 · 카드 저장 횟수)
 --   lec_set_try   시험 · 드릴 · 쌓인 오답 한 판(문항과 정답은 서버에만 · 답은 문항마다 lec_set_ans 로 한 번)
 --   lec_set_rec   구문 녹음 한 개(파일은 Storage 버킷 lec-rec · 비공개 · 30일 뒤 지움)
---   lec_rec_ok    학생마다 녹음 동의 · 학교급(고등만 앱 본인 동의 · 나머지는 보호자 동의서를 선생님이 찍음)
---   lec_consent.sv · sv_at  세트 기록 동의 판('s1-2026-11' · v1 기록 동의 위에 따로)
+--   lec_rec_ok    S1-b 부터 안 씀(옛 녹음 동의 · 학교급 줄 · 표와 줄은 그대로 둠 · 읽고 쓰는 함수 없음)
+--   lec_consent.sv · sv_at  S1-b 부터 안 씀(옛 세트 기록 동의 판 · 칸은 그대로 둠)
+--   S1-b(11-17 원장님 «동의서 필요없어 오바쫌 하지마 클래스카드도 그냥 다 하는데»): 세트 동의 · 녹음 동의 · 학교급 갈래를 뺌
+--     히즈클래스 기록 동의(lec__agreed)만 보고 세트가 바로 열림 · ★ 녹음도 모든 학생이 바로(lec_rec_begin · lec_rec_slot 은 녹음 동의를 안 봄 · 기록 동의는 lec_rec_begin 이 그대로 봄)
+--     지킴은 그대로: 듣기 · 지우기는 원장님 계정만(lec_set_is_admin) · 한 개 45초 · ★ 두 문장 · 30일 뒤 지움
+--     옛 화면을 위해 lec_set_home 은 'agree' true · 'rec' {ok true}, lec_set_items 는 'rec' {ok true} 를 그대로 돌려줌
 --   다섯 표는 행 보안 켬 · 정책 0 = 표로는 아무도 못 읽음 · 함수로만 · 새 함수는 app_state 를 읽지 않음(반은 lec_key.cls)
 --   이름 바뀜(lec__move) · 학생 지움(lec_forget · 동의 지움)은 트리거 셋이 세트 기록을 따라 옮기거나 지움(기존 함수 몸통 그대로)
 --   끄개 · 학생 묶음 숨김: revoke execute on function public.lec_set_home(text) from anon, authenticated;
@@ -5931,6 +5935,7 @@ create index if not exists lec_set_rec_set on public.lec_set_rec (set_id, k);
 create index if not exists lec_set_rec_sid on public.lec_set_rec (sid);
 create index if not exists lec_set_rec_st  on public.lec_set_rec (st, at);
 
+-- lec_rec_ok: S1-b 부터 안 씀(옛 녹음 동의 · 학교급 · 표와 줄은 그대로 · 읽고 쓰는 함수 없음 · 이름 바뀜 · 학생 지움 트리거만 옛 줄을 옮기거나 지움)
 create table if not exists public.lec_rec_ok (
   sid         text primary key,
   lvl         text not null default '',
@@ -5943,7 +5948,7 @@ create table if not exists public.lec_rec_ok (
   constraint lec_rec_ok_how_ok check (how in ('', 'self', 'paper', 'sms', 'phone'))
 );
 
--- 세트 기록 동의(v1 기록 동의 줄에 칸 둘 · 기존 함수는 이 칸을 건드리지 않음 · lec__move 는 줄째 옮겨 같이 감)
+-- sv · sv_at: S1-b 부터 안 씀(옛 세트 기록 동의 판 · 칸은 그대로 둠 · 아무 함수도 읽거나 쓰지 않음)
 alter table public.lec_consent add column if not exists sv text not null default '';
 alter table public.lec_consent add column if not exists sv_at timestamptz;
 
@@ -5958,6 +5963,8 @@ alter table public.lec_rec_ok   enable row level security;
 
 -- 새로 만든 함수 · 트리거라 정확한 모양으로 먼저 지우고 새로 만듦(권한은 아래 한곳에서 다시 줌)
 --   트리거를 먼저 지워야 트리거 함수를 지울 수 있음 · lec_rec_slot · lec_set_is_admin 은 Storage 정책이 걸려 있어 지우지 않고 바꿔 씀
+--   S1-b 에서 없앰 · 다시 안 만듦(아래 drop 만 남김 · 운영에서 지우고 빈 DB 에서는 할 일 없음 · 부르는 곳 0):
+--     lec__set_ver · lec__rec_ver · lec__set_ok · lec__rec_can · lec_set_agree · lec_rec_agree · lec_rec_off · lec_rec_guard · lec_rec_lvl
 drop trigger if exists lec_key_set_mv on public.lec_key;
 drop trigger if exists lec_consent_set_mv on public.lec_consent;
 drop trigger if exists lec_consent_set_gone on public.lec_consent;
@@ -6017,35 +6024,10 @@ drop function if exists public.lec_rec_lvl(jsonb);
 drop function if exists public.lec_rec_expired();
 drop function if exists public.lec_rec_gone(uuid[]);
 
--- 판 · 오늘(서울 날짜)
-create or replace function public.lec__set_ver() returns text
-language sql immutable set search_path = public as $$
-  select 's1-2026-11'::text
-$$;
-
-create or replace function public.lec__rec_ver() returns text
-language sql immutable set search_path = public as $$
-  select 'r1-2026-11'::text
-$$;
-
+-- 오늘(서울 날짜)
 create or replace function public.lec__set_today() returns date
 language sql stable set search_path = public as $$
   select (now() at time zone 'Asia/Seoul')::date
-$$;
-
--- 세트 기록 동의 있음 = v1 기록 동의 + 세트 판 동의
-create or replace function public.lec__set_ok(p_sid text) returns boolean
-language sql stable set search_path = public as $$
-  select public.lec__agreed(p_sid)
-         and exists (select 1 from public.lec_consent c where c.sid = p_sid and c.sv = public.lec__set_ver())
-$$;
-
--- 녹음 동의 있음 = 동의 방법이 있고 지금 판 · 본인 동의는 고등(h)일 때만
-create or replace function public.lec__rec_can(p_sid text) returns boolean
-language sql stable set search_path = public as $$
-  select exists (select 1 from public.lec_rec_ok o
-                  where o.sid = p_sid and o.how <> '' and o.ver = public.lec__rec_ver()
-                    and (o.how <> 'self' or o.lvl = 'h'))
 $$;
 
 -- 이 학생(반 목록)에게 보이는 세트: 숨김 아님 · 공개일 지남 · 반이 겹침
@@ -6574,17 +6556,16 @@ create trigger lec_consent_set_mv after update of sid on public.lec_consent
 create trigger lec_consent_set_gone after delete on public.lec_consent
   for each row execute function public.lec__set_gone();
 
--- 학생: 공부 묶음 목록(보이는 세트 40개 · 내 진도 · 쌓인 오답 수 · 녹음 동의) · 세트 동의 전이면 진도 · 오답은 null
+-- 학생: 공부 묶음 목록(보이는 세트 40개 · 내 진도 · 쌓인 오답 수) · 히즈클래스 기록 동의만 봄(세트 동의 · 녹음 동의는 S1-b 에서 뺌)
+--   'agree' true · 'rec' {ok true} 는 옛 화면(동의 카드 · 녹음 동의 길이 있던 판)이 바로 열리게 그대로 돌려줌 · 새 화면은 안 읽음
 create or replace function public.lec_set_home(p_key text)
 returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare
   k       public.lec_key;
   v_day   date := public.lec__set_today();
-  v_agree boolean;
   v_sets  jsonb;
-  v_due   jsonb := null;
-  v_rec   jsonb;
+  v_due   jsonb;
 begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then
@@ -6593,61 +6574,30 @@ begin
   if not public.lec__agreed(k.sid) then
     return jsonb_build_object('ok', false, 'err', 'consent');
   end if;
-  v_agree := public.lec__set_ok(k.sid);
   select coalesce(jsonb_agg(jsonb_build_object(
            'id', xs.id, 'kind', xs.kind, 'title', xs.title, 'n', xs.n, 'need', public.lec__set_need(xs.n),
            'on', xs.posted_on, 'pick', cardinality(xs.pick),
-           'me', case when v_agree then public.lec__set_me(xs, k.sid, v_day) end)
+           'me', public.lec__set_me(xs, k.sid, v_day))
            order by xs.posted_on desc, xs.created_at desc), '[]'::jsonb)
     into v_sets
     from public.lec_set xs
    where xs.id in (select y.id from public.lec_set y
                     where public.lec__set_open(y, k.cls)
                     order by y.posted_on desc, y.created_at desc limit 40);
-  if v_agree then
-    -- 숨김 · 공개 전 · 다른 반 세트는 문항을 풀기 전에 거름(lec__set_open 은 xs 한 표 조건) ·
-    -- 시험 · 드릴 판이 열린 세트는 now 에서 뺌(lec__set_busy 는 세트마다 한 번)
-    select jsonb_build_object('n', coalesce(sum(y.n), 0)::integer,
-                              'now', coalesce(sum(y.nw) filter (where not public.lec__set_busy(k.sid, y.id)), 0)::integer)
-      into v_due
-      from (select xs.id, count(*) as n, count(*) filter (where public.lec__set_due_on(c.card, v_day)) as nw
-              from public.lec_set xs
-              join public.lec_set_prog xp on xp.set_id = xs.id and xp.sid = k.sid
-             cross join lateral (select xp.cards -> (u.e ->> 'k') as card from jsonb_array_elements(xs.items) as u(e)) c
-             where xs.kind in ('voc', 'gram') and public.lec__set_open(xs, k.cls)
-               and coalesce(c.card ->> 'z', '') <> ''
-             group by xs.id) y;
-  end if;
-  select jsonb_build_object('lvl', coalesce(xo.lvl, ''), 'how', coalesce(xo.how, ''), 'ok', public.lec__rec_can(k.sid),
-                            'ver', public.lec__rec_ver())
-    into v_rec
-    from (select 1 as one) z
-    left join public.lec_rec_ok xo on xo.sid = k.sid;
-  return jsonb_build_object('ok', true, 'today', to_char(v_day, 'YYYY-MM-DD'), 'agree', v_agree, 'ver', public.lec__set_ver(),
-                            'sets', v_sets, 'due', v_due, 'rec', v_rec);
-end
-$$;
-
--- 학생: 세트 기록 동의(묶음 안 카드 «동의하고 시작»)
-create or replace function public.lec_set_agree(p_key text, p_ver text)
-returns jsonb
-language plpgsql volatile security definer set search_path = public as $$
-declare
-  k    public.lec_key;
-  v_at timestamptz;
-begin
-  select * into k from public.lec_key where kh = public.lec__kh(p_key);
-  if not found then
-    return jsonb_build_object('ok', false, 'err', 'key');
-  end if;
-  if not public.lec__agreed(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'consent');
-  end if;
-  if p_ver is distinct from public.lec__set_ver() then
-    return jsonb_build_object('ok', false, 'err', 'ver', 'ver', public.lec__set_ver());
-  end if;
-  update public.lec_consent xc set sv = p_ver, sv_at = now() where xc.sid = k.sid returning xc.sv_at into v_at;
-  return jsonb_build_object('ok', true, 'ver', p_ver, 'at', v_at);
+  -- 숨김 · 공개 전 · 다른 반 세트는 문항을 풀기 전에 거름(lec__set_open 은 xs 한 표 조건) ·
+  -- 시험 · 드릴 판이 열린 세트는 now 에서 뺌(lec__set_busy 는 세트마다 한 번)
+  select jsonb_build_object('n', coalesce(sum(y.n), 0)::integer,
+                            'now', coalesce(sum(y.nw) filter (where not public.lec__set_busy(k.sid, y.id)), 0)::integer)
+    into v_due
+    from (select xs.id, count(*) as n, count(*) filter (where public.lec__set_due_on(c.card, v_day)) as nw
+            from public.lec_set xs
+            join public.lec_set_prog xp on xp.set_id = xs.id and xp.sid = k.sid
+           cross join lateral (select xp.cards -> (u.e ->> 'k') as card from jsonb_array_elements(xs.items) as u(e)) c
+           where xs.kind in ('voc', 'gram') and public.lec__set_open(xs, k.cls)
+             and coalesce(c.card ->> 'z', '') <> ''
+           group by xs.id) y;
+  return jsonb_build_object('ok', true, 'today', to_char(v_day, 'YYYY-MM-DD'), 'agree', true,
+                            'sets', v_sets, 'due', v_due, 'rec', jsonb_build_object('ok', true));
 end
 $$;
 
@@ -6668,9 +6618,6 @@ begin
   end if;
   if not public.lec__agreed(k.sid) then
     return jsonb_build_object('ok', false, 'err', 'consent');
-  end if;
-  if not public.lec__set_ok(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'agree');
   end if;
   select * into s from public.lec_set xs where xs.id = p_set;
   if not found or not public.lec__set_open(s, k.cls) then
@@ -6698,9 +6645,7 @@ begin
   v_me := public.lec__set_me(s, k.sid, public.lec__set_today());
   return jsonb_build_object('ok', true, 'id', s.id, 'kind', s.kind, 'title', s.title, 'n', s.n, 'items', v_items,
                             'pick', to_jsonb(s.pick), 'cards', v_cards, 'recs', v_me -> 'recs',
-                            'rec', (select jsonb_build_object('lvl', coalesce(xo.lvl, ''), 'how', coalesce(xo.how, ''),
-                                                              'ok', public.lec__rec_can(k.sid))
-                                      from (select 1 as one) z left join public.lec_rec_ok xo on xo.sid = k.sid));
+                            'rec', jsonb_build_object('ok', true));   -- 옛 화면이 ★ 녹음을 바로 열게(S1-b · 녹음 동의 없음)
 end
 $$;
 
@@ -6724,9 +6669,6 @@ begin
   end if;
   if not public.lec__agreed(k.sid) then
     return jsonb_build_object('ok', false, 'err', 'consent');
-  end if;
-  if not public.lec__set_ok(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'agree');
   end if;
   select * into s from public.lec_set xs where xs.id = p_set;
   if not found or not public.lec__set_open(s, k.cls) then
@@ -6785,9 +6727,6 @@ begin
   end if;
   if not public.lec__agreed(k.sid) then
     return jsonb_build_object('ok', false, 'err', 'consent');
-  end if;
-  if not public.lec__set_ok(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'agree');
   end if;
   select * into s from public.lec_set xs where xs.id = p_set;
   if not found or not public.lec__set_open(s, k.cls) then
@@ -6856,9 +6795,6 @@ begin
   if not public.lec__agreed(k.sid) then
     return jsonb_build_object('ok', false, 'err', 'consent');
   end if;
-  if not public.lec__set_ok(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'agree');
-  end if;
   perform pg_advisory_xact_lock(hashtext('lec_set_due|' || k.sid));
   select * into t from public.lec_set_try xt
    where xt.sid = k.sid and xt.kind = 'due' and xt.done_at is null
@@ -6920,9 +6856,6 @@ begin
   end if;
   if not public.lec__agreed(k.sid) then
     return jsonb_build_object('ok', false, 'err', 'consent');
-  end if;
-  if not public.lec__set_ok(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'agree');
   end if;
   select * into t from public.lec_set_try xt where xt.id = p_try and xt.sid = k.sid for update;
   if not found then
@@ -6988,56 +6921,6 @@ begin
 end
 $$;
 
--- 학생: 녹음 제출 본인 동의(고등만 · 판이 같아야 함)
-create or replace function public.lec_rec_agree(p_key text, p_ver text)
-returns jsonb
-language plpgsql volatile security definer set search_path = public as $$
-declare
-  k    public.lec_key;
-  v_at timestamptz;
-begin
-  select * into k from public.lec_key where kh = public.lec__kh(p_key);
-  if not found then
-    return jsonb_build_object('ok', false, 'err', 'key');
-  end if;
-  if not public.lec__agreed(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'consent');
-  end if;
-  if not public.lec__set_ok(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'agree');
-  end if;
-  if p_ver is distinct from public.lec__rec_ver() then
-    return jsonb_build_object('ok', false, 'err', 'ver', 'ver', public.lec__rec_ver());
-  end if;
-  if coalesce((select xo.lvl from public.lec_rec_ok xo where xo.sid = k.sid), '') <> 'h' then
-    return jsonb_build_object('ok', false, 'err', 'level');
-  end if;
-  update public.lec_rec_ok xo set how = 'self', ver = p_ver, ok_at = now(), ok_by = 'self'
-   where xo.sid = k.sid
-  returning xo.ok_at into v_at;
-  return jsonb_build_object('ok', true, 'how', 'self', 'at', v_at);
-end
-$$;
-
--- 학생: 녹음 동의 거둠(낸 녹음은 다음 정리 때 파일까지 지움)
-create or replace function public.lec_rec_off(p_key text)
-returns jsonb
-language plpgsql volatile security definer set search_path = public as $$
-declare
-  k   public.lec_key;
-  v_n integer;
-begin
-  select * into k from public.lec_key where kh = public.lec__kh(p_key);
-  if not found then
-    return jsonb_build_object('ok', false, 'err', 'key');
-  end if;
-  update public.lec_rec_ok xo set how = '', ok_at = null, ok_by = '' where xo.sid = k.sid;
-  with u as (update public.lec_set_rec xr set st = 'old' where xr.sid = k.sid and xr.st in ('wait', 'done') returning 1)
-  select count(*) into v_n from u;
-  return jsonb_build_object('ok', true, 'n', v_n);
-end
-$$;
-
 -- 학생: 녹음 올리기 표(10분 · 이 이름으로만 Storage 에 한 번 올릴 수 있음 · 하루 10개)
 create or replace function public.lec_rec_begin(p_key text, p_set uuid, p_k text, p_mime text, p_bytes integer, p_ms integer)
 returns jsonb
@@ -7057,18 +6940,12 @@ begin
   if not public.lec__agreed(k.sid) then
     return jsonb_build_object('ok', false, 'err', 'consent');
   end if;
-  if not public.lec__set_ok(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'agree');
-  end if;
   select * into s from public.lec_set xs where xs.id = p_set;
   if not found or s.kind <> 'gu' or not public.lec__set_open(s, k.cls) then
     return jsonb_build_object('ok', false, 'err', 'none');
   end if;
   if p_k is null or not (p_k = any (s.pick)) then
     return jsonb_build_object('ok', false, 'err', 'pick');
-  end if;
-  if not public.lec__rec_can(k.sid) then
-    return jsonb_build_object('ok', false, 'err', 'rec_ok');
   end if;
   if p_mime is null or p_mime not in ('audio/webm', 'audio/mp4', 'audio/ogg') then
     return jsonb_build_object('ok', false, 'err', 'mime');
@@ -7341,7 +7218,7 @@ begin
 end
 $$;
 
--- 선생님(관리자): 세트 결과 표(학생마다 진도 · 녹음 · 자주 틀린 것 다섯 · 녹음 동의)
+-- 선생님(관리자): 세트 결과 표(학생마다 진도 · 녹음 · 자주 틀린 것 다섯)
 create or replace function public.lec_set_staff(p_set uuid)
 returns jsonb
 language plpgsql stable security definer set search_path = public as $$
@@ -7350,7 +7227,6 @@ declare
   v_day   date := public.lec__set_today();
   v_rows  jsonb;
   v_often jsonb := '[]'::jsonb;
-  v_recok jsonb;
 begin
   if not public.lec_set_is_admin() then
     return jsonb_build_object('ok', false, 'err', 'forbidden');
@@ -7393,16 +7269,12 @@ begin
              limit 5) y
      where y.cnt > 0;
   end if;
-  select coalesce(jsonb_agg(jsonb_build_object('sid', xo.sid, 'lvl', xo.lvl, 'how', xo.how, 'ok', public.lec__rec_can(xo.sid),
-                                               'at', xo.ok_at) order by xo.sid), '[]'::jsonb)
-    into v_recok
-    from public.lec_rec_ok xo;
   return jsonb_build_object('ok', true, 'today', to_char(v_day, 'YYYY-MM-DD'),
                             'set', jsonb_build_object('id', s.id, 'kind', s.kind, 'title', s.title, 'class_ids', to_jsonb(s.class_ids),
                                                       'posted_on', s.posted_on, 'hidden', s.hidden, 'n', s.n,
                                                       'need', public.lec__set_need(s.n), 'pick', to_jsonb(s.pick),
                                                       'items', case when s.kind = 'gu' then s.items else null end),
-                            'rows', v_rows, 'often', v_often, 'recok', v_recok);
+                            'rows', v_rows, 'often', v_often);
 end
 $$;
 
@@ -7429,69 +7301,6 @@ begin
     return jsonb_build_object('ok', false, 'err', 'none');
   end if;
   return jsonb_build_object('ok', true, 'mark', p_mark, 'why', p_why);
-end
-$$;
-
--- 선생님(관리자): 보호자 동의서 찍기(paper · sms · phone) · 끄면 그 학생 녹음은 지울 것으로
-create or replace function public.lec_rec_guard(p_skey text, p_how text, p_on boolean)
-returns jsonb
-language plpgsql volatile security definer set search_path = public as $$
-declare
-  v_at timestamptz;
-begin
-  if not public.lec_set_is_admin() then
-    return jsonb_build_object('ok', false, 'err', 'forbidden');
-  end if;
-  if coalesce(btrim(p_skey), '') = '' or p_on is null then
-    return jsonb_build_object('ok', false, 'err', 'input');
-  end if;
-  if p_on then
-    if p_how is null or p_how not in ('paper', 'sms', 'phone') then
-      return jsonb_build_object('ok', false, 'err', 'how');
-    end if;
-    insert into public.lec_rec_ok as xo (sid, how, ver, ok_at, ok_by)
-    values (p_skey, p_how, public.lec__rec_ver(), now(), 'Benjamin')
-    on conflict (sid) do update set how = excluded.how, ver = excluded.ver, ok_at = excluded.ok_at, ok_by = excluded.ok_by
-    returning xo.ok_at into v_at;
-    return jsonb_build_object('ok', true, 'how', p_how, 'at', v_at);
-  end if;
-  update public.lec_rec_ok xo set how = '', ok_at = null, ok_by = '' where xo.sid = p_skey;
-  update public.lec_set_rec xr set st = 'old' where xr.sid = p_skey and xr.st in ('wait', 'done');
-  return jsonb_build_object('ok', true, 'how', '', 'at', null);
-end
-$$;
-
--- 선생님(관리자): 학교급 맞춤([{s: 학생 열쇠, l: '' e m h}] · 바뀐 줄만 · 1000줄까지)
-create or replace function public.lec_rec_lvl(p_rows jsonb)
-returns jsonb
-language plpgsql volatile security definer set search_path = public as $$
-declare
-  v_n integer;
-begin
-  if not public.lec_set_is_admin() then
-    return jsonb_build_object('ok', false, 'err', 'forbidden');
-  end if;
-  if jsonb_typeof(p_rows) is distinct from 'array' then
-    return jsonb_build_object('ok', false, 'err', 'input');
-  end if;
-  if jsonb_array_length(p_rows) > 1000
-     or exists (select 1 from jsonb_array_elements(p_rows) as u(e)
-                 where jsonb_typeof(u.e) is distinct from 'object'
-                    or jsonb_typeof(u.e -> 's') is distinct from 'string' or btrim(u.e ->> 's') = ''
-                    or jsonb_typeof(u.e -> 'l') is distinct from 'string' or (u.e ->> 'l') not in ('', 'e', 'm', 'h')) then
-    return jsonb_build_object('ok', false, 'err', 'input');
-  end if;
-  with src as (select distinct on (u.e ->> 's') u.e ->> 's' as sid, u.e ->> 'l' as l
-                 from jsonb_array_elements(p_rows) with ordinality as u(e, o)
-                order by u.e ->> 's', u.o desc),
-       up as (insert into public.lec_rec_ok as xo (sid, lvl, lvl_at)
-              select src.sid, src.l, now() from src
-               where (src.l <> '' and not exists (select 1 from public.lec_rec_ok y where y.sid = src.sid))
-                  or exists (select 1 from public.lec_rec_ok y where y.sid = src.sid and y.lvl is distinct from src.l)
-              on conflict (sid) do update set lvl = excluded.lvl, lvl_at = excluded.lvl_at
-              returning 1)
-  select count(*) into v_n from up;
-  return jsonb_build_object('ok', true, 'n', v_n);
 end
 $$;
 
@@ -7575,9 +7384,9 @@ begin
 end
 $$;
 
--- 권한: 속 함수 = 밖에서 못 부름 · 학생 함수 열둘 = 누구나(열쇠로 확인) · 선생님 함수 = 로그인한 사람만(안에서 관리자 확인)
-revoke all on function public.lec__set_ver(), public.lec__rec_ver(), public.lec__set_today(), public.lec__set_ok(text),
-  public.lec__rec_can(text), public.lec__set_open(public.lec_set, text[]), public.lec__set_need(integer), public.lec__set_norm(text),
+-- 권한: 속 함수 = 밖에서 못 부름 · 학생 함수 아홉 = 누구나(열쇠로 확인) · 선생님 함수 = 로그인한 사람만(안에서 관리자 확인)
+revoke all on function public.lec__set_today(),
+  public.lec__set_open(public.lec_set, text[]), public.lec__set_need(integer), public.lec__set_norm(text),
   public.lec__set_vars(text), public.lec__set_alts(text), public.lec__set_match(text, text), public.lec__set_opts(text),
   public.lec__set_txt(jsonb, text), public.lec__set_ktext(text, jsonb), public.lec__set_mark(jsonb, boolean, text, date),
   public.lec__set_memo(jsonb), public.lec__set_due_on(jsonb, date), public.lec__set_keys(text, jsonb, jsonb),
@@ -7586,25 +7395,25 @@ revoke all on function public.lec__set_ver(), public.lec__rec_ver(), public.lec_
   public.lec__set_end(public.lec_set_try, text, text[]), public.lec__set_move(text, text), public.lec__set_mv(), public.lec__set_gone(),
   public.lec__set_busy(text, uuid), public.lec__rec_exp(public.lec_set_rec), public.lec__rec_has(text)
   from public, anon, authenticated;
-revoke all on function public.lec_set_home(text), public.lec_set_agree(text, text), public.lec_set_items(text, uuid),
+revoke all on function public.lec_set_home(text), public.lec_set_items(text, uuid),
   public.lec_set_card(text, uuid, jsonb), public.lec_set_test(text, uuid), public.lec_set_due(text),
-  public.lec_set_ans(text, uuid, integer, text), public.lec_rec_agree(text, text), public.lec_rec_off(text),
+  public.lec_set_ans(text, uuid, integer, text),
   public.lec_rec_begin(text, uuid, text, text, integer, integer), public.lec_rec_done(text, uuid), public.lec_rec_slot(text)
   from public;
-grant execute on function public.lec_set_home(text), public.lec_set_agree(text, text), public.lec_set_items(text, uuid),
+grant execute on function public.lec_set_home(text), public.lec_set_items(text, uuid),
   public.lec_set_card(text, uuid, jsonb), public.lec_set_test(text, uuid), public.lec_set_due(text),
-  public.lec_set_ans(text, uuid, integer, text), public.lec_rec_agree(text, text), public.lec_rec_off(text),
+  public.lec_set_ans(text, uuid, integer, text),
   public.lec_rec_begin(text, uuid, text, text, integer, integer), public.lec_rec_done(text, uuid), public.lec_rec_slot(text)
   to anon, authenticated;
 revoke all on function public.lec_set_is_admin(), public.lec_set_list_staff(), public.lec_set_get(uuid),
   public.lec_set_put(uuid, text, text, text[], date, jsonb, integer[]), public.lec_set_hide(uuid, boolean), public.lec_set_del(uuid),
-  public.lec_set_staff(uuid), public.lec_rec_mark(uuid, text, integer), public.lec_rec_guard(text, text, boolean),
-  public.lec_rec_lvl(jsonb), public.lec_rec_expired(), public.lec_rec_gone(uuid[])
+  public.lec_set_staff(uuid), public.lec_rec_mark(uuid, text, integer),
+  public.lec_rec_expired(), public.lec_rec_gone(uuid[])
   from public, anon;
 grant execute on function public.lec_set_is_admin(), public.lec_set_list_staff(), public.lec_set_get(uuid),
   public.lec_set_put(uuid, text, text, text[], date, jsonb, integer[]), public.lec_set_hide(uuid, boolean), public.lec_set_del(uuid),
-  public.lec_set_staff(uuid), public.lec_rec_mark(uuid, text, integer), public.lec_rec_guard(text, text, boolean),
-  public.lec_rec_lvl(jsonb), public.lec_rec_expired(), public.lec_rec_gone(uuid[])
+  public.lec_set_staff(uuid), public.lec_rec_mark(uuid, text, integer),
+  public.lec_rec_expired(), public.lec_rec_gone(uuid[])
   to authenticated;
 
 -- 녹음 «냄»의 파일 확인(lec_rec_done 은 주인 권한으로 storage.objects 를 읽음)이 되는가:
@@ -7778,9 +7587,10 @@ begin
 end
 $$;
 
--- 스스로 점검(S1 단어 · 구문 · 문법): 판정 표(_check/class_set_vectors.json) · 없는 열쇠 · 동의 둘 · 관리자만 · 세트 저장 검사 ·
+-- 스스로 점검(S1 단어 · 구문 · 문법): 판정 표(_check/class_set_vectors.json) · 없는 열쇠 · 기록 동의만으로 열림(S1-b) · 관리자만 · 세트 저장 검사 ·
 -- 열쇠 다시 매김 · 보임 · 단어 시험(정답이 폰에 안 감 · 채점 · 같은 문항 다시 · 끝 · 다시 보기 · 하루 한도 · 통과) · 문법 드릴 ·
--- 쌓인 오답 · 카드 · 녹음(학교급 · 보호자 동의 · 본인 동의 · 표 · 냄 · 듣기 표시 · 다시 냄 · 하루 한도) · 정리 · 이름 바뀜 · 지움 · 권한.
+-- 쌓인 오답 · 카드 · 녹음(동의 · 학교급 없이 바로 표 · 냄 · 듣기 표시 · 다시 냄 · 하루 한도) · 정리 · 이름 바뀜 · 지움 · 권한 ·
+-- 없앤 동의 함수 없음 · 끄개 두 줄.
 -- 점검용으로 넣은 세트 · 열쇠 · 동의 · 녹음 줄은 끝에 되돌려 남지 않습니다(Storage 에 올린 파일도 없음)
 do $$
 declare
@@ -7820,6 +7630,7 @@ declare
   v_busy  uuid;
   v_kept  uuid[];
   v_w     uuid;
+  v_off   boolean;
 begin
   begin
     -- 8) 판정 표(_check/class_set_vectors.json 과 같은 값 · class_set_vec_sql.py 가 만든 글)
@@ -7972,20 +7783,17 @@ begin
     -- 1) 없는 열쇠 → 학생 함수 모두 'key'
     v_t := 'selftest-none-' || v_ks;
     if (public.lec_set_home(v_t) ->> 'err') is distinct from 'key'
-       or (public.lec_set_agree(v_t, public.lec__set_ver()) ->> 'err') is distinct from 'key'
        or (public.lec_set_items(v_t, gen_random_uuid()) ->> 'err') is distinct from 'key'
        or (public.lec_set_card(v_t, gen_random_uuid(), '{}'::jsonb) ->> 'err') is distinct from 'key'
        or (public.lec_set_test(v_t, gen_random_uuid()) ->> 'err') is distinct from 'key'
        or (public.lec_set_due(v_t) ->> 'err') is distinct from 'key'
        or (public.lec_set_ans(v_t, gen_random_uuid(), 0, 'a') ->> 'err') is distinct from 'key'
-       or (public.lec_rec_agree(v_t, public.lec__rec_ver()) ->> 'err') is distinct from 'key'
-       or (public.lec_rec_off(v_t) ->> 'err') is distinct from 'key'
        or (public.lec_rec_begin(v_t, gen_random_uuid(), 'k1', 'audio/webm', 10, 1000) ->> 'err') is distinct from 'key'
        or (public.lec_rec_done(v_t, gen_random_uuid()) ->> 'err') is distinct from 'key' then
       raise exception '점검 실패(S1 없는 열쇠)';
     end if;
 
-    -- 학생 넷(가 = 기록 동의 + 세트 동의 · 나 = 기록 동의만 · 다 = 동의 없음 · 마 = 반 없는 열쇠) · 반 둘
+    -- 학생 넷(가 · 나 = 히즈클래스 기록 동의만 · S1-b 부터 세트 동의 · 녹음 동의 없음 · 다 = 동의 없음 · 마 = 반 없는 열쇠) · 반 둘
     v_c1 := 'selftest-s1-' || v_ks || '-a';
     v_c2 := 'selftest-s1-' || v_ks || '-b';
     v_ka := 'selftest' || v_ks || 's1a';
@@ -8001,7 +7809,6 @@ begin
       (v_sa, 'agree', public.lec__consent_ver()),
       ('selftest-s1b|점검나', 'agree', public.lec__consent_ver()),
       ('selftest-s1e|점검마', 'agree', public.lec__consent_ver());
-    update public.lec_consent set sv = public.lec__set_ver() where sid = 'selftest-s1e|점검마';
 
     -- 3) 선생님 함수: 로그인 없음 · anon · 관리자 아닌 선생님 = forbidden
     foreach v_t in array array['', '{"role":"anon"}', '{"role":"authenticated","email":"joey@his.kr"}'] loop
@@ -8014,8 +7821,6 @@ begin
          or (public.lec_set_del(gen_random_uuid()) ->> 'err') is distinct from 'forbidden'
          or (public.lec_set_staff(gen_random_uuid()) ->> 'err') is distinct from 'forbidden'
          or (public.lec_rec_mark(gen_random_uuid(), 'ok', 0) ->> 'err') is distinct from 'forbidden'
-         or (public.lec_rec_guard('x', 'paper', true) ->> 'err') is distinct from 'forbidden'
-         or (public.lec_rec_lvl('[]'::jsonb) ->> 'err') is distinct from 'forbidden'
          or (public.lec_rec_expired() ->> 'err') is distinct from 'forbidden'
          or (public.lec_rec_gone('{}'::uuid[]) ->> 'err') is distinct from 'forbidden' then
         raise exception '점검 실패(S1 관리자 아님 막기 «%»)', v_t;
@@ -8131,34 +7936,36 @@ begin
       raise exception '점검 실패(S1 숨기기 · 가져오기)';
     end if;
 
-    -- 2) 동의: 없음 = consent · 기록 동의만 = 목록만(진도 · 오답 null) · 쓰기는 agree · 판 틀림 = ver
-    if (public.lec_set_home(v_kc) ->> 'err') is distinct from 'consent' then
+    -- 2) 동의: 히즈클래스 기록 동의 없음 = consent · 기록 동의만 있으면 세트가 바로 열림(S1-b · 세트 동의 · 녹음 동의 없음)
+    --    옛 화면용 'agree' true · 'rec' {ok true} · 내 진도(me) · 쌓인 오답(due)이 바로 옴 · 'ver' 없음 · 열기 · 오답 판도 'agree' 로 안 막힘
+    if (public.lec_set_home(v_kc) ->> 'err') is distinct from 'consent'
+       or (public.lec_set_items(v_kc, v_voc) ->> 'err') is distinct from 'consent'
+       or (public.lec_set_due(v_kc) ->> 'err') is distinct from 'consent'
+       or (public.lec_set_card(v_kc, v_voc, '{}'::jsonb) ->> 'err') is distinct from 'consent'
+       or (public.lec_set_test(v_kc, v_voc) ->> 'err') is distinct from 'consent'
+       or (public.lec_set_ans(v_kc, gen_random_uuid(), 0, 'a') ->> 'err') is distinct from 'consent'
+       or (public.lec_rec_begin(v_kc, v_gu, 'k1', 'audio/webm', 1000, 3000) ->> 'err') is distinct from 'consent' then
       raise exception '점검 실패(S1 기록 동의 없음)';
     end if;
     r := public.lec_set_home(v_kb);
-    if not coalesce((r ->> 'ok')::boolean, false) or (r ->> 'agree')::boolean or jsonb_typeof(r -> 'due') <> 'null'
+    if not coalesce((r ->> 'ok')::boolean, false) or not coalesce((r ->> 'agree')::boolean, false)
+       or not coalesce((r -> 'rec' ->> 'ok')::boolean, false) or r ? 'ver'
+       or jsonb_typeof(r -> 'due') is distinct from 'object' or (r -> 'due' ->> 'n')::integer <> 0
        or jsonb_array_length(r -> 'sets') <> 4
-       or exists (select 1 from jsonb_array_elements(r -> 'sets') as u(e) where jsonb_typeof(u.e -> 'me') <> 'null') then
-      raise exception '점검 실패(S1 세트 동의 전 목록): %', r;
+       or exists (select 1 from jsonb_array_elements(r -> 'sets') as u(e) where jsonb_typeof(u.e -> 'me') is distinct from 'object') then
+      raise exception '점검 실패(S1 기록 동의만으로 목록): %', r;
     end if;
-    if (public.lec_set_test(v_kb, v_voc) ->> 'err') is distinct from 'agree'
-       or (public.lec_set_items(v_kb, v_voc) ->> 'err') is distinct from 'agree'
-       or (public.lec_set_card(v_kb, v_voc, '{}'::jsonb) ->> 'err') is distinct from 'agree'
-       or (public.lec_set_due(v_kb) ->> 'err') is distinct from 'agree'
-       or (public.lec_rec_agree(v_kb, public.lec__rec_ver()) ->> 'err') is distinct from 'agree'
-       or (public.lec_set_agree(v_kb, 's0-2026-01') ->> 'err') is distinct from 'ver'
-       or (public.lec_set_agree(v_kc, public.lec__set_ver()) ->> 'err') is distinct from 'consent' then
-      raise exception '점검 실패(S1 세트 동의 막기)';
-    end if;
-    r := public.lec_set_agree(v_ka, public.lec__set_ver());
-    if not coalesce((r ->> 'ok')::boolean, false) or not public.lec__set_ok(v_sa) then
-      raise exception '점검 실패(S1 세트 동의): %', r;
+    r := public.lec_set_items(v_kb, v_gu);
+    if not coalesce((r ->> 'ok')::boolean, false) or not coalesce((r -> 'rec' ->> 'ok')::boolean, false)
+       or not coalesce((public.lec_set_items(v_kb, v_voc) ->> 'ok')::boolean, false)
+       or not coalesce((public.lec_set_due(v_kb) ->> 'ok')::boolean, false) then
+      raise exception '점검 실패(S1 기록 동의만으로 열기): %', r;
     end if;
     r := public.lec_set_home(v_ka);
     if not coalesce((r ->> 'agree')::boolean, false) or (r -> 'due' ->> 'n')::integer <> 0
        or ((select u.e from jsonb_array_elements(r -> 'sets') as u(e) where u.e ->> 'id' = v_voc::text) -> 'me' ->> 'test') is distinct from 'none'
        or ((select u.e from jsonb_array_elements(r -> 'sets') as u(e) where u.e ->> 'id' = v_gu::text) ->> 'pick')::integer <> 2 then
-      raise exception '점검 실패(S1 세트 동의 뒤 목록): %', r;
+      raise exception '점검 실패(S1 목록): %', r;
     end if;
 
     -- 5) 보임: 숨김 · 앞날 공개 · 다른 반 · 없는 세트 · 반 없는 열쇠 = none · 종류 다름 = kind
@@ -8389,7 +8196,7 @@ begin
       raise exception '점검 실패(S1 문항 받기): %', r;
     end if;
 
-    -- 11) 녹음: 학교급 m 본인 동의 = level · 보호자 동의 = 됨 · 거둠 = old · h 본인 동의 · 표 · 이름 · 지난 표 · 늦음 · 파일 · 들음 표시 · 다시 냄 · 하루 10개
+    -- 11) 녹음: 녹음 동의 · 학교급 없이 바로 표(S1-b) · 표 · 이름 · 지난 표 · 늦음 · 파일 · 들음 표시 · 다시 냄 · 하루 10개
     v_st := to_regclass('storage.objects') is not null;
     if v_st then
       begin
@@ -8403,36 +8210,23 @@ begin
       raise exception '점검 실패(S1 · 녹음 파일 확인 안 됨: lec_rec_done 주인 %(이)가 storage.objects 를 행 보안 때문에 못 읽음 → 녹음이 모두 실패 · 주인을 postgres 로 바꾸거나 BYPASSRLS)',
         (select p.proowner::regrole::text from pg_proc p where p.oid = 'public.lec_rec_done(text, uuid)'::regprocedure);
     end if;
-    r := public.lec_rec_lvl(jsonb_build_array(jsonb_build_object('s', v_sa, 'l', 'm')));
-    if (r ->> 'n')::integer is distinct from 1
-       or (public.lec_rec_agree(v_ka, public.lec__rec_ver()) ->> 'err') is distinct from 'level'
-       or (public.lec_rec_begin(v_ka, v_gu, 'k1', 'audio/webm', 1000, 3000) ->> 'err') is distinct from 'rec_ok' then
-      raise exception '점검 실패(S1 녹음 학교급 m): %', r;
+    -- S1-b: 녹음 동의 · 학교급 없음 → 녹음 동의 줄이 없는 학생(나)도 · 옛 줄(lec_rec_ok · 중학생 m · 동의 없음)이 남은 학생(가)도 바로 표
+    --   (표는 바로 지울 것(old)으로 돌려 아래 셈에 안 걸리게 · 옛 «거둠» 자리) · lec_set_home · lec_set_items 의 rec.ok 는 늘 true(옛 화면)
+    r := public.lec_rec_begin(v_kb, v_gu, 'k1', 'audio/webm', 1000, 3000);
+    if not coalesce((r ->> 'ok')::boolean, false) or (r ->> 'path') !~ ('^' || v_gu::text || '/[0-9a-f]{32}[.]webm$') then
+      raise exception '점검 실패(S1 녹음 동의 줄 없이 표): %', r;
     end if;
-    r := public.lec_rec_guard(v_sa, 'paper', true);
-    if not coalesce((r ->> 'ok')::boolean, false) or not public.lec__rec_can(v_sa) then
-      raise exception '점검 실패(S1 보호자 동의): %', r;
-    end if;
+    update public.lec_set_rec xr set st = 'old' where xr.id = (r ->> 'id')::uuid;
+    insert into public.lec_rec_ok (sid, lvl, lvl_at) values (v_sa, 'm', now());
     r := public.lec_rec_begin(v_ka, v_gu, 'k1', 'audio/mp4', 1000, 3000);
     if not coalesce((r ->> 'ok')::boolean, false) or (r ->> 'path') !~ ('^' || v_gu::text || '/[0-9a-f]{32}[.]m4a$') then
-      raise exception '점검 실패(S1 보호자 동의 뒤 표): %', r;
+      raise exception '점검 실패(S1 중학생 · 동의 없이 녹음 표): %', r;
     end if;
-    r := public.lec_rec_off(v_ka);
-    if (r ->> 'n')::integer is distinct from 1
-       or exists (select 1 from public.lec_set_rec xr where xr.sid = v_sa and xr.st <> 'old')
-       or (public.lec_rec_begin(v_ka, v_gu, 'k1', 'audio/webm', 1000, 3000) ->> 'err') is distinct from 'rec_ok' then
-      raise exception '점검 실패(S1 녹음 동의 거둠): %', r;
-    end if;
-    r := public.lec_rec_lvl(jsonb_build_array(jsonb_build_object('s', v_sa, 'l', 'h'), jsonb_build_object('s', 'selftest-s1b|점검나', 'l', '')));
-    if (r ->> 'n')::integer is distinct from 1
-       or (public.lec_rec_lvl(jsonb_build_array(jsonb_build_object('s', v_sa, 'l', 'h'))) ->> 'n')::integer is distinct from 0
-       or (public.lec_rec_agree(v_ka, 'r0-2026-01') ->> 'err') is distinct from 'ver' then
-      raise exception '점검 실패(S1 학교급 맞춤): %', r;
-    end if;
-    r := public.lec_rec_agree(v_ka, public.lec__rec_ver());
-    if not coalesce((r ->> 'ok')::boolean, false) or (r ->> 'how') is distinct from 'self' or not public.lec__rec_can(v_sa)
-       or not coalesce((public.lec_set_home(v_ka) -> 'rec' ->> 'ok')::boolean, false) then
-      raise exception '점검 실패(S1 본인 동의): %', r;
+    update public.lec_set_rec xr set st = 'old' where xr.id = (r ->> 'id')::uuid;
+    if not coalesce((public.lec_set_home(v_ka) -> 'rec' ->> 'ok')::boolean, false)
+       or not coalesce((public.lec_set_home(v_kb) -> 'rec' ->> 'ok')::boolean, false)
+       or not coalesce((public.lec_set_items(v_ka, v_gu) -> 'rec' ->> 'ok')::boolean, false) then
+      raise exception '점검 실패(S1 옛 화면용 rec.ok)';
     end if;
     if (public.lec_rec_begin(v_ka, v_gu, 'k3', 'audio/webm', 1000, 3000) ->> 'err') is distinct from 'pick'
        or (public.lec_rec_begin(v_ka, v_gu, 'k1', 'audio/wav', 1000, 3000) ->> 'err') is distinct from 'mime'
@@ -8494,7 +8288,7 @@ begin
     if ((select u.e from jsonb_array_elements(r -> 'rows') as u(e) where u.e ->> 'sid' = v_sa) -> 'gu' -> 'recs' -> 0 ->> 'path') is distinct from v_path
        or ((select u.e from jsonb_array_elements(r -> 'rows') as u(e) where u.e ->> 'sid' = v_sa) ->> 'sname') is distinct from '점검가'
        or jsonb_typeof(r -> 'set' -> 'items') is distinct from 'array'
-       or not exists (select 1 from jsonb_array_elements(r -> 'recok') as u(e) where u.e ->> 'sid' = v_sa and (u.e ->> 'ok')::boolean) then
+       or r ? 'recok' then   -- S1-b: 녹음 동의 칸 없음
       raise exception '점검 실패(S1 선생님 결과 표): %', r;
     end if;
     if (public.lec_rec_mark(v_rec, 'zz', 0) ->> 'err') is distinct from 'mark'
@@ -8543,13 +8337,6 @@ begin
       from generate_series(1, greatest(10 - v_n, 0));
     if (public.lec_rec_begin(v_ka, v_gu, 'k1', 'audio/webm', 1000, 3000) ->> 'err') is distinct from 'limit' then
       raise exception '점검 실패(S1 녹음 하루 한도)';
-    end if;
-    if (public.lec_rec_guard('', 'paper', true) ->> 'err') is distinct from 'input'
-       or (public.lec_rec_guard(v_sa, 'xx', true) ->> 'err') is distinct from 'how'
-       or (public.lec_rec_lvl('{}'::jsonb) ->> 'err') is distinct from 'input'
-       or (public.lec_rec_lvl('[{"s":"","l":"h"}]'::jsonb) ->> 'err') is distinct from 'input'
-       or (public.lec_rec_lvl('[{"s":"a","l":"x"}]'::jsonb) ->> 'err') is distinct from 'input' then
-      raise exception '점검 실패(S1 보호자 동의 · 학교급 막기)';
     end if;
 
     -- 12) 정리: 지울 것 · 지난 올리기 표 · 30일 지난 녹음을 고름(id 로 바로 봄 · 목록 500개 한도와 무관)
@@ -8629,7 +8416,7 @@ begin
       raise exception '점검 실패(S1 지운 녹음 표시): %', v_card;
     end if;
 
-    -- 13) 이름 바뀜(lec__move · 트리거) → 진도 · 판 · 녹음 · 녹음 동의가 따라감 · 동의 지움(lec_forget 과 같은 줄) → 세트 기록 지움
+    -- 13) 이름 바뀜(lec__move · 트리거) → 진도 · 판 · 녹음 · 옛 녹음 동의 줄(S1-b 부터 안 씀 · 남은 줄)이 따라감 · 동의 지움(lec_forget 과 같은 줄) → 세트 기록 · 옛 줄 지움
     perform public.lec__move(v_sa, v_sa2, '점검가');
     if exists (select 1 from public.lec_set_prog xp where xp.sid = v_sa)
        or exists (select 1 from public.lec_set_try xt where xt.sid = v_sa)
@@ -8638,8 +8425,8 @@ begin
        or (select count(*) from public.lec_set_prog xp where xp.sid = v_sa2) <> 4
        or not exists (select 1 from public.lec_set_try xt where xt.sid = v_sa2)
        or not exists (select 1 from public.lec_set_rec xr where xr.sid = v_sa2)
-       or not exists (select 1 from public.lec_rec_ok xo where xo.sid = v_sa2 and xo.lvl = 'h')
-       or not public.lec__set_ok(v_sa2) then
+       or not exists (select 1 from public.lec_rec_ok xo where xo.sid = v_sa2 and xo.lvl = 'm')
+       or not public.lec__agreed(v_sa2) then
       raise exception '점검 실패(S1 이름 바뀜 따라감)';
     end if;
     delete from public.lec_consent where sid = v_sa2;
@@ -8660,14 +8447,11 @@ begin
 
     -- 14) 권한: 학생 함수 = 누구나 · 선생님 함수 = 로그인한 사람만 · 다섯 표 = 행 보안 · 권한 0 · 정책 0 · 녹음 파일을 누구나 듣는 정책 0
     if not has_function_privilege('anon', 'public.lec_set_home(text)', 'execute')
-       or not has_function_privilege('anon', 'public.lec_set_agree(text, text)', 'execute')
        or not has_function_privilege('anon', 'public.lec_set_items(text, uuid)', 'execute')
        or not has_function_privilege('anon', 'public.lec_set_card(text, uuid, jsonb)', 'execute')
        or not has_function_privilege('anon', 'public.lec_set_test(text, uuid)', 'execute')
        or not has_function_privilege('anon', 'public.lec_set_due(text)', 'execute')
        or not has_function_privilege('anon', 'public.lec_set_ans(text, uuid, integer, text)', 'execute')
-       or not has_function_privilege('anon', 'public.lec_rec_agree(text, text)', 'execute')
-       or not has_function_privilege('anon', 'public.lec_rec_off(text)', 'execute')
        or not has_function_privilege('anon', 'public.lec_rec_begin(text, uuid, text, text, integer, integer)', 'execute')
        or not has_function_privilege('anon', 'public.lec_rec_done(text, uuid)', 'execute')
        or not has_function_privilege('anon', 'public.lec_rec_slot(text)', 'execute')
@@ -8678,11 +8462,19 @@ begin
       from unnest(array['public.lec_set_is_admin()', 'public.lec_set_list_staff()', 'public.lec_set_get(uuid)',
                         'public.lec_set_put(uuid, text, text, text[], date, jsonb, integer[])', 'public.lec_set_hide(uuid, boolean)',
                         'public.lec_set_del(uuid)', 'public.lec_set_staff(uuid)', 'public.lec_rec_mark(uuid, text, integer)',
-                        'public.lec_rec_guard(text, text, boolean)', 'public.lec_rec_lvl(jsonb)', 'public.lec_rec_expired()',
-                        'public.lec_rec_gone(uuid[])']) as u(f)
+                        'public.lec_rec_expired()', 'public.lec_rec_gone(uuid[])']) as u(f)
      where has_function_privilege('anon', u.f, 'execute') or not has_function_privilege('authenticated', u.f, 'execute');
     if v_t is not null then
       raise exception '점검 실패(S1 선생님 함수 권한): %', v_t;
+    end if;
+    -- S1-b 에서 없앤 동의 함수 아홉은 정말 없음(운영에 남은 S1 판도 이 파일의 drop 이 지움)
+    select string_agg(u.f, ', ') into v_t
+      from unnest(array['public.lec_set_agree(text, text)', 'public.lec_rec_agree(text, text)', 'public.lec_rec_off(text)',
+                        'public.lec_rec_guard(text, text, boolean)', 'public.lec_rec_lvl(jsonb)', 'public.lec__set_ok(text)',
+                        'public.lec__rec_can(text)', 'public.lec__set_ver()', 'public.lec__rec_ver()']) as u(f)
+     where to_regprocedure(u.f) is not null;
+    if v_t is not null then
+      raise exception '점검 실패(S1-b · 없앤 동의 함수가 남음): %', v_t;
     end if;
     select string_agg(c.relname || ' ' || u.rl, ', ') into v_t
       from pg_class c
@@ -8723,6 +8515,39 @@ begin
        and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'));
     if v_t is not null then
       raise exception '점검 실패(S1 · 속 함수를 밖에서 부를 수 있음): %', v_t;
+    end if;
+    -- 끄개 두 줄(머리글)이 아직 듣는지(S1-b 뒤에도 · 이 점검 안에서만 하고 끝에 함께 되돌림)
+    --   ① 학생 묶음 숨김: lec_set_home 권한 거둠 → anon · authenticated 가 못 부름
+    revoke execute on function public.lec_set_home(text) from anon, authenticated;
+    if has_function_privilege('anon', 'public.lec_set_home(text)', 'execute')
+       or has_function_privilege('authenticated', 'public.lec_set_home(text)', 'execute') then
+      raise exception '점검 실패(S1 끄개 · 학생 묶음 숨김이 안 들음)';
+    end if;
+    --   ② 녹음 올리기 막음: 올리기 정책 이름이 lec_rec_put 하나 · 지우면 lec-rec 에 올리는 정책 0
+    --      (SQL 로 Storage 정책을 못 고치는 서버는 건너뜀 · 그때는 대시보드에서 lec_rec_put 을 지움)
+    if to_regclass('storage.objects') is not null
+       and exists (select 1 from pg_policies pp where pp.schemaname = 'storage' and pp.tablename = 'objects' and pp.policyname = 'lec_rec_put') then
+      v_off := true;
+      begin
+        execute 'drop policy if exists lec_rec_put on storage.objects';
+      exception when others then
+        v_off := false;
+      end;
+      --      남은 올리기 허용 정책: anon · authenticated · public 에게 열린 올리기 · 전부 가운데 버킷 조건이 없거나 lec-rec 를 담은 것(lec__rec_open 과 같은 꼴)
+      if v_off then
+        select string_agg(pp.policyname::text, ', ' order by pp.policyname) into v_t
+          from pg_policies pp
+         where pp.schemaname = 'storage' and pp.tablename = 'objects'
+           and pp.permissive = 'PERMISSIVE'
+           and pp.roles && array['anon', 'authenticated', 'public']::name[]
+           and pp.cmd in ('INSERT', 'ALL')
+           and (coalesce(pp.with_check, pp.qual) is null
+                or coalesce(pp.with_check, pp.qual) not like '%bucket_id%'
+                or coalesce(pp.with_check, pp.qual) like '%lec-rec%');
+        if v_t is not null then
+          raise exception '점검 실패(S1 끄개 · lec_rec_put 을 지워도 lec-rec 에 올릴 수 있는 정책이 남음): %', v_t;
+        end if;
+      end if;
     end if;
 
     raise exception 'LEC_SELFTEST_OK';
