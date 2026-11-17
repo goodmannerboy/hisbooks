@@ -3495,6 +3495,10 @@ window.__lecAdminStart = function () {
   function sxRs(k) { return str((L.SET_RS && L.SET_RS[k]) || SX_RS[k]); }
   function sxWhy(i) { return str((isArr(L.REC_WHY) ? L.REC_WHY : SX_WHY)[+i || 0]); }
   function sxUnit(k) { return k === 'gu' ? '문장' : (k === 'gram' ? '문제' : '개'); }
+  /* 단어 한 번에 2000개(11-18 원장님): 새 단어 세트만 · 한 세트는 그대로 300(서버 · SQL 그대로) · 301~2000 = 앞에서부터 300개씩 세트 여럿 */
+  var SX_MAX = 2000;
+  function sxSplit(k) { return k === 'voc' && !!S.sd && S.sd.t === 'put' && !S.sd.id; }
+  function sxMax(k) { return sxSplit(k) ? SX_MAX : sxLim(k); }
   function sxPill(c, t) { return '<span class="sx-p ' + c + '">' + esc(t) + '</span>'; }
   /* 다시 그린 뒤 누른 자리로 초점(같은 단추 · 같은 세트) */
   function sxFocusBy(act, k, v) {
@@ -4011,11 +4015,12 @@ window.__lecAdminStart = function () {
   function sxClose() {
     var sd = S.sd;
     if (!sd) return false;
+    if (sd.batch) { toast('세트를 올리는 중이에요. 다 올라갈 때까지 기다려 주세요'); return false; }
     rvStop(); rvGen += 1;
     try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
     if (sd.t === 'put') {
       /* 새 세트를 저장 없이 닫으면 쓰던 글은 다음 «새 세트»에 그대로 */
-      if (!sd.id) S.sxDraft = trim(S.inputs['sd:txt']) ? { txt: S.inputs['sd:txt'], title: S.inputs['sd:title'], on: S.inputs['sd:on'], forced: sd.forced, pick: sd.pick, cls: sd.cls } : null;
+      if (!sd.id) S.sxDraft = trim(S.inputs['sd:txt']) ? { txt: S.inputs['sd:txt'], title: S.inputs['sd:title'], on: S.inputs['sd:on'], forced: sd.forced, pick: sd.pick, cls: sd.cls, cont: sd.cont, unsure: sd.unsure } : null;
       delete S.inputs['sd:txt']; delete S.inputs['sd:title']; delete S.inputs['sd:on'];
     }
     S.sd = null;
@@ -4025,6 +4030,7 @@ window.__lecAdminStart = function () {
   }
   function sxOpenPut(id) {
     var dr = S.sxDraft;
+    if (S.sd && S.sd.batch) { toast('세트를 올리는 중이에요. 다 올라갈 때까지 기다려 주세요'); return; }
     if (!L.setParse || !L.setPut) { toast('세트를 쓰려면 서버 준비(SQL)를 먼저 넣어 주세요', true); return; }
     closeDrawer(); closeEditor();
     S.pp = null; S.setAsk = '';
@@ -4032,6 +4038,7 @@ window.__lecAdminStart = function () {
     if (!id && dr) {
       S.inputs['sd:txt'] = dr.txt; S.inputs['sd:title'] = dr.title; S.inputs['sd:on'] = dr.on || today();
       S.sd.forced = dr.forced || ''; S.sd.pick = dr.pick || null; S.sd.cls = dr.cls || {};
+      S.sd.cont = !!dr.cont; S.sd.unsure = dr.unsure || null;
     } else { S.inputs['sd:txt'] = ''; S.inputs['sd:title'] = ''; S.inputs['sd:on'] = today(); }
     render();
     sxPaintSd('#sd-txt');
@@ -4128,11 +4135,11 @@ window.__lecAdminStart = function () {
       esc(sd.id ? '고친 줄만 새 문항이 되고, 그대로 둔 문항의 학생 기록은 남아요' : '엑셀 표를 그대로 복사해 붙여 넣어요 · 어휘 «단어 | 뜻» · 구문 «영어 | 해석» · 문법 «번호 | 문제 | 답 | 해설 | 포인트»') + '</p></div>' +
       '<button type="button" class="x" data-act="sdClose" aria-label="닫기">×</button></div><div class="db">';
     if (sd.loading) return h + '<p class="mut">불러오는 중이에요</p></div>';
-    h += '<div class="fld" style="margin-top:0"><label for="sd-txt">붙여 넣기</label><textarea id="sd-txt" data-k="sd:txt" rows="7" spellcheck="false" autocomplete="off" ' +
+    h += '<div class="fld" style="margin-top:0"><label for="sd-txt">붙여 넣기</label><textarea id="sd-txt" data-k="sd:txt" rows="7" spellcheck="false" autocomplete="off"' + (sd.batch ? ' readonly' : '') + ' ' +
       'placeholder="엑셀에서 복사해 그대로 붙여요 · 칸 사이를 두 칸 띄어 써도 돼요"></textarea></div>';
     h += '<div id="sd-an">' + sxAnHtml() + '</div>';
-    h += '<div class="sx-f2"><div class="fld"><label for="sd-title">이름<span class="req">꼭</span></label><input id="sd-title" type="text" data-k="sd:title" maxlength="60" autocomplete="off" placeholder="예: 고1 11월 모의 18~24번"></div>' +
-      '<div class="fld"><label for="sd-on">공개</label><input id="sd-on" type="date" data-k="sd:on"></div></div>';
+    h += '<div class="sx-f2"><div class="fld"><label for="sd-title">이름<span class="req">꼭</span></label><input id="sd-title" type="text" data-k="sd:title" maxlength="60" autocomplete="off"' + (sd.batch ? ' readonly' : '') + ' placeholder="예: 고1 11월 모의 18~24번"></div>' +
+      '<div class="fld"><label for="sd-on">공개</label><input id="sd-on" type="date" data-k="sd:on"' + (sd.batch ? ' readonly' : '') + '></div></div>';
     h += '<div class="fld"><span class="fl" id="sd-cls-l">볼 반<span class="req">꼭</span></span><div id="sd-cls">' + sxClsHtml() + '</div></div>';
     h += '</div><div class="edfoot"><p id="sd-msg" class="msg bad" role="alert">' + esc(sd.msg || '') + '</p><div class="sx-row"><span class="mut sm" id="sd-sum">' + esc(sxPutSum()) + '</span><span class="sp"></span>' +
       '<button type="button" class="btn txt" data-act="sdClose">그만두기</button><button type="button" class="btn fill" data-act="sxSave"' + (sd.busy ? ' disabled' : '') + '>저장 <span class="kb">Ctrl+Enter</span></button></div></div>';
@@ -4140,14 +4147,14 @@ window.__lecAdminStart = function () {
   }
   /* 붙여 넣은 글 → 종류 칩 · 까닭 한 줄 · 경고 · 미리 보기 표(빨간 줄 먼저 · 6줄 · 구문은 ★ 고르기라 모두) */
   function sxAnHtml() {
-    var sp = sxParse(), sd = S.sd, rows = sp.rows, ko = sxKindOf(rows), k = ko.k, ks = ['voc', 'gu', 'gram'], h, i, kk, on, rs, w, bad, msgs, ng, lim, cols, hd, order, pk, shown, r, c, rc, gp;
+    var sp = sxParse(), sd = S.sd, rows = sp.rows, ko = sxKindOf(rows), k = ko.k, ks = ['voc', 'gu', 'gram'], h, i, kk, on, rs, w, bad, msgs, ng, lim, pl, cols, hd, order, pk, shown, r, c, rc, gp;
     h = '<div class="sx-row sx-kd" role="group" aria-label="종류"><span class="lb">종류</span>';
     for (i = 0; i < ks.length; i += 1) {
       kk = ks[i]; on = !!rows.length && kk === k;
       h += '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="sxKind" data-v="' + kk + '"' +
         (sd.id && kk !== sd.forced ? ' disabled' : '') + '>' + SX_KIND[kk] + '</button>';
     }
-    h += '<span class="mut sm">' + (rows.length ? esc(rows.length + '줄 · ' + sxLim(k) + '개까지') : '') + '</span></div>';
+    h += '<span class="mut sm">' + (rows.length ? esc(rows.length + '줄 · ' + sxMax(k) + '개까지') : '') + '</span></div>';
     rs = !rows.length ? '위에 붙여 넣으면 바로 알아봐요' : (sd.forced && sd.forced !== ko.auto ? sxRs('forced') : sxRs(k));
     if (k === 'gu' && rows.length) rs += ' · ★ 녹음 2문장(안 고르면 앞 두 문장)';
     if (sp.head) rs += ' · 맨 윗줄은 칸 이름으로 보고 뺐어요 «' + sp.head + '»';
@@ -4162,8 +4169,10 @@ window.__lecAdminStart = function () {
     }
     ng = +w.ng || 0;
     if (ng) h += '<p class="sx-ngl">빨간 ' + ng + '줄은 빼고 저장해요</p>';
-    lim = sxLim(k);
-    if (lim && rows.length - ng > lim) h += '<p class="sx-ngl">' + esc(lim + sxUnit(k) + '까지 넣을 수 있어요 · 지금 ' + (rows.length - ng) + sxUnit(k)) + '</p>';
+    lim = sxMax(k);
+    if (lim && rows.length - ng > lim) h += '<p class="sx-ngl">' + esc((sxSplit(k) ? '한 번에 ' : '') + lim + sxUnit(k) + '까지 넣을 수 있어요 · 지금 ' + (rows.length - ng) + sxUnit(k)) + '</p>';
+    pl = sxPlan(k, rows, bad);
+    if (pl) h += '<p class="sx-rs" id="sd-split">' + esc(sxPlanText(pl)) + '</p>';
     if (k === 'gu') { cols = ['9%', '39%', '32%', '14%', '6%']; hd = ['번호', '영어 문장', '해석', '포인트', '★']; }
     else if (k === 'gram') { cols = ['9%', '45%', '15%', '11%', '20%']; hd = ['번호', '문제', '꼴', '답', '해설']; }
     else { cols = ['14%', '38%', '48%']; hd = ['번호', '단어', '뜻']; }
@@ -4201,10 +4210,10 @@ window.__lecAdminStart = function () {
     if (s) s.textContent = sxPutSum();
   }
   function sxPutSum() {
-    var rows = sxRowsNow(), k, w, ids;
+    var rows = sxRowsNow(), k, w, ids, pl;
     if (!rows.length) return '';
-    k = sxKindOf(rows).k; w = sxWarn(k, rows); ids = sxClsIds();
-    return SX_KIND[k] + ' ' + (rows.length - (+w.ng || 0)) + sxUnit(k) + (ids.length ? ' · ' + clsNames(ids) : '');
+    k = sxKindOf(rows).k; w = sxWarn(k, rows); ids = sxClsIds(); pl = sxPlan(k, rows, w.bad);
+    return SX_KIND[k] + ' ' + (rows.length - (+w.ng || 0)) + sxUnit(k) + (pl ? ' · ' + pl.ch.length + '세트' : '') + (ids.length ? ' · ' + clsNames(ids) : '');
   }
   /* 볼 반: 강의 서랍과 같은 목록에서 «전체»만 뺌 · 고칠 때 지금 목록에 없는 반도 그대로 둠 */
   function sxClsHtml() {
@@ -4235,7 +4244,7 @@ window.__lecAdminStart = function () {
   }
   /* 저장(네 번 누름: 붙여 넣기 · 이름 · 반 · 저장): 빨간 줄 뺌 · ★ 는 저장할 문항 차례로 바꿔 보냄(빈 것 = 서버가 앞 두 문장) */
   function sxSave(btn) {
-    var sd = S.sd, rows, k, w, map = [], items, i, pick = [], pk, title, on, cls, lim;
+    var sd = S.sd, rows, k, w, map = [], items, i, pick = [], pk, title, on, cls, lim, pl;
     if (!sd || sd.t !== 'put' || sd.busy || sd.loading) return;
     rows = sxRowsNow();
     if (!rows.length) { sxMsg('먼저 엑셀에서 복사해 붙여 넣어 주세요', 'sd-txt'); return; }
@@ -4244,14 +4253,20 @@ window.__lecAdminStart = function () {
     for (i = 0; i < rows.length; i += 1) { if (w.bad[i] !== 'ng') map.push(i); }
     try { items = L.setItemsFrom(k, rows) || []; } catch (e) { items = []; }
     if (!items.length) { sxMsg('저장할 줄이 없어요. 빨간 줄을 고쳐 주세요', 'sd-txt'); return; }
-    lim = sxLim(k);
-    if (lim && items.length > lim) { sxMsg(SX_KIND[k] + (batchim(SX_KIND[k]) ? '은 ' : '는 ') + lim + sxUnit(k) + '까지 넣을 수 있어요(지금 ' + items.length + ')', 'sd-txt'); return; }
+    lim = sxMax(k);
+    if (lim && items.length > lim) {
+      sxMsg(SX_KIND[k] + (batchim(SX_KIND[k]) ? '은 ' : '는 ') + (sxSplit(k) ? '한 번에 ' : '') + lim + sxUnit(k) + '까지 넣을 수 있어요(지금 ' + items.length + ')', 'sd-txt');
+      return;
+    }
     title = trim(S.inputs['sd:title']);
     if (!title) { sxMsg('이름을 적어 주세요', 'sd-title'); return; }
     cls = sxClsIds();
     if (!cls.length) { sxMsg('볼 반을 골라 주세요', null); return; }
     on = trim(S.inputs['sd:on']);
     if (on && !isDay(on)) { sxMsg('공개일을 확인해 주세요', 'sd-on'); return; }
+    /* 단어 301~2000개(이어서 올릴 때는 300개 이하도) = 300개씩 여러 세트로 */
+    pl = sxPlan(k, rows, w.bad);
+    if (pl && pl.n === items.length) { sxBatch(sd, k, pl, items, map, title, cls, on); return; }
     if (k === 'gu') {
       pk = sxPick(rows, w.bad);
       for (i = 0; i < pk.length; i += 1) { if (map.indexOf(pk[i]) >= 0) pick.push(map.indexOf(pk[i])); }
@@ -4295,6 +4310,149 @@ window.__lecAdminStart = function () {
     if (r && r.err === 'input') return '붙여 넣은 글이 너무 길어요. 나눠서 넣어 주세요';
     return sxErr(r);
   }
+  /* 나눠 올리기 계획(새 단어 세트): 빨간 줄 뺀 차례로 앞에서부터 300개씩 · 마지막 = 나머지 ·
+     범위 = 모든 줄에 번호가 있으면 그 세트 첫 줄 ~ 끝 줄 번호(번호가 다시 1부터라 범위가 겹치면 차례 번호), 아니면 차례 번호 ·
+     null = 한 세트로(300개 이하 · 2000개 넘음 · 고치기 · 단어 밖) · 이어서 올릴 때(cont)는 300개 이하도 이름에 범위를 붙임 */
+  function sxPlan(k, rows, bad) {
+    var lim = sxLim(k), ns = [], num = true, out, i;
+    if (!sxSplit(k) || !lim) return null;
+    for (i = 0; i < rows.length; i += 1) {
+      if (bad[i] === 'ng') continue;
+      ns.push(str(rows[i] && rows[i].n));
+      if (!ns[ns.length - 1]) num = false;
+    }
+    if (!ns.length || ns.length > SX_MAX || (ns.length <= lim && !S.sd.cont)) return null;
+    function mk(byNum) {
+      var o = [], seen = {}, s, e, a, b;
+      for (s = 0; s < ns.length; s = e) {
+        e = Math.min(s + lim, ns.length);
+        a = byNum ? ns[s] : String(s + 1); b = byNum ? ns[e - 1] : String(e);
+        if (has(seen, a + '~' + b)) return null;
+        seen[a + '~' + b] = 1;
+        o.push({ s: s, e: e, a: a, b: b });
+      }
+      return o;
+    }
+    out = (num && mk(true)) || mk(false);
+    return { cont: !!S.sd.cont, n: ns.length, ch: out };
+  }
+  function sxPlanText(pl) {
+    var r = [], i;
+    for (i = 0; i < pl.ch.length; i += 1) r.push(pl.ch[i].a + '~' + pl.ch[i].b);
+    return (pl.ch.length > 1 ? (pl.cont ? '이어서 ' : '') + sxLim('voc') + '개씩 ' + pl.ch.length + '세트로 나눠 올라가요' : '이어서 올려요') +
+      ' · ' + r.join(' · ') + ' · 세트 이름 끝에 범위가 붙어요';
+  }
+  /* 세트 이름 = «{입력한 이름} {첫}~{끝}» · 서버 규칙(앞뒤 빈칸 뺀 60자)에 맞게 범위는 두고 이름 쪽을 줄임 */
+  function sxTitleOf(base, c) {
+    var tail = ' ' + c.a + '~' + c.b,
+      cl = L.clen || function (x) { return str(x).length; },
+      lf = L.left || function (x, m) { return str(x).slice(0, Math.max(0, m)); };
+    base = trim(base);
+    if (cl(base) + cl(tail) > 60) base = lf(base, 60 - cl(tail)).replace(/\s+$/, '');
+    return base + tail;
+  }
+  function sxSameCls(a, b) {
+    a = (isArr(a) ? a.slice() : []).sort();
+    b = (isArr(b) ? b.slice() : []).sort();
+    return a.join('\n') === b.join('\n');
+  }
+  /* 답을 못 받은 세트가 실제로 만들어졌나: 올리기 전 목록(known)에 없던 같은 이름 · 같은 수 · 같은 반 단어 세트 */
+  function sxFound(list, t, n, cls, known) {
+    var i, it;
+    for (i = 0; isArr(list) && i < list.length; i += 1) {
+      it = list[i];
+      if (it && it.kind === 'voc' && !known[str(it.id)] && trim(it.title) === t && +it.n === n && sxSameCls(it.class_ids, cls)) return str(it.id);
+    }
+    return '';
+  }
+  /* 나눠 올리기: 뒤 세트부터 하나씩 만듦(목록은 새로 만든 것이 위라 1~300 이 맨 위) · 올리는 동안 서랍 잠금(닫기 · 다시 누르기 막음) ·
+     중간에 막히면 거기서 멈추고 남은 줄만 칸에 남김(다시 «저장» = 이어서) · 답을 못 받은 세트는 목록을 다시 읽어 올라갔는지 봄(겹쳐 만들지 않게) ·
+     목록도 못 읽으면 sd.unsure 에 적어 두고 다음 «저장» 때 먼저 확인 */
+  function sxBatch(sd, k, pl, items, map, base, cls, on) {
+    var ch = pl.ch.slice(), all = ch.length, made = 0, top = '', known = {};
+    function list() {
+      if (!L.setListStaff) return Promise.resolve({ ok: false, err: 'old' });
+      return Promise.resolve().then(function () { return L.setListStaff(DA.rpc); }).then(function (r) {
+        return r && r.ok && isArr(r.items) ? r : (r && r.err ? r : { ok: false, err: 'error' });
+      }, function () { return { ok: false, err: 'error' }; });
+    }
+    function prog() { var s = $('sd-sum'); if (s) s.textContent = '올리는 중 · ' + made + ' / ' + all + '세트'; }
+    function ok(id) { made += 1; top = id; known[id] = 1; ch.pop(); return next(); }
+    function next() {
+      var c, t, n;
+      if (S.sd !== sd) return stop(null, false);
+      if (!ch.length) return done();
+      c = ch[ch.length - 1]; t = sxTitleOf(base, c); n = c.e - c.s;
+      prog();
+      return Promise.resolve().then(function () {
+        return L.setPut(DA.rpc, { id: null, kind: k, title: t, cls: cls, on: on || null, items: items.slice(c.s, c.e), pick: [] });
+      }).then(null, function () { return { ok: false, err: 'error' }; }).then(function (r) {
+        if (r && r.ok && str(r.id)) return ok(str(r.id));
+        if (r && (r.err === 'network' || r.err === 'error')) {
+          return list().then(function (a) {
+            var f, kn = {}, x;
+            if (!a.ok) {
+              for (x in known) { if (has(known, x)) kn[x] = 1; }
+              sd.unsure = { t: t, n: n, cls: cls.slice(), known: kn };
+              return stop(r, true);
+            }
+            f = sxFound(a.items, t, n, cls, known);
+            return f ? ok(f) : stop(r, false);
+          });
+        }
+        return stop(r, false);
+      });
+    }
+    function done() {
+      sd.busy = false; sd.batch = false;
+      if (S.sd !== sd) return;
+      S.sxDraft = null;
+      S.sd = null;
+      delete S.inputs['sd:txt']; delete S.inputs['sd:title']; delete S.inputs['sd:on'];
+      sxPaintSd();
+      S.tab = 'set'; S.setSel = top; S.setSt = null; S.setStErr = '';
+      toast((made > 1 ? made + '세트로 나눠 저장했어요' : '저장했어요') + ' · ' +
+        (!on || on <= today() ? clsNames(cls) + ' 학생 폰 목록에 바로 떠요' : L.fmtDay(on) + '에 학생 폰에 떠요'));
+      sxReload();
+    }
+    function stop(r, uns) {
+      var c = ch.length ? ch[ch.length - 1] : null, rest = c ? c.e : 0, mm = [], i, m;
+      sd.busy = false; sd.batch = false;
+      if (S.sd !== sd) {
+        if (made) { toast(made + '세트 올라갔어요 · 남은 것은 «새 세트»로 다시 올려 주세요', true); sxReload(); }
+        return;
+      }
+      if (r && r.err === 'old') { S.setOld = true; S.set = null; render(); }
+      if (!uns) sd.unsure = null;
+      if (c) { for (i = c.s; i < c.e; i += 1) mm.push(made ? i : map[i]); }
+      if (made) {
+        S.inputs['sd:txt'] = items.slice(0, rest).map(function (x) { return sxLine(k, x); }).join('\n');
+        sd.cont = true; sd.more = false;
+      }
+      m = uns ? (c ? '«' + sxTitleOf(base, c) + '» 세트가 올라갔는지 확인하지 못했어요. 인터넷 연결을 확인하고 «저장»을 다시 누르면 먼저 확인하고 이어서 올려요' : sxErr(r))
+        : sxPutErr(r, mm);
+      if (made) m = made + '세트 올라갔어요 · 남은 ' + rest + sxUnit(k) + '는 «저장»을 다시 누르면 이어서 올라가요 · ' + m;
+      sd.msg = m;
+      sxPaintSd();
+      if (made) sxReload();
+    }
+    sd.busy = true; sd.batch = true; sd.msg = '';
+    sxPaintSd();
+    prog();
+    return list().then(function (a) {
+      var u = sd.unsure, c, t, n, f, i;
+      if (S.sd !== sd) return stop(null, false);
+      if (!a.ok) return stop(a, !!u);
+      for (i = 0; i < a.items.length; i += 1) { if (a.items[i] && a.items[i].id) known[str(a.items[i].id)] = 1; }
+      if (u) {
+        c = ch[ch.length - 1]; t = sxTitleOf(base, c); n = c.e - c.s;
+        f = u.t === t && u.n === n && sxSameCls(u.cls, cls) ? sxFound(a.items, t, n, cls, u.known || {}) : '';
+        sd.unsure = null;
+        if (f) return ok(f);
+      }
+      return next();
+    });
+  }
 
   /* ---- 녹음 듣기 서랍: 한 문장을 반 학생 녹음으로 이어 들음(안 들은 것 먼저 · 없으면 모두)
      Space 재생 · 멈춤 · M 원래 소리(영어 목소리가 없으면 단추 숨김) · R 이 학생 다시 · 1~4 까닭 · Enter 판정하고 다음(recMark) */
@@ -4302,7 +4460,7 @@ window.__lecAdminStart = function () {
   function rvText(e) { try { return L.sayText ? str(L.sayText(e)) : str(e).replace(/\s*\/\s*/g, ' '); } catch (x) { return str(e); } }
   function rvOpen(id) {
     var st = S.setSt && S.setSt.id === id ? S.setSt.r : null, it = sxItem(id);
-    if (!st || !it) return;
+    if (!st || !it || (S.sd && S.sd.batch)) return;
     if (st.set && isArr(st.set.items)) { rvStart(it, st, st.set.items, false, false); return; }
     sxFull(id).then(function (set) { rvStart(it, st, set.items, false, false); }, function (e) {
       toast('녹음을 불러오지 못했어요. ' + (e && e.r ? sxErr(e.r) : errText(e)), true);
@@ -4970,7 +5128,7 @@ window.__lecAdminStart = function () {
       case 'sxRec': rvOpen(s); break;
       case 'sdClose': sxClose(); break;
       case 'sxKind':
-        if (!S.sd || S.sd.t !== 'put' || S.sd.id) break;
+        if (!S.sd || S.sd.t !== 'put' || S.sd.id || S.sd.batch) break;
         S.sd.forced = v; S.sd.pick = null; S.sd.more = false;
         sxAn();
         refocus('sd-an', 'data-v', v);
@@ -4978,7 +5136,7 @@ window.__lecAdminStart = function () {
       case 'sxStar': if (S.sd && S.sd.t === 'put') { sxStar(+attr(el, 'data-i')); refocus('sd-an', 'data-i', attr(el, 'data-i')); } break;
       case 'sxMore': if (S.sd && S.sd.t === 'put') { S.sd.more = true; sxAn(); } break;
       case 'sxCls':
-        if (!S.sd || S.sd.t !== 'put') break;
+        if (!S.sd || S.sd.t !== 'put' || S.sd.batch) break;
         S.sd.cls[c] = !S.sd.cls[c];
         $('sd-cls').innerHTML = sxClsHtml();
         refocus('sd-cls', 'data-c', c);
@@ -5007,6 +5165,7 @@ window.__lecAdminStart = function () {
     /* S1 세트: 붙여 넣은 글이 바뀌면 종류 · 경고 · 미리 보기를 곧바로(새 세트는 고른 종류 · ★ 도 처음부터) */
     if (t && t.id === 'sd-txt' && S.sd && S.sd.t === 'put') {
       if (!S.sd.id) { S.sd.forced = ''; S.sd.pick = null; }
+      if (!trim(t.value)) { S.sd.cont = false; S.sd.unsure = null; }   /* 칸을 비우면 «이어서 올리기»도 끝 */
       S.sd.more = false;
       sxAn();
       return;
