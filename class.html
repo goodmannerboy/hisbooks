@@ -374,6 +374,128 @@ a.row:active{background:var(--press)}
   .stopw.m{display:none}
   .stopw.w{display:block;margin:0 0 14px}
 }
+/* S1 단어 · 구문 · 문법(11-17 · 여덟 기능 결론안 · lead2_design S1~S8 · G V3~V7): 목록 묶음(맨 위 카드 아래) · 공부 화면(가운데 480 · 폰 먼저)
+   굵기 400/700 · 가장 작은 글 12 · 누르는 곳 44 이상 · 양쪽 정렬 문단에 text-wrap:balance 없음 */
+.sw,.sgrp{word-break:keep-all;overflow-wrap:break-word}
+button.row{width:100%;margin:0;border:0;border-radius:0;background:none;color:inherit;font:inherit;text-align:left}
+button.row:active{background:var(--press)}
+.srow .mn,.srow .tt,.srow .mt,.srow .un{display:block}
+.sgrp .absln{margin:0;padding:8px 14px;border-top:1px solid var(--line);min-height:48px}
+.sgrp .absln .k.am{color:var(--aT)}
+.sgrp .rows > .absln:first-child{border-top:0}
+.sst .s2r + .s2r:before{left:14px}
+.absln.off{cursor:default}
+.absln.off::after{content:none}
+.scons h3{margin:0 0 8px;font-size:16px;font-weight:700;line-height:1.35;letter-spacing:-.01em}
+.scons ol{margin:0;padding:0;list-style:none;counter-reset:c}
+.scons li{position:relative;padding:10px 0 10px 32px;border-top:1px solid var(--line);text-align:justify;font-size:14px;line-height:1.55;word-break:keep-all;line-break:strict}
+.scons li:first-child{border-top:0;padding-top:4px}
+.scons li:before{counter-increment:c;content:counter(c);position:absolute;left:0;top:10px;width:22px;height:22px;border-radius:50%;border:1px solid var(--dash);font-size:12px;font-weight:700;line-height:20px;text-align:center}
+.scons li:first-child:before{top:4px}
+.scons .btn-fill{margin-top:12px}
+.sw{max-width:480px;margin:0 auto}
+.shd{display:flex;align-items:center;gap:8px;min-height:48px}
+.shd .sc{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sbar{height:4px;margin:0 0 14px;border-radius:2px;background:var(--track);overflow:hidden}
+.sbar b{display:block;height:100%;background:var(--ink);transition:width .24s}
+.sload{min-height:240px}
+.sh1{margin:4px 0 0;font-size:20px;font-weight:700;line-height:1.3;letter-spacing:-.02em}
+.sh2{margin:4px 0 6px;font-size:16px;font-weight:700;line-height:1.35}
+.smt{margin:2px 0 14px;font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.slab{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--ink)}
+.snote{margin:0 0 12px;font-size:13px;line-height:1.6;color:var(--ink2);text-align:justify}
+.snote.c{margin:12px 0 0;font-weight:700;color:var(--ink)}
+.sst .s2r{display:flex;align-items:center;gap:10px;min-height:56px}
+.sst .s2r .mn{flex:1 1 auto;min-width:0}
+.sst .s2r .tt{font-size:15px}
+.sst .s2r .st{font-size:13px}
+.sst .s2r .ring{width:28px;height:28px}
+.sst + .err + .btn-fill{margin-top:4px}
+.vcard{position:relative;display:block;width:100%;height:clamp(280px,48vh,420px);height:clamp(280px,48svh,420px);border:1px solid var(--line);border-radius:16px;background:var(--card);cursor:pointer;-webkit-user-select:none;user-select:none}
+.vcard .vf,.vcard .vb{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:52px 20px 28px;text-align:center;transition:opacity .18s,visibility .18s}
+.vcard .vb,.vcard.on .vf{opacity:0;visibility:hidden}
+.vcard.on .vb{opacity:1;visibility:visible}
+.vw{font-size:34px;font-weight:700;line-height:1.2;letter-spacing:-.01em;word-break:keep-all;overflow-wrap:break-word}
+.vf.s26 .vw{font-size:26px}
+.vf.s22 .vw{font-size:22px}
+.vhint{font-size:13px;color:var(--ink2)}
+.ve{font-size:15px;color:var(--ink2);word-break:keep-all;overflow-wrap:break-word}
+.vm{font-size:22px;font-weight:700;line-height:1.4;word-break:keep-all;overflow-wrap:break-word}
+.vm.s18{font-size:18px}
+.vno{position:absolute;left:14px;top:14px;z-index:1;padding:5px 8px;border-radius:999px;background:var(--tile);color:var(--ink);font-size:12px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.vsay{position:absolute;right:4px;top:4px;z-index:2;display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;border-radius:12px;background:none;color:var(--ink)}
+.vbtns{display:flex;gap:12px;margin-top:16px}
+.vbtns>button{flex:1 1 0;min-width:0;min-height:56px;font-size:17px}
+.sq{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.sqt{margin:0 0 6px;font-size:12px;color:var(--ink2)}
+.sqs{margin:0 0 8px;font-size:13px;color:var(--ink2)}
+.sqw{margin:0;padding:28px 0;font-size:26px;font-weight:700;line-height:1.25;text-align:center;word-break:keep-all;overflow-wrap:break-word}
+.sqm{margin:4px 0 8px;font-size:22px;font-weight:700;line-height:1.4;text-align:center;word-break:keep-all;overflow-wrap:break-word}
+.sqg{margin:0;font-size:18px;line-height:1.7;text-align:justify;word-break:keep-all;overflow-wrap:break-word}
+.sslot{display:inline-block;min-width:70px;margin:0 2px;padding:0 8px;border:1.5px dashed var(--dash);border-radius:8px;line-height:1.5;text-align:center;color:var(--ink2)}
+.sslot.ok{border-style:solid;border-color:#9FCFB3;background:var(--gB);color:var(--gT);font-weight:700}
+.sund{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.sfix{display:inline-block;margin:0 2px;padding:0 6px;border-radius:6px;background:var(--gB);color:var(--gT);font-weight:700}
+.sopts{margin:4px 0 0}
+.sopt{display:block;width:100%;min-height:52px;margin:8px 0 0;padding:10px 14px;border:1px solid var(--sl);border-radius:12px;background:var(--card);color:var(--ink);font-size:16px;line-height:1.4;text-align:left;word-break:keep-all;overflow-wrap:break-word}
+.sopt:active{background:var(--press)}
+.sopt[disabled]{cursor:default}
+.sopt.ok{border-color:#9FCFB3;background:var(--gB);color:var(--gT);font-weight:700}
+.sopt.no{border-color:#E5B5A9;background:var(--cB);color:var(--cT)}
+.sin{display:block;width:100%;height:50px;margin:12px 0 0;border:1px solid var(--inL);border-radius:12px;background:var(--card);padding:0 14px;font-size:20px;color:var(--ink)}
+.sin:focus{border-color:var(--focus);outline:none}
+.sin.ok{border-color:#9FCFB3;background:var(--gB);color:var(--gT)}
+.sin.no{border-color:#E5B5A9;background:var(--cB);color:var(--cT)}
+.sfb{min-height:22px;margin:8px 0 0;font-size:14px;font-weight:700;color:var(--ink2)}
+.sfb.ok,.sfb .sfa{color:var(--gT)}
+.sfb.er{color:var(--cT)}
+.sx{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:var(--nB);font-size:14px;line-height:1.6}
+.sx p{margin:4px 0 0;text-align:justify;word-break:keep-all;overflow-wrap:break-word}
+.sq + .btn-fill,.sfb + .btn-fill,.sx + .btn-fill,.sopts + .sfb + .btn-fill{margin-top:12px}
+.sres{display:flex;flex-direction:column;align-items:center;margin:8px 0 0;padding:24px 16px 12px;border:1px solid var(--line);border-radius:16px;background:var(--card);text-align:center}
+.sres>.fish{width:40px;height:19.4px;margin:0 0 14px}
+.sres>svg{color:var(--done)}
+.sres .btn-fill,.sres .btn-line{margin-top:12px}
+.sres .sr1 + .btn-fill,.sres .sr2 + .btn-fill,.sres .sr3 + .btn-fill{margin-top:16px}
+.rg64{position:relative;width:64px;height:64px}
+.rg64 .ring{width:64px;height:64px}
+.rg64 span{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.sr1{margin:12px 0 0;font-size:20px;font-weight:700;line-height:1.3;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.sr2{margin:6px 0 0;font-size:15px;font-weight:700}
+.sr2.am{color:var(--aT)}
+.sr3{margin:4px 0 0;font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.stxt{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:6px auto 0;padding:0 12px;border:0;background:none;color:var(--ink2);font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.stxtw{text-align:center}
+.gq .gtags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.gq .tag.gno{background:var(--tile);color:var(--ink)}
+.ge{margin:0;font-size:16px;line-height:1.7;word-break:keep-all;overflow-wrap:break-word}
+.ge .gc{border-radius:4px;padding:0 2px;transition:background-color .16s}
+.ge .gc.on{background:var(--aB)}
+.ge .gs{color:#B9AE8C}
+.gbar{display:block;height:12px;margin:7px 0;border-radius:6px;background:var(--track)}
+.gt{margin:8px 0 0;font-size:14px;line-height:1.6;color:var(--ink2);text-align:justify;word-break:keep-all;overflow-wrap:break-word}
+.gt.b{font-size:15px;font-weight:700;color:var(--ink)}
+.scue{min-height:22px;margin:10px 0 0;font-size:13px;color:var(--ink2);text-align:center}
+.s2b{display:flex;gap:8px;margin-top:8px}
+.s2b>button{flex:1 1 0;min-width:0}
+.sintro{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 8px 20px;text-align:center}
+.sintro svg{color:var(--ink)}
+.sintro p{margin:0;font-size:15px}
+.sintro .sub{font-size:13px}
+.srec{margin:10px 0 0;padding:14px}
+.srt{margin:0;font-size:14px;font-weight:700;line-height:1.55;text-align:justify;word-break:keep-all;overflow-wrap:break-word}
+.srt .sno{margin-right:6px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.srs{margin:6px 0 0}
+.srb{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 0}
+.schip{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 14px;border:1px solid var(--sl);border-radius:999px;background:transparent;color:var(--ink);font-size:14px;font-weight:700;white-space:nowrap}
+.schip.on{border-color:var(--fillB);background:var(--fillB);color:var(--fillT)}
+.schip[disabled]{opacity:.55;cursor:default}
+.srl{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin-right:4px;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.rdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--cT)}
+.smsg{margin:12px 0 0;font-size:13px;font-weight:700;line-height:1.55;color:var(--cT);text-align:justify}
+.smsg2{margin:2px 0 0;font-size:13px;line-height:1.55;color:var(--ink2)}
+.sbot{margin:14px 0 0}
+.sbot .snote{margin:0;text-align:center}
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{transition:none !important;animation:none !important;scroll-behavior:auto !important}
 }
@@ -492,6 +614,9 @@ window.__lecStart = function () {
     alBad: '', /* 이 열쇠로 저장했더니 서버가 'bad' → 이 화면에서는 다시 구독 · 저장 안 함 */
     alBusy: false, nIds: null, /* 알림으로 연 강의(목록이면 그 줄을 잠깐 칠함) */
     homeAt: 0, /* 마지막으로 집 정보를 받은 때(홈 화면 앱으로 돌아왔을 때 1분이 넘었으면 다시 받음) */
+    set: null, /* S1 lec_set_home 답(단어 · 구문 · 문법 묶음) · 없거나 옛 서버 · 미리 보기면 null = 묶음 없음 */
+    setDirty: false, /* 공부 화면에서 쓰기(카드 · 답 · 녹음 · 동의)를 함 → 목록으로 돌아올 때만 한 번 더 받음 */
+    setMore: false, setY: 0, /* «지난 n개 더»를 펼침 · 공부 화면에 들어갈 때의 목록 스크롤 자리 */
     loginErr: '', nav: false, view: '', tab: 'toc',
     q: null
   };
@@ -733,12 +858,14 @@ window.__lecStart = function () {
     if (uc && typeof uc.then === 'function') uc.then(function (r) { fin(!!r && r.outcome === 'accepted'); }, function () { fin(false); });
     else fin(false);
   }
-  /* 카톡에서 밖의 브라우저로: 넘기는 주소에 ?i=1 → 밖에서 열리면 안내 판이 이어서 저절로 열림 */
-  function pwaKakao() {
-    var u = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.origin + location.pathname + '?i=1');
+  /* 카톡에서 밖의 브라우저로 여는 스킴(설치 안내 · S1 녹음이 같이 씀 · 여는 주소만 다름) */
+  function kakaoOut(url) {
+    var u = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url);
     if (L.TEST && typeof window.__pwaGo === 'function') { window.__pwaGo(u); return; } /* 시험(?t=1)에서만 · 실제로 옮겨 가지 않고 주소만 넘김 */
     location.href = u;
   }
+  /* 설치 안내: 넘기는 주소에 ?i=1 → 밖에서 열리면 안내 판이 이어서 저절로 열림 */
+  function pwaKakao() { kakaoOut(location.origin + location.pathname + '?i=1'); }
   PW.cb = function (k) {
     if (k === 'installed') {
       var b = $('pwaBtn');
@@ -1064,6 +1191,9 @@ window.__lecStart = function () {
       compass: '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M8 16l2-6l6-2l-2 6z"/>',
       globe: '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/>',
       x: '<path d="M18 6L6 18"/><path d="M6 6l12 12"/>',
+      /* S1: 발음 듣기 · 녹음 */
+      vol: '<path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+      mic: '<path d="M9 5a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0z"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/><path d="M8 21h8"/>',
       pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9.5 14.5L12 17l2.5-2.5"/>'
     };
     return '<svg width="' + n + '" height="' + n + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (P[name] || '') + '</svg>';
@@ -1127,7 +1257,7 @@ window.__lecStart = function () {
     L.login(name, pin, DEV).then(function (r) {
       b.disabled = false;
       if (r && r.ok) {
-        S.key = r.key; S.name = r.name || name; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
+        S.key = r.key; S.name = r.name || name; S.att = null; S.paper = null; S.pdf = null; S.rng = null; S.set = null;
         S.alFresh = pwaStandalone(); /* N1: 홈 화면 앱 첫 로그인 = 목록 앞에 알림 한 단계(조건이 맞을 때만) */
         L.lsSet(LS.key, r.key);
         loadHome();
@@ -1148,7 +1278,7 @@ window.__lecStart = function () {
   function reLogin() {
     L.lsDel(LS.key); L.lsDel(LS.sess);
     S.key = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
-    S.al = null; S.alFresh = false;
+    S.al = null; S.alFresh = false; S.set = null; S.setDirty = false; S.setMore = false;
     clearHash();
     showLogin(M.again);
   }
@@ -1186,6 +1316,7 @@ window.__lecStart = function () {
       S.consent = r.consent || null;
       if (r.consent_ver) S.cver = r.consent_ver;
       if (quiet) { if (then) then(); else quietList(); return; }
+      setLoad(side, k); /* S1 단어 · 구문 · 문법: 집 정보 답 뒤 한 번(같은 0.6초 안에 오면 목록과 함께 그림) */
       sideWait(side, k, route);
     }, function () {
       if (k === S.key && then) { then(); return; }
@@ -1203,6 +1334,7 @@ window.__lecStart = function () {
       sd.n -= 1;
       if (sd.n <= 0 && sd.cb) { var f = sd.cb; sd.cb = null; f(); }
     }
+    sd.one = one; /* S1 setLoad 가 같이 기다림 */
     S.att = null; S.rng = null; S.absAt = 0;
     L.att(k).then(function (a) { if (k === S.key) S.att = a; one(); }, one);
     L.rngMe(k).then(function (r) { if (k === S.key) S.rng = r; one(); }, one);
@@ -1358,6 +1490,7 @@ window.__lecStart = function () {
         S.consent = { choice: r.choice, ver: r.ver, at: r.at };
         if (again) clearHash();
         else if (pwaStandalone()) S.alFresh = true; /* N1: 동의 판에서 동의한 바로 뒤 = 알림 단계 자리(옛 «기록 없이» 학생 포함 · 기기당 한 번은 route 가 셈) */
+        if (!again) setLoad(null, k); /* S1: 동의 전에는 안 불렀음 → 동의 바로 뒤 한 번(늦으면 묶음이 생길 때만 다시 그림) */
         route();
         return;
       }
@@ -1549,6 +1682,7 @@ window.__lecStart = function () {
         cardBody(best, rec, M.contLab, '', '') + '</a>';
     }
     h += alCardHTML(); /* N1 새 영상 알림 카드(홈 화면 앱 · 폰 허락 전에만) */
+    h += setGrpHTML(); /* S1 단어 · 구문 · 문법 묶음(없으면 '' = 픽셀 0) */
     if (!arr.length) {
       h += '<div class="rows"><div class="empty">아직 올라온 강의가 없어요.<br>수업 영상이 올라오면 여기에 보여요.</div></div>';
     } else {
@@ -1753,6 +1887,1193 @@ window.__lecStart = function () {
     app.innerHTML = '<div class="wrap"><div class="end1">' + fishSVG() +
       '<p>' + M.ended + '</p><button class="btn-line" type="button" data-act="list">목록으로</button></div></div>';
   }
+
+  /* ------------------------------------------------------------ 단어 · 구문 · 문법(S1 · 11-17) */
+  /* 여덟 기능 결론안(원장님 «결론안대로») · 계약서 §9-1 · §9-2 · §10 · lead2_design S1~S8 · lead2_tech T3 · T4 · 학생 글은 위젯 cc8 그대로
+     목록: 집 정보 답 뒤 setHome 한 번 → 맨 위 카드 아래 묶음 · null · 공부 자료 0 이고 쌓인 오답 0 = 묶음 없음(픽셀 0 · 띠 0)
+           늦게 오면 묶음이 생길 때만 조용히 다시 그림 · 쓰기(카드 · 답 · 녹음 · 동의)를 한 뒤 목록으로 돌아올 때만 한 번 더(반복 확인 0)
+     공부 화면: 주소(#) 안 바꿈(S6 · 아이폰이 마이크 허락을 다시 물음) · «‹ 목록» · «‹ 그만»으로 목록(들어갈 때의 스크롤 자리)
+     정답: 답한 뒤 그 문항 것만 받음 · 시험에 들어가면 들고 있던 단어 문항을 버림 · localStorage 에 문항 · 정답 0(§9-2)
+     미리 보기 안쪽(window.__lecPvIn) = 부름 · 쓰기 · 녹음 0(class-preview.js 갈음 목록 · 마이크 거절과 두 겹 · §8-204) */
+  var W = null, WRUN = 0, SAYRUN = 0, SAYV = null, SAYW = false;
+  var KIND_W = { voc: '단어', gu: '구문', gram: '문법' };
+  /* 계약서 §4-13 표(Lec.SET_ERR 가 있으면 그것 · limit 은 녹음 자리에서 녹음 글) */
+  var SET_TX = {
+    testing: '시험을 마치면 외우기를 볼 수 있어요.',
+    due_testing: '하던 시험을 마치면 이어서 풀 수 있어요.',
+    limit: '오늘은 여기까지예요. 내일 다시 해요.',
+    tomorrow: '내일 다시 볼 수 있어요.',
+    pass: '이미 통과했어요.',
+    none: '지금은 열 수 없어요.', kind: '지금은 열 수 없어요.', 'try': '지금은 열 수 없어요.', done: '지금은 열 수 없어요.',
+    rec_ok: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.', level: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.',
+    size: '45초 안으로 다시 녹음해 주세요.',
+    mime: '이 폰에서는 녹음을 보낼 수 없어요.',
+    upload: '보내지 못했어요.', file: '보내지 못했어요.', late: '보내지 못했어요.', network: '보내지 못했어요.',
+    other: '잠시 뒤 다시 해 주세요.'
+  };
+  /* lead2_tech T3 «실패 때 학생에게 보일 것» */
+  var REC_TX = {
+    kakao: '녹음은 카카오톡 안에서는 안 돼요.',
+    none: '이 폰에서는 녹음이 안 돼요. 듣고 따라 읽기는 할 수 있어요.',
+    deny: '마이크를 허락해야 녹음할 수 있어요.',
+    denyI: '설정 › Safari › 마이크',
+    denyA: '주소창 왼쪽 › 권한 › 마이크',
+    busy: '다른 앱이 마이크를 쓰고 있어요. 닫고 다시 눌러 주세요.',
+    cap: '45초까지 녹음돼요.',
+    big: '소리 파일이 너무 커요. 다시 녹음해 주세요.',
+    limit: '오늘은 녹음을 더 보낼 수 없어요.'
+  };
+  var REC_WHY0 = ['', '끊어 읽기', '강세 · 억양', '빠진 말 · 틀린 말', '소리'];
+  var KO_N = ['', '한', '두', '세', '네', '다섯'];
+  function two(n) { n = String(n == null ? '' : n); return n.length === 1 ? '0' + n : n; }
+  function setPv() { return PV || !!window.__lecPvIn; }
+  function setTx(e, ctx) {
+    var t;
+    if (ctx === 'rec' && e === 'limit') return (L.SET_ERR && L.SET_ERR.rec_limit) || REC_TX.limit;
+    if (ctx === 'open' && e === 'network') return M.net;
+    if (ctx === 'due' && e === 'testing') return SET_TX.due_testing;
+    t = L.SET_ERR && typeof L.SET_ERR === 'object' ? L.SET_ERR[e] : null;
+    if (typeof t === 'string' && t) return t;
+    return SET_TX[e] || SET_TX.other;
+  }
+  function setWhy(i) { var a = L.REC_WHY || REC_WHY0; return a[+i || 0] || ''; }
+  function wT(f, ms) { var my = WRUN; return setTimeout(function () { if (my === WRUN && W) f(); }, ms); }
+
+  /* 집 정보 뒤 한 번 · sd = 함께 기다리는 묶음(sideStart) · null 이면(동의 바로 뒤) 늦게 와도 묶음이 생길 때만 다시 그림 */
+  function setLoad(sd, k) {
+    var fin = false;
+    S.set = null; S.setMore = false; S.setDirty = false;
+    if (setPv() || typeof L.setHome !== 'function' || recMode() !== 'agree') return;
+    if (sd && sd.one) sd.n += 1; else sd = null;
+    function got(r) {
+      if (fin) return;
+      fin = true;
+      var late = S.view === 'list';
+      if (k === S.key) S.set = r && r.ok ? r : null;
+      if (sd) sd.one();
+      if (k === S.key && late && S.view === 'list' && setGrpHTML()) quietList();
+    }
+    L.setHome(k).then(got, function () { got(null); });
+  }
+  function setFind(id) {
+    var a = (S.set && S.set.sets) || [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i] && String(a[i].id) === String(id)) return a[i]; }
+    return null;
+  }
+  /* 끝남(고리 체크 · 목록 아래로): 단어 · 문법 = 통과 · 구문 = ★ 문장이 모두 «좋아요»(★ 없으면 따라 말하기를 다 함) */
+  function setDone(s) {
+    var m = s && s.me, r, i;
+    if (!m) return false;
+    if (s.kind === 'gu') {
+      r = m.recs || [];
+      if (!r.length) return +s.n > 0 && (+m.said || 0) >= +s.n;
+      for (i = 0; i < r.length; i += 1) { if (!r[i] || r[i].st !== 'ok') return false; }
+      return true;
+    }
+    return m.test === 'pass' || m.next === 'pass';
+  }
+  /* 차례: 안 끝난 것(서버 차례 = 새것부터) → 끝난 것 */
+  function setRows() {
+    var a = (S.set && S.set.sets) || [], o = [], d = [], i;
+    for (i = 0; i < a.length; i += 1) {
+      if (!a[i] || !KIND_W[a[i].kind]) continue;
+      if (setDone(a[i])) d.push(a[i]); else o.push(a[i]);
+    }
+    return o.concat(d);
+  }
+  function setGrpHTML() {
+    var s = S.set, rows, due, show, h, i, c;
+    if (setPv() || !s || !s.ok) return '';
+    rows = setRows();
+    due = s.agree && s.due && +s.due.n > 0 ? s.due : null;
+    if (!rows.length && !due) return '';
+    h = '<section class="grp sgrp" id="setGrp" aria-labelledby="setGrpT"><h2 id="setGrpT">단어 · 구문 · 문법</h2>';
+    if (!s.agree) { /* 동의 전 = 묶음 안 카드 한 장(단추 하나 · 건너뛰기 없음) · 묶음 밖은 그대로 */
+      c = noteHTML(L.SET_NOTE, 's1agree', 'sAgErr');
+      return rows.length && c ? h + c + '</section>' : '';
+    }
+    show = S.setMore ? rows.length : Math.min(3, rows.length);
+    h += '<div class="rows">';
+    for (i = 0; i < show; i += 1) h += setRowHTML(rows[i]);
+    if (due) {
+      h += +due.now > 0 ?
+        '<button class="absln sdue" type="button" data-act="s1due"><span class="k am">쌓인 오답 ' + (+due.n) + '개</span><span class="v">두 번 맞히면 빠져요</span></button>' :
+        '<div class="absln sdue off"><span class="k am">쌓인 오답 ' + (+due.n) + '개</span><span class="v">내일부터 나와요</span></div>';
+    }
+    if (rows.length > show) h += '<button class="absln smore" type="button" data-act="s1more"><span class="k">지난 ' + (rows.length - show) + '개 더</span></button>';
+    return h + '</div></section>';
+  }
+  function setRowHTML(s) {
+    var m = s.me || null, n = +s.n || 0, k = s.kind, ok = setDone(s), mt = [], rs = '', un = '', pct = 0, rc, na = 0, ns = 0, nk = 0, why = 0, j, st;
+    if (s.on) mt.push(L.fmtDay(L.isoDay(s.on)));
+    if (k === 'voc') {
+      mt.push(n + '개');
+      if (m) {
+        /* «외움 0»은 보이지 않음(검수 11-17 · 외움 = 다른 두 날 · 하루는 시험) · 고리는 외움이 0 이면 시험에서 맞힌 수(kn)로 */
+        if (+m.known > 0) mt.push('외움 ' + (+m.known));
+        pct = n ? Math.floor((+m.known > 0 ? +m.known : (+m.kn || 0)) * 100 / n) : 0;
+        if (ok) rs = '<span class="tag grn">통과</span>';
+        else if (m.test === 'open') rs = '<span class="st">이어서 시험 보기</span>';
+        else if (m.test === 'fail') rs = '<span class="st">시험 · ' + Math.max(1, (+s.need || 0) - (+m.kn || 0)) + '개 더 맞히면 통과</span>';
+        else rs = '<span class="st">시험 아직</span>';
+      }
+    } else if (k === 'gram') {
+      mt.push(n + '문제');
+      if (m) {
+        pct = +m.best || 0;
+        if (ok) rs = '<span class="tag grn">통과</span>';
+        else if (m.test === 'open') rs = '<span class="st">이어서 풀기</span>';
+        else if (m.next === 'tomorrow') rs = '<span class="st">내일 다시' + (pct > 0 ? ' · 최고 ' + pct + '%' : '') + '</span>';
+        else if (+m.tn > 0) rs = '<span class="st">다시 풀 수 있어요' + (pct > 0 ? ' · 최고 ' + pct + '%' : '') + '</span>';
+        else rs = '<span class="st">아직</span>';
+      }
+    } else {
+      mt.push(n + '문장');
+      if (+s.pick > 0) mt.push('★녹음 ' + (+s.pick));
+      if (m) {
+        rc = m.recs || [];
+        for (j = 0; j < rc.length; j += 1) {
+          st = rc[j] && rc[j].st;
+          if (st === 'again') { na += 1; if (!why) why = +rc[j].why || 0; } else if (st === 'sent') ns += 1; else if (st === 'ok') nk += 1;
+        }
+        pct = +s.pick > 0 ? Math.floor((ns + nk) * 100 / +s.pick) : (n ? Math.floor(Math.min(n, +m.said || 0) * 100 / n) : 0);
+        if (na) un = '다시 녹음할 문장 ' + na + (setWhy(why) ? ' · ' + setWhy(why) : '');
+        if (ok && +s.pick > 0) rs = '<span class="tag grn">좋아요</span>';
+        else if (ns && !na) rs = '<span class="st">냈어요 · 원장 선생님이 듣기 전</span>';
+        else if (+m.said > 0) rs = '<span class="st">따라 말하기 ' + Math.min(n, +m.said) + ' / ' + n + '</span>';
+        else if (!na) rs = '<span class="st">아직</span>';
+      }
+    }
+    return '<button class="row srow" type="button" data-act="s1open" data-id="' + esc(s.id) + '"><span class="tile"><b>' + KIND_W[k] + '</b></span>' +
+      '<span class="mn"><span class="tt">' + esc(s.title) + '</span><span class="mt">' + esc(mt.join(' · ')) + '</span>' +
+      (rs ? '<span class="rs">' + rs + '</span>' : '') + (un ? '<span class="un">' + esc(un) + '</span>' : '') + '</span>' +
+      (m ? ring(pct, ok) : '') + '</button>';
+  }
+  /* 안내 카드(SET_NOTE · REC_NOTE 같은 꼴 · 번호 목록 + 단추 하나 + 오류 한 줄) */
+  function noteHTML(N, act, eid) {
+    var it = N && N.items, h, i;
+    if (!it || !it.length) return '';
+    h = '<div class="card scons"><h3>' + esc(N.title || '') + '</h3><ol>';
+    for (i = 0; i < it.length; i += 1) h += '<li>' + esc(it[i]) + '</li>';
+    if (!act) return h + '</ol></div>'; /* 동의한 뒤 다시 읽기만(단추 없음 · 끄기 단추도 없음) */
+    return h + '</ol><button class="btn-fill" type="button" data-act="' + act + '">' + esc(N.btn || '') + '</button><p class="err" id="' + eid + '" role="alert"></p></div>';
+  }
+  function setAgreeGo(btn) {
+    var k = S.key;
+    if (setPv()) { pvNo(); return; }
+    if (!S.set || !btn || btn.disabled) return;
+    btn.disabled = true;
+    setHTML('sAgErr', '');
+    L.setAgree(k).then(function (r) {
+      if (k !== S.key) return;
+      if (r && r.ok) {
+        L.setHome(k).then(function (h) {
+          if (k !== S.key) return;
+          if (h && h.ok) S.set = h; else if (S.set) S.set.agree = true;
+          S.setDirty = false;
+          quietList();
+        }, function () { if (k !== S.key) return; if (S.set) S.set.agree = true; quietList(); });
+        return;
+      }
+      if (setGoneBy(r)) return;
+      btn.disabled = false;
+      setHTML('sAgErr', esc(setTx(r && r.err, 'open')));
+    }, function () {
+      if (k !== S.key) return;
+      btn.disabled = false;
+      setHTML('sAgErr', esc(M.net));
+    });
+  }
+
+  /* 공부 화면 틀 · 거두기 · 목록으로 */
+  function setStop() {
+    var R, k, mk;
+    WRUN += 1;
+    if (!W) return;
+    sayStop();
+    audStop();
+    /* 외우기 · 따라 말하기 도중 다른 화면으로 감(알림 · 주소 바뀜) = 이 판 표시를 기다리지 않고 한 번 보냄 */
+    mk = W.mode === 'mem' ? W.marks : (W.mode === 'gu' && W.g ? W.g.marks : null);
+    if (mk && Object.keys(mk).length && S.key && !setPv() && typeof L.setCard === 'function') {
+      S.setDirty = true;
+      try { L.setCard(S.key, W.id, mk); } catch (e0) { /* 없음 */ }
+    }
+    R = W.g && W.g.R;
+    if (R) {
+      recKill(R);
+      for (k in R.b) {
+        if (R.b.hasOwnProperty(k) && R.b[k] && R.b[k].url) { try { URL.revokeObjectURL(R.b[k].url); } catch (e) { /* 없음 */ } }
+      }
+      R.b = {};
+    }
+    W = null;
+  }
+  function setHide() {
+    var g = W && W.g;
+    sayStop(); audStop(); recStop();
+    /* 숨을 때(안드로이드 뒤로 · 다른 앱 · 폰이 앱을 닫음) 아직 안 보낸 외우기 · 따라 말하기 표시를 setCard 한 번으로 보내고 비움(검수 11-17)
+       보낼 것이 없으면 부르지 않음 → 숨김/보임을 되풀이해도 더 안 부름 */
+    if (W && W.mode === 'mem' && W.marks && Object.keys(W.marks).length) memSave(function () { /* 다음 판 고르기용 카드도 memSave 가 고침 */ });
+    else if (g && W.mode === 'gu' && g.marks && Object.keys(g.marks).length) guSave(function () { /* 없음 */ });
+    /* 따라 말하기 도중 = 그 문장 처음으로(«듣기»를 다시 누를 수 있게 · 쉼 타이머도 끊음) */
+    if (g && W.mode === 'gu' && g.busy) { g.run += 1; g.busy = false; g.wait = false; g.hl = -1; g.cue = ''; guDraw(); }
+  }
+  function setPage(h) { app.innerHTML = '<div class="wrap"><div class="sw">' + h + '</div></div>'; }
+  function setHead(back, cnt, pct) {
+    return '<div class="shd"><button class="backb" type="button" data-act="s1back"><span class="ar" aria-hidden="true">‹</span>' + back + '</button><span class="sp"></span>' +
+      (cnt ? '<span class="sc">' + cnt + '</span>' : '') + '</div>' +
+      (typeof pct === 'number' ? '<div class="sbar" aria-hidden="true"><b style="width:' + Math.max(0, Math.min(100, pct)) + '%"></b></div>' : '');
+  }
+  function setInfo(title, msg) {
+    if (!W) return;
+    W.mode = 'info';
+    setPage(setHead('목록') + (title ? '<h1 class="sh1">' + esc(title) + '</h1>' : '') +
+      '<div class="sres"><p class="sr2">' + esc(msg) + '</p><button class="btn-fill" type="button" data-act="s1back">목록으로</button></div>');
+  }
+  /* 실패 공통: key = 다시 들어오기 · consent = 기록 안내 · agree = 목록의 동의 카드 · old(옛 서버) = 묶음 없앰 → true(이 화면을 떠남) */
+  function setGoneBy(r) {
+    var e = r && r.err;
+    if (e === 'key') { reLogin(); return true; }
+    if (e === 'consent') { setStop(); S.consent = null; route(); return true; }
+    if (e === 'agree') { if (S.set) S.set.agree = false; setBack(false); return true; }
+    if (e === 'old') { S.set = null; setBack(false); return true; }
+    if (e === 'preview') { setBack(false); return true; }
+    return false;
+  }
+  function setOpen(id) {
+    var s = id ? setFind(id) : null;
+    if (setPv() || !S.set || (id && !s)) return;
+    S.setY = window.pageYOffset || (document.documentElement && document.documentElement.scrollTop) || 0;
+    teardown();
+    W = { id: s ? s.id : '', kind: s ? s.kind : 'due', s: s, mode: '', busy: false };
+    S.view = 'set';
+    try { window.scrollTo(0, 0); } catch (e) { /* 없음 */ }
+    if (!s) tStart();
+    else if (s.kind === 'voc') s2Draw('');
+    else if (s.kind === 'gram') tStart();
+    else guLoad();
+  }
+  /* 목록으로(fetch = 쓰기를 했음 → 0.6초까지 새 묶음을 기다려 그림 · 늦으면 그린 뒤 조용히 다시) */
+  function setBack(fetch) {
+    var y = S.setY || 0, k = S.key, drawn = false, tm = 0, bs, i;
+    setStop();
+    S.view = 'setwait';
+    function draw() {
+      if (drawn || k !== S.key || S.view !== 'setwait') return;
+      drawn = true;
+      if (tm) clearTimeout(tm);
+      showList();
+      try { window.scrollTo(0, y); } catch (e) { /* 없음 */ }
+    }
+    if (!fetch || setPv() || !S.set || typeof L.setHome !== 'function') { draw(); return; }
+    S.setDirty = false;
+    bs = app.querySelectorAll('button');
+    for (i = 0; i < bs.length; i += 1) bs[i].disabled = true;
+    tm = setTimeout(draw, SIDE_MS);
+    L.setHome(k).then(function (r) {
+      if (k !== S.key) return;
+      if (r && r.ok) S.set = r;
+      if (drawn) { if (S.view === 'list') quietList(); return; }
+      draw();
+    }, draw);
+  }
+  /* «‹ 목록» · «‹ 그만»: 외우기 · 따라 말하기는 이 판 표시를 한 번 저장한 뒤 · 끝 한 번 더는 결과로 */
+  function setLeave() {
+    var my = WRUN;
+    if (W.mode === 'memsave' || W.mode === 'gusave') return;
+    if (W.mode === 'mem') { W.mode = 'memsave'; memSave(function () { if (my === WRUN) setBack(S.setDirty); }); return; }
+    if (W.mode === 'gu') { sayStop(); W.mode = 'gusave'; guSave(function () { if (my === WRUN) setBack(S.setDirty); }); return; }
+    if (W.mode === 't' && W.t && (W.t.ph === 'aq' || W.t.ph === 'as')) { W.t.step += 1; tResult(); return; }
+    setBack(S.setDirty);
+  }
+  function setClick(a, el) {
+    var g, it;
+    if (a === 'open') { setOpen(attr(el, 'data-id')); return; }
+    if (a === 'due') { setOpen(null); return; }
+    if (a === 'more') { S.setMore = true; showList(); return; }
+    if (a === 'agree') { setAgreeGo(el); return; }
+    if (!W) return;
+    if (a === 'back') { setLeave(); return; }
+    if (W.busy) return;
+    if (a === 'mem') memLoad();
+    else if (a === 'test' || a === 'retake') tStart();
+    else if (a === 'flip') memFlip();
+    else if (a === 'say') memSay();
+    else if (a === 'yes') memMark(true);
+    else if (a === 'no') memMark(false);
+    else if (a === 'opt') tPick(+attr(el, 'data-i'));
+    else if (a === 'chk') tChk();
+    else if (a === 'next') { if (W.t && W.t.fb && !tFresh(W.t)) tNext(); }
+    else if (W.g) {
+      g = W.g;
+      if (a === 'play' || a === 'again') { if (W.mode === 'gu' && g.ph === 'a' && !g.busy) { g.cue = ''; guPlay(); } }
+      else if (a === 'gnext') { if (W.mode === 'gu' && g.ph === 'a' && g.busy && g.wait) { g.wait = false; guStep(g.run); } }
+      else if (a === 'toB') { sayStop(); g.run += 1; g.ph = 'b'; g.show = false; g.busy = false; g.hl = -1; g.cue = '먼저 소리 내어 말해 봐요'; guDraw(); }
+      else if (a === 'reveal') { g.show = true; g.cue = '말한 것과 맞춰 봐요'; guDraw(); }
+      else if (a === 'redo') { sayStop(); g.run += 1; g.ph = 'a'; g.done = false; g.busy = false; g.hl = -1; g.show = false; g.cue = ''; guDraw(); }
+      else if (a === 'know') {
+        it = g.items[g.i];
+        if (it && it.k) g.marks[it.k] = 1;
+        sayStop(); g.run += 1; g.i += 1; g.ph = 'a'; g.done = false; g.busy = false; g.hl = -1; g.show = false; g.cue = '';
+        if (g.i >= g.items.length) guFinish(); else guDraw();
+      } else if (a === 'torec') { if (W.mode === 'gu') guToRec(); }
+      else if (a === 'gu0') { recKill(g.R); sayStop(); audStop(); g.run += 1; g.i = 0; g.ph = 'a'; g.done = false; g.busy = false; g.hl = -1; g.show = false; g.cue = ''; g.direct = false; W.mode = 'gu'; guDraw(); }
+      else if (a === 'mic') { if (g.R) { g.R.intro = false; recDraw(); } }
+      else if (a === 'rec') recStart(attr(el, 'data-k'));
+      else if (a === 'stop') recStop();
+      else if (a === 'me') audPlay(attr(el, 'data-k'));
+      else if (a === 'or') { it = g.byK[attr(el, 'data-k')]; if (it) { audStop(); sayRun(L.sayParts(String(it.e || '')) || []); } }
+      else if (a === 'send') recSendAll();
+      else if (a === 'note') { if (g.R) { g.R.note = true; recDraw(); } }
+      else if (a === 'noteno') { if (g.R) { g.R.note = false; recDraw(); } }
+      else if (a === 'recok') recAgreeGo(el);
+      else if (a === 'out') recOut();
+    }
+  }
+
+  /* 단어 첫 화면(S2): ① 외우기 › ② 시험 · 잠금 없음 · 둘 다 누름 · 아래 단추 하나 */
+  function s2Draw(err) {
+    var s = W.s, m = s.me || {}, n = +s.n || 0, seen = Math.min(n, +m.seen || 0), t = m.test || 'none', right, btn, act;
+    W.mode = 's2';
+    if (t === 'pass') right = '<span class="tag grn">통과</span>';
+    else if (t === 'open') right = '<span class="st">이어서 보기</span>';
+    else if (+m.tn > 0 && +m.best > 0) right = '<span class="st">아직 · 최고 ' + (+m.best) + '%</span>';
+    else right = '<span class="st">아직</span>';
+    if (t === 'open') { btn = '이어서 시험 보기'; act = 'test'; }
+    else if (t === 'fail') { btn = '다시 시험 보기'; act = 'test'; }
+    else if (t === 'none' && n > 0 && seen >= n) { btn = '시험 보기'; act = 'test'; }
+    else { btn = seen > 0 ? '이어서 외우기' : '외우기 시작'; act = 'mem'; }
+    setPage(setHead('목록') + '<h1 class="sh1">' + esc(s.title) + '</h1>' +
+      '<p class="smt">' + n + '개' + (s.on ? ' · ' + esc(L.fmtDay(L.isoDay(s.on))) : '') + '</p>' +
+      '<div class="rows sst">' +
+      '<button class="row s2r" type="button" data-act="s1mem"><span class="mn"><span class="tt">① 외우기</span></span><span class="st">' + (seen > 0 ? seen + ' / ' + n : '아직') + '</span>' +
+      ring(n ? Math.floor(seen * 100 / n) : 0, n > 0 && seen >= n) + '</button>' +
+      '<button class="row s2r" type="button" data-act="s1test"><span class="mn"><span class="tt">② 시험</span></span>' + right + '</button></div>' +
+      '<p class="err" id="sErr" role="alert">' + esc(err || '') + '</p>' +
+      '<button class="btn-fill" type="button" data-act="s1' + act + '">' + btn + '</button>');
+  }
+  function setBusyBtns(on) {
+    var bs = app.querySelectorAll('.sw button'), i;
+    for (i = 0; i < bs.length; i += 1) { if (bs[i].getAttribute('data-act') !== 's1back') bs[i].disabled = !!on; }
+  }
+
+  /* 외우기(G V3 · V4): setItems → setDeck 20장 · 앞 = 단어 · 누르면 뜻(돌리지 않고 0.18초 겹침) · «다시 / 알아요» · 판 끝이나 «그만»에 setCard 한 번 */
+  function memLoad() {
+    var my = WRUN, k = S.key;
+    if (W.items) { memRound(); return; }
+    W.busy = true;
+    setBusyBtns(true);
+    L.setItems(k, W.id).then(function (r) {
+      var a, i;
+      if (my !== WRUN || !W) return;
+      W.busy = false;
+      if (!r || !r.ok) { if (setGoneBy(r)) return; s2Draw(setTx(r && r.err, 'open')); return; }
+      a = r.items || [];
+      W.items = a; W.cards = r.cards || {}; W.byK = {};
+      for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].k) W.byK[a[i].k] = a[i]; }
+      memRound();
+    }, function () {
+      if (my !== WRUN || !W) return;
+      W.busy = false;
+      s2Draw(M.net);
+    });
+  }
+  function memRound() {
+    W.mode = 'mem';
+    W.q = (L.setDeck(W.items, W.cards, 20) || []).slice();
+    W.tot = W.q.length; W.times = {}; W.marks = {}; W.rm = {}; W.flip = false;
+    if (W.nth == null) W.nth = 0;
+    if (!W.tot) { setInfo(W.s.title, setTx('none')); return; }
+    memDraw();
+  }
+  function memDraw() {
+    var k = W.q[0], it = W.byK[k] || {}, w = String(it.w || ''), m = String(it.m || ''), seen = {}, nl = 0, i, at, fs;
+    for (i = 0; i < W.q.length; i += 1) { if (!seen['k' + W.q[i]]) { seen['k' + W.q[i]] = 1; nl += 1; } }
+    at = Math.max(1, W.tot - nl + 1);
+    fs = w.length > 19 ? ' s22' : (w.length > 13 ? ' s26' : '');
+    setPage(setHead('그만', at + ' / ' + W.tot, Math.round((at - 1) * 100 / W.tot)) +
+      '<div class="vcard' + (W.flip ? ' on' : '') + '" id="vCard" data-act="s1flip" role="button" tabindex="0" aria-pressed="' + (W.flip ? 'true' : 'false') + '" aria-label="' + esc(W.flip ? w + ' ' + m : w) + '">' +
+      (it.n ? '<span class="vno" aria-hidden="true">' + esc(two(it.n)) + '번</span>' : '') +
+      '<button class="vsay" id="vSay" type="button" data-act="s1say" aria-label="발음 듣기"' + (sayV() ? '' : ' hidden') + '>' + icon('vol', 22) + '</button>' +
+      '<span class="vf' + fs + '" aria-hidden="true"><span class="vw">' + esc(w) + '</span>' + (W.nth < 3 ? '<span class="vhint">눌러서 뜻 보기</span>' : '') + '</span>' +
+      '<span class="vb" aria-hidden="true"><span class="ve">' + esc(w) + '</span><span class="vm' + (m.length > 36 ? ' s18' : '') + '">' + esc(m) + '</span></span></div>' +
+      '<div class="vbtns"><button class="btn-line" type="button" data-act="s1no">다시</button><button class="btn-fill" type="button" data-act="s1yes">알아요</button></div>');
+  }
+  function memFlip() {
+    var c = $('vCard'), it;
+    if (!W || W.mode !== 'mem' || !c) return;
+    W.flip = !W.flip;
+    it = W.byK[W.q[0]] || {};
+    c.className = 'vcard' + (W.flip ? ' on' : '');
+    c.setAttribute('aria-pressed', W.flip ? 'true' : 'false');
+    c.setAttribute('aria-label', W.flip ? String(it.w || '') + ' ' + String(it.m || '') : String(it.w || ''));
+  }
+  function memSay() {
+    var it = W.mode === 'mem' && W.q && W.byK ? W.byK[W.q[0]] : null;
+    if (!it || !sayV()) return;
+    sayStop();
+    sayOne(String(it.w || ''), null); /* 누를 때만 · 빠르기 0.9 */
+  }
+  function memMark(ok) {
+    var k, nx;
+    if (W.mode !== 'mem' || !W.q || !W.q.length) return;
+    k = W.q[0];
+    if (ok) W.marks[k] = 1; else if (W.marks[k] !== 1 && W.rm[k] !== 1) W.marks[k] = 0;
+    if (ok) W.rm[k] = 1; else if (W.rm[k] !== 1) W.rm[k] = 0;
+    nx = L.setNextQ(W.q, !ok, W.times) || {};
+    W.q = nx.q || W.q.slice(1);
+    W.times = nx.times || W.times;
+    W.flip = false; W.nth += 1;
+    sayStop();
+    if (!W.q.length) { memEnd(); return; }
+    memDraw();
+  }
+  /* 이 판 표시(알아요 1 · 다시만 0)를 한 번 보냄 · 다음 판을 고르려고 들고 있는 카드에도 같은 셈을 함(Lec.setMark) */
+  function memSave(then) {
+    var mk = W.marks || {}, ks = Object.keys(mk), day = (S.set && S.set.today) || L.isoDay(), i;
+    W.marks = {};
+    if (!ks.length || setPv()) { then(null); return; }
+    for (i = 0; i < ks.length; i += 1) W.cards[ks[i]] = L.setMark(W.cards[ks[i]] || {}, mk[ks[i]] === 1, 'card', day);
+    S.setDirty = true;
+    L.setCard(S.key, W.id, mk).then(then, function () { then(null); });
+  }
+  /* 판 끝(G V6 · 리더 11-17): «외움» = 다른 두 날 맞힘 · 그중 하루는 시험(계약서 §3-4 · setMemo) → 여기서는 이 판 «알아요» 수만
+     고리 64 + «이번 판 알아요 n / m» · 규칙 한 줄 · «다시 볼 단어 6» · % 와 별 없음 · 알아요 0 이면 숫자 줄 대신 «다시 볼 단어 m»(검수 11-17)
+     세는 것은 판 전체 표시(W.rm) · 보내는 것은 아직 안 보낸 표시(W.marks · 숨을 때 먼저 보냈을 수 있음) */
+  function memEnd() {
+    var my = WRUN, mk = W.rm || W.marks || {}, again = 0, kn = 0, m = W.tot || 0, kk;
+    for (kk in mk) { if (mk.hasOwnProperty(kk)) { if (mk[kk] === 1) kn += 1; else again += 1; } }
+    W.mode = 'memsave';
+    setPage(setHead('목록') + '<div class="sload"></div>');
+    memSave(function () {
+      if (my !== WRUN || !W) return;
+      W.mode = 'memend';
+      setPage(setHead('목록') + '<div class="sres"><div class="rg64">' + ring(m ? Math.floor(kn * 100 / m) : 0, m > 0 && kn >= m) + '</div>' +
+        (kn > 0 ? '<p class="sr1">이번 판 알아요 ' + kn + ' / ' + m + '</p>' : '<p class="sr1">다시 볼 단어 ' + again + '</p>') +
+        '<p class="sr3">시험 포함, 다른 날 두 번 맞히면 외운 단어예요.</p>' + /* 360 · 390 한 줄 */
+        (again && kn > 0 ? '<p class="sr2 am">다시 볼 단어 ' + again + '</p>' : '') +
+        '<button class="btn-fill" type="button" data-act="s1mem">이어서 외우기</button>' +
+        '<button class="btn-line" type="button" data-act="s1test">시험 보기</button>' +
+        '<button class="stxt" type="button" data-act="s1back">목록으로</button></div>');
+    });
+  }
+
+  /* 시험(단어) · 드릴(문법) · 쌓인 오답: setTest / setDue(나갔다 와도 이어서 · done 으로 이어 그림) → 문항마다 setAns(첫 답만 점수)
+     → 그 자리에 맞음 · 틀림과 정답(문법은 해설 · 포인트) → 끝에 틀린 것을 받은 정답으로 한 번 더(3번까지 · 서버 안 부름) → 결과 */
+  function tStart() {
+    var my = WRUN, k = S.key, due = W.kind === 'due', p;
+    W.items = null; W.byK = null; W.cards = null; W.q = null; /* §9-2 시험에 들어가면 들고 있던 단어 문항을 버림 */
+    W.busy = true; W.mode = 'tload';
+    setPage(setHead(due ? '목록' : '그만') + '<div class="sload"></div>');
+    p = due ? L.setDue(k) : L.setTest(k, W.id);
+    p.then(function (r) {
+      if (my !== WRUN || !W) return;
+      W.busy = false;
+      if (!r || !r.ok) {
+        if (setGoneBy(r)) return;
+        if (W.kind === 'voc') s2Draw(setTx(r && r.err, 'open'));
+        else setInfo(due ? '쌓인 오답' : W.s.title, setTx(r && r.err, 'open'));
+        return;
+      }
+      if (!r['try'] || !r.q || !r.q.length) { setInfo(due ? '쌓인 오답' : W.s.title, setTx(due ? 'tomorrow' : 'none')); return; }
+      tBegin(r);
+    }, function () {
+      if (my !== WRUN || !W) return;
+      W.busy = false;
+      if (W.kind === 'voc') s2Draw(M.net); else setInfo(due ? '쌓인 오답' : W.s.title, M.net);
+    });
+  }
+  function tBegin(r) {
+    var q = r.q || [], d = r.done || [], t, i, a, n = Math.min(+r.n || q.length, q.length);
+    t = { id: r['try'], kind: r.kind || (W.kind === 'due' ? 'due' : 'test'), title: r.title || (W.s ? W.s.title : ''), n: n, total: +r.total || n, need: +r.need || 0,
+          kn: +r.kn || 0, round: +r.round || 1, q: q, ans: [], i: 0, ph: 'q', fb: null, end: null, ag: [], agN: 0, agDone: 0, step: 0, busy: false,
+          first: !d.length, lastOk: false };
+    for (i = 0; i < d.length; i += 1) {
+      a = d[i];
+      if (a && a.i >= 0 && a.i < n) t.ans[a.i] = { v: a.v, r: !!a.r, a: a.a == null ? '' : String(a.a), x: a.x || '', pt: a.pt || '' };
+    }
+    while (t.i < n && t.ans[t.i]) t.i += 1;
+    W.t = t; W.mode = 't';
+    if (t.i >= n) { tAfter(); return; }
+    tDraw();
+  }
+  function tIdx(t) { return (t.ph === 'aq' || t.ph === 'as') ? (t.ag[0] ? t.ag[0].i : 0) : t.i; }
+  function tGram(t, q) { return t.kind === 'due' ? q.kd === 'gram' : W.kind === 'gram'; }
+  function tOpts(t, q) { return q.o || (tGram(t, q) ? (L.gramParts(String(q.p || '')) || {}).o : null) || []; }
+  /* 문법 칸 앞뒤 빈칸(gramParts 가 빈칸을 남기든 지우든 낱말이 붙지 않게) */
+  function gEsc(s, pre) {
+    s = String(s == null ? '' : s);
+    if (!s) return '';
+    if (pre) return esc(s) + (/\s$/.test(s) ? '' : ' ');
+    return (/^[\s.,!?;:'")\]]/.test(s) ? '' : ' ') + esc(s);
+  }
+  function tNote(t) {
+    if (t.kind === 'due') return '<p class="snote">두 번 맞히면 빠져요</p>';
+    if (W.kind === 'gram') return '<p class="snote">괄호 고르기와 고쳐 쓰기가 섞여 나와요<br>' + t.n + '문제 · ' + t.need + '개 맞히면 통과<br>틀리면 바로 정답과 해설이 나와요</p>';
+    if (t.round > 1) return '';
+    return '<p class="snote">' + t.n + '문제 · ' + t.need + '개 맞히면 통과<br>틀린 문제는 끝에 한 번 더 나와요 · 점수에는 안 들어가요</p>';
+  }
+  function xBoxHTML(pt, x) {
+    if (!pt && !x) return '';
+    return '<div class="sx">' + (pt ? '<span class="tag amb">' + esc(pt) + '</span>' : '') + (x ? '<p>' + esc(x) + '</p>' : '') + '</div>';
+  }
+  function tDraw() {
+    var t = W.t, ag = t.ph === 'aq' || t.ph === 'as', idx = tIdx(t), q = t.q[idx] || {}, gram = tGram(t, q), fb = t.fb,
+        pos = ag ? t.agDone : t.i, of = ag ? t.agN : t.n, h, gp, o, i, cls, el;
+    h = setHead('그만', (t.kind === 'due' ? '쌓인 오답 · ' : '') + Math.min(pos + 1, of) + ' / ' + of, of ? Math.round(pos * 100 / of) : 0);
+    if (ag) h += '<p class="slab">틀린 문제 한 번 더 · 점수에는 안 들어가요</p>';
+    else if (t.kind === 'test' && t.round > 1) h += '<p class="slab">다시 보기 · 틀린 것은 직접 써요</p>';
+    if (!ag && t.first && t.i === 0 && !fb) h += tNote(t);
+    if (t.kind === 'due' && q.t) h += '<p class="sqt">' + esc(q.t) + '</p>';
+    h += '<div class="sq">';
+    if (gram) {
+      gp = L.gramParts(String(q.p || '')) || {};
+      if (q.f === 'c') {
+        h += '<p class="sqs">알맞은 말을 골라요</p><p class="sqg">' + gEsc(gp.pre, 1) + '<span class="sslot' + (fb ? ' ok' : '') + '">' + (fb ? esc(fb.a) : '?') + '</span>' + gEsc(gp.post, 0) + '</p>';
+      } else {
+        h += '<p class="sqs">밑줄 친 말을 바르게 고쳐 써요</p><p class="sqg">' + gEsc(gp.pre, 1) + '<span class="sund">' + esc(gp.mid || '') + '</span>' +
+          (fb ? ' <span class="sfix">' + esc(fb.a) + '</span>' : '') + gEsc(gp.post, 0) + '</p>';
+      }
+    } else if (q.f === 'c') {
+      h += '<p class="sqw">' + esc(q.p || '') + '</p>';
+    } else {
+      h += '<p class="sqs">뜻을 보고 영어로 써요</p><p class="sqm">' + esc(q.p || '') + '</p>';
+    }
+    h += '</div>';
+    if (q.f === 'c') {
+      o = tOpts(t, q);
+      h += '<div class="sopts" role="group" aria-label="보기">';
+      for (i = 0; i < o.length; i += 1) {
+        cls = '';
+        if (fb) { if (L.setNorm(o[i]) === L.setNorm(fb.a)) cls = ' ok'; else if (i === fb.sel && !fb.ok) cls = ' no'; }
+        h += '<button class="sopt' + cls + '" type="button" data-act="s1opt" data-i="' + i + '"' + (fb ? ' disabled' : '') + '>' + esc(o[i]) + '</button>';
+      }
+      h += '</div><p class="sfb' + (fb && fb.ok ? ' ok' : '') + '" id="sFb" role="status">' + (fb && fb.ok ? '맞아요' : '') + '</p>';
+    } else {
+      h += '<input class="sin' + (fb ? (fb.ok ? ' ok' : ' no') : '') + '" id="sIn" type="text" maxlength="200" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="' +
+        (gram ? '고쳐 쓴 말' : '영어로 쓰기') + '"' + (fb ? ' readonly value="' + esc(fb.v) + '"' : '') + '>' +
+        '<p class="sfb' + (fb && fb.ok ? ' ok' : '') + '" id="sFb" role="status">' + (fb ? (fb.ok ? '맞아요' : '<span class="sfa">정답 ' + esc(fb.a) + '</span>') : '') + '</p>';
+    }
+    if (fb && !fb.ok && gram) h += xBoxHTML(fb.pt, fb.x);
+    if (!fb && q.f !== 'c') h += '<button class="btn-fill" type="button" data-act="s1chk">확인</button>';
+    else if (fb && !fb.ok && (gram || q.f !== 'c')) h += '<button class="btn-fill" type="button" data-act="s1next">다음</button>';
+    setPage(h);
+    t.at = Date.now();
+    el = !fb && q.f !== 'c' ? $('sIn') : (fb && !fb.ok ? app.querySelector('[data-act=s1next]') : null);
+    if (el) { try { el.focus(); } catch (e) { /* 없음 */ } }
+  }
+  /* 두 번 누름 막기(검수 11-17): 문항 · 정답 표시를 그린 뒤 0.35초 안의 누름은 버림 → «다음» 두 번째 누름이 다음 문항의 첫 답이 되지 않게 */
+  var T_GAP = 350;
+  function tFresh(t) { return !!(t && t.at && Date.now() - t.at < T_GAP); }
+  function tPick(i) {
+    var t = W.t, o;
+    if (!t || t.busy || (t.ph !== 'q' && t.ph !== 'aq') || tFresh(t)) return;
+    o = tOpts(t, t.q[tIdx(t)] || {});
+    if (!(i >= 0 && i < o.length)) return;
+    tSend(String(o[i]), i);
+  }
+  function tChk() {
+    var t = W.t, inp = $('sIn'), v, fb;
+    if (!t || tFresh(t)) return;
+    if (t.ph === 'shown' || t.ph === 'as') { if (t.fb && !t.fb.ok) tNext(); return; }
+    if (t.busy || !inp || (t.ph !== 'q' && t.ph !== 'aq')) return;
+    v = String(inp.value || '').replace(/^\s+|\s+$/g, '');
+    if (!v) {
+      fb = $('sFb');
+      if (fb) { fb.className = 'sfb er'; fb.textContent = tGram(t, t.q[tIdx(t)] || {}) ? '먼저 고쳐 쓴 말을 써요' : '먼저 영어를 써요'; }
+      try { inp.focus(); } catch (e) { /* 없음 */ }
+      return;
+    }
+    tSend(v, -1);
+  }
+  function tLock(on) {
+    var bs = app.querySelectorAll('.sopt,[data-act=s1chk]'), inp = $('sIn'), i;
+    for (i = 0; i < bs.length; i += 1) bs[i].disabled = !!on;
+    if (inp) inp.readOnly = !!on;
+  }
+  function tErr(m) { var fb = $('sFb'); if (fb) { fb.className = 'sfb er'; fb.textContent = m; } }
+  function tSend(v, sel) {
+    var t = W.t, my = WRUN, idx, q, a, ok;
+    if (t.ph === 'aq') { /* 끝 한 번 더: 받은 정답과 맞춤(Lec.setNorm · setMatch) · 서버 안 부름 · 카드 안 바뀜 */
+      idx = tIdx(t); q = t.q[idx] || {}; a = (t.ans[idx] && t.ans[idx].a) || '';
+      ok = q.f === 'c' ? L.setNorm(v) === L.setNorm(a) : !!L.setMatch(v, a);
+      t.ag[0].n += 1; t.lastOk = ok; t.ph = 'as';
+      t.fb = { ok: ok, a: a, x: t.ans[idx].x, pt: t.ans[idx].pt, v: v, sel: sel };
+      tDraw(); tAuto();
+      return;
+    }
+    if (t.ph !== 'q') return;
+    if (setPv()) { pvNo(); return; }
+    idx = t.i;
+    t.busy = true; tLock(true);
+    S.setDirty = true;
+    L.setAns(S.key, t.id, idx, v).then(function (r) {
+      if (my !== WRUN || !W || W.t !== t) return;
+      t.busy = false;
+      if (!r || !r.ok) {
+        if (setGoneBy(r)) return;
+        if (r && (r.err === 'try' || r.err === 'done')) { setInfo(t.title, setTx(r.err)); return; }
+        /* 쌓인 오답 중에 그 자료의 시험 · 풀기가 열림(서버 4a86147 · 답 'testing') → 이 판에 맞는 글로 멈춤 · 다시 부르기 없음 */
+        if (r && r.err === 'testing' && t.kind === 'due') { setInfo('쌓인 오답', setTx('testing', 'due')); return; }
+        tLock(false); tErr(setTx(r && r.err, 'send'));
+        return;
+      }
+      t.ans[idx] = { v: v, r: !!r.r, a: r.a == null ? '' : String(r.a), x: r.x || '', pt: r.pt || '' };
+      if (r.end) t.end = r.end;
+      t.ph = 'shown';
+      t.fb = { ok: !!r.r, a: t.ans[idx].a, x: t.ans[idx].x, pt: t.ans[idx].pt, v: v, sel: sel };
+      tDraw(); tAuto();
+    }, function () {
+      if (my !== WRUN || !W || W.t !== t) return;
+      t.busy = false; tLock(false); tErr(setTx('network', 'send'));
+    });
+  }
+  /* 맞음 0.8초 · 단어 고르기 틀림 1.6초 뒤 다음(위젯) · 쓰기 · 문법 틀림은 «다음»을 눌러야 */
+  function tAuto() {
+    var t = W.t, fb = t.fb, q = t.q[tIdx(t)] || {}, ms = 0, n = t.step;
+    if (!fb) return;
+    if (fb.ok) ms = 800;
+    else if (q.f === 'c' && !tGram(t, q)) ms = 1600;
+    if (!ms) return;
+    wT(function () { if (W.t === t && t.step === n && t.fb === fb) tNext(); }, ms);
+  }
+  function tNext() {
+    var t = W && W.t, it, j;
+    if (!t || !t.fb) return;
+    t.step += 1; t.fb = null;
+    if (t.ph === 'shown') {
+      t.ph = 'q';
+      j = t.i + 1;
+      while (j < t.n && t.ans[j]) j += 1;
+      if (j < t.n) { t.i = j; tDraw(); return; }
+      tAfter();
+      return;
+    }
+    if (t.ph === 'as') {
+      it = t.ag.shift();
+      if (!t.lastOk && it.n < 3) t.ag.push(it); else t.agDone += 1;
+      if (t.ag.length) { t.ph = 'aq'; tDraw(); return; }
+      tResult();
+    }
+  }
+  function tAfter() {
+    var t = W.t, j;
+    t.ag = [];
+    for (j = 0; j < t.n; j += 1) { if (t.ans[j] && !t.ans[j].r) t.ag.push({ i: j, n: 0 }); }
+    t.agN = t.ag.length; t.agDone = 0;
+    if (t.ag.length) { t.ph = 'aq'; tDraw(); return; }
+    tResult();
+  }
+  /* 결과(S5 · 위젯 W.res): 고리 64 · «통과» / «아직이에요» · «40 / 42 · 95%» · «3개 더 맞히면 통과예요.» · 틀린 것은 쌓인 오답에 */
+  function tResult() {
+    var t = W.t, e = t.end, voc, of, got, pct, pass, need, h, wr;
+    if (t.kind === 'due') { dueResult(); return; }
+    if (!e) { setBack(true); return; }
+    W.mode = 'res'; t.ph = 'res';
+    voc = W.kind === 'voc';
+    of = voc ? (+e.total || t.total) : (+e.n || t.n);
+    got = voc ? (+e.kn || 0) : (+e.sc || 0);
+    need = +e.need || t.need;
+    pct = of ? Math.floor(got * 100 / of) : 0;
+    pass = !!e.pass;
+    /* 하나도 못 맞힘 = «0 / 42 · 0%» 숫자 줄과 고리 안 % 를 빼고 남은 것(몇 개 더)만(검수 11-17) */
+    h = setHead('목록') + '<div class="sres"><div class="rg64">' + ring(pct, pass) + (pass || got <= 0 ? '' : '<span>' + pct + '%</span>') + '</div>' +
+      '<p class="sr1">' + (pass ? '통과' : '아직이에요') + '</p>' +
+      (got > 0 ? '<p class="sr3">' + got + ' / ' + of + ' · ' + pct + '%</p>' : '') +
+      (!pass && need > got ? '<p class="sr2">' + (need - got) + '개 더 맞히면 통과예요.</p>' : '') +
+      (+e.ever > 0 ? '<p class="sr3">틀린 ' + (+e.ever) + '개는 쌓인 오답에 담았어요.</p>' : '');
+    if (pass) h += '<button class="btn-fill" type="button" data-act="s1back">목록으로</button>';
+    else if (voc && e.next === 'retake') {
+      wr = Math.max(0, of - got);
+      h += '<button class="btn-fill" type="button" data-act="s1retake">틀린 ' + wr + '개 다시 보기 · ' + (wr + Math.min(wr, got)) + '문제</button>' +
+        '<button class="stxt" type="button" data-act="s1back">목록으로</button>';
+    } else h += '<p class="sr3">내일 다시 볼 수 있어요.</p><button class="btn-fill" type="button" data-act="s1back">목록으로</button>';
+    setPage(h + '</div>');
+  }
+  /* 쌓인 오답 끝(S8): 통과 · 떨어짐 없음 · «오늘 4개가 빠졌어요 · 남은 19개»
+     end.out(이 판에서 빠진 수) · end.due(남은 수)가 오면 그것(목록은 돌아갈 때 다시 받음) · 없으면(옛 서버 · 흉내) 새 묶음을 받아 «들어올 때 수 − 새 수» */
+  function dueResult() {
+    var t = W.t, e = t.end, my = WRUN, k = S.key, before = S.set && S.set.due ? +S.set.due.n || 0 : 0;
+    W.mode = 'res'; t.ph = 'res';
+    function draw(out, left) {
+      var h;
+      if (my !== WRUN || !W) return;
+      h = setHead('목록') + '<div class="sres">' + fishSVG();
+      if (left === null) h += '<p class="sr2">두 번 맞히면 빠져요</p>';
+      else {
+        if (out > 0) h += '<p class="sr1">오늘 ' + out + '개가 빠졌어요' + (left > 0 ? ' · 남은 ' + left + '개' : '') + '</p>' + (left > 0 ? '' : '<p class="sr3">쌓인 오답을 다 비웠어요</p>');
+        else h += left > 0 ? '<p class="sr1">쌓인 오답 ' + left + '개</p><p class="sr3">두 번 맞히면 빠져요</p>' : '<p class="sr1">쌓인 오답을 다 비웠어요</p>';
+      }
+      setPage(h + '<button class="btn-fill" type="button" data-act="s1back">목록으로</button></div>');
+    }
+    if (e && e.out != null && e.due != null) { draw(Math.max(0, +e.out || 0), Math.max(0, +e.due || 0)); return; }
+    if (setPv()) { draw(0, null); return; }
+    setPage(setHead('목록') + '<div class="sload"></div>');
+    S.setDirty = false;
+    L.setHome(k).then(function (r) {
+      var left;
+      if (k !== S.key) return;
+      if (r && r.ok) { S.set = r; left = r.due ? +r.due.n || 0 : 0; draw(Math.max(0, before - left), left); } else { S.setDirty = true; draw(0, null); }
+    }, function () { S.setDirty = true; draw(0, null); });
+  }
+
+  /* 폰 목소리(T4): en-US → en-* → 없으면 소리 단추 숨김 · 빠르기 0.9 · 덩어리마다 speak · onend 가 안 오면 글자 수 × 90ms + 1.5초 뒤 넘어감 */
+  function sayV() {
+    var ss = window.speechSynthesis, f;
+    if (!ss || !window.SpeechSynthesisUtterance || typeof L.sayVoice !== 'function') return null;
+    if (SAYV) return SAYV;
+    try { SAYV = L.sayVoice(ss.getVoices() || []) || null; } catch (e) { SAYV = null; }
+    if (!SAYV && !SAYW) { /* 크롬은 목소리 목록이 늦게 옴 → 오면 단추를 보임 */
+      SAYW = true;
+      f = function () {
+        try { SAYV = L.sayVoice(ss.getVoices() || []) || null; } catch (e2) { SAYV = null; }
+        var b = $('vSay');
+        if (b && SAYV) b.hidden = false;
+      };
+      try { if (ss.addEventListener) ss.addEventListener('voiceschanged', f); else ss.onvoiceschanged = f; } catch (e3) { /* 없음 */ }
+    }
+    return SAYV;
+  }
+  function sayStop() {
+    SAYRUN += 1;
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) { /* 없음 */ }
+  }
+  /* 한 조각 말하기: cb(d) · d = onstart ~ onend 로 잰 길이(안 오면 글자 수 × 90ms)
+     nost 가 있으면: speak 뒤 1.5초 안에 onstart 가 없음(아이폰이 누름 밖 speak 를 막음 · 크롬 not-allowed) = 소리를 거두고 nost() · cb 는 안 부름 */
+  function sayOne(t, cb, nost) {
+    var v = sayV(), ss = window.speechSynthesis, my = SAYRUN, fin = false, t0 = 0, to = 0, ns = 0, est, u;
+    t = String(t || '');
+    est = t.length * 90;
+    function clr() { if (to) clearTimeout(to); if (ns) clearTimeout(ns); to = 0; ns = 0; }
+    function done(d) {
+      if (fin) return;
+      fin = true;
+      clr();
+      if (my === SAYRUN && cb) cb(d);
+    }
+    function noStart() {
+      if (fin) return;
+      if (!nost) { if (!to) to = setTimeout(function () { done(est); }, est); return; } /* 막혔어도 시간으로 넘어감 */
+      fin = true;
+      clr();
+      try { ss.cancel(); } catch (e0) { /* 없음 */ }
+      if (my === SAYRUN) nost();
+    }
+    if (!v) { to = setTimeout(function () { done(est); }, est); return; } /* 목소리 없음 = 소리 없이 같은 시간(따라 읽기는 됨) */
+    try {
+      u = new window.SpeechSynthesisUtterance(t);
+      u.voice = v; u.lang = v.lang; u.rate = 0.9;
+      u.onstart = function () {
+        if (fin || t0) return;
+        t0 = Date.now();
+        clr();
+        to = setTimeout(function () { done(est); }, est + 1500); /* onend 가 안 옴 */
+      };
+      u.onend = function () { done(t0 ? Date.now() - t0 : est); };
+      u.onerror = function () { if (!t0) noStart(); else done(Date.now() - t0); };
+      ss.cancel();
+      ss.speak(u);
+    } catch (e) { to = setTimeout(function () { done(est); }, est); return; }
+    ns = setTimeout(function () { ns = 0; if (!t0) noStart(); }, 1500);
+  }
+  /* «▶ 원래 소리»: 덩어리 사이 0.35초(T4) · 첫 덩어리는 누름 안에서 */
+  function sayRun(parts) {
+    var j = 0, my;
+    sayStop();
+    my = SAYRUN;
+    function nx() {
+      if (my !== SAYRUN || j >= parts.length) return;
+      sayOne(parts[j], function () { j += 1; if (j < parts.length) setTimeout(nx, 350); });
+    }
+    nx();
+  }
+
+  /* 구문(Q2 가): 덩어리마다 듣고 따라 말하기 → 해석만 보고 영어로 말하기 → setCard(say) 한 번 → ★ 문장 녹음 */
+  function guLoad() {
+    var my = WRUN, k = S.key;
+    W.mode = 'load'; W.busy = true;
+    setPage(setHead('목록') + '<div class="sload"></div>');
+    L.setItems(k, W.id).then(function (r) {
+      var g, rc, j, again = false, cd, i0 = -1;
+      if (my !== WRUN || !W) return;
+      W.busy = false;
+      if (!r || !r.ok) { if (setGoneBy(r)) return; setInfo(W.s.title, setTx(r && r.err, 'open')); return; }
+      g = { items: r.items || [], pick: r.pick || [], recs: {}, rec: r.rec || {}, byK: {}, i: 0, ph: 'a', hl: -1, busy: false, done: false, show: false, cue: '',
+            marks: {}, run: 0, R: null, direct: false, wait: false, j: 0, man: false };
+      rc = r.recs || [];
+      for (j = 0; j < g.items.length; j += 1) { if (g.items[j] && g.items[j].k) g.byK[g.items[j].k] = g.items[j]; }
+      for (j = 0; j < rc.length; j += 1) { if (rc[j] && rc[j].k) { g.recs[rc[j].k] = rc[j]; if (rc[j].st === 'again' && g.byK[rc[j].k]) again = true; } }
+      /* 다시 열면 아직 «알아요» 안 한 첫 문장부터(검수 11-17 · 카드 g = 따라 말하기 함) · 다 했으면 1번부터 + «★ 녹음으로» */
+      cd = r.cards || {};
+      for (j = 0; j < g.items.length && i0 < 0; j += 1) { if (!(g.items[j] && cd[g.items[j].k] && cd[g.items[j].k].g)) i0 = j; }
+      g.allSaid = g.items.length > 0 && i0 < 0;
+      g.i = i0 > 0 ? i0 : 0;
+      W.g = g;
+      if (!g.items.length) { setInfo(W.s.title, setTx('none')); return; }
+      if (again) { g.direct = true; recOpen(); return; } /* 선생님이 «다시»를 보냄 = 녹음 화면부터(따라 말하기는 아래 글자 단추로) */
+      W.mode = 'gu';
+      guDraw();
+    }, function () {
+      if (my !== WRUN || !W) return;
+      W.busy = false;
+      setInfo(W.s.title, M.net);
+    });
+  }
+  function guDraw() {
+    var g = W.g, it = g.items[g.i] || {}, b = g.ph === 'b', n = g.items.length, parts = L.sayParts(String(it.e || '')) || [], eng = '', j, h;
+    if (b && !g.show) eng = '<span class="gbar" style="width:92%"></span><span class="gbar" style="width:58%"></span>';
+    else {
+      for (j = 0; j < parts.length; j += 1) eng += (j ? ' <span class="gs" aria-hidden="true">/</span> ' : '') + '<span class="gc' + (g.hl === j ? ' on' : '') + '">' + esc(parts[j]) + '</span>';
+    }
+    h = setHead('목록', (g.i + 1) + ' / ' + n, Math.round(g.i * 100 / n)) +
+      '<p class="slab">' + (b ? '② 해석 보고 영어로 말해요' : '① 듣고 따라 말해요 · 덩어리마다') + '</p>' +
+      '<div class="sq gq"><div class="gtags"><span class="tag gno">' + esc(two(it.n || g.i + 1)) + '번</span>' + (it.p ? '<span class="tag sky">' + esc(it.p) + '</span>' : '') + '</div>' +
+      '<p class="ge">' + eng + '</p><p class="gt' + (b ? ' b' : '') + '">' + esc(it.t || '') + '</p></div>' +
+      '<p class="scue" id="gCue" role="status">' + esc(g.cue) + '</p>';
+    if (!b) {
+      if (g.done) h += '<div class="s2b"><button class="btn-line" type="button" data-act="s1again">한 번 더</button><button class="btn-fill" type="button" data-act="s1toB">다음 단계</button></div>';
+      else if (g.busy && g.wait) h += '<button class="btn-fill" type="button" data-act="s1gnext">다음 듣기</button>';
+      else h += '<button class="btn-fill" type="button" data-act="s1play"' + (g.busy ? ' aria-disabled="true"' : '') + '>' + (g.busy ? '듣는 중' : '듣기') + '</button>';
+    } else {
+      h += g.show ? '<div class="s2b"><button class="btn-line" type="button" data-act="s1redo">다시</button><button class="btn-fill" type="button" data-act="s1know">알아요</button></div>' :
+        '<button class="btn-fill" type="button" data-act="s1reveal">말해 본 뒤 영어 보기</button>';
+    }
+    if (guRecLink()) h += '<div class="stxtw"><button class="stxt" type="button" data-act="s1torec">★ 녹음으로</button></div>';
+    setPage(h);
+  }
+  /* «★ 녹음으로»(검수 11-17): ★ 문장이 있고 · 따라 말하기를 다 했거나(said ≥ n) 녹음을 시작해 아직 낼 문장이 남았을 때 → 따라 말하기를 처음부터 다시 하지 않고 녹음 칸으로 */
+  function guRecLink() {
+    var g = W.g, p = recPick(), any = false, i;
+    if (!p.length) return false;
+    if (g.allSaid) return true;
+    for (i = 0; i < p.length; i += 1) { if (g.recs[p[i]] && g.recs[p[i]].st) any = true; }
+    return any && recNeed().length > 0;
+  }
+  function guToRec() {
+    var my = WRUN, g = W.g;
+    sayStop(); g.run += 1; g.busy = false; g.wait = false; g.hl = -1;
+    W.mode = 'gusave';
+    setPage(setHead('목록') + '<div class="sload"></div>');
+    guSave(function () {
+      if (my !== WRUN || !W) return;
+      g.direct = true; /* 녹음 칸 아래 «따라 말하기 처음부터» */
+      recOpen();
+    });
+  }
+  /* 첫 덩어리는 누름 안에서 speak · 끝나면 «따라 말해요» 뒤 쉼 = max(1.5초, 1.3 × 말한 길이 + 0.5초) · 8초 넘지 않음(리더 11-17)
+     speak 뒤 1.5초 안에 소리가 시작 안 되면(아이폰이 누름 밖 speak 를 막음) 자동 넘김을 멈추고 «다음 듣기»로 한 조각씩(g.man · 이 구문 동안) */
+  function guPause(d) { return Math.min(8000, Math.max(1500, Math.round(1.3 * (+d || 0) + 500))); }
+  function guPlay() {
+    var g = W.g, it = g.items[g.i] || {};
+    sayStop();
+    g.run += 1;
+    g.busy = true; g.done = false; g.wait = false; g.j = 0;
+    if (it.k && g.marks[it.k] !== 1) g.marks[it.k] = 0;
+    guStep(g.run);
+  }
+  function guStep(run) {
+    var g = W && W.g, it, parts, j;
+    if (!g || g.run !== run || W.mode !== 'gu') return;
+    it = g.items[g.i] || {};
+    parts = L.sayParts(String(it.e || '')) || [];
+    j = g.j;
+    function live() { return W && W.g === g && g.run === run && W.mode === 'gu'; }
+    if (j >= parts.length) { g.hl = -1; g.busy = false; g.done = true; g.wait = false; g.cue = '한 번 더 하거나 다음 단계로 가요'; guDraw(); return; }
+    g.hl = j; g.wait = false; g.cue = '잘 들어요'; guDraw();
+    sayOne(parts[j], function (d) {
+      if (!live()) return;
+      g.j = j + 1;
+      g.cue = '따라 말해요';
+      if (g.man && g.j < parts.length) { g.wait = true; guDraw(); return; } /* 다음 speak 는 누름 안에서 */
+      guDraw();
+      wT(function () { guStep(run); }, guPause(d));
+    }, function () {
+      if (!live()) return;
+      g.man = true; g.wait = true; g.cue = ''; guDraw(); /* 이 조각을 «다음 듣기»로 다시 */
+    });
+  }
+  function guSave(then) {
+    var g = W.g, mk = g.marks || {}, ks = Object.keys(mk);
+    g.marks = {};
+    if (!ks.length || setPv()) { then(); return; }
+    S.setDirty = true;
+    L.setCard(S.key, W.id, mk).then(function () { then(); }, function () { then(); });
+  }
+  function guFinish() {
+    var my = WRUN, g = W.g;
+    sayStop();
+    W.mode = 'gusave';
+    setPage(setHead('목록') + '<div class="sload"></div>');
+    guSave(function () {
+      if (my !== WRUN || !W) return;
+      g.i = 0;
+      if (recPick().length) { recOpen(); return; }
+      guDoneDraw();
+    });
+  }
+  function guDoneDraw() {
+    W.mode = 'gudone';
+    setPage(setHead('목록') + '<div class="sres">' + icon('check', 36) + '<p class="sr1">다 했어요</p><button class="btn-fill" type="button" data-act="s1back">목록으로</button></div>');
+  }
+
+  /* ★ 녹음(T3): rec.ok 면 녹음 → 폰에서 먼저 들어 봄 → «원장 선생님께 내기»(recSend) · 아니면 고등학생 = «녹음 제출 안내 보기»(REC_NOTE → recAgree) · 그 밖 = 보호자 동의 한 줄
+     띠 · 알림 없음 · 녹음은 이 화면을 닫을 때까지 폰 메모리 안(localStorage 0) */
+  function recPick() {
+    var g = W.g, p = g.pick || [], o = [], i;
+    for (i = 0; i < p.length; i += 1) { if (g.byK[p[i]]) o.push(p[i]); }
+    return o;
+  }
+  function recOpen() {
+    var g = W.g, k, any = false;
+    W.mode = 'rec';
+    if (!g.R) {
+      for (k in g.recs) { if (g.recs.hasOwnProperty(k) && g.recs[k] && g.recs[k].st) any = true; }
+      g.R = { intro: !any, b: {}, on: null, msg: '', msg2: '', err: '', retry: false, busy: false, sent: false, note: false, done: {}, big: {} };
+    }
+    recDraw();
+  }
+  function recSt(k) { var g = W.g; if (g.R && g.R.done[k]) return 'sent'; return (g.recs[k] && g.recs[k].st) || ''; }
+  function recNeed() {
+    var p = recPick(), o = [], i, st;
+    for (i = 0; i < p.length; i += 1) { st = recSt(p[i]); if (st === '' || st === 'again') o.push(p[i]); }
+    return o;
+  }
+  function recCan() {
+    var md = navigator.mediaDevices;
+    if (/KAKAOTALK/i.test(String(navigator.userAgent || ''))) return 'kakao';
+    if (!md || typeof md.getUserMedia !== 'function' || !window.MediaRecorder) return 'none';
+    return 'ok';
+  }
+  function recClock(on) {
+    var s = on && on.t0 ? Math.min(45, Math.floor((Date.now() - on.t0) / 1000)) : 0;
+    return Math.floor(s / 60) + ':' + two(s % 60);
+  }
+  function recLeftText(n) {
+    if (n === 1) return '녹음하면 낼 수 있어요';
+    return (KO_N[n] ? KO_N[n] + ' 문장' : n + '문장') + '을 다 녹음하면 낼 수 있어요';
+  }
+  function guZeroHTML() { return '<div class="stxtw"><button class="stxt" type="button" data-act="s1gu0">따라 말하기 처음부터</button></div>'; }
+  /* 녹음 제출 끄기 길은 학생 화면에 두지 않음(원장님 11-17 · 원장 선생님이 선생님 화면에서 끔) → Lec.recOff 는 이 화면이 부르지 않음 */
+  function recDraw() {
+    var g = W.g, R = g.R, rc = g.rec || {}, p = recPick(), need = recNeed(), can = recCan(), live = !!rc.ok && can === 'ok', os = pwaOs(),
+        h = setHead('목록'), i, k, it, st, tag, ctl, all, wy, nt;
+    /* 동의한 뒤에도 녹음 칸 아래 «녹음 제출 안내»로 여덟 줄을 다시 읽음(검수 11-17 · 단추 없이 «돌아가기»만) */
+    nt = rc.ok ? '<div class="stxtw"><button class="stxt" type="button" data-act="s1note">녹음 제출 안내</button></div>' : '';
+    if (R.note) {
+      setPage(h + '<p class="sh2">★ 녹음 ' + p.length + '문장</p>' + noteHTML(L.REC_NOTE, rc.ok ? '' : 's1recok', 'rAgErr') +
+        '<div class="stxtw"><button class="stxt" type="button" data-act="s1noteno">돌아가기</button></div>');
+      return;
+    }
+    if (R.sent) {
+      setPage(h + '<div class="sres">' + icon('check', 36) + '<p class="sr1">냈어요</p><p class="sr3">원장 선생님이 듣기 전</p><p class="sr3">원장 선생님이 «다시»를 보내면 그 문장만 다시 녹음해요.</p>' +
+        '<button class="btn-fill" type="button" data-act="s1back">목록으로</button></div>' + nt);
+      return;
+    }
+    h += '<p class="sh2">★ 녹음 ' + p.length + '문장</p>';
+    if (live && R.intro && need.length) {
+      setPage(h + '<div class="sintro">' + icon('mic', 30) + '<p>해석을 보고 외워서 말해요.</p><p class="sub">녹음은 원장 선생님만 들어요 · 30일 뒤 지워요</p></div>' +
+        '<button class="btn-fill" type="button" data-act="s1mic">마이크 켜고 녹음</button>' + (g.direct ? guZeroHTML() : '') + nt);
+      return;
+    }
+    h += '<p class="snote">해석을 보고 외워서 말해요</p>';
+    for (i = 0; i < p.length; i += 1) {
+      k = p[i]; it = g.byK[k] || {}; st = recSt(k); tag = ''; wy = setWhy(g.recs[k] && g.recs[k].why);
+      if (st === 'sent') tag = '<span class="tag">냈어요</span>';
+      else if (st === 'ok') tag = '<span class="tag grn">좋아요</span>';
+      else if (st === 'again') tag = '<span class="tag amb">다시' + (wy ? ' · ' + esc(wy) : '') + '</span>';
+      if (live && (st === '' || st === 'again')) {
+        if (R.on && R.on.k === k) {
+          ctl = '<span class="srl"><i class="rdot" aria-hidden="true"></i>지금 말해요 <span id="rTime">' + recClock(R.on) + '</span></span>' +
+            '<button class="schip" type="button" data-act="s1stop">멈추기</button>';
+        } else if (R.b[k]) {
+          ctl = '<button class="schip" type="button" data-act="s1me" data-k="' + esc(k) + '"' + (R.on ? ' disabled' : '') + '>▶ 내 소리</button>' +
+            '<button class="schip" type="button" data-act="s1or" data-k="' + esc(k) + '"' + (R.on ? ' disabled' : '') + '>▶ 원래 소리</button>' +
+            '<button class="schip" type="button" data-act="s1rec" data-k="' + esc(k) + '"' + (R.on || R.busy ? ' disabled' : '') + '>다시</button>';
+        } else {
+          ctl = '<button class="schip on" type="button" data-act="s1rec" data-k="' + esc(k) + '"' + (R.on || R.busy ? ' disabled' : '') + '>● 녹음</button>';
+        }
+      } else {
+        ctl = '<button class="schip" type="button" data-act="s1or" data-k="' + esc(k) + '">▶ 원래 소리</button>';
+      }
+      h += '<div class="sq srec"><p class="srt"><span class="sno">' + esc(two(it.n || i + 1)) + '</span>' + esc(it.t || '') + '</p>' +
+        (tag ? '<p class="srs">' + tag + '</p>' : '') + '<div class="srb">' + ctl + '</div>' +
+        (R.big && R.big[k] && !R.b[k] ? '<p class="smsg" role="alert">' + esc(REC_TX.big) + '</p>' : '') + '</div>';
+    }
+    if (R.msg) h += '<p class="smsg" role="alert">' + esc(R.msg) + '</p>' + (R.msg2 ? '<p class="smsg2">' + esc(R.msg2) + '</p>' : '');
+    h += '<div class="sbot">';
+    if (!rc.ok) {
+      h += rc.lvl === 'h' ? '<button class="btn-line" type="button" data-act="s1note">녹음 제출 안내 보기</button>' :
+        '<p class="snote c">' + esc((L.REC_NOTE && L.REC_NOTE.guard) || SET_TX.rec_ok) + '</p>';
+    } else if (can === 'kakao') {
+      h += '<p class="smsg">' + esc(REC_TX.kakao) + '</p><button class="btn-fill" type="button" data-act="s1out">' + (os === 'ios' ? '사파리로 열기' : '다른 브라우저로 열기') + '</button>';
+    } else if (can === 'none') {
+      h += '<p class="smsg">' + esc(REC_TX.none) + '</p>';
+    } else if (need.length) {
+      all = true;
+      for (i = 0; i < need.length; i += 1) { if (!R.b[need[i]]) all = false; }
+      if (R.err) h += '<p class="smsg" role="alert">' + esc(R.err) + '</p>';
+      if (all) h += '<button class="btn-fill" type="button" data-act="s1send"' + (R.busy || R.on ? ' disabled' : '') + '>' + (R.err && R.retry ? '다시 보내기' : '원장 선생님께 내기') + '</button>';
+      else h += '<p class="snote">' + recLeftText(need.length) + '</p>';
+    } else {
+      h += '<button class="btn-fill" type="button" data-act="s1back">목록으로</button>';
+    }
+    setPage(h + '</div>' + (g.direct ? guZeroHTML() : '') + nt);
+  }
+  /* 녹음: 누른 그 자리에서 마이크(에코 캔슬 끔) · 32kbps · 45초에 저절로 멈춤 · 멈추면 바로 track.stop */
+  function recStart(k) {
+    var g = W.g, R = g.R, md = navigator.mediaDevices, MR = window.MediaRecorder, my = WRUN, on, pr = null;
+    if (setPv()) { pvNo(); return; }
+    if (!R || R.on || R.busy || !(g.rec && g.rec.ok) || !k) return;
+    if (!md || typeof md.getUserMedia !== 'function' || !MR) { R.msg = REC_TX.none; R.msg2 = ''; recDraw(); return; }
+    sayStop(); audStop();
+    R.msg = ''; R.msg2 = ''; R.err = ''; R.retry = false;
+    if (R.big) delete R.big[k];
+    on = { k: k, t0: 0, mr: null, st: null, iv: 0, to: 0, dead: false, cap: false };
+    R.on = on;
+    try { pr = md.getUserMedia({ audio: { echoCancellation: false } }); } catch (e0) { pr = null; }
+    if (!pr || typeof pr.then !== 'function') { R.on = null; R.msg = REC_TX.none; recDraw(); return; }
+    recDraw();
+    pr.then(function (st) {
+      var mime, mr = null, parts = [];
+      if (my !== WRUN || !W || R.on !== on || on.dead) { trackStop(st); return; }
+      on.st = st;
+      mime = L.recMime(MR) || '';
+      try { mr = new MR(st, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 }); } catch (e1) {
+        try { mr = new MR(st); } catch (e2) { mr = null; }
+      }
+      if (!mr) { trackStop(st); R.on = null; R.msg = REC_TX.none; recDraw(); return; }
+      on.mr = mr;
+      mr.ondataavailable = function (ev) { if (ev && ev.data && ev.data.size) parts.push(ev.data); };
+      mr.onstop = function () {
+        var type, blob = null, old, url = '';
+        trackStop(st);
+        if (on.iv) clearInterval(on.iv);
+        if (on.to) clearTimeout(on.to);
+        if (on.dead || my !== WRUN || !W) return;
+        R.on = null;
+        type = String(mr.mimeType || mime || '');
+        try { blob = new Blob(parts, type ? { type: type } : {}); } catch (e3) { blob = null; }
+        if (!blob || !blob.size) { R.msg = REC_TX.none; recDraw(); return; }
+        old = R.b[k];
+        if (old && old.url) { try { URL.revokeObjectURL(old.url); } catch (e4) { /* 없음 */ } }
+        /* 멈출 때 크기를 잼(검수 11-17): 1MB 넘으면(아이폰이 32kbps 를 무시할 때) 들고 있지 않고 그 문장 칸에 바로 «다시 녹음해 주세요» */
+        if (blob.size > (L.REC_MAX_BYTES || 1048576)) { delete R.b[k]; if (!R.big) R.big = {}; R.big[k] = true; recDraw(); return; }
+        try { url = URL.createObjectURL(blob); } catch (e5) { url = ''; }
+        R.b[k] = { blob: blob, mime: type, ms: Math.min(Date.now() - on.t0, L.REC_MAX_MS || 45000), url: url };
+        if (on.cap) R.msg = REC_TX.cap;
+        recDraw();
+      };
+      try { mr.start(); } catch (e6) { trackStop(st); R.on = null; R.msg = REC_TX.none; recDraw(); return; }
+      on.t0 = Date.now();
+      on.iv = setInterval(function () { var el = $('rTime'); if (el && R.on === on) el.textContent = recClock(on); }, 250);
+      on.to = setTimeout(function () { on.cap = true; recStop(); }, L.REC_MAX_MS || 45000);
+      recDraw();
+    }, function (err) {
+      var nm = String((err && err.name) || ''), os = pwaOs();
+      if (my !== WRUN || !W || R.on !== on || on.dead) return;
+      R.on = null;
+      if (nm === 'NotAllowedError' || nm === 'PermissionDeniedError' || nm === 'SecurityError') {
+        R.msg = REC_TX.deny; R.msg2 = os === 'ios' ? REC_TX.denyI : (os === 'android' ? REC_TX.denyA : '');
+      } else if (nm === 'NotReadableError' || nm === 'TrackStartError' || nm === 'AbortError') {
+        R.msg = REC_TX.busy; R.msg2 = '';
+      } else {
+        R.msg = REC_TX.none; R.msg2 = '';
+      }
+      recDraw();
+    });
+  }
+  function recStop() {
+    var R = W && W.g && W.g.R, on = R && R.on;
+    if (!on) return;
+    if (!on.mr) { on.dead = true; R.on = null; trackStop(on.st); if (W.mode === 'rec') recDraw(); return; } /* 허락을 기다리는 중 */
+    try { if (on.mr.state !== 'inactive') on.mr.stop(); } catch (e) { /* 없음 */ }
+  }
+  function recKill(R) {
+    var on = R && R.on;
+    if (!on) return;
+    on.dead = true;
+    if (on.iv) clearInterval(on.iv);
+    if (on.to) clearTimeout(on.to);
+    try { if (on.mr && on.mr.state !== 'inactive') on.mr.stop(); } catch (e) { /* 없음 */ }
+    trackStop(on.st);
+    R.on = null;
+  }
+  function trackStop(st) {
+    var a, i;
+    try { a = st && st.getTracks ? st.getTracks() : []; for (i = 0; i < a.length; i += 1) a[i].stop(); } catch (e) { /* 없음 */ }
+  }
+  function audPlay(k) {
+    var R = W.g.R, b = R && R.b[k], a, p;
+    if (!b || !b.url || (R && R.on)) return;
+    sayStop(); audStop();
+    try {
+      a = new Audio(b.url);
+      W.aud = a;
+      p = a.play();
+      if (p && typeof p.then === 'function') p.then(null, function () { /* 없음 */ });
+    } catch (e) { /* 없음 */ }
+  }
+  function audStop() {
+    if (!W || !W.aud) return;
+    try { W.aud.pause(); } catch (e) { /* 없음 */ }
+    W.aud = null;
+  }
+  /* 차례대로 begin → 올림 → done(Lec.recSend) · 하나라도 실패하면 그 자리 «보내지 못했어요.» + «다시 보내기»(이미 간 문장은 다시 안 보냄) */
+  function recSendAll() {
+    var g = W.g, R = g.R, my = WRUN, list = recNeed(), j;
+    if (setPv()) { pvNo(); return; }
+    if (!R || R.busy || R.on || !list.length) return;
+    for (j = 0; j < list.length; j += 1) { if (!R.b[list[j]]) return; }
+    j = 0;
+    sayStop(); audStop();
+    R.busy = true; R.err = ''; R.retry = false; R.msg = ''; R.msg2 = '';
+    recDraw();
+    function fail(e) {
+      if (my !== WRUN || !W) return;
+      R.busy = false;
+      R.err = setTx(e, 'rec');
+      R.retry = e === 'upload' || e === 'file' || e === 'late' || e === 'network' || e === 'error';
+      if (e === 'rec_ok' || e === 'level') g.rec.ok = false;
+      recDraw();
+    }
+    function one() {
+      var k, b, base;
+      if (my !== WRUN || !W) return;
+      if (j >= list.length) { R.busy = false; R.sent = true; recDraw(); return; }
+      k = list[j]; b = R.b[k]; base = L.recBase(b.mime) || '';
+      if (!base) { fail('mime'); return; }
+      if (b.blob.size > (L.REC_MAX_BYTES || 1048576)) { fail('size'); return; }
+      S.setDirty = true;
+      L.recSend(S.key, W.id, k, b.blob, base, b.ms).then(function (r) {
+        if (my !== WRUN || !W) return;
+        if (r && r.ok) { R.done[k] = 1; j += 1; one(); return; }
+        if (r && (r.err === 'key' || r.err === 'consent' || r.err === 'agree' || r.err === 'old' || r.err === 'preview')) { setGoneBy(r); return; }
+        fail(r && r.err ? r.err : 'error');
+      }, function () { fail('network'); });
+    }
+    one();
+  }
+  function recAgreeGo(btn) {
+    var g = W.g, my = WRUN;
+    if (setPv()) { pvNo(); return; }
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    setHTML('rAgErr', '');
+    S.setDirty = true;
+    L.recAgree(S.key).then(function (r) {
+      if (my !== WRUN || !W) return;
+      if (r && r.ok) { g.rec.ok = true; g.rec.how = r.how || 'self'; g.R.note = false; g.R.intro = true; recDraw(); return; }
+      if (setGoneBy(r)) return;
+      btn.disabled = false;
+      setHTML('rAgErr', esc(setTx(r && r.err, 'open')));
+    }, function () {
+      if (my !== WRUN || !W) return;
+      btn.disabled = false;
+      setHTML('rAgErr', esc(M.net));
+    });
+  }
+  /* 카톡 안 = 밖의 브라우저로(설치 안내와 같은 kakaoOut · 지금 주소 그대로 · 설치 판은 안 엶) */
+  function recOut() { kakaoOut(location.origin + location.pathname + location.search); }
 
   /* ------------------------------------------------------------ 재생기 */
   /* 유튜브: {time(), dur(), state(), seek(t), play(), pause(), rate(r)} */
@@ -2295,6 +3616,7 @@ window.__lecStart = function () {
 
   function teardown() {
     stage(false);
+    setStop(); /* S1 공부 화면: 말소리 · 녹음 · 마이크 · 타이머 · 내 소리 주소를 모두 거둠(주소가 바뀌어 다른 화면으로 가도) */
     if (!T) return;
     try { sample(); sendBeat(true); } catch (e) { /* 없음 */ }
     if (T.iv) clearInterval(T.iv);
@@ -2704,7 +4026,7 @@ window.__lecStart = function () {
     L.lsDel(LS.key); L.lsDel(LS.sess); L.lsDel(LS.pend); L.lsDel(LS.rate); L.lsDel(LS.seen);
     SEEN = null;
     S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
-    S.al = null; S.alFresh = false; S.nIds = null;
+    S.al = null; S.alFresh = false; S.nIds = null; S.set = null; S.setDirty = false; S.setMore = false;
     clearHash();
     showLogin('');
     if (Object.prototype.toString.call(a) === '[object Array]') {
@@ -2729,7 +4051,7 @@ window.__lecStart = function () {
     var d = M2.db(), key = L.hex64(), at = nowIso();
     d.key.push({ key: key, sid: 's0901|오가을', rid: 's0901', pin: '', sname: '오가을', cls: ['c-g1a'], dev: '개인 링크', made_by: 'Benjamin', created_at: at, last_at: at });
     M2.save(d);
-    S.key = key; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
+    S.key = key; S.att = null; S.paper = null; S.pdf = null; S.rng = null; S.set = null;
     L.lsSet(LS.key, key);
     loadHome();
   }
@@ -2761,7 +4083,7 @@ window.__lecStart = function () {
     } else if (act === 'agree') { choose('agree', el); }
     else if (act === 'recback') { goList(); }
     else if (act === 'logout') { logout(); }
-    else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; clearHash(); showLogin(''); }
+    else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; S.set = null; clearHash(); showLogin(''); }
     else if (act === 'retry') { loadHome(); }
     else if (act === 'list') { goList(); }
     else if (act === 'absmore') { jumpAbs(); }
@@ -2818,6 +4140,7 @@ window.__lecStart = function () {
     else if (act === 'del') { S.q.del = attr(el, 'data-id'); keepReply(); drawQList(); }
     else if (act === 'delno') { S.q.del = null; keepReply(); drawQList(); }
     else if (act === 'delyes') { keepReply(); delQ(attr(el, 'data-id')); }
+    else if (act.indexOf('s1') === 0) { setClick(act.substring(2), el); }   /* S1 단어 · 구문 · 문법 */
     else if (act === 'pwa') { pwaOpen(el); }
     else if (act === 'alon') { alOn(el, false); }   /* N1 목록 카드 [알림 받기] */
     else if (act === 'alstep') { alOn(el, true); }  /* N1 첫 로그인 단계 [알림 받기] */
@@ -2845,6 +4168,13 @@ window.__lecStart = function () {
 
   document.addEventListener('submit', function (e) {
     if (e.target && e.target.id === 'loginForm') { e.preventDefault(); doLogin(); }
+  });
+  /* S1: 쓰기 칸 Enter = 확인(한글 조합 중에는 안 함) · 단어 카드 Enter · Space = 뒤집기 */
+  document.addEventListener('keydown', function (e) {
+    var t = e.target, k = e.key || '', c = e.keyCode;
+    if (!W || pwa.el || !t || e.isComposing || c === 229) return;
+    if ((k === 'Enter' || c === 13) && t.id === 'sIn') { e.preventDefault(); setClick('chk', t); return; }
+    if ((k === 'Enter' || c === 13 || k === ' ' || k === 'Spacebar' || c === 32) && t.id === 'vCard') { e.preventDefault(); setClick('flip', t); }
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
@@ -2894,6 +4224,7 @@ window.__lecStart = function () {
   window.addEventListener('hashchange', function () { pwaClose(false); S.nav = true; route(); });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden' && T) { sample(); sendBeat(true); }
+    if (document.visibilityState === 'hidden' && W) setHide(); /* S1: 다른 앱으로 가면 말소리 · 녹음을 멈춤(녹음한 것은 남음) */
     if (document.visibilityState === 'visible') alBack(); /* N1: 홈 화면 앱으로 돌아옴 */
   });
   /* N1: 앱이 열려 있을 때 알림을 누름 → 일꾼이 {type: 'lec-open', ids} 를 보냄 */
@@ -2913,7 +4244,11 @@ window.__lecStart = function () {
         view: S.view, rec: recMode(), tab: S.tab,
         T: T ? { id: T.lec.id, S: T.S, durL: T.durL, ready: T.ready, real: T.real, local: T.local, server: T.server, sess: T.sess, err: T.err, stopped: T.stopped,
           stopOn: T.stopOn, stopDone: Object.keys(T.stopDone), to: T.to, skipTo: T.skipTo, stopEnd: T.stopEnd } : null,
-        paper: S.paper, rng: S.rng, absAt: S.absAt
+        paper: S.paper, rng: S.rng, absAt: S.absAt,
+        set: S.set, setDirty: S.setDirty, W: W ? { mode: W.mode, kind: W.kind, id: W.id, ph: W.t ? W.t.ph : '', rec: !!(W.g && W.g.R && W.g.R.on),
+          tid: W.t ? W.t.id : '', ti: W.t ? tIdx(W.t) : -1, step: W.t ? W.t.step : 0, fb: !!(W.t && W.t.fb), busy: !!(W.t && W.t.busy), fr: tFresh(W.t),
+          g: W.g ? { i: W.g.i, ph: W.g.ph, busy: W.g.busy, wait: !!W.g.wait, done: W.g.done, man: !!W.g.man, j: W.g.j || 0, ok: !!(W.g.rec && W.g.rec.ok) } : null,
+          q: W.q ? W.q.length : 0, tot: W.tot || 0 } : null
       };
     };
   }

@@ -351,6 +351,10 @@
     /* 새 영상 알림(§8-205): pushOn = null(서버 없음과 같음 → 단계 · 카드 · 켜는 법 줄 없음) · 저장 · 끄기 = 보내지 않음 */
     A.pushOn = function () { return ok(null); };
     A.pushSave = no; A.pushOff = no;
+    /* 단어 · 구문 · 문법(S1 · §10): setHome = null(묶음 없음 · 픽셀 0) · 나머지 읽기 · 쓰기 · 녹음 · 올리기 = 보내지 않음 */
+    A.setHome = function () { return ok(null); };
+    A.setAgree = no; A.setItems = no; A.setCard = no; A.setTest = no; A.setDue = no; A.setAns = no;
+    A.recAgree = no; A.recOff = no; A.recBegin = no; A.recDone = no; A.recPut = no; A.recSend = no;
     A.logout = function () { return ok({ ok: true }); };
     w.Lec = A;
     w.__lecPvIn = true;
@@ -376,6 +380,16 @@
       }
     } catch (e2) { /* 없음 */ }
     try { if (w.PushManager && w.PushManager.prototype) w.PushManager.prototype.subscribe = function () { return Promise.reject(new Error('preview')); }; } catch (e3) { /* 없음 */ }
+    /* 마이크도 켜지 않음(S1 녹음 · class.html 의 __lecPvIn 막음과 두 겹) */
+    try {
+      if (w.navigator && w.navigator.mediaDevices) {
+        w.navigator.mediaDevices.getUserMedia = function () {
+          var er = new Error('preview');
+          try { er.name = 'NotAllowedError'; } catch (e6) { /* 없음 */ }
+          return Promise.reject(er);
+        };
+      }
+    } catch (e5) { /* 없음 */ }
 
     /* 안쪽 주소(#v= · #rng)로 가는 링크는 기록 없이 바꿔치기(바깥 탭의 뒤로 가기 기록이 늘지 않게) */
     d.addEventListener('click', function (e) {

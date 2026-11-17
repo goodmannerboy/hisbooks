@@ -606,6 +606,107 @@ html.tvon,html.tvon body{overflow:hidden}
   .lo td.vb,.lt td.vb{text-align:left;padding-top:6px;width:100%}
 }
 </style>
+<style id="k-set">
+/* S1 세트(11-17 · 원장님 계정만): 왼쪽 목록 380 · 오른쪽 결과 표 · 서랍 960(붙여 넣기 · 녹음 듣기) · 인쇄 작은 창은 단추 아래
+   K 색: 크림 #F4ECD7 · 카드 #FFFDF7 · 줄 #E3D7B8 · 딥그린 #0C4631 · 초록 #DDF0E5/#1E5A3E · 코랄 #FBE9E3/#9A3F33 · 호박 #FBF0C9/#7A5410 · 해설 #EFEDE5 */
+.sx{display:grid;grid-template-columns:380px minmax(0,1fr);gap:16px;align-items:start}
+/* 한글은 낱말 가운데서 끊지 않음(WebKit «지웁니/다» 끊김) · 양쪽 정렬은 그대로 */
+.sx,#sd,.sx-pp{word-break:keep-all;overflow-wrap:break-word}
+.sx-l{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sx-it{display:block;width:100%;text-align:left;background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:#2B2A26;transition:border-color .16s}
+.sx-it:hover{border-color:#CBBF9A}
+.sx-it.on{border-color:#0C4631;box-shadow:inset 0 0 0 1px #0C4631}
+.sx-it:focus-visible,.sx-star:focus-visible{outline:2px solid #9E7C14;outline-offset:2px}
+.sx-it .t{display:block;font-size:14px;font-weight:700;line-height:1.4}
+.sx-it .m,.sx-it .s{display:block;margin-top:2px;font-size:13px;line-height:1.4;color:#5F6256}
+.sx-it .s.g{color:#0C4631;font-weight:700}
+.sx-k{display:inline-block;padding:2px 8px;border-radius:999px;background:#EDF3EF;color:#0C4631;font-size:12px;font-weight:700;line-height:1.5;margin-right:6px;vertical-align:1px;white-space:nowrap}
+.sx-p{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12.5px;line-height:1.5;white-space:nowrap;margin:1px 4px 1px 0}
+.sx-p.ok{background:#DDF0E5;color:#1E5A3E}
+.sx-p.am{background:#FBF0C9;color:#7A5410}
+.sx-p.ng{background:#FBE9E3;color:#9A3F33}
+.sx-p.no{background:#EFEDE5;color:#5F6256}
+.sx-p.nw{background:#FFFDF7;color:#0C4631;box-shadow:inset 0 0 0 1px #0C4631;font-weight:700}
+.sx-r{min-width:0}
+.sx-hd{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sx-tt{flex:1 1 280px;min-width:0}
+.sx-tt h2{display:inline;font-size:18px;font-weight:700;letter-spacing:-.02em;margin-right:8px}
+.sx-tt .mut{display:block;margin-top:4px;font-size:13px}
+.sx-ac{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sx-pw{position:relative;display:inline-block}
+.sx-sum{margin:12px 0 8px;font-size:14px}
+.sx-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sx-ask{margin:12px 0 0}
+.sx-ask .sx-row{margin-top:8px}
+.sxt{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}
+.sxt th{text-align:left;font-size:13px;color:#5F6256;font-weight:400;padding:8px 10px;border-bottom:1px solid #E6DCBF;white-space:nowrap}
+.sxt td{padding:8px 10px;border-bottom:1px solid #EFE7D2;vertical-align:middle}
+.sxt tr:last-child td{border-bottom:0}
+.sxt td.num,.sxt td.dt{font-variant-numeric:tabular-nums}
+.sxt td.dt{white-space:nowrap;color:#5F6256}
+.sxt .nm b{font-weight:700}
+.sxt .nm .tag{margin-left:6px}
+.sxt .gd{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.sxt .gd .sx-row{gap:4px}
+.sx-ft{margin:10px 0 0;font-size:13px;color:#5F6256}
+.sx-pp{position:absolute;right:0;top:calc(100% + 6px);z-index:6;width:460px;max-width:calc(100vw - 32px);background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;box-shadow:0 12px 32px rgba(12,70,49,.14);padding:14px 16px;text-align:left;white-space:normal}
+.sx-pr{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.sx-pr>.lb{width:36px;flex:none;font-size:13px;color:#5F6256}
+.sx-pr .chip{min-height:32px;font-size:13px}
+.sx-pr input{width:72px;min-height:32px;padding:4px 8px;font-size:13px;text-align:center}
+.sx-pp p{margin:0 0 10px;font-size:13px}
+#sd{width:min(960px,100%)}
+#sd-txt{width:100%;min-height:150px;font-size:13px;line-height:1.6;white-space:pre;overflow-x:auto;tab-size:4;font-family:Consolas,"Malgun Gothic",monospace;border:1.5px dashed #CBBF9A;border-radius:12px;background:#F4ECD7}
+.sx-kd{margin-top:12px}
+.sx-kd .lb{font-size:13px;color:#5F6256}
+.sx-rs{margin:8px 0 0;font-size:13px;color:#1E5A3E}
+.sx-ws{margin-top:8px}
+.sx-ngl{margin:6px 0 0;font-size:13px;font-weight:700;color:#9A3F33}
+.sx-pv{width:100%;margin-top:10px;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.sx-pv th{text-align:left;font-weight:400;color:#5F6256;padding:6px 8px;border-bottom:1px solid #E6DCBF}
+.sx-pv td{padding:6px 8px;border-bottom:1px solid #EFE7D2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sx-pv tr.ng td{background:#FBE9E3;color:#9A3F33}
+.sx-pv tr.am td{background:#FBF0C9;color:#7A5410}
+.sx-pv td.more{color:#5F6256;white-space:normal}
+.sx-star{min-width:32px;min-height:28px;border:0;border-radius:8px;background:transparent;color:#CBBF9A;font-size:16px;line-height:1;cursor:pointer}
+.sx-star.on{color:#9E7C14}
+.sx-f2{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:0 16px}
+.sx-f2 input{width:100%}
+.kb{display:inline-block;min-width:20px;padding:0 5px;margin-right:4px;border:1px solid #CBBF9A;border-radius:5px;background:#FFFDF7;color:#5F6256;font-size:12px;line-height:18px;text-align:center;font-weight:400}
+.btn.fill .kb{background:transparent;border-color:rgba(255,253,247,.5);color:#FFFDF7}
+.chip.on .kb{border-color:#8CC4A6;color:#1E5A3E}
+.rv-pg{margin:0 0 8px;font-size:13px}
+.rv-box{background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;padding:12px 14px}
+.rv-s{margin:0 0 8px;font-size:15px;line-height:1.55;text-align:left}
+.rv-s b{margin-right:6px;color:#0C4631}
+.rv-l{display:flex;flex-direction:column;gap:4px}
+.rv-r{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px}
+.rv-r.cur{background:#FFF7E0}
+.rv-r .n{width:96px;flex:none;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-r.cur .n{font-weight:700}
+.rv-bar{flex:1;height:6px;border-radius:3px;background:#E9E0C6;overflow:hidden}
+.rv-bar i{display:block;height:100%;width:0;background:#0C4631}
+.rv-r .gap{flex:1}
+.rv-r .st{min-width:150px;text-align:right;font-size:13px;color:#5F6256}
+.rv-why{margin-top:10px;min-height:36px}
+.rv-k{margin-top:10px}
+.rv-note{min-height:20px;margin:8px 0 0}
+.rv-end{padding:24px 0}
+.rv-end .big{margin:0 0 6px;font-size:17px;font-weight:700;color:#0C4631}
+.rv-end .btn{margin-top:14px}
+@media (max-width:1100px){.sx{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:860px){
+  .sxt thead{display:none}
+  .sxt,.sxt tbody,.sxt tr,.sxt td{display:block;width:100%}
+  .sxt tr{border:1px solid #EAE0C4;border-radius:12px;padding:8px 12px;margin-bottom:10px;background:#FFFFFF}
+  .sxt td{padding:3px 0;border:0}
+  .sxt td[data-l]:before{content:attr(data-l);display:inline-block;min-width:76px;color:#5F6256;font-size:12.5px}
+  .sx-f2{grid-template-columns:minmax(0,1fr)}
+  .sx-pp{position:fixed;left:16px;right:16px;top:auto;bottom:16px;width:auto}
+  .sx-pr .chip,.sx-pr input{min-height:44px}
+  .sx-star{min-width:44px;min-height:44px}
+}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -613,6 +714,8 @@ html.tvon,html.tvon body{overflow:hidden}
 <div id="dw" class="dw" role="dialog" aria-modal="true" aria-labelledby="dw-t" hidden></div>
 <div id="edb" class="dwb" data-act="edClose" hidden></div>
 <div id="ed" class="dw" role="dialog" aria-modal="true" aria-labelledby="ed-t" hidden></div>
+<div id="sdb" class="dwb" data-act="sdClose" hidden></div>
+<div id="sd" class="dw" role="dialog" aria-modal="true" aria-labelledby="sd-t" tabindex="-1" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:24px">자바스크립트를 켜야 쓸 수 있어요.</p></noscript>
 <script>
@@ -690,7 +793,12 @@ window.__lecAdminStart = function () {
     att: null,
     /* C2 시험 범위: rng = {rows, ex, today}(못 받으면 null) · rngOld = 서버에 범위 함수가 없음(이 화면에서는 다시 묻지 않음) ·
        rngSel = 묶음마다 고른 강의 {강의 id: true} · rngMore = 묶음마다 «이전 강의» 펼침 */
-    rng: null, rngOld: false, rngSel: {}, rngMore: {}
+    rng: null, rngOld: false, rngSel: {}, rngMore: {},
+    /* S1 세트(관리자만): set = 목록 답 {today, unheard, items}(못 받으면 null) · setOld = 서버에 세트 함수가 없음(이 화면에서 다시 안 부름) ·
+       setInit = 학교급 맞춤 · 30일 지난 녹음 정리를 한 번 했음 · setSel = 고른 세트 · setSt = 결과 표 답 {id, r} · setFull = 문항까지 받은 세트 ·
+       setAsk = 지우기 묻는 세트 · setGd · setGx = 보호자 동의 찍기 · 녹음 끄기 묻는 학생 · pp = 인쇄 작은 창 · sd = 세트 서랍(붙여 넣기 · 녹음 듣기) */
+    set: null, setOld: false, setErr: false, setInit: false, setSel: '', setSt: null, setStErr: '', setFull: {},
+    setAsk: '', setGd: '', setGx: '', pp: null, sd: null, sxDraft: null
   };
   var D = null;
   var sb = null;
@@ -864,8 +972,17 @@ window.__lecAdminStart = function () {
       exams: function () { return st.exams(); },
       /* P1 필기 PDF 저장소 흉내 */
       pdfPut: function (key, file) { return st.pdfPut(key, file.size, 'application/pdf'); },
-      pdfDel: function (keys) { return st.pdfDel(keys); }
+      pdfDel: function (keys) { return st.pdfDel(keys); },
+      /* S1 녹음 저장소 흉내(듣기 주소 · 지우기) */
+      recUrl: function (path) { return Promise.resolve().then(function () { return st.recUrl(path); }).then(recUrlOf); },
+      recDel: function (paths) { return Promise.resolve().then(function () { return st.recDel(paths); }); }
     };
+  }
+  /* S1 듣기 주소: 글 그대로 또는 {signedUrl} · 없으면 실패 */
+  function recUrlOf(v) {
+    var u = typeof v === 'string' ? v : (v && (v.signedUrl || v.signedURL || v.url)) || '';
+    if (!u) throw new Error('rec url');
+    return u;
   }
   /* PostgREST 는 한 번에 1000 줄까지 → 끝까지 나눠 받음 */
   function pageAll(table, cols, orders) {
@@ -925,7 +1042,10 @@ window.__lecAdminStart = function () {
       },
       /* P1 필기 PDF: 버킷 lec-pdf · 덮어쓰기 없음(같은 이름 = 같은 내용 · «이미 있음»은 부르는 쪽이 성공으로 셈) */
       pdfPut: function (key, file) { return rq(sb.storage.from('lec-pdf').upload(key, file, { upsert: false, contentType: 'application/pdf' })); },
-      pdfDel: function (keys) { return rq(sb.storage.from('lec-pdf').remove(keys)); }
+      pdfDel: function (keys) { return rq(sb.storage.from('lec-pdf').remove(keys)); },
+      /* S1 녹음(버킷 lec-rec · 비공개): 듣기 = 10분짜리 서명 주소 · 지우기 = 원장님이 열 때 한 번(recClean) */
+      recUrl: function (path) { return rq(sb.storage.from('lec-rec').createSignedUrl(path, 600)).then(recUrlOf); },
+      recDel: function (paths) { return rq(sb.storage.from('lec-rec').remove(paths)); }
     };
   }
 
@@ -1345,7 +1465,7 @@ window.__lecAdminStart = function () {
   function render() {
     if (!S.me || !D) return;
     paint(app, '<div class="wrap">' + headHtml() + demoHtml() + todoHtml() + tabsHtml() + '<main id="main">' +
-      (S.tab === 'stat' ? statHtml() : (S.tab === 'qna' ? qnaHtml() : lecHtml())) + '</main></div>');
+      (S.tab === 'stat' ? statHtml() : (S.tab === 'qna' ? qnaHtml() : (S.tab === 'set' && sxOn() ? setHtml() : lecHtml()))) + '</main></div>');
     if (S.qFocus && S.tab === 'qna') {
       var a = app.querySelectorAll('[data-th]'), i;
       for (i = 0; i < a.length; i += 1) {
@@ -1378,7 +1498,9 @@ window.__lecAdminStart = function () {
       return '<button type="button" class="tab' + (S.tab === k ? ' on' : '') + '"' + (S.tab === k ? ' aria-current="page"' : '') +
         ' data-act="tab" data-v="' + k + '">' + label + '</button>';
     }
+    /* S1: «세트 n»(n = 안 들은 녹음 · 0 이면 숫자 없음)은 원장님 계정만 */
     return '<nav class="tabs" aria-label="화면">' + t('lec', '강의') + t('stat', '시청 현황') + t('qna', '질문 ' + waitCount()) +
+      (sxOn() ? t('set', S.set && S.set.unheard > 0 ? '세트 ' + S.set.unheard : '세트') : '') +
       '<span class="sp"></span><button type="button" class="btn sm txt" data-act="reload">다시 불러오기</button></nav>';
   }
 
@@ -3350,6 +3472,1124 @@ window.__lecAdminStart = function () {
     });
   }
 
+  /* ------------------------------------------------------- S1 세트(11-17 · 원장님 계정만)
+     어휘 · 주요구문 · 문법 세트: 왼쪽 목록 · 오른쪽 결과 표 · 붙여 넣기 서랍(새로 · 고치기) · 녹음 듣기 서랍 · 시험지 인쇄(새 창 · A4 흑백).
+     Joey · Dana = 탭 · 줄 · 부름 0. 관리자가 열 때 한 번 setListStaff → 'old' 면 세트 탭 안 한 줄(그 밖 화면 그대로) ·
+     아니면 한 번만 조용히 recLvl(학교급) → recClean(30일 지난 녹음 지우기 · 띠 · 알림 없음). 반복 확인 · 실시간 0 */
+  var SX_KIND = { voc: '어휘', gu: '주요구문', gram: '문법' };
+  var SX_LIM = { voc: 300, gu: 30, gram: 50 };
+  var SX_RS = {
+    voc: '한 줄이 한두 낱말이라 어휘로 읽었어요', gu: '한 줄이 문장이라 주요구문으로 읽었어요',
+    gram: '괄호 안에 / 보기나 [ ]가 있어 문법으로 읽었어요', forced: '선생님이 고른 종류로 읽어요'
+  };
+  var SX_FMT = {
+    voc: [['ko', '뜻 쓰기'], ['en', '영어 쓰기'], ['mix', '섞어서']],
+    gu: [['mean', '의미 쓰기'], ['write', '영작'], ['blank', '빈칸'], ['scr', '어순 배열']],
+    gram: [['gram', '괄호 고르기 · 고쳐 쓰기']]
+  };
+  var SX_WHY = ['', '끊어 읽기', '강세 · 억양', '빠진 말 · 틀린 말', '소리'];
+  var SX_LV = { h: '고', m: '중', e: '초' };
+  var SX_HOW = { self: '본인', paper: '종이', sms: '문자', phone: '전화' };
+  var SX_ITEM = { w: '단어', m: '뜻', e: '영어 문장', t: '해석', s: '문제', a: '답', blank: '빈 칸', opt: '보기', len: '글자 수' };
+  function sxOn() { return !!(S.me && S.me.admin); }
+  function sxLim(k) { return +((L.SET_LIM && L.SET_LIM[k]) || SX_LIM[k] || 0); }
+  function sxRs(k) { return str((L.SET_RS && L.SET_RS[k]) || SX_RS[k]); }
+  function sxWhy(i) { return str((isArr(L.REC_WHY) ? L.REC_WHY : SX_WHY)[+i || 0]); }
+  function sxUnit(k) { return k === 'gu' ? '문장' : (k === 'gram' ? '문제' : '개'); }
+  function sxPill(c, t) { return '<span class="sx-p ' + c + '">' + esc(t) + '</span>'; }
+  /* 다시 그린 뒤 누른 자리로 초점(같은 단추 · 같은 세트) */
+  function sxFocusBy(act, k, v) {
+    var a = document.querySelectorAll('[data-act="' + act + '"]'), i;
+    for (i = 0; i < a.length; i += 1) {
+      if (v == null || a[i].getAttribute(k) === v) { try { a[i].focus(); } catch (e) {} return; }
+    }
+  }
+  function sxFocus(act, s) { sxFocusBy(act, 'data-s', s); }
+  function sxFocusV(act, v) { sxFocusBy(act, 'data-v', v); }
+  function sxItem(id) {
+    var a = S.set ? S.set.items : [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].id === id) return a[i]; }
+    return null;
+  }
+  function sxCur() { return S.setSel ? sxItem(S.setSel) : null; }
+  /* 고른 세트가 없어졌으면 맨 위 세트로 */
+  function sxFix() {
+    if (!S.set || sxItem(S.setSel)) return;
+    S.setSel = S.set.items.length ? S.set.items[0].id : '';
+    S.setSt = null; S.pp = null; S.setAsk = ''; S.setGd = ''; S.setGx = '';
+  }
+  function sxLast(v) {
+    var d = v ? L.isoDay(v) : '';
+    if (!d) return '–';
+    if (d === today()) return '오늘 ' + hm(v);
+    if (d === addDays(today(), -1)) return '어제';
+    return L.fmtDay(d);
+  }
+  /* 세트를 보는 반 학생(시작 전 학생 뺌 · 이름 차례) */
+  function sxStu(ids) {
+    var out = [], i, j, r;
+    ids = ids || [];
+    for (i = 0; i < D.rosterAll.length; i += 1) {
+      r = D.rosterAll[i];
+      if (!started(r)) continue;
+      for (j = 0; j < r.cls.length; j += 1) { if (ids.indexOf(r.cls[j]) >= 0) { out.push(r); break; } }
+    }
+    out.sort(function (a, b) { return cmpKo(a.sname, b.sname) || (a.skey < b.skey ? -1 : 1); });
+    return out;
+  }
+  function sxMeta(it) {
+    var on = str(it.posted_on), t = (clsNames(it.class_ids) || '반 없음') + ' · ' + (+it.n || 0) + sxUnit(it.kind);
+    if (isDay(on)) t += ' · ' + L.fmtDay(on) + (on > (S.set ? S.set.today : today()) ? ' 공개' : '');
+    return t;
+  }
+  /* 목록 칸 한 줄: 어휘 · 문법 «통과 9 / 14» · 구문 «낸 학생 9 / 14 · 새 녹음 5»(안 함 = 반 명단 − did) */
+  function sxShort(it) {
+    var c = it.cnt || {}, T = sxStu(it.class_ids).length, u = +c.unheard || 0;
+    if (it.kind === 'gu') return { t: '낸 학생 ' + (+c.recs || 0) + ' / ' + T + (u ? ' · 새 녹음 ' + u : ''), g: u > 0 };
+    return { t: '통과 ' + (+c.pass || 0) + ' / ' + T + ' · 안 함 ' + Math.max(0, T - (+c.did || 0)), g: false };
+  }
+
+  /* 불러오기: 목록(관리자가 열 때 · 다시 불러오기 · 쓰고 난 뒤) · 늘 끝남(실패해도 다른 화면은 그대로) */
+  function sxLoad() {
+    if (!sxOn() || S.setOld) return null;
+    if (!L.setListStaff) { S.setOld = true; S.set = null; return null; }
+    return Promise.resolve().then(function () { return L.setListStaff(DA.rpc); }).then(function (r) {
+      var i, it, f;
+      if (r && r.err === 'old') { S.setOld = true; S.set = null; S.setErr = false; return; }
+      if (!r || !r.ok || !isArr(r.items)) { if (!S.set) S.setErr = true; return; }
+      for (i = 0; i < r.items.length; i += 1) {
+        it = r.items[i]; f = it ? S.setFull[it.id] : null;
+        if (f && str(f.updated_at) !== str(it.updated_at)) delete S.setFull[it.id];
+      }
+      S.set = { today: isDay(r.today) ? r.today : today(), unheard: +r.unheard || 0, items: r.items };
+      S.setErr = false;
+    }, function () { if (!S.set) S.setErr = true; });
+  }
+  /* 처음 한 번: 세트 반 학생의 학교급 맞춤(서버 꼴 · 1000줄 자르기는 recLvl 몫) → 30일 지난 녹음 정리 · 모두 조용히(실패 · 'old' = 다음 열 때 다시) */
+  function sxInit() {
+    var want = {}, rows = [], lv, i, j, ids, r;
+    if (S.setInit || !sxOn() || S.setOld || !S.set || !D) return;
+    S.setInit = true;
+    for (i = 0; i < S.set.items.length; i += 1) {
+      ids = (S.set.items[i] && S.set.items[i].class_ids) || [];
+      for (j = 0; j < ids.length; j += 1) want[ids[j]] = 1;
+    }
+    try { lv = L.levelsFrom ? L.levelsFrom(D.classes) : []; } catch (e) { lv = []; }
+    for (i = 0; isArr(lv) && i < lv.length; i += 1) {
+      r = lv[i] ? D.rmapAll[lv[i].skey] : null;
+      if (!r) continue;
+      for (j = 0; j < r.cls.length; j += 1) { if (want[r.cls[j]]) { rows.push(lv[i]); break; } }
+    }
+    Promise.resolve().then(function () {
+      return L.recLvl && rows.length ? L.recLvl(DA.rpc, rows) : null;
+    }).then(null, function () { return null; }).then(sxClean);
+  }
+  /* 녹음 파일 정리(lec_rec_expired → 저장 곳에서 지움(실패 = reject → 그 묶음은 다음에) → lec_rec_gone) · 원장님만 ·
+     열 때 한 번 · 녹음 끈 뒤 · 학생 기록 지운 뒤(서버가 그 학생 녹음을 old 로 바꿈) · 실패해도 다음에 다시 */
+  function sxClean() {
+    if (!sxOn() || S.setOld || !L.recClean || !DA.recDel) return Promise.resolve(null);
+    return Promise.resolve().then(function () { return L.recClean(DA.rpc, DA.recDel); }).then(null, function () { return null; });
+  }
+  /* 결과 표: 고른 세트 하나(탭을 열 때 · 고를 때 · 다시 불러올 때) */
+  var sxGen = 0, sxNone = '';   /* sxNone = «지워진 세트»로 목록을 한 번 다시 읽은 세트(또 'none' 이면 다시 안 읽고 안내만 · 부름이 끝없이 오가지 않게) */
+  function sxStaff(force) {
+    var id = S.setSel, my;
+    if (!sxOn() || S.setOld || !id || !L.setStaff) return;
+    if (!force && S.setSt && S.setSt.id === id) return;
+    my = ++sxGen;
+    if (S.setStErr === id) S.setStErr = '';
+    Promise.resolve().then(function () { return L.setStaff(DA.rpc, id); }).then(function (r) {
+      if (my !== sxGen) return;
+      if (r && r.ok) { S.setSt = { id: id, r: r }; sxNone = ''; }
+      else if (r && r.err === 'old') { S.setOld = true; S.set = null; }
+      else if (r && r.err === 'none' && sxNone !== id) { sxNone = id; sxReload(); return; }
+      else {
+        if (r && r.err === 'none' && S.setSt && S.setSt.id === id) S.setSt = null;   /* 지워진 세트의 옛 표는 내림 */
+        S.setStErr = id;
+      }
+      render();
+    }, function () {
+      if (my !== sxGen) return;
+      S.setStErr = id;
+      render();
+    });
+  }
+  function sxReload() {
+    return Promise.resolve(sxLoad()).then(function () {
+      sxFix();
+      render();
+      if (S.tab === 'set') sxStaff(true);
+    });
+  }
+  /* 문항까지(고치기 · 인쇄 · 녹음 서랍 원래 소리) · 목록의 updated_at 이 바뀌면 다시 받음 */
+  function sxFull(id, fresh) {
+    if (!fresh && S.setFull[id]) return Promise.resolve(S.setFull[id]);
+    if (!L.setGet) return Promise.reject(new Error('old'));
+    return Promise.resolve().then(function () { return L.setGet(DA.rpc, id); }).then(function (r) {
+      var e;
+      if (r && r.ok && r.set && isArr(r.set.items)) { S.setFull[id] = r.set; return r.set; }
+      e = new Error(str(r && r.err) || 'error');
+      e.r = r;
+      throw e;
+    });
+  }
+  function sxErr(r) {
+    var e = r && r.err;
+    if (e === 'old') return '세트를 쓰려면 서버 준비(SQL)를 먼저 넣어 주세요';
+    if (e === 'forbidden') return '원장님 계정만 할 수 있어요';
+    if (e === 'network') return '인터넷 연결을 확인해 주세요';
+    if (e === 'none') return '지워진 세트예요. «다시 불러오기»를 눌러 주세요';
+    if (e === 'kind') return '종류는 바꿀 수 없어요';
+    if (e === 'title') return '이름은 60자까지 적어 주세요';
+    if (e === 'cls') return '볼 반을 골라 주세요';
+    if (e === 'limit') return '한 번에 넣을 수 있는 수를 넘었어요';
+    if (e === 'pick') return '★ 문장을 다시 골라 주세요';
+    if (e === 'input' || e === 'mark' || e === 'how') return '입력을 확인해 주세요';
+    return '하지 못했어요. 잠시 뒤 다시 해 주세요';
+  }
+  /* 숨기기 · 지우기 · 보호자 동의: 끝나면 목록 · 표만 다시 읽음 */
+  function sxCall(key, btn, fn, ok, after) {
+    if (S.busy[key]) return;
+    S.busy[key] = 1;
+    if (btn) btn.disabled = true;
+    Promise.resolve().then(fn).then(function (r) {
+      S.busy[key] = 0;
+      if (btn) btn.disabled = false;
+      if (!r || !r.ok) {
+        toast(sxErr(r), true);
+        if (r && r.err === 'none') sxReload();
+        return;
+      }
+      if (after) after(r);
+      if (ok) toast(typeof ok === 'function' ? ok(r) : ok);
+      sxReload();
+    }, function (e) {
+      S.busy[key] = 0;
+      if (btn) btn.disabled = false;
+      toast('하지 못했어요. ' + errText(e), true);
+    });
+  }
+
+  /* 세트 탭: 왼쪽 목록 380 · 오른쪽 결과 표 */
+  function setHtml() {
+    var list, cur, h, i;
+    if (S.setOld) return '<section class="card"><p class="empty">세트를 쓰려면 서버 준비(SQL)를 먼저 넣어 주세요.</p></section>';
+    if (!S.set) return '<section class="card"><p class="empty">' + (S.setErr ? '세트를 불러오지 못했어요. «다시 불러오기»를 눌러 주세요.' : '세트를 불러오는 중이에요') + '</p></section>';
+    list = S.set.items; cur = sxCur();
+    h = '<div class="sx"><section class="sx-l" aria-label="세트 목록"><button type="button" class="btn fill wide" data-act="sxNew">＋ 새 세트</button>';
+    if (!list.length) h += '<p class="empty">아직 세트가 없어요. 엑셀에서 복사해 붙여 넣으면 어휘 · 주요구문 · 문법을 알아서 읽어요.</p>';
+    for (i = 0; i < list.length; i += 1) { if (list[i]) h += sxItHtml(list[i], !!cur && cur.id === list[i].id); }
+    return h + '</section><section class="card sx-r" aria-label="결과 표">' + (cur ? sxResHtml(cur) : '<p class="empty">왼쪽에서 세트를 고르면 결과 표가 나와요.</p>') + '</section></div>';
+  }
+  function sxItHtml(it, on) {
+    var s = sxShort(it);
+    return '<button type="button" class="sx-it' + (on ? ' on' : '') + '" data-act="sxSel" data-s="' + esc(it.id) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+      '<span class="t"><span class="sx-k">' + esc(SX_KIND[it.kind] || '') + '</span>' + esc(it.title) + (it.hidden ? ' <span class="tag t-neutral">숨김</span>' : '') + '</span>' +
+      '<span class="m">' + esc(sxMeta(it)) + '</span><span class="s' + (s.g ? ' g' : '') + '">' + esc(s.t) + '</span></button>';
+  }
+  /* 결과 표 한 장: 종류에 맞는 칸만 · 덜 한 학생이 위(순위 · 색 차례 없음) */
+  function sxResHtml(it) {
+    var st = S.setSt && S.setSt.id === it.id ? S.setSt.r : null, k = it.kind, id = esc(it.id), h, rows, i, j, n, pk, cols, d, a, un = 0, all = 0, okm = {}, often;
+    /* 녹음 듣기 수 = 지금 ★ 문장마다 학생의 최신 낸 녹음(지운 것 뺌) · 새 녹음 = 그 가운데 표시가 빈 것(서버 unheard 와 같은 셈) */
+    if (st && k === 'gu') {
+      rows = isArr(st.rows) ? st.rows : [];
+      pk = sxPk(it, st);
+      for (i = 0; i < rows.length; i += 1) {
+        for (j = 0; j < pk.length; j += 1) {
+          a = sxRecOf(rows[i] ? rows[i].gu : null, pk[j]);
+          if (!sxLive(a)) continue;
+          all += 1;
+          if (!a.mark) un += 1;
+        }
+      }
+    }
+    h = '<div class="sx-hd"><div class="sx-tt"><span class="sx-k">' + esc(SX_KIND[k] || '') + '</span><h2>' + esc(it.title) + '</h2>' +
+      (it.hidden ? '<span class="tag t-neutral">숨김 · 학생에게 안 보여요</span>' : '') + '<span class="mut">' + esc(sxMeta(it)) + '</span></div><div class="sx-ac">';
+    if (k === 'gu') h += '<button type="button" class="btn sm' + (un ? ' fill' : '') + '" data-act="sxRec" data-s="' + id + '"' + (all ? '' : ' disabled') + '>녹음 듣기' + (un ? ' ' + un : '') + '</button>';
+    h += '<span class="sx-pw"><button type="button" class="btn sm" data-act="sxPrint" data-s="' + id + '" aria-expanded="' + (S.pp && S.pp.id === it.id ? 'true' : 'false') + '">시험지 인쇄</button>' +
+      (S.pp && S.pp.id === it.id ? sxPpHtml(it) : '') + '</span>' +
+      '<button type="button" class="btn sm txt" data-act="sxEdit" data-s="' + id + '">고치기</button>' +
+      '<button type="button" class="btn sm txt" data-act="sxHide" data-s="' + id + '" data-v="' + (it.hidden ? '0' : '1') + '">' + (it.hidden ? '다시 보이기' : '숨기기') + '</button>' +
+      '<button type="button" class="btn sm txt" data-act="sxDelAsk" data-s="' + id + '">지우기</button></div></div>';
+    if (S.setAsk === it.id) {
+      h += '<div class="box coral sx-ask" role="alert"><p>' + esc('«' + it.title + '»' + eul(it.title) + ' 지울까요? 학생 진도 · 시험 기록도 함께 지워지고 되돌릴 수 없어요.') + '</p>' +
+        '<div class="sx-row"><button type="button" class="btn sm warn" data-act="sxDelYes" data-s="' + id + '">지우기</button><button type="button" class="btn sm" data-act="sxDelNo">그만두기</button></div></div>';
+    }
+    if (!st) return h + '<p class="empty">' + (S.setStErr === it.id ? '결과를 불러오지 못했어요. «다시 불러오기»를 눌러 주세요.' : '결과를 불러오는 중이에요') + '</p>';
+    rows = sxRows(it, st);
+    n = +(st.set && st.set.n) || +it.n || 0;
+    pk = sxPk(it, st);
+    a = isArr(st.recok) ? st.recok : [];
+    for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].sid) okm[a[i].sid] = a[i]; }
+    h += '<p class="sx-sum">' + esc(sxSumText(k, rows, pk)) + '</p>';
+    cols = k === 'voc' ? [['학생', '22%'], ['외움', '13%'], ['시험', '34%'], ['쌓인 오답', '13%'], ['마지막', '18%']]
+      : (k === 'gu' ? [['학생', '17%'], ['따라 말하기', '13%'], ['녹음 ★' + pk.length, '30%'], ['녹음 동의', '24%'], ['마지막', '16%']]
+        : [['학생', '22%'], ['시험', '43%'], ['쌓인 오답', '15%'], ['마지막', '20%']]);
+    h += '<table class="sxt"><colgroup>';
+    for (i = 0; i < cols.length; i += 1) h += '<col style="width:' + cols[i][1] + '">';
+    h += '</colgroup><thead><tr>';
+    for (i = 0; i < cols.length; i += 1) h += '<th scope="col">' + esc(cols[i][0]) + '</th>';
+    h += '</tr></thead><tbody>';
+    if (!rows.length) h += '<tr><td colspan="' + cols.length + '" class="mut">이 반에 학생이 없어요.</td></tr>';
+    for (i = 0; i < rows.length; i += 1) h += sxTr(k, rows[i], n, pk, okm);
+    h += '</tbody></table>';
+    if (k === 'gu') return h + '<p class="sx-ft">녹음은 30일 뒤 저절로 지워져요</p>';
+    often = [];
+    a = isArr(st.often) ? st.often : [];
+    /* 단어 또는 문제 앞 40자(서버가 자름 → 끝에 …) · 하나씩 알약(문제 안의 « / »와 섞이지 않게) */
+    for (i = 0; i < a.length; i += 1) {
+      d = trim(a[i] && a[i].w);
+      if (d) often.push(sxPill('no', d + (k === 'gram' && d.length >= 40 ? '…' : '')));
+    }
+    if (often.length) h += '<p class="sx-ft">' + (k === 'voc' ? '자주 틀린 단어' : '자주 틀린 문제') + ' ' + often.join('') + '</p>';
+    return h;
+  }
+  /* 표 줄: 지금 반 학생(명단) 모두 + 반 밖으로 옮긴 학생의 기록 줄 · 덜 한 학생이 위 */
+  function sxRows(it, st) {
+    var map = {}, out = [], seen = {}, rs = isArr(st.rows) ? st.rows : [], stu = sxStu(it.class_ids), k = it.kind, n = +(st.set && st.set.n) || +it.n || 0, i, x;
+    for (i = 0; i < rs.length; i += 1) { if (rs[i] && rs[i].sid) map[rs[i].sid] = rs[i]; }
+    for (i = 0; i < stu.length; i += 1) {
+      x = map[stu[i].skey] || null;
+      seen[stu[i].skey] = 1;
+      out.push({ sid: stu[i].skey, name: stu[i].sname, r: stu[i], x: x, mine: true, v: sxVal(k, x, n) });
+    }
+    for (i = 0; i < rs.length; i += 1) {
+      x = rs[i];
+      if (!x || !x.sid || seen[x.sid]) continue;
+      seen[x.sid] = 1;
+      out.push({ sid: x.sid, name: str(x.sname) || str(x.sid).split('|').pop(), r: D.rmapAll[x.sid] || null, x: x, mine: false, v: sxVal(k, x, n) });
+    }
+    out.sort(function (a, b) { return ((a.mine ? 0 : 1) - (b.mine ? 0 : 1)) || (a.v - b.v) || cmpKo(a.name, b.name) || (a.sid < b.sid ? -1 : 1); });
+    return out;
+  }
+  /* 덜 한 정도(작을수록 위): 기록 없음 → 시험 안 봄 · 외움 적음 → 아직 → 통과 / 구문 = 낸 녹음 수 · 따라 말한 수 */
+  function sxVal(k, x, n) {
+    var d = x ? x[k] : null;
+    if (!d) return -1;
+    if (k === 'gu') return (isArr(d.recs) ? d.recs.length : 0) * 1000 + (+d.said || 0);
+    if (d.test === 'pass') return 100000;
+    if (k === 'voc') return (+d.tn ? 10000 : 0) + Math.round(1000 * (+d.known || 0) / Math.max(1, n));
+    return +d.tn ? 10000 + (+d.best || 0) : 0;
+  }
+  function sxPk(it, st) { return st && st.set && isArr(st.set.pick) ? st.set.pick : (isArr(it.pick) ? it.pick : []); }
+  function sxSumText(k, rows, pk) {
+    var T = 0, did = 0, pass = 0, sent = 0, nw = 0, i, j, d, a, u;
+    for (i = 0; i < rows.length; i += 1) {
+      if (!rows[i].mine) continue;
+      T += 1;
+      d = rows[i].x ? rows[i].x[k] : null;
+      if (!d) continue;
+      did += 1;
+      if (k !== 'gu') { if (d.test === 'pass') pass += 1; continue; }
+      if (isArr(d.recs) && d.recs.length) sent += 1;
+      u = false;
+      for (j = 0; j < pk.length; j += 1) { a = sxRecOf(d, pk[j]); if (sxLive(a) && !a.mark) u = true; }
+      if (u) nw += 1;
+    }
+    if (k === 'gu') return '낸 학생 ' + sent + ' / ' + T + (nw ? ' · 새 녹음 ' + nw + '명' : '');
+    return '통과 ' + pass + ' / ' + T + ' · 아직 ' + (did - pass) + ' · 안 함 ' + (T - did);
+  }
+  function sxTr(k, w, n, pk, okm) {
+    var d = w.x ? w.x[k] : null, h;
+    h = '<tr><td data-l="학생" class="nm"><b>' + esc(w.name) + '</b>' + (!w.mine ? '<span class="tag t-line">지금 반 밖</span>' : (w.r ? stuTags(w.r) : '')) + '</td>';
+    if (k === 'voc') {
+      h += '<td data-l="외움" class="num">' + (d ? esc((+d.known || 0) + ' / ' + n) : '–') + '</td><td data-l="시험">' + sxTest(k, d) + '</td>' +
+        '<td data-l="쌓인 오답" class="num">' + (d ? esc(String(+d.due || 0)) : '–') + '</td>';
+    } else if (k === 'gram') {
+      h += '<td data-l="시험">' + sxTest(k, d) + '</td><td data-l="쌓인 오답" class="num">' + (d ? esc(String(+d.due || 0)) : '–') + '</td>';
+    } else {
+      h += '<td data-l="따라 말하기" class="num">' + (d ? esc((+d.said || 0) + ' / ' + n) : '–') + '</td><td data-l="녹음">' + sxRecs(d, pk) + '</td>' +
+        '<td data-l="녹음 동의">' + sxGdHtml(w, okm) + '</td>';
+    }
+    return h + '<td data-l="마지막" class="dt">' + esc(w.x ? sxLast(w.x.last) : '–') + '</td></tr>';
+  }
+  /* 시험 칸: 통과 · 첫 % / 아직 · 첫 % · 몇 번(문법은 다시 볼 때) / 안 봄 / 안 함 */
+  function sxTest(k, d) {
+    var tn, f1, t;
+    if (!d) return '<span class="mut">안 함</span>';
+    tn = +d.tn || 0;
+    f1 = d.f1 == null || d.f1 === '' || !isFinite(+d.f1) ? null : +d.f1;
+    if (d.test === 'pass') return sxPill('ok', '통과' + (f1 != null ? ' · 첫 ' + f1 + '%' : ''));
+    if (!tn && d.test !== 'open') return '<span class="mut">안 봄</span>';
+    t = (d.test === 'open' ? '푸는 중' : '아직') + (f1 != null ? ' · 첫 ' + f1 + '%' : '') + (tn ? ' · ' + tn + '번' : '');
+    if (k === 'gram' && d.test !== 'open') t += d.next === 'tomorrow' ? ' · 내일 다시' : (d.next === 'now' ? ' · 지금 다시' : '');
+    return sxPill('am', t);
+  }
+  function sxRecOf(d, key) {
+    var a = d && isArr(d.recs) ? d.recs : [], i, best = null;
+    for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].k === key && (!best || tsv(a[i].at) > tsv(best.at))) best = a[i]; }
+    return best;
+  }
+  /* 틀 수 있는 녹음(gone = 30일 지나 파일 지움 · path '') · 새 녹음 = 최신 낸 녹음의 표시가 빈 것(서버 unheard 와 같은 셈) */
+  function sxLive(r) { return !!r && r.st !== 'gone' && !!r.path; }
+  /* 녹음 칸: ★ 문장마다 안 냄 · 30일 지나 지움 · 좋아요 · 다시(까닭) · 기다림 · 새 녹음 */
+  function sxRecs(d, pk) {
+    var h = '', i, r, s;
+    if (!pk.length) return '–';
+    for (i = 0; i < pk.length; i += 1) {
+      r = sxRecOf(d, pk[i]);
+      s = '★' + (i + 1) + ' ';
+      if (!r) h += sxPill('no', s + '안 냄');
+      else if (!sxLive(r)) h += sxPill('no', s + '30일 지나 지움');
+      else if (r.mark === 'ok') h += sxPill('ok', s + '좋아요');
+      else if (r.mark === 'again') h += sxPill('am', s + '다시' + (+r.why ? ' · ' + sxWhy(r.why) : '') + ' · 기다림');
+      else h += sxPill('nw', s + '새 녹음');
+    }
+    return h;
+  }
+  /* 학교급: 히즈북스 학생 칸으로 셈(Lec.levelsFrom) · 못 셈 → 서버 줄(recok.lvl) */
+  var sxLvD = null, sxLvM = null;
+  function sxLvMap() {
+    var a, i;
+    if (sxLvD === D && sxLvM) return sxLvM;
+    sxLvD = D; sxLvM = {};
+    try { a = L.levelsFrom ? L.levelsFrom(D.classes) : []; } catch (e) { a = []; }
+    for (i = 0; isArr(a) && i < a.length; i += 1) { if (a[i] && a[i].skey) sxLvM[a[i].skey] = str(a[i].lvl); }
+    return sxLvM;
+  }
+  /* 녹음 동의 칸: 학교급 · 본인 동의 / 보호자 동의 · 종이 · 날짜 — 어느 쪽이든 «끄기»(학생 화면엔 끄는 단추가 없고 원장 선생님께 말하면 여기서 끔)
+     / 동의 전(+ 보호자 동의 찍기) */
+  function sxGdHtml(w, okm) {
+    var o = okm[w.sid] || null, m = sxLvMap(), lv = has(m, w.sid) ? m[w.sid] : (o ? str(o.lvl) : ''), lt = SX_LV[lv] || '모름',
+      how = o ? str(o.how) : '', id = esc(w.sid), h = '<div class="gd">';
+    if (o && o.ok) {
+      h += '<span>' + esc(how === 'self' ? lt + ' · 본인 동의' : lt + ' · 보호자 동의 · ' + (SX_HOW[how] || how) + (o.at ? ' · ' + md(o.at) : '')) + '</span>';
+      if (S.setGx === w.sid) {
+        h += '<span class="mut sm">끄면 이 학생이 보낸 녹음도 지워요.</span><span class="sx-row"><button type="button" class="btn sm warn" data-act="sxGxYes" data-s="' + id + '">끄기</button>' +
+          '<button type="button" class="btn sm" data-act="sxGxNo">그대로 두기</button></span>';
+      } else h += '<button type="button" class="btn sm txt" data-act="sxGx" data-s="' + id + '">끄기</button>';
+      return h + '</div>';
+    }
+    if (lv === 'h') return h + '<span class="mut">' + esc(lt + ' · 앱에서 본인 동의 전') + '</span></div>';
+    h += '<span class="mut">' + esc(lt + ' · 보호자 동의 전') + '</span>';
+    if (S.setGd === w.sid) {
+      h += '<span class="sx-row"><button type="button" class="btn sm" data-act="sxGdOn" data-s="' + id + '" data-v="paper">종이</button>' +
+        '<button type="button" class="btn sm" data-act="sxGdOn" data-s="' + id + '" data-v="sms">문자</button>' +
+        '<button type="button" class="btn sm" data-act="sxGdOn" data-s="' + id + '" data-v="phone">전화</button>' +
+        '<button type="button" class="btn sm txt" data-act="sxGxNo">그만두기</button></span>';
+    } else h += '<button type="button" class="btn sm" data-act="sxGd" data-s="' + id + '">보호자 동의 찍기</button>';
+    return h + '</div>';
+  }
+
+  /* ---- 시험지 인쇄 작은 창(단추 아래): 형식 · 번호(전부 · 범위) · 순서(섞기) → 새 창에 그려 인쇄 · 대상 0 이어도 거절 안 함 */
+  function sxPpHtml(it) {
+    var p = S.pp, f = SX_FMT[it.kind] || [], h, i;
+    function ch(act, v, on, label) {
+      return '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="' + act + '"' + (v != null ? ' data-v="' + v + '"' : '') + '>' + esc(label) + '</button>';
+    }
+    h = '<div class="sx-pp" role="group" aria-label="시험지 인쇄"><div class="sx-pr"><span class="lb">형식</span>';
+    for (i = 0; i < f.length; i += 1) h += ch('sxPm', f[i][0], p.mode === f[i][0], f[i][1]);
+    h += '</div><div class="sx-pr"><span class="lb">번호</span>' + ch('sxPall', null, p.all, '전부') +
+      '<input type="text" inputmode="numeric" data-k="pp:from" aria-label="시작 번호" placeholder="처음" autocomplete="off"><span class="mut">~</span>' +
+      '<input type="text" inputmode="numeric" data-k="pp:to" aria-label="끝 번호" placeholder="끝" autocomplete="off"></div>' +
+      '<div class="sx-pr"><span class="lb">순서</span>' + ch('sxPo', '0', !p.shuf, '그대로') + ch('sxPo', '1', p.shuf, '섞기') + '</div>' +
+      '<p class="mut">정답지가 끝 장에 붙어요 · A4 흑백 · 여백 10mm</p>' +
+      '<div class="sx-row"><button type="button" class="btn fill" data-act="sxPgo" data-s="' + esc(it.id) + '">인쇄</button>' +
+      '<button type="button" class="btn sm txt" data-act="sxPx">닫기</button></div></div>';
+    return h;
+  }
+  function sxPallMark() {
+    var b = app.querySelector('[data-act="sxPall"]');
+    if (!b || !S.pp) return;
+    b.className = 'chip' + (S.pp.all ? ' on' : '');
+    b.setAttribute('aria-pressed', S.pp.all ? 'true' : 'false');
+  }
+  /* 번호 범위 → 문항 열쇠(문항 «번호» 칸 기준) · 전부 = null · 맞는 것이 없으면 [] */
+  function sxKeys(set, p) {
+    var a = trim(S.inputs['pp:from']), b = trim(S.inputs['pp:to']), lo, hi, out = [], i, v;
+    if (p.all || (!a && !b)) return null;
+    lo = a ? parseInt(a, 10) : -Infinity;
+    hi = b ? parseInt(b, 10) : Infinity;
+    if (isNaN(lo) || isNaN(hi)) return [];
+    if (lo > hi) { v = lo; lo = hi; hi = v; }
+    for (i = 0; i < set.items.length; i += 1) {
+      v = parseInt(str(set.items[i] && set.items[i].n), 10);
+      if (isFinite(v) && v >= lo && v <= hi) out.push(set.items[i].k);
+    }
+    return out;
+  }
+  /* 창은 누른 그 자리에서 엶(팝업 막힘 피함) · 막히면 숨은 틀에서 인쇄(거절하지 않음) */
+  function sxPrintGo(btn, id) {
+    var p = S.pp, w = null;
+    if (!p || p.id !== id || !L.setPrint) return;
+    try { w = window.open('', '_blank'); } catch (e) { w = null; }
+    if (w) {
+      try {
+        w.document.open();
+        w.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"></head><body style="font:14px sans-serif;padding:24px">시험지를 만드는 중이에요</body></html>');
+        w.document.close();
+        w.document.title = '시험지';
+      } catch (e2) {}
+    }
+    if (btn) btn.disabled = true;
+    sxFull(id).then(function (set) {
+      var keys = sxKeys(set, p), opt = { shuffle: !!p.shuf }, pr, note = '';
+      if (btn) btn.disabled = false;
+      if (keys && !keys.length) note = '고른 번호에 맞는 문항이 없어 전부 넣었어요';
+      else if (keys) opt.keys = keys;
+      pr = L.setPrint(set, p.mode, opt);
+      sxWrite(w, sxPaper(set, pr, p.mode), set.title + ' · ' + sxKt(set.kind));
+      S.pp = null;
+      render();
+      if (note) toast(note);
+    }).then(null, function (e) {
+      if (btn) btn.disabled = false;
+      if (w) { try { w.close(); } catch (e3) {} }
+      toast('시험지를 만들지 못했어요. ' + (e && e.r ? sxErr(e.r) : errText(e)), true);
+    });
+  }
+  function sxKt(k) { return k === 'voc' ? '어휘 시험' : (k === 'gu' ? '구문 시험' : '문법 시험'); }
+  function sxWrite(w, html, tt) {
+    var f, d;
+    if (w && !w.closed) {
+      try {
+        w.document.open(); w.document.write(html); w.document.close();
+        try { w.document.title = tt; w.focus(); } catch (e0) {}
+        setTimeout(function () { try { w.print(); } catch (e1) {} }, 400);
+        return;
+      } catch (e2) {}
+    }
+    f = document.createElement('iframe');
+    f.setAttribute('aria-hidden', 'true');
+    f.tabIndex = -1;
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    document.body.appendChild(f);
+    d = f.contentWindow.document;
+    d.open(); d.write(html); d.close();
+    try { d.title = tt; } catch (e4) {}
+    setTimeout(function () {
+      try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e3) {}
+      setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 60000);
+    }, 400);
+  }
+  /* 종이: 히즈북스 시험지 꼴(머리 띠 · 로고 · 이름 · 점수 · 꼬리) 흑백 · A4 · 여백 10mm · 정답지는 끝 장 */
+  function sxPaper(set, pr, mode) {
+    var k = set.kind, day = today().replace(/-/g, '.'), q = isArr(pr && pr.q) ? pr.q : [], a = isArr(pr && pr.a) ? pr.a : [], cnt = q.length,
+      lb = str(pr && pr.label), kt = sxKt(k), qs = '', as = '', i, gc = k === 'voc' ? ' grid' : '', css, logo, head, heada, foot;
+    for (i = 0; i < q.length; i += 1) qs += sxPq(k, mode, q[i], false);
+    for (i = 0; i < a.length; i += 1) as += sxPq(k, mode, a[i], true);
+    css = '@page{size:A4;margin:10mm}*{box-sizing:border-box;margin:0;padding:0}html,body{background:#fff;color:#000}' +
+      'body{font-family:"Noto Sans KR","Malgun Gothic",sans-serif;font-size:13.5px;word-break:keep-all;overflow-wrap:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      '.tb{position:sticky;top:0;z-index:3;display:flex;gap:12px;align-items:center;padding:8px 14px;background:#F2F2F2;border-bottom:1px solid #CCC;font-size:13px}' +
+      '.tb button{margin-left:auto;font:inherit;padding:6px 14px;border:1px solid #000;border-radius:6px;background:#fff;cursor:pointer}' +
+      '.ak{break-before:page;page-break-before:always}' +
+      '.hd{position:relative;overflow:hidden;background:#E5E5E5;border-radius:6px}' +
+      '.hd:before,.hd:after{content:"";position:absolute;top:0;bottom:0;right:0}' +
+      '.hd:before{width:170px;background:#D6D6D6;clip-path:polygon(45% 0,100% 0,100% 100%,0 100%)}' +
+      '.hd:after{width:90px;background:#CCCCCC;clip-path:polygon(60% 0,100% 0,100% 100%,10% 100%)}' +
+      '.hdi{position:relative;z-index:1;display:flex;align-items:center;gap:14px;padding:12px 16px}' +
+      '.logo{background:#fff;border-radius:6px;padding:5px 10px;text-align:center;line-height:1.1}' +
+      '.logo .lb{font-size:18px;font-weight:900;letter-spacing:1px}.logo .ls{font-size:8px;font-weight:700}' +
+      '.tt{min-width:0}.tt .ti{font-size:19px;font-weight:800;line-height:1.3}.tt .ac{font-size:11px;font-weight:700;margin-top:2px}' +
+      '.nm{margin-left:auto;background:#fff;border-radius:6px;padding:6px 12px;min-width:160px;font-size:12px;line-height:1.9}' +
+      '.nm u{display:inline-block;min-width:84px;text-decoration:none;border-bottom:1px solid #000;margin-left:6px}' +
+      '.cw{padding:14px 2px 0}.cw.grid{column-count:2;column-gap:12mm}' +
+      '.q{break-inside:avoid;display:flex;gap:7px;align-items:baseline;padding:6px 0;line-height:1.55}' +
+      '.no{font-weight:800;min-width:22px;flex:none}.en{font-weight:700}' +
+      '.bl{flex:1;min-width:52px;border-bottom:1px solid #666;align-self:stretch}' +
+      '.a{font-weight:800}.q .a{flex:1}.u{text-decoration:underline}' +
+      '.qb{break-inside:avoid;display:flex;gap:8px;padding:8px 0 10px;line-height:1.75}' +
+      '.bd{flex:1;min-width:0}.ln{height:28px;border-bottom:1px solid #666}.ko{font-size:12.5px;color:#333}' +
+      '.bk{display:inline-block;height:1.2em;border-bottom:1px solid #000;vertical-align:-2px}' +
+      '.tok{display:inline-block;border:1px solid #000;border-radius:4px;padding:0 6px;margin:3px 4px 0 0;line-height:1.6}' +
+      '.x{margin-top:4px;padding:6px 10px;background:#EEEEEE;border-left:2px solid #000;font-size:12.5px;line-height:1.6;text-align:justify}' +
+      '.ft{display:flex;justify-content:space-between;margin-top:14px;padding-top:4px;border-top:2px solid #000;font-size:10px;font-weight:700}' +
+      '@media screen{body{background:#E5E5E5}.pg{width:210mm;min-height:297mm;margin:12px auto;padding:10mm;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2)}}' +
+      '@media print{.tb{display:none}}';
+    logo = '<div class="logo"><div class="lb">HIS</div><div class="ls">Excellence in English</div></div>';
+    head = '<div class="hd"><div class="hdi">' + logo + '<div class="tt"><div class="ti">' + esc(set.title) + '</div><div class="ac">' + esc('히즈어학원 · ' + kt + (lb ? ' · ' + lb : '')) + '</div></div>' +
+      '<div class="nm"><div>이름 <u></u></div><div>점수 <u></u> / ' + cnt + '</div></div></div></div>';
+    heada = '<div class="hd"><div class="hdi">' + logo + '<div class="tt"><div class="ti">정답지</div><div class="ac">' + esc(set.title + ' · ' + cnt + '문항' + (lb ? ' · ' + lb : '')) + '</div></div>' +
+      '<div class="nm"><div>' + esc(day) + '</div></div></div></div>';
+    foot = '<div class="ft"><span>Excellence in English, HIS</span><span>' + esc(day) + '</span></div>';
+    return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><style>' + css + '</style></head><body>' +
+      '<div class="tb"><b>' + esc(set.title) + '</b><span>' + esc((lb ? lb + ' · ' : '') + cnt + '문항 · 정답지는 끝 장') + '</span><button type="button" onclick="print()">인쇄 · PDF로 저장</button></div>' +
+      '<div class="pg">' + head + '<div class="cw' + gc + '">' + qs + '</div>' + foot + '</div>' +
+      '<div class="pg ak">' + heada + '<div class="cw' + gc + '">' + as + '</div>' + foot + '</div></body></html>';
+  }
+  /* 문항 하나(q · 정답지 a 같은 꼴 · setPrint §8-4) */
+  function sxPq(k, mode, x, ak) {
+    var no, b, i, w, ws;
+    x = x || {};
+    no = '<span class="no">' + esc(x.no != null ? String(x.no) : '') + '</span>';
+    if (k === 'voc') return '<div class="q">' + no + '<span class="en">' + esc(x.show) + '</span>' + (ak ? '<span class="a">' + esc(x.ans) + '</span>' : '<span class="bl"></span>') + '</div>';
+    if (k === 'gram') {
+      b = '<div>' + esc(x.s) + '</div>';
+      if (ak) b += '<div class="a">답 · ' + esc(x.ans) + '</div>' + (trim(x.x) ? '<div class="x">' + esc(x.x) + '</div>' : '');
+      else if (x.f === 'r') b += '<div class="ln"></div>';
+      return '<div class="qb">' + no + '<div class="bd">' + b + '</div></div>';
+    }
+    if (mode === 'blank') {
+      ws = isArr(x.words) ? x.words : [];
+      b = [];
+      for (i = 0; i < ws.length; i += 1) {
+        w = ws[i] || {};
+        if (!w.b) b.push(esc(w.w));
+        else if (ak) b.push('<b class="a u">' + esc(w.w) + '</b>');
+        else b.push('<span class="bk" style="min-width:' + Math.max(3, Math.round(str(w.w).length * 6) / 10) + 'em"></span>');
+      }
+      return '<div class="qb">' + no + '<div class="bd"><div>' + b.join(' ') + '</div>' + (trim(x.ko) ? '<div class="ko">' + esc(x.ko) + '</div>' : '') + '</div></div>';
+    }
+    if (mode === 'scr') {
+      if (ak) return '<div class="qb">' + no + '<div class="bd"><div class="a">' + esc(x.ans) + '</div></div></div>';
+      ws = isArr(x.toks) ? x.toks : [];
+      b = '';
+      for (i = 0; i < ws.length; i += 1) b += '<span class="tok">' + esc(ws[i]) + '</span>';
+      return '<div class="qb">' + no + '<div class="bd"><div>' + esc(x.ko) + '</div><div>' + b + '</div><div class="ln"></div></div></div>';
+    }
+    b = '<div>' + esc(x.show) + '</div>';
+    b += ak ? '<div class="a">' + esc(x.ans) + '</div>' : '<div class="ln"></div>' + (str(x.show).length > 90 ? '<div class="ln"></div>' : '');
+    return '<div class="qb">' + no + '<div class="bd">' + b + '</div></div>';
+  }
+
+  /* ---- 세트 서랍(960): 붙여 넣기(새로 · 고치기) 또는 녹음 듣기 */
+  function sxPaintSd(focusSel) {
+    var dw = $('sd'), bk = $('sdb'), was, f;
+    if (!dw || !bk) return;
+    if (!S.sd) { dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; return; }
+    was = dw.hidden;
+    dw.hidden = false; bk.hidden = false;
+    paint(dw, S.sd.t === 'rec' ? rvHtml() : sxPutHtml());
+    if (was) dw.scrollTop = 0;
+    f = focusSel ? dw.querySelector(focusSel) : null;
+    if (f || !dw.contains(document.activeElement)) { try { (f || dw).focus(); } catch (e) {} }
+  }
+  function sxClose() {
+    var sd = S.sd;
+    if (!sd) return false;
+    rvStop(); rvGen += 1;
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+    if (sd.t === 'put') {
+      /* 새 세트를 저장 없이 닫으면 쓰던 글은 다음 «새 세트»에 그대로 */
+      if (!sd.id) S.sxDraft = trim(S.inputs['sd:txt']) ? { txt: S.inputs['sd:txt'], title: S.inputs['sd:title'], on: S.inputs['sd:on'], forced: sd.forced, pick: sd.pick, cls: sd.cls } : null;
+      delete S.inputs['sd:txt']; delete S.inputs['sd:title']; delete S.inputs['sd:on'];
+    }
+    S.sd = null;
+    sxPaintSd();
+    if (sd.t === 'rec' && sd.marked) sxReload();
+    return true;
+  }
+  function sxOpenPut(id) {
+    var dr = S.sxDraft;
+    if (!L.setParse || !L.setPut) { toast('세트를 쓰려면 서버 준비(SQL)를 먼저 넣어 주세요', true); return; }
+    closeDrawer(); closeEditor();
+    S.pp = null; S.setAsk = '';
+    S.sd = { t: 'put', id: id || '', forced: '', pick: null, more: false, cls: {}, set: null, loading: !!id, busy: false, msg: '' };
+    if (!id && dr) {
+      S.inputs['sd:txt'] = dr.txt; S.inputs['sd:title'] = dr.title; S.inputs['sd:on'] = dr.on || today();
+      S.sd.forced = dr.forced || ''; S.sd.pick = dr.pick || null; S.sd.cls = dr.cls || {};
+    } else { S.inputs['sd:txt'] = ''; S.inputs['sd:title'] = ''; S.inputs['sd:on'] = today(); }
+    render();
+    sxPaintSd('#sd-txt');
+    if (!id) return;
+    sxFull(id, true).then(function (set) {
+      var lines = [], pk = [], i, j;
+      if (!S.sd || S.sd.id !== id) return;
+      for (i = 0; i < set.items.length; i += 1) lines.push(sxLine(set.kind, set.items[i] || {}));
+      S.inputs['sd:txt'] = lines.join('\n');
+      S.inputs['sd:title'] = str(set.title);
+      S.inputs['sd:on'] = isDay(set.posted_on) ? set.posted_on : today();
+      S.sd.loading = false; S.sd.set = set; S.sd.forced = set.kind; S.sd.cls = {};
+      for (i = 0; isArr(set.class_ids) && i < set.class_ids.length; i += 1) S.sd.cls[set.class_ids[i]] = true;
+      if (set.kind === 'gu' && isArr(set.pick)) {
+        for (i = 0; i < set.pick.length; i += 1) {
+          for (j = 0; j < set.items.length; j += 1) { if (set.items[j] && set.items[j].k === set.pick[i]) pk.push(j); }
+        }
+        S.sd.pick = pk;
+      }
+      sxPaintSd('#sd-txt');
+    }, function (e) {
+      if (!S.sd || S.sd.id !== id) return;
+      S.sd.loading = false;
+      sxPaintSd();
+      sxMsg('세트를 불러오지 못했어요. ' + (e && e.r ? sxErr(e.r) : errText(e)), null);
+    });
+  }
+  /* 고치기: 지금 문항을 붙여 넣는 꼴(번호 | 칸 …) 그대로 다시 깖 */
+  function sxLine(k, x) {
+    var c = k === 'voc' ? [x.w, x.m] : (k === 'gu' ? [x.e, x.t, x.p] : [x.s, x.a, x.x, x.p]), i;
+    for (i = 0; i < c.length; i += 1) c[i] = str(c[i]).replace(/[\t\r\n]+/g, ' ');
+    while (c.length > 2 && !c[c.length - 1]) c.pop();
+    if (str(x.n)) c.unshift(str(x.n));
+    return c.join('\t');
+  }
+  /* 엑셀에서 칸 이름 줄까지 복사해 와도 그 줄은 읽지 않음: ① 첫 줄이 칸 이름 낱말(한글 · 영어)로만 됨(«No. · Word · Meaning» · «번호 · 어휘 · 의미» · «단어 · 뜻 · 예문»)
+     ② 첫 줄만 번호가 없고 나머지 줄 대부분(80% 이상 · 2줄 이상)이 번호로 시작함 · 뺀 줄은 미리 보기 위에 그대로 보여 줌 */
+  var SX_HEAD = {};
+  (function (s) { var a = s.split(' '), i; for (i = 0; i < a.length; i += 1) SX_HEAD[a[i]] = 1; })(
+    '번호 순번 번 no num number # 문제 문항 질문 question questions 답 정답 답안 answer answers 해설 설명 풀이 explanation explanations ' +
+    '포인트 핵심 point points 단어 어휘 낱말 영단어 word words vocabulary vocab 뜻 의미 우리말 우리말뜻 한글뜻 뜻풀이 meaning meanings definition korean ' +
+    '문장 영어문장 영문 영어 구문 예문 예시 sentence sentences english example examples 해석 번역 translation 보기 선택지 꼴 유형 품사 비고 메모 출처 ' +
+    'choice choices option options type note notes');
+  function sxHeadWord(s) { return trim(s).toLowerCase().replace(/[\s.:()\/·]+/g, ''); }
+  function sxHeadRow(a) {
+    var r = a[0], c = r && isArr(r.c) ? r.c : [], i, t, n = 0, all = true, num = 0;
+    if (!r || str(r.n)) return false;
+    for (i = 0; i < c.length; i += 1) { t = sxHeadWord(c[i]); if (!t) continue; n += 1; if (!SX_HEAD[t]) all = false; }
+    if (all && n >= 2) return true;
+    for (i = 1; i < a.length; i += 1) { if (a[i] && str(a[i].n)) num += 1; }
+    return a.length - 1 >= 2 && num >= (a.length - 1) * 0.8;
+  }
+  function sxParse() {
+    var a, h;
+    try { a = L.setParse(str(S.inputs['sd:txt'])) || []; } catch (e) { a = []; }
+    if (a.length && sxHeadRow(a)) {
+      h = (isArr(a[0].c) ? a[0].c : []).filter(function (x) { return !!trim(x); }).join(' · ');
+      return { rows: a.slice(1), head: h.length > 40 ? h.slice(0, 40) + '…' : h };
+    }
+    return { rows: a, head: '' };
+  }
+  function sxRowsNow() { return sxParse().rows; }
+  function sxWarn(k, rows) {
+    var w;
+    try { w = L.setWarn(k, rows); } catch (e) { w = null; }
+    w = w || {};
+    if (!w.bad) w.bad = {};
+    return w;
+  }
+  function sxKindOf(rows) {
+    var a = '';
+    try { a = rows.length ? L.setDetect(rows) : ''; } catch (e) { a = ''; }
+    return { auto: a, k: (S.sd && S.sd.forced) || a || 'voc' };
+  }
+  function sxGp(s) { var p = null; try { p = L.gramParts ? L.gramParts(str(s)) : null; } catch (e) { p = null; } return p ? str(p.f) : ''; }
+  /* ★ 녹음 문장(구문): 고른 줄(빨간 줄 뺌 · 2개까지) · 안 골랐으면 앞 두 줄 */
+  function sxPick(rows, bad) {
+    var out = [], a = S.sd && isArr(S.sd.pick) ? S.sd.pick : [], i;
+    for (i = 0; i < a.length && out.length < 2; i += 1) { if (a[i] >= 0 && a[i] < rows.length && bad[a[i]] !== 'ng' && out.indexOf(a[i]) < 0) out.push(a[i]); }
+    if (out.length) return out;
+    for (i = 0; i < rows.length && out.length < 2; i += 1) { if (bad[i] !== 'ng') out.push(i); }
+    return out;
+  }
+  function sxStar(i) {
+    var rows = sxRowsNow(), w = sxWarn('gu', rows), cur = sxPick(rows, w.bad), j = cur.indexOf(i);
+    if (j >= 0) cur.splice(j, 1);
+    else { cur.push(i); if (cur.length > 2) cur.shift(); }
+    S.sd.pick = cur;
+    sxAn();
+  }
+  function sxPutHtml() {
+    var sd = S.sd, h;
+    h = '<div class="dh"><div class="dt"><h2 id="sd-t">' + (sd.id ? '세트 고치기' : '새 세트') + '</h2><p class="mut">' +
+      esc(sd.id ? '고친 줄만 새 문항이 되고, 그대로 둔 문항의 학생 기록은 남아요' : '엑셀 표를 그대로 복사해 붙여 넣어요 · 어휘 «단어 | 뜻» · 구문 «영어 | 해석» · 문법 «번호 | 문제 | 답 | 해설 | 포인트»') + '</p></div>' +
+      '<button type="button" class="x" data-act="sdClose" aria-label="닫기">×</button></div><div class="db">';
+    if (sd.loading) return h + '<p class="mut">불러오는 중이에요</p></div>';
+    h += '<div class="fld" style="margin-top:0"><label for="sd-txt">붙여 넣기</label><textarea id="sd-txt" data-k="sd:txt" rows="7" spellcheck="false" autocomplete="off" ' +
+      'placeholder="엑셀에서 복사해 그대로 붙여요 · 칸 사이를 두 칸 띄어 써도 돼요"></textarea></div>';
+    h += '<div id="sd-an">' + sxAnHtml() + '</div>';
+    h += '<div class="sx-f2"><div class="fld"><label for="sd-title">이름<span class="req">꼭</span></label><input id="sd-title" type="text" data-k="sd:title" maxlength="60" autocomplete="off" placeholder="예: 고1 11월 모의 18~24번"></div>' +
+      '<div class="fld"><label for="sd-on">공개</label><input id="sd-on" type="date" data-k="sd:on"></div></div>';
+    h += '<div class="fld"><span class="fl" id="sd-cls-l">볼 반<span class="req">꼭</span></span><div id="sd-cls">' + sxClsHtml() + '</div></div>';
+    h += '</div><div class="edfoot"><p id="sd-msg" class="msg bad" role="alert">' + esc(sd.msg || '') + '</p><div class="sx-row"><span class="mut sm" id="sd-sum">' + esc(sxPutSum()) + '</span><span class="sp"></span>' +
+      '<button type="button" class="btn txt" data-act="sdClose">그만두기</button><button type="button" class="btn fill" data-act="sxSave"' + (sd.busy ? ' disabled' : '') + '>저장 <span class="kb">Ctrl+Enter</span></button></div></div>';
+    return h;
+  }
+  /* 붙여 넣은 글 → 종류 칩 · 까닭 한 줄 · 경고 · 미리 보기 표(빨간 줄 먼저 · 6줄 · 구문은 ★ 고르기라 모두) */
+  function sxAnHtml() {
+    var sp = sxParse(), sd = S.sd, rows = sp.rows, ko = sxKindOf(rows), k = ko.k, ks = ['voc', 'gu', 'gram'], h, i, kk, on, rs, w, bad, msgs, ng, lim, cols, hd, order, pk, shown, r, c, rc, gp;
+    h = '<div class="sx-row sx-kd" role="group" aria-label="종류"><span class="lb">종류</span>';
+    for (i = 0; i < ks.length; i += 1) {
+      kk = ks[i]; on = !!rows.length && kk === k;
+      h += '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="sxKind" data-v="' + kk + '"' +
+        (sd.id && kk !== sd.forced ? ' disabled' : '') + '>' + SX_KIND[kk] + '</button>';
+    }
+    h += '<span class="mut sm">' + (rows.length ? esc(rows.length + '줄 · ' + sxLim(k) + '개까지') : '') + '</span></div>';
+    rs = !rows.length ? '위에 붙여 넣으면 바로 알아봐요' : (sd.forced && sd.forced !== ko.auto ? sxRs('forced') : sxRs(k));
+    if (k === 'gu' && rows.length) rs += ' · ★ 녹음 2문장(안 고르면 앞 두 문장)';
+    if (sp.head) rs += ' · 맨 윗줄은 칸 이름으로 보고 뺐어요 «' + sp.head + '»';
+    h += '<p class="sx-rs">' + esc(rs) + '</p>';
+    if (!rows.length) return h;
+    w = sxWarn(k, rows); bad = w.bad;
+    msgs = isArr(w.msgs) ? w.msgs : [];
+    if (msgs.length) {
+      h += '<div class="sx-row sx-ws">';
+      for (i = 0; i < msgs.length; i += 1) { if (msgs[i]) h += sxPill(msgs[i].c === 'ng' ? 'ng' : 'am', str(msgs[i].t)); }
+      h += '</div>';
+    }
+    ng = +w.ng || 0;
+    if (ng) h += '<p class="sx-ngl">빨간 ' + ng + '줄은 빼고 저장해요</p>';
+    lim = sxLim(k);
+    if (lim && rows.length - ng > lim) h += '<p class="sx-ngl">' + esc(lim + sxUnit(k) + '까지 넣을 수 있어요 · 지금 ' + (rows.length - ng) + sxUnit(k)) + '</p>';
+    if (k === 'gu') { cols = ['9%', '39%', '32%', '14%', '6%']; hd = ['번호', '영어 문장', '해석', '포인트', '★']; }
+    else if (k === 'gram') { cols = ['9%', '45%', '15%', '11%', '20%']; hd = ['번호', '문제', '꼴', '답', '해설']; }
+    else { cols = ['14%', '38%', '48%']; hd = ['번호', '단어', '뜻']; }
+    order = [];
+    for (i = 0; i < rows.length; i += 1) order.push(i);
+    order.sort(function (a, b) { return ((bad[a] ? 0 : 1) - (bad[b] ? 0 : 1)) || (a - b); });
+    pk = k === 'gu' ? sxPick(rows, bad) : [];
+    shown = sd.more ? order.length : (k === 'gu' ? 40 : 6);
+    h += '<table class="sx-pv"><colgroup>';
+    for (i = 0; i < cols.length; i += 1) h += '<col style="width:' + cols[i] + '">';
+    h += '</colgroup><thead><tr>';
+    for (i = 0; i < hd.length; i += 1) h += '<th scope="col">' + hd[i] + '</th>';
+    h += '</tr></thead><tbody>';
+    for (i = 0; i < order.length && i < shown; i += 1) {
+      r = rows[order[i]] || {}; c = r.c || [];
+      rc = bad[order[i]] === 'ng' ? ' class="ng"' : (bad[order[i]] === 'am' ? ' class="am"' : '');
+      h += '<tr' + rc + '><td>' + esc(r.n) + '</td><td title="' + esc(c[0]) + '">' + esc(c[0]) + '</td>';
+      if (k === 'gu') {
+        h += '<td title="' + esc(c[1]) + '">' + esc(c[1] || '빈칸') + '</td><td>' + esc(c[2] || '') + '</td><td>' +
+          (bad[order[i]] === 'ng' ? '' : '<button type="button" class="sx-star' + (pk.indexOf(order[i]) >= 0 ? ' on' : '') + '" data-act="sxStar" data-i="' + order[i] + '" aria-pressed="' +
+            (pk.indexOf(order[i]) >= 0 ? 'true' : 'false') + '" aria-label="' + (order[i] + 1) + '번째 줄 녹음 문장">' + (pk.indexOf(order[i]) >= 0 ? '★' : '☆') + '</button>') + '</td>';
+      } else if (k === 'gram') {
+        gp = sxGp(c[0]);
+        h += '<td>' + (gp === 'c' ? '고르기' : (gp === 'r' ? '고쳐 쓰기' : '–')) + '</td><td>' + esc(c[1] || '빈칸') + '</td><td title="' + esc(c[2]) + '">' + esc(c[2] || '') + '</td>';
+      } else h += '<td>' + esc(c[1] || '빈칸') + '</td>';
+      h += '</tr>';
+    }
+    if (order.length > shown) h += '<tr><td colspan="' + hd.length + '" class="more">그 밖 ' + (order.length - shown) + '줄 <button type="button" class="btn sm txt" data-act="sxMore">모두 보기</button></td></tr>';
+    return h + '</tbody></table>';
+  }
+  function sxAn() {
+    var b = $('sd-an'), s = $('sd-sum');
+    if (!S.sd || S.sd.t !== 'put') return;
+    if (b) b.innerHTML = sxAnHtml();
+    if (s) s.textContent = sxPutSum();
+  }
+  function sxPutSum() {
+    var rows = sxRowsNow(), k, w, ids;
+    if (!rows.length) return '';
+    k = sxKindOf(rows).k; w = sxWarn(k, rows); ids = sxClsIds();
+    return SX_KIND[k] + ' ' + (rows.length - (+w.ng || 0)) + sxUnit(k) + (ids.length ? ' · ' + clsNames(ids) : '');
+  }
+  /* 볼 반: 강의 서랍과 같은 목록에서 «전체»만 뺌 · 고칠 때 지금 목록에 없는 반도 그대로 둠 */
+  function sxClsHtml() {
+    var h = '<div class="chips" role="group" aria-labelledby="sd-cls-l">', ids = sxClsAll(), i, c, on;
+    for (i = 0; i < ids.length; i += 1) {
+      c = ids[i]; on = !!S.sd.cls[c];
+      h += '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="sxCls" data-c="' + esc(c) + '">' + esc(D.cname[c] || '지워진 반') + '</button>';
+    }
+    if (!ids.length) h += '<span class="mut sm">반이 없어요. 히즈북스에서 반을 먼저 만들어 주세요.</span>';
+    return h + '</div>';
+  }
+  function sxClsAll() {
+    var out = [], i, k;
+    for (i = 0; i < D.my.length; i += 1) out.push(D.my[i].id);
+    for (k in S.sd.cls) { if (has(S.sd.cls, k) && S.sd.cls[k] && k !== '*' && out.indexOf(k) < 0) out.push(k); }
+    return out;
+  }
+  function sxClsIds() {
+    var a = sxClsAll(), out = [], i;
+    for (i = 0; i < a.length; i += 1) { if (S.sd.cls[a[i]]) out.push(a[i]); }
+    return out;
+  }
+  function sxMsg(t, fid) {
+    var m = $('sd-msg'), el = fid ? $(fid) : null;
+    if (S.sd) S.sd.msg = t;
+    if (m) m.textContent = t;
+    if (el) { try { el.focus(); } catch (e) {} }
+  }
+  /* 저장(네 번 누름: 붙여 넣기 · 이름 · 반 · 저장): 빨간 줄 뺌 · ★ 는 저장할 문항 차례로 바꿔 보냄(빈 것 = 서버가 앞 두 문장) */
+  function sxSave(btn) {
+    var sd = S.sd, rows, k, w, map = [], items, i, pick = [], pk, title, on, cls, lim;
+    if (!sd || sd.t !== 'put' || sd.busy || sd.loading) return;
+    rows = sxRowsNow();
+    if (!rows.length) { sxMsg('먼저 엑셀에서 복사해 붙여 넣어 주세요', 'sd-txt'); return; }
+    k = sxKindOf(rows).k;
+    w = sxWarn(k, rows);
+    for (i = 0; i < rows.length; i += 1) { if (w.bad[i] !== 'ng') map.push(i); }
+    try { items = L.setItemsFrom(k, rows) || []; } catch (e) { items = []; }
+    if (!items.length) { sxMsg('저장할 줄이 없어요. 빨간 줄을 고쳐 주세요', 'sd-txt'); return; }
+    lim = sxLim(k);
+    if (lim && items.length > lim) { sxMsg(SX_KIND[k] + (batchim(SX_KIND[k]) ? '은 ' : '는 ') + lim + sxUnit(k) + '까지 넣을 수 있어요(지금 ' + items.length + ')', 'sd-txt'); return; }
+    title = trim(S.inputs['sd:title']);
+    if (!title) { sxMsg('이름을 적어 주세요', 'sd-title'); return; }
+    cls = sxClsIds();
+    if (!cls.length) { sxMsg('볼 반을 골라 주세요', null); return; }
+    on = trim(S.inputs['sd:on']);
+    if (on && !isDay(on)) { sxMsg('공개일을 확인해 주세요', 'sd-on'); return; }
+    if (k === 'gu') {
+      pk = sxPick(rows, w.bad);
+      for (i = 0; i < pk.length; i += 1) { if (map.indexOf(pk[i]) >= 0) pick.push(map.indexOf(pk[i])); }
+    }
+    sd.busy = true;
+    sxMsg('', null);
+    if (btn) btn.disabled = true;
+    Promise.resolve().then(function () {
+      return L.setPut(DA.rpc, { id: sd.id || null, kind: k, title: title, cls: cls, on: on || null, items: items, pick: pick });
+    }).then(function (r) {
+      var nid, msg;
+      if (S.sd !== sd) return;
+      sd.busy = false;
+      if (btn) btn.disabled = false;
+      if (!r || !r.ok) { sxMsg(sxPutErr(r, map), null); if (r && r.err === 'old') { S.setOld = true; S.set = null; render(); } return; }
+      nid = str(r.id) || sd.id;
+      delete S.setFull[nid];
+      msg = sd.id ? '고쳤어요 · 그대로 둔 문항의 학생 기록은 남아요'
+        : (!on || on <= today() ? '저장했어요 · ' + clsNames(cls) + ' 학생 폰 목록에 바로 떠요' : '저장했어요 · ' + L.fmtDay(on) + '에 학생 폰에 떠요');
+      if (!sd.id) S.sxDraft = null;
+      S.sd = null;
+      delete S.inputs['sd:txt']; delete S.inputs['sd:title']; delete S.inputs['sd:on'];
+      sxPaintSd();
+      S.tab = 'set'; S.setSel = nid; S.setSt = null; S.setStErr = '';
+      toast(msg);
+      sxReload();
+    }, function (e) {
+      if (S.sd !== sd) return;
+      sd.busy = false;
+      if (btn) btn.disabled = false;
+      sxMsg('저장하지 못했어요. ' + errText(e), null);
+    });
+  }
+  function sxPutErr(r, map) {
+    var at, nm;
+    if (r && r.err === 'items') {
+      at = +r.at;
+      nm = SX_ITEM[str(r.why)] || '내용';
+      return (isFinite(at) && map[at] != null ? (map[at] + 1) + '번째 줄 · ' : '') + nm + eul(nm) + ' 확인해 주세요';
+    }
+    if (r && r.err === 'input') return '붙여 넣은 글이 너무 길어요. 나눠서 넣어 주세요';
+    return sxErr(r);
+  }
+
+  /* ---- 녹음 듣기 서랍: 한 문장을 반 학생 녹음으로 이어 들음(안 들은 것 먼저 · 없으면 모두)
+     Space 재생 · 멈춤 · M 원래 소리(영어 목소리가 없으면 단추 숨김) · R 이 학생 다시 · 1~4 까닭 · Enter 판정하고 다음(recMark) */
+  var rvAu = null, rvUrls = {}, rvGen = 0, rvVc = false;
+  function rvText(e) { try { return L.sayText ? str(L.sayText(e)) : str(e).replace(/\s*\/\s*/g, ' '); } catch (x) { return str(e); } }
+  function rvOpen(id) {
+    var st = S.setSt && S.setSt.id === id ? S.setSt.r : null, it = sxItem(id);
+    if (!st || !it) return;
+    if (st.set && isArr(st.set.items)) { rvStart(it, st, st.set.items, false, false); return; }
+    sxFull(id).then(function (set) { rvStart(it, st, set.items, false, false); }, function (e) {
+      toast('녹음을 불러오지 못했어요. ' + (e && e.r ? sxErr(e.r) : errText(e)), true);
+    });
+  }
+  function rvQueue(it, st, items, onlyNew) {
+    var pk = sxPk(it, st), rows = sxRows(it, st), q = [], imap = {}, i, j, e, list, rec;
+    rows.sort(function (a, b) { return cmpKo(a.name, b.name) || (a.sid < b.sid ? -1 : 1); });
+    for (i = 0; isArr(items) && i < items.length; i += 1) { if (items[i]) imap[items[i].k] = items[i]; }
+    for (i = 0; i < pk.length; i += 1) {
+      e = imap[pk[i]] || null;
+      list = [];
+      for (j = 0; j < rows.length; j += 1) {
+        rec = sxRecOf(rows[j].x ? rows[j].x.gu : null, pk[i]);
+        if (!sxLive(rec) || (onlyNew && rec.mark)) continue;
+        list.push({ name: rows[j].name, rec: rec, res: '', why: 0, bad: false });
+      }
+      if (list.length) q.push({ no: i + 1, n: e ? str(e.n) : '', e: e ? str(e.e) : '', list: list });
+    }
+    return q;
+  }
+  function rvStart(it, st, items, all, marked) {
+    var q = all ? [] : rvQueue(it, st, items, true);
+    if (!q.length) q = rvQueue(it, st, items, false);
+    if (!q.length) { toast('들을 녹음이 없어요'); return; }
+    closeDrawer(); closeEditor();
+    rvStop(); rvGen += 1;
+    S.pp = null;
+    S.sd = { t: 'rec', id: it.id, title: it.title, cls: clsNames(it.class_ids), items: items, q: q, s: 0, u: 0, fl: false, why: 0,
+      ok: 0, ng: 0, end: false, pl: false, ld: false, pr: 0, note: '', marked: !!marked };
+    rvVoiceWatch();
+    render();
+    sxPaintSd();
+    rvPlay();
+  }
+  function rvCur() {
+    var sd = S.sd, s = sd && sd.t === 'rec' && !sd.end ? sd.q[sd.s] : null;
+    return s ? s.list[sd.u] || null : null;
+  }
+  function rvAudio() {
+    if (rvAu) return rvAu;
+    rvAu = new Audio();
+    rvAu.preload = 'auto';
+    rvAu.addEventListener('timeupdate', rvTick);
+    rvAu.addEventListener('playing', function () { if (S.sd && S.sd.t === 'rec') { S.sd.pl = true; S.sd.ld = false; rvTick(); } });
+    rvAu.addEventListener('pause', function () { if (S.sd && S.sd.t === 'rec') { S.sd.pl = false; rvTick(); } });
+    rvAu.addEventListener('ended', function () { if (S.sd && S.sd.t === 'rec') { S.sd.pl = false; S.sd.pr = 100; rvTick(); } });
+    rvAu.addEventListener('error', function () {
+      var c = rvCur();
+      if (!c || rvAu.getAttribute('data-p') !== c.rec.path) return;
+      c.bad = true; S.sd.pl = false; S.sd.ld = false;
+      sxPaintSd();
+    });
+    return rvAu;
+  }
+  function rvStop() { if (rvAu) { try { rvAu.pause(); } catch (e) {} } if (S.sd && S.sd.t === 'rec') S.sd.pl = false; }
+  function rvGo(a) {
+    var p = null;
+    try { p = a.play(); } catch (e) { p = null; }
+    if (p && typeof p.then === 'function') p.then(null, function () { if (S.sd && S.sd.t === 'rec') { S.sd.pl = false; S.sd.ld = false; rvTick(); } });
+  }
+  /* 서명 주소는 10분 → 8분 안이면 다시 씀 */
+  function rvUrl(path) {
+    var c = rvUrls[path], t = new Date().getTime();
+    if (c && t - c.at < 480000) return Promise.resolve(c.u);
+    return DA.recUrl(path).then(function (u) { rvUrls[path] = { u: u, at: t }; return u; });
+  }
+  function rvPlay() {
+    var sd = S.sd, c = rvCur(), a, my;
+    if (!c || c.bad) return;
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e0) {}
+    a = rvAudio();
+    if (a.getAttribute('data-p') === c.rec.path) {
+      if (a.ended || sd.pr >= 100) { try { a.currentTime = 0; } catch (e1) {} sd.pr = 0; }
+      rvGo(a);
+      return;
+    }
+    my = ++rvGen;
+    sd.ld = true; sd.pr = 0;
+    rvTick();
+    rvUrl(c.rec.path).then(function (u) {
+      if (my !== rvGen || rvCur() !== c) return;
+      a.setAttribute('data-p', c.rec.path);
+      a.src = u;
+      rvGo(a);
+    }, function () {
+      if (my !== rvGen || rvCur() !== c) return;
+      c.bad = true; sd.ld = false;
+      sxPaintSd();
+    });
+  }
+  function rvTick() {
+    var sd = S.sd, c = rvCur(), a = rvAu, b = $('rv-bar'), s = $('rv-st'), dur;
+    if (!sd || sd.t !== 'rec' || !c) return;
+    if (a && a.getAttribute('data-p') === c.rec.path && a.currentTime > 0) {
+      dur = isFinite(a.duration) && a.duration > 0 ? a.duration : (+c.rec.ms > 0 ? +c.rec.ms / 1000 : 0);
+      if (dur) sd.pr = Math.min(100, Math.round(a.currentTime * 100 / dur));
+    }
+    if (b) b.style.width = sd.pr + '%';
+    if (s) s.innerHTML = rvSt(c, true);
+  }
+  function rvSt(c, cur) {
+    var sd = S.sd;
+    if (c.res === 'ok') return sxPill('ok', '좋아요');
+    if (c.res === 'again') return sxPill('am', '다시' + (c.why ? ' · ' + sxWhy(c.why) : ''));
+    if (c.res === 'skip') return '넘김';
+    if (c.res === 'fail') return sxPill('ng', '저장 못 함');
+    if (!cur) return '기다림';
+    if (c.bad) return sxPill('ng', '소리를 못 불러왔어요');
+    if (sd.fl) return sxPill('am', '다시' + (sd.why ? ' · ' + sxWhy(sd.why) : ''));
+    if (sd.pl) return '듣는 중';
+    if (sd.pr >= 100) return '다 들음';
+    return sd.ld ? '불러오는 중' : '멈춤';
+  }
+  function rvVoice() {
+    var ss = window.speechSynthesis;
+    if (!ss || !window.SpeechSynthesisUtterance || !L.sayVoice) return null;
+    try { return L.sayVoice(ss.getVoices() || []) || null; } catch (e) { return null; }
+  }
+  function rvVoiceWatch() {
+    var ss = window.speechSynthesis;
+    if (rvVc || !ss || !ss.addEventListener) return;
+    rvVc = true;
+    try { ss.addEventListener('voiceschanged', function () { if (S.sd && S.sd.t === 'rec' && !S.sd.end) sxPaintSd(); }); } catch (e) {}
+  }
+  function rvSay() {
+    var sd = S.sd, s = sd.q[sd.s], v = rvVoice(), u, n;
+    if (!s || !v) return;
+    rvStop();
+    rvTick();
+    try {
+      window.speechSynthesis.cancel();
+      u = new window.SpeechSynthesisUtterance(rvText(s.e));
+      u.voice = v; u.lang = v.lang || 'en-US'; u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+    sd.note = '원래 소리를 들려줘요';
+    n = $('rv-note');
+    if (n) n.textContent = sd.note;
+  }
+  function rvKeyOf(ev) {
+    var c = str(ev.code), k = str(ev.key);
+    if (c === 'Space' || k === ' ' || k === 'Spacebar') return ' ';
+    if (c === 'Enter' || c === 'NumpadEnter' || k === 'Enter') return 'Enter';
+    if (c === 'KeyM' || k === 'm' || k === 'M') return 'm';
+    if (c === 'KeyR' || k === 'r' || k === 'R') return 'r';
+    if (/^(Digit|Numpad)[1-4]$/.test(c)) return c.charAt(c.length - 1);
+    if (/^[1-4]$/.test(k)) return k;
+    return '';
+  }
+  function rvKey(k) {
+    var sd = S.sd, n;
+    if (!sd || sd.t !== 'rec') return;
+    if (sd.end) { if (k === 'Enter') rvRestart(); return; }
+    if (k === ' ' || k === 'sp') { if (sd.pl) { rvStop(); rvTick(); } else rvPlay(); return; }
+    if (k === 'm') { rvSay(); return; }
+    if (k === 'r') { sd.fl = !sd.fl; if (!sd.fl) sd.why = 0; sxPaintSd(); return; }
+    if (/^[1-4]$/.test(k)) {
+      n = +k;
+      if (sd.fl && sd.why === n) sd.why = 0;
+      else { sd.fl = true; sd.why = n; }
+      sxPaintSd();
+      return;
+    }
+    if (k === 'Enter') rvNext();
+  }
+  function rvNext() {
+    var sd = S.sd, c = rvCur(), mark, why;
+    if (!c) return;
+    rvStop(); rvGen += 1;
+    if (c.bad) { c.res = 'skip'; sd.note = c.name + ' 넘김'; }
+    else {
+      mark = sd.fl ? 'again' : 'ok';
+      why = sd.fl ? sd.why : 0;
+      c.res = mark; c.why = why;
+      if (mark === 'ok') sd.ok += 1; else sd.ng += 1;
+      sd.marked = true;
+      rvMark(sd, c, mark, why);
+      sd.note = c.name + (mark === 'ok' ? ' 좋아요' : ' 다시 보냄' + (why ? ' · ' + sxWhy(why) : ''));
+    }
+    sd.fl = false; sd.why = 0; sd.pr = 0; sd.ld = false;
+    sd.u += 1;
+    if (sd.u >= sd.q[sd.s].list.length) { sd.u = 0; sd.s += 1; }
+    if (sd.s >= sd.q.length) sd.end = true;
+    sxPaintSd();
+    if (!sd.end) rvPlay();
+  }
+  function rvMark(sd, c, mark, why) {
+    var rec = c.rec;
+    Promise.resolve().then(function () { return L.recMark(DA.rpc, rec.id, mark, why); }).then(function (r) {
+      if (r && r.ok) { rec.mark = mark; rec.why = why; if (!rec.heard_at) rec.heard_at = new Date().toISOString(); return; }
+      rvFail(sd, c, r);
+    }, function () { rvFail(sd, c, null); });
+  }
+  function rvFail(sd, c, r) {
+    if (c.res === 'ok') sd.ok -= 1;
+    else if (c.res === 'again') sd.ng -= 1;
+    c.res = 'fail';
+    toast(c.name + ' 판정을 저장하지 못했어요. ' + sxErr(r), true);
+    if (S.sd === sd) sxPaintSd();
+  }
+  function rvRestart() {
+    var sd = S.sd, it = sxItem(sd.id), st = S.setSt && S.setSt.id === sd.id ? S.setSt.r : null;
+    if (!it || !st) { sxClose(); return; }
+    rvStart(it, st, sd.items, true, sd.marked);
+  }
+  function rvHtml() {
+    var sd = S.sd, h, s, list, i, c, cur;
+    h = '<div class="dh"><div class="dt"><h2 id="sd-t">' + esc('녹음 듣기 · ' + sd.title) + '</h2><p class="mut">' + esc(sd.cls) + '</p></div>' +
+      '<button type="button" class="x" data-act="sdClose" aria-label="닫기">×</button></div><div class="db">';
+    if (sd.end) {
+      return h + '<div class="rv-end"><p class="big">' + esc('다 들었어요 · 좋아요 ' + sd.ok + ' · 다시 ' + sd.ng) + '</p>' +
+        '<p class="mut">다시를 받은 학생 폰에는 그 문장만 «다시 녹음할 문장»으로 떠요.</p>' +
+        '<button type="button" class="btn strong" data-act="rvKey" data-v="Enter">처음부터</button></div></div>';
+    }
+    s = sd.q[sd.s]; list = s.list; c = list[sd.u];
+    h += '<p class="rv-pg mut">' + esc('문장 ' + (sd.s + 1) + ' / ' + sd.q.length + ' · 학생 ' + (sd.u + 1) + ' / ' + list.length) + '</p>';
+    h += '<div class="rv-box"><p class="rv-s"><b>★' + esc(s.n || String(s.no)) + '</b>' + esc(rvText(s.e)) + '</p><div class="rv-l">';
+    for (i = 0; i < list.length; i += 1) {
+      cur = i === sd.u;
+      h += '<div class="rv-r' + (cur ? ' cur' : '') + '"><span class="n">' + esc(list[i].name) + '</span>' +
+        (cur ? '<span class="rv-bar" aria-hidden="true"><i id="rv-bar" style="width:' + sd.pr + '%"></i></span>' : '<span class="gap"></span>') +
+        '<span class="st"' + (cur ? ' id="rv-st"' : '') + '>' + rvSt(list[i], cur) + '</span></div>';
+    }
+    h += '</div></div><div class="sx-row rv-why">';
+    if (sd.fl) {
+      h += '<span class="mut sm">까닭 · 고르지 않아도 돼요</span>';
+      for (i = 1; i <= 4; i += 1) {
+        h += '<button type="button" class="chip' + (sd.why === i ? ' on' : '') + '" aria-pressed="' + (sd.why === i ? 'true' : 'false') + '" data-act="rvKey" data-v="' + i + '">' +
+          '<span class="kb">' + i + '</span>' + esc(sxWhy(i)) + '</button>';
+      }
+    }
+    h += '</div><div class="sx-row rv-k"><button type="button" class="btn" data-act="rvKey" data-v="sp"><span class="kb">Space</span>재생 · 멈춤</button>' +
+      (rvVoice() ? '<button type="button" class="btn" data-act="rvKey" data-v="m"><span class="kb">M</span>원래 소리</button>' : '') +
+      '<button type="button" class="btn' + (sd.fl ? ' warn' : '') + '" aria-pressed="' + (sd.fl ? 'true' : 'false') + '" data-act="rvKey" data-v="r"><span class="kb">R</span>이 학생 다시</button>' +
+      '<span class="sp"></span><button type="button" class="btn fill" data-act="rvKey" data-v="Enter">' +
+      (c && c.bad ? '넘기기' : (sd.fl ? '다시 보내고 다음' : '좋아요 · 다음')) + ' <span class="kb">Enter</span></button></div>' +
+      '<p class="mut sm rv-note" id="rv-note" role="status">' + esc(sd.note) + '</p></div>';
+    return h;
+  }
+
   /* ------------------------------------------------------------------ 오류 문구 */
   function errText(e) {
     var m = str(e && (e.message || e.code)), st = +(e && e.status) || 0;
@@ -3458,15 +4698,19 @@ window.__lecAdminStart = function () {
   function refresh(note) {
     var my = ++loadGen, lp = DA.lectures();
     return Promise.all([DA.classes(), lp, DA.progress(), DA.qna(), DA.consents(), DA.keys(), loadTodo(),
-      lp.then(loadAtt, function () { S.att = null; }), loadRng()]).then(function (raw) {
+      lp.then(loadAtt, function () { S.att = null; }), loadRng(), sxLoad()]).then(function (raw) {
       if (my !== loadGen) return;
       build(raw);
       S.loadedAt = new Date().getTime();
       S.sess = null;
+      sxFix();
       renderAll();
       if (note) toast('새로 불러왔어요');
       rngSyncNow(my);
       hashOnce();
+      /* S1 세트: 처음 한 번 학교급 · 녹음 정리(조용히) · 세트 탭이면 결과 표도 새로 */
+      sxInit();
+      if (S.tab === 'set') sxStaff(true);
     }, function (e) {
       if (my !== loadGen) return;
       if (!D) showFail('자료를 불러오지 못했어요. ' + errText(e), function () { app.innerHTML = loadingHtml(); refresh(); });
@@ -3557,7 +4801,7 @@ window.__lecAdminStart = function () {
     var s = attr(el, 'data-s'), l = attr(el, 'data-l'), c = attr(el, 'data-c'), v = attr(el, 'data-v'), q = attr(el, 'data-q');
     var inDw = !!($('dw') && $('dw').contains(el)), r, t, k, note, chips, i;
     switch (a) {
-      case 'tab': S.tab = v; S.qFocus = ''; render(); break;
+      case 'tab': S.tab = v; S.qFocus = ''; if (v === 'set') sxFix(); render(); if (v === 'set') sxStaff(false); break;
       case 'reload': refresh(true); break;
       case 'retry': if (S.retry) S.retry(); break;
       case 'copyAddr':
@@ -3594,7 +4838,7 @@ window.__lecAdminStart = function () {
       case 'forgetNo': S.ask.forget = null; renderAll(); break;
       case 'forgetYes':
         act('forget', el, DA.rpc('lec_forget', { p_skey: s }), function (x) { return '진도 ' + (x.progress || 0) + '개 · 질문 ' + (x.questions || 0) + '개를 지웠어요'; },
-          function () { S.ask.forget = null; });
+          function () { S.ask.forget = null; sxClean(); /* 그 학생 녹음은 서버가 old 로 바꿈 → 파일까지 바로 정리(원장님만) */ });
         break;
       case 'newLec': openEditor(''); break;
       case 'editLec': openEditor(l); break;
@@ -3731,6 +4975,76 @@ window.__lecAdminStart = function () {
       case 'edPdfOff': pdfOff(); break;
       case 'edPdfUndo': pdfUndo(); break;
       case 'edTxtFold': if (S.ed && $('ed-txtw')) { txtFold(!$('ed-txtw').hidden); if (!$('ed-txtw').hidden && $('ed-txt')) { try { $('ed-txt').focus(); } catch (e3) {} } } break;
+      /* S1 세트 */
+      case 'sxNew': sxOpenPut(''); break;
+      case 'sxEdit': sxOpenPut(s); break;
+      case 'sxSel':
+        if (S.setSel !== s) { S.setSel = s; S.setSt = null; S.setStErr = ''; S.pp = null; S.setAsk = ''; S.setGd = ''; S.setGx = ''; }
+        render();
+        sxFocus('sxSel', s);
+        sxStaff(true);
+        break;
+      case 'sxHide':
+        r = sxItem(s);
+        if (!r) break;
+        sxCall('sxHide', el, function () { return L.setHide(DA.rpc, s, v === '1'); }, v === '1' ? '숨겼어요 · 학생 폰 목록에서 빠져요' : '다시 보여요 · 학생 폰 목록에 떠요');
+        break;
+      case 'sxDelAsk': S.setAsk = s; S.pp = null; render(); sxFocus('sxDelNo', null); break;
+      case 'sxDelNo': S.setAsk = ''; render(); sxFocus('sxDelAsk', S.setSel); break;
+      case 'sxDelYes':
+        sxCall('sxDel', el, function () { return L.setDel(DA.rpc, s); }, function (x) {
+          return '지웠어요' + (+x.recs ? ' · 녹음 ' + (+x.recs) + '개도 지워져요' : '');
+        }, function () { S.setAsk = ''; delete S.setFull[s]; if (S.setSel === s) { S.setSel = ''; S.setSt = null; } });
+        break;
+      case 'sxPrint':
+        if (S.pp && S.pp.id === s) S.pp = null;
+        else {
+          r = sxItem(s);
+          if (!r) break;
+          S.pp = { id: s, mode: (SX_FMT[r.kind] || [['']])[0][0], all: true, shuf: false };
+          delete S.inputs['pp:from']; delete S.inputs['pp:to'];
+          S.setAsk = '';
+        }
+        render();
+        sxFocus(S.pp ? 'sxPm' : 'sxPrint', S.pp ? null : s);
+        break;
+      case 'sxPm': if (S.pp) { S.pp.mode = v; render(); sxFocusV('sxPm', v); } break;
+      case 'sxPall': if (S.pp) { S.pp.all = true; delete S.inputs['pp:from']; delete S.inputs['pp:to']; render(); sxFocus('sxPall', null); } break;
+      case 'sxPo': if (S.pp) { S.pp.shuf = v === '1'; render(); sxFocusV('sxPo', v); } break;
+      case 'sxPgo': sxPrintGo(el, s); break;
+      case 'sxPx': r = S.pp ? S.pp.id : ''; S.pp = null; render(); if (r) sxFocus('sxPrint', r); break;
+      case 'sxRec': rvOpen(s); break;
+      case 'sxGd': S.setGd = s; S.setGx = ''; render(); sxFocus('sxGdOn', s); break;
+      case 'sxGx': S.setGx = s; S.setGd = ''; render(); sxFocus('sxGxNo', null); break;
+      case 'sxGxNo': S.setGd = ''; S.setGx = ''; render(); break;
+      case 'sxGdOn':
+        sxCall('sxGd', el, function () { return L.recGuard(DA.rpc, s, v, true); }, '보호자 동의를 적었어요 · 이 학생도 녹음할 수 있어요', function () { S.setGd = ''; });
+        break;
+      case 'sxGxYes':
+        sxCall('sxGd', el, function () { return L.recGuard(DA.rpc, s, '', false); }, '녹음을 껐어요 · 이 학생이 보낸 녹음도 지워요', function () {
+          S.setGx = '';
+          sxClean();   /* 끈 학생의 녹음 파일도 바로 정리(서버가 old 로 바꾼 줄) */
+        });
+        break;
+      case 'sdClose': sxClose(); break;
+      case 'sxKind':
+        if (!S.sd || S.sd.t !== 'put' || S.sd.id) break;
+        S.sd.forced = v; S.sd.pick = null; S.sd.more = false;
+        sxAn();
+        refocus('sd-an', 'data-v', v);
+        break;
+      case 'sxStar': if (S.sd && S.sd.t === 'put') { sxStar(+attr(el, 'data-i')); refocus('sd-an', 'data-i', attr(el, 'data-i')); } break;
+      case 'sxMore': if (S.sd && S.sd.t === 'put') { S.sd.more = true; sxAn(); } break;
+      case 'sxCls':
+        if (!S.sd || S.sd.t !== 'put') break;
+        S.sd.cls[c] = !S.sd.cls[c];
+        $('sd-cls').innerHTML = sxClsHtml();
+        refocus('sd-cls', 'data-c', c);
+        r = $('sd-sum');
+        if (r) r.textContent = sxPutSum();
+        break;
+      case 'sxSave': sxSave(el); break;
+      case 'rvKey': rvKey(v); break;
       default: return;
     }
     if (el.tagName === 'A') return;
@@ -3748,6 +5062,17 @@ window.__lecAdminStart = function () {
   function onInput(ev) {
     var t = ev.target, k = t && t.getAttribute ? t.getAttribute('data-k') : null;
     if (k) S.inputs[k] = t.value;
+    /* S1 세트: 붙여 넣은 글이 바뀌면 종류 · 경고 · 미리 보기를 곧바로(새 세트는 고른 종류 · ★ 도 처음부터) */
+    if (t && t.id === 'sd-txt' && S.sd && S.sd.t === 'put') {
+      if (!S.sd.id) { S.sd.forced = ''; S.sd.pick = null; }
+      S.sd.more = false;
+      sxAn();
+      return;
+    }
+    if (k === 'pp:from' || k === 'pp:to') {
+      if (S.pp) { S.pp.all = !trim(S.inputs['pp:from']) && !trim(S.inputs['pp:to']); sxPallMark(); }
+      return;
+    }
     if (!S.ed || !t) return;
     if (t.id === 'ed-yt') ytSchedule();
     else if (t.id === 'ed-txt') {
@@ -3818,7 +5143,29 @@ window.__lecAdminStart = function () {
     return !!b;
   }
   function onKey(ev) {
-    var t = ev.target, k = t && t.getAttribute ? t.getAttribute('data-k') : '';
+    var t = ev.target, k = t && t.getAttribute ? t.getAttribute('data-k') : '', rk, r9;
+    /* S1 녹음 듣기: Space · M · R · 1~4 · Enter(글 칸 · Ctrl · Alt 와 함께면 그냥 둠 · 누르고 있으면 한 번만) */
+    if (S.sd && S.sd.t === 'rec' && !(ev.ctrlKey || ev.metaKey || ev.altKey) && !(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) {
+      rk = rvKeyOf(ev);
+      /* 초점이 녹음 단추 말고 다른 단추(× 닫기 등) · 링크에 있으면 Enter 는 그 단추 몫(× 에서 Enter = 닫기) */
+      if (rk === 'Enter' && t && (t.tagName === 'A' || (t.tagName === 'BUTTON' && t.getAttribute('data-act') !== 'rvKey'))) rk = '';
+      if (rk) {
+        ev.preventDefault();
+        if (!ev.repeat) rvKey(rk);
+        return;
+      }
+    }
+    /* S1 세트 서랍: Ctrl+Enter = 저장 */
+    if ((ev.key === 'Enter' || ev.keyCode === 13) && (ev.ctrlKey || ev.metaKey) && !ev.isComposing && ev.keyCode !== 229 && S.sd && S.sd.t === 'put') {
+      ev.preventDefault();
+      sxSave(($('sd') || document).querySelector('[data-act=sxSave]'));
+      return;
+    }
+    if ((ev.key === 'Escape' || ev.keyCode === 27) && (S.sd || S.pp)) {
+      if (S.sd) { r9 = S.sd.t === 'rec' ? S.sd.id : ''; sxClose(); if (r9) sxFocus('sxRec', r9); return; }
+      r9 = S.pp.id; S.pp = null; render(); sxFocus('sxPrint', r9);
+      return;
+    }
     /* K: 새 강의 서랍 안 어디서나 Ctrl+Enter(Cmd+Enter) = 올리기 · 저장 */
     if ((ev.key === 'Enter' || ev.keyCode === 13) && (ev.ctrlKey || ev.metaKey) && !ev.isComposing && ev.keyCode !== 229 && S.ed && S.ed.can && inEd(t)) {
       ev.preventDefault();
@@ -3843,6 +5190,11 @@ window.__lecAdminStart = function () {
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
   document.addEventListener('keydown', onKey);
+  /* S1 녹음 듣기: 단추에 초점이 있어도 Space 를 떼며 한 번 더 누르지 않게 */
+  document.addEventListener('keyup', function (ev) {
+    var t = ev.target;
+    if (S.sd && S.sd.t === 'rec' && t && t.tagName === 'BUTTON' && rvKeyOf(ev) === ' ') ev.preventDefault();
+  });
   document.addEventListener('dragover', function (ev) { if (edDropOk(ev)) { ev.preventDefault(); edDragMark(true); } });
   document.addEventListener('dragleave', function (ev) { if (!ev.relatedTarget || !inEd(ev.relatedTarget)) edDragMark(false); });
   document.addEventListener('drop', function (ev) {
@@ -3854,6 +5206,14 @@ window.__lecAdminStart = function () {
   /* K: 서랍 안 글 칸 밖에서 붙여 넣어도 실행기 txt 면 읽음(머리줄 [제목] · [히즈클래스] · [히즈 클래스] · [히즈 온라인] · [온라인 클래스] · [설명] · 띄어쓰기 상관없음) */
   document.addEventListener('paste', function (ev) {
     var t = ev.target, d = ev.clipboardData, v;
+    /* S1 세트: 붙여 넣은 뒤 이름이 비었으면 이름 칸으로(네 번 누름 · 붙여 넣기 → 이름 → 반 → 저장) */
+    if (t && t.id === 'sd-txt' && S.sd && S.sd.t === 'put') {
+      setTimeout(function () {
+        var n = $('sd-title');
+        if (n && S.sd && !trim(n.value) && sxRowsNow().length) { try { n.focus(); } catch (e) {} }
+      }, 0);
+      return;
+    }
     if (!S.ed || !S.ed.can || !inEd(t) || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || !d) return;
     v = str(d.getData('text'));
     if (!/\[\s*(제\s*목|히즈\s*클래스|히즈\s*온라인|온라인\s*클래스|설\s*명)\s*\]/.test(v)) return;

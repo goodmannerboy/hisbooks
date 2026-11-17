@@ -196,6 +196,7 @@
     if (c2Ensure(d)) save(d);   /* C2 시연 자료(아래 C2 절) */
     if (c2Many(d)) save(d);     /* ?manyexams=1 = 시험 여럿(아래 C2 절) · 아니면 넣었던 것을 걷어 냄 */
     if (pdfEnsure(d)) save(d);  /* P1: files 칸 · 저장 곳 목록 */
+    if (s1Ensure(d)) save(d);   /* S1: 단어 · 구문 · 문법 시연 자료(아래 S1 절) */
     return d;
   }
   function pdfEnsure(d) {
@@ -633,6 +634,7 @@
   function move(d, oldSid, newSid, sname) {
     var X = L(), i, j, p, q, now = pgts(nowMs());
     if (oldSid == null || newSid == null || oldSid === newSid) return;
+    var s1b = s1Before(d, oldSid, newSid);   /* S1 트리거 흉내(아래 S1 절) */
     for (i = 0; i < d.progress.length; i += 1) {
       p = d.progress[i];
       if (p.sid !== newSid) continue;
@@ -689,6 +691,7 @@
     for (i = 0; i < d.fail.length; i += 1) {
       if (d.fail[i].who === 'k:' + oldSid) d.fail[i].who = 'k:' + newSid;
     }
+    s1After(d, oldSid, newSid, s1b);
   }
 
   /* ---------------------------------------------------------- 학생 화면 함수(SQL 과 같은 차례) */
@@ -1662,6 +1665,7 @@
     if ((OLD || NOPAPER) && fn === 'lec_paper') sig = null;
     if ((OLD || NOPDF) && fn === 'lec_pdf') sig = null;   /* P1 을 아직 안 넣은 서버(아래 NOPDF) */
     if ((OLD || NORANGE) && /^lec_range_/.test(fn)) sig = null;   /* C2 함수가 없는 서버(아래 C2 절) */
+    if ((OLD || NOSET) && /^lec_(set|rec)_/.test(fn)) sig = null;   /* S1 함수가 없는 서버(아래 S1 절) */
     if (!sig) throw httpErr(404, 'PGRST202', 'Could not find the function public.' + fn);
     args = args && typeof args === 'object' && !isArr(args) ? args : {};
     for (k in args) {
@@ -1878,7 +1882,9 @@
     if (L().btrim(sk) === '') return { ok: false, err: 'input' };
     d.progress = d.progress.filter(function (x) { if (x.sid === sk) { n += 1; return false; } return true; });
     d.session = d.session.filter(function (x) { return x.sid !== sk; });
+    var s1c = !!findConsent(d, sk);
     d.consent = (d.consent || []).filter(function (x) { return x.sid !== sk; });
+    if (s1c) s1Gone(d, sk);   /* 트리거 lec__set_gone(아래 S1 절) */
     for (i = 0; i < d.qna.length; i += 1) {
       if (d.qna[i].sid === sk) {
         if (d.qna[i].parent == null) m += 1;
@@ -3168,4 +3174,1221 @@
     /* 시험용: 이 폰 구독이 사라짐(푸시 서버가 지움 · 앱 데이터 지움) */
     drop: function () { PWS.sub = null; pwsKeep(); }
   };
+
+  /* ======================================================= S1 (11-17) 단어 · 구문 · 문법
+     class-setup.sql S1 절(lec_set · lec_set_prog · lec_set_try · lec_set_rec · lec_rec_ok · lec_consent.sv)과 같은 규칙 · 둘이 다르면 SQL 이 기준.
+     판정(맞춤 글 · 채점 · 카드 · 열쇠 · 문항 짜기)은 class-api.js 순수 함수(L().setNorm …)를 그대로 씀.
+     ?noset=1 또는 LecMock.noSet(true) = S1 함수가 없는 서버(?oldsql=1 도 같음 · 위 checkArgs 의 한 줄이 404 PGRST202 로)
+     녹음 저장 곳(Storage 버킷 lec-rec) 흉내: LecMock.recPut(path, size, mime) · staff.recUrl(path) · staff.recDel(paths) ·
+       LecMock.recFail(true) = 버킷이 없는 서버 · 파일은 d.recobj · 소리는 LecMock.tone(path)(8 kHz · 16비트 · 1.2초 WAV)
+     시연 자료(s1Ensure · 저장소에 한 번만 · d.s1 표시 · 반 c-g1a 고1 A반 · 지어낸 글):
+       단어 «고1 11월 모의 18~24번» 42개(그제) · 구문 «11월 주요 구문» 8문장 ★ k1 k2(어제) · 문법 «분사 · 수일치 드릴» 12문항(어제)
+       이바다 = 세트 동의 · 녹음 본인 동의(h) · 단어 tn 2 f1 74 kn 35 · 어제 쌓인 오답 4 · 구문 말하기 5 · k1 낸 것(안 들음) · k2 다시(끊어 읽기) ·
+                문법 tn 1 f1 83 last_sc 10(쌓인 오답 2)
+       최새봄 = 세트 동의 · 녹음 본인 동의(h) · 단어 통과(tn 1 f1 93 kn 40 · 쌓인 오답 2) · 구문 k1 좋아요 · k2 낸 것(안 들음)
+       김하늘 · 정단비 = 기록 동의 전 · 박구름 = 기록 안 함('consent') */
+  var NOSET = false;
+  try { NOSET = /[?&]noset=1(&|$)/.test(w.location.search); } catch (e) { NOSET = false; }
+  var RECFAIL = false;
+  var S_VER = 's1-2026-11', R_VER = 'r1-2026-11';
+  var S_LIM = { voc: 300, gu: 30, gram: 50 };
+  var R_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg'];
+  var S1ID = {
+    SV: '5e710000-0000-4000-8000-000000000001',
+    SG: '5e710000-0000-4000-8000-000000000002',
+    SR: '5e710000-0000-4000-8000-000000000003',
+    R1: '5e720000-0000-4000-8000-000000000001',
+    R2: '5e720000-0000-4000-8000-000000000002',
+    R3: '5e720000-0000-4000-8000-000000000003',
+    R4: '5e720000-0000-4000-8000-000000000004'
+  };
+
+  function sGone() { if (NOSET || OLD) throw httpErr(404, 'PGRST202', 'Could not find the function'); }
+  function sAdmin() { return !!(ME && ME.admin); }
+  function sNow() { return pgts(nowMs()); }
+  function sp(s) { return str(s).replace(/^ +| +$/g, ''); }   /* SQL btrim(빈칸만) */
+  function cps(s) { return L().clen(str(s)); }                /* char_length(글자 수) */
+  function cpLeft(s, n) {                                      /* left(s, n)(글자 수 · 짝 서로게이트는 한 글자) */
+    var t = str(s), o = '', i = 0, c = 0, h;
+    while (i < t.length && c < n) {
+      h = t.charCodeAt(i);
+      if (h >= 0xD800 && h <= 0xDBFF && i + 1 < t.length) { o += t.substr(i, 2); i += 2; } else { o += t.charAt(i); i += 1; }
+      c += 1;
+    }
+    return o;
+  }
+  function sTabs(d) {
+    var a = ['set', 'sprog', 'stry', 'srec', 'recok'], i;
+    for (i = 0; i < a.length; i += 1) { if (!isArr(d[a[i]])) d[a[i]] = []; }
+    if (!d.recobj || typeof d.recobj !== 'object' || isArr(d.recobj)) d.recobj = {};
+    return d;
+  }
+  /* jsonb::text 의 바이트 수(octet_length · 쉼표 · 쌍점 뒤 빈칸) */
+  function pgText(v) {
+    var o = [], k;
+    if (v === null || v === undefined) return 'null';
+    if (typeof v === 'string') return JSON.stringify(v);
+    if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+    if (isArr(v)) { for (k = 0; k < v.length; k += 1) o.push(pgText(v[k])); return '[' + o.join(', ') + ']'; }
+    for (k in v) { if (has(v, k) && v[k] !== undefined) o.push(JSON.stringify(k) + ': ' + pgText(v[k])); }
+    return '{' + o.join(', ') + '}';
+  }
+  function octets(s) {
+    try { return unescape(encodeURIComponent(s)).length; } catch (e) { return s.length * 3; }
+  }
+  function sFind(d, id) {
+    var i;
+    for (i = 0; i < d.set.length; i += 1) { if (d.set[i].id === id) return d.set[i]; }
+    return null;
+  }
+  /* lec__set_open: 숨김 아님 · 공개일 지남 · 반이 겹침 */
+  function sOpen(s, cls) {
+    var i;
+    if (!s || s.hidden || !(s.posted_on <= today())) return false;
+    if (!isArr(cls) || !cls.length) return false;
+    for (i = 0; i < cls.length; i += 1) { if (cls[i] != null && s.class_ids.indexOf(cls[i]) >= 0) return true; }
+    return false;
+  }
+  /* lec__set_ok · lec__rec_can */
+  function sOk(d, sid) {
+    var c = findConsent(d, sid);
+    return agreed(d, sid) && !!c && c.sv === S_VER;
+  }
+  function rOk(d, sid) {
+    var o = rRow(d, sid);
+    return !!o && o.how !== '' && o.ver === R_VER && (o.how !== 'self' || o.lvl === 'h');
+  }
+  function rRow(d, sid) {
+    var i;
+    for (i = 0; i < d.recok.length; i += 1) { if (d.recok[i].sid === sid) return d.recok[i]; }
+    return null;
+  }
+  function sProg(d, sid, setId) {
+    var i;
+    for (i = 0; i < d.sprog.length; i += 1) { if (d.sprog[i].sid === sid && d.sprog[i].set_id === setId) return d.sprog[i]; }
+    return null;
+  }
+  function sProgMake(d, sid, setId) {
+    var p = sProg(d, sid, setId), t = sNow();
+    if (p) return p;
+    p = { sid: sid, set_id: setId, cards: {}, kn: [], tn: 0, f1: null, last_sc: null, best: 0, pass_at: null,
+          sv_day: null, sv_n: 0, first_at: t, last_at: t };
+    d.sprog.push(p);
+    return p;
+  }
+  function sKeys(s) {
+    var o = [], i;
+    for (i = 0; i < s.items.length; i += 1) o.push(str(s.items[i].k));
+    return o;
+  }
+  function sCard(p, k) { return p && isObj(p.cards) && has(p.cards, k) ? p.cards[k] : undefined; }
+  function sOrd(a, b) {   /* posted_on desc, created_at desc */
+    if (a.posted_on !== b.posted_on) return a.posted_on < b.posted_on ? 1 : -1;
+    return tms(b.created_at) - tms(a.created_at);
+  }
+  function sKnN(p, keys) {
+    var n = 0, i, kn = p && isArr(p.kn) ? p.kn : [];
+    for (i = 0; i < kn.length; i += 1) { if (keys.indexOf(kn[i]) >= 0) n += 1; }
+    return n;
+  }
+  function sTries(d, sid, setId) {
+    return d.stry.filter(function (t) { return t.sid === sid && t.set_id === setId; });
+  }
+  /* 최신 낸 줄(done · gone · done_at 내림차순 · null 뒤) */
+  function rLatest(d, sid, setId, k) {
+    var best = null, i, r, a, b;
+    for (i = 0; i < d.srec.length; i += 1) {
+      r = d.srec[i];
+      if (r.sid !== sid || r.set_id !== setId || r.k !== k || (r.st !== 'done' && r.st !== 'gone')) continue;
+      if (!best) { best = r; continue; }
+      a = r.done_at == null ? -Infinity : tms(r.done_at);
+      b = best.done_at == null ? -Infinity : tms(best.done_at);
+      if (a > b) best = r;
+    }
+    return best;
+  }
+  /* lec__set_me */
+  function sMe(d, s, sid, day) {
+    var X = L(), p = sProg(d, sid, s.id), keys = sKeys(s), seen = 0, known = 0, said = 0, due = 0, open = -1, vday = 0, i, c, t, tr, test, recs, r;
+    for (i = 0; i < keys.length; i += 1) {
+      c = sCard(p, keys[i]);
+      if (!isObj(c)) continue;
+      if (str(c.s) === '1') seen += 1;
+      if (X.setMemo(c)) known += 1;
+      if (str(c.g) === '1') said += 1;
+      if (str(c.z) !== '') due += 1;
+    }
+    tr = sTries(d, sid, s.id);
+    for (i = 0; i < tr.length; i += 1) {
+      t = tr[i];
+      if (t.done_at == null) open = Math.max(open, t.got);
+      if (t.day === day && (t.kind === 'test' || t.kind === 'drill')) vday += 1;
+    }
+    test = p && p.pass_at != null ? 'pass' : (open >= 0 ? 'open' : (p && p.tn > 0 ? 'fail' : 'none'));
+    if (s.kind === 'voc') {
+      return { seen: seen, known: known, due: due, test: test, tn: p ? p.tn : 0, kn: sKnN(p, keys), best: p ? p.best : 0,
+               f1: p ? p.f1 : null, left: Math.max(0, 5 - vday), got: Math.max(open, 0) };
+    }
+    if (s.kind === 'gram') {
+      return { due: due, test: test, tn: p ? p.tn : 0, best: p ? p.best : 0, f1: p ? p.f1 : null, last_sc: p ? p.last_sc : null,
+               next: p && p.pass_at != null ? 'pass' : (open < 0 && vday > 0 ? 'tomorrow' : 'now'), got: Math.max(open, 0) };
+    }
+    recs = [];
+    for (i = 0; i < s.pick.length; i += 1) {
+      r = rLatest(d, sid, s.id, s.pick[i]);
+      recs.push({ k: s.pick[i], st: !r ? '' : (r.mark === 'again' ? 'again' : (r.mark === 'ok' ? 'ok' : 'sent')),
+                  why: r ? r.why : 0, at: r ? r.done_at : null });
+    }
+    return { seen: seen, said: said, recs: recs };
+  }
+  /* lec__set_view: 정답 · 해설 · 열쇠 뺀 한 판 */
+  function sView(t, head) {
+    var o = { ok: true, 'try': t.id, kind: t.kind, n: t.n }, k, q = [], done = [], i, x;
+    for (k in head) { if (has(head, k)) o[k] = head[k]; }
+    for (i = 0; i < t.qs.length; i += 1) {
+      x = t.qs[i];
+      q.push(t.kind === 'due' ? { f: x.f, p: x.p, o: x.o == null ? null : x.o, kd: x.kd, t: x.t } : { f: x.f, p: x.p, o: x.o == null ? null : x.o });
+    }
+    for (i = 0; i < t.ans.length; i += 1) {
+      x = t.ans[i];
+      if (!isObj(x)) continue;
+      done.push({ i: i, v: x.v, r: !!x.r, a: t.qs[i].a, x: str(t.qs[i].x), pt: str(t.qs[i].pt) });
+    }
+    o.q = q;
+    o.done = done;
+    return o;
+  }
+  /* 보이는 voc · gram 세트에 남은 쌓인 오답 수(lec_set_home due.n · lec__set_end due) */
+  function sDueN(d, sid, cls, day) {
+    var n = 0, now = 0, i, j, s, p, c;
+    for (i = 0; i < d.set.length; i += 1) {
+      s = d.set[i];
+      if ((s.kind !== 'voc' && s.kind !== 'gram') || !sOpen(s, cls)) continue;
+      p = sProg(d, sid, s.id);
+      if (!p) continue;
+      for (j = 0; j < s.items.length; j += 1) {
+        c = sCard(p, str(s.items[j].k));
+        if (!isObj(c) || str(c.z) === '') continue;
+        n += 1;
+        if (L().setDueOn(c, day) && !sBusy(d, sid, s.id)) now += 1;
+      }
+    }
+    return { n: n, now: now };
+  }
+  /* lec__set_busy: 그 세트에 열린 시험 · 드릴 판이 있음(쌓인 오답에서 빠짐 · 답 'testing') */
+  function sBusy(d, sid, setId) {
+    var i, t;
+    for (i = 0; i < d.stry.length; i += 1) {
+      t = d.stry[i];
+      if (t.sid === sid && t.set_id === setId && (t.kind === 'test' || t.kind === 'drill') && t.done_at == null) return true;
+    }
+    return false;
+  }
+  /* lec__set_end */
+  function sEnd(d, t, sid, cls) {
+    var s, p, tot, need, kn = 0, pass, cnt, next, out = 0, i, q, pp, c;
+    if (t.done_at == null) return null;
+    if (t.kind === 'due') {
+      for (i = 0; i < t.qs.length; i += 1) {
+        q = t.qs[i];
+        pp = sProg(d, sid, q.s);
+        if (!pp) continue;
+        c = sCard(pp, q.k);
+        if (!isObj(c) || str(c.z) === '') out += 1;
+      }
+      return { sc: t.sc, n: t.n, total: t.n, need: 0, kn: 0, pass: false, ever: t.n - t.sc, f1: null, next: 'none',
+               out: out, due: sDueN(d, sid, cls, today()).n };
+    }
+    s = sFind(d, t.set_id);
+    p = sProg(d, sid, t.set_id);
+    tot = s ? s.n : t.n;
+    if (t.kind === 'test') {
+      need = L().setNeed(tot);
+      kn = s ? sKnN(p, sKeys(s)) : 0;
+      pass = !!p && p.pass_at != null;
+      cnt = d.stry.filter(function (x) { return x.sid === sid && x.set_id === t.set_id && x.kind === 'test' && x.day === today(); }).length;
+      next = pass ? 'pass' : (cnt < 5 ? 'retake' : 'tomorrow');
+    } else {
+      need = L().setNeed(t.n);
+      pass = t.sc >= need;
+      next = pass ? 'pass' : 'tomorrow';
+    }
+    return { sc: t.sc, n: t.n, total: tot, need: need, kn: kn, pass: pass, ever: t.n - t.sc, f1: p ? p.f1 : null, next: next };
+  }
+  function shuf(a) {
+    var i, j, x;
+    for (i = a.length - 1; i > 0; i -= 1) { j = Math.floor(Math.random() * (i + 1)); x = a[i]; a[i] = a[j]; a[j] = x; }
+    return a;
+  }
+  /* lec__set_qs: 서버만 아는 한 판(정답 a · 해설 x · 포인트 pt · 열쇠 k) */
+  function sQs(s, kn, retake) {
+    var X = L(), out = [], plan, i, j, it, f, o, idx;
+    if (s.kind === 'gram') {
+      plan = shuf(s.items.slice());
+      for (i = 0; i < plan.length; i += 1) {
+        it = plan[i];
+        o = X.setOpts(it.s);
+        out.push({ k: str(it.k), f: o ? 'c' : 'r', p: str(it.s), o: o, a: str(it.a), x: str(it.x), pt: str(it.p) });
+      }
+      return out;
+    }
+    plan = retake ? X.setRetake(s.items, kn) : X.setFirst(s.items);
+    for (i = 0; i < plan.length; i += 1) {
+      idx = -1;
+      for (j = 0; j < s.items.length; j += 1) { if (str(s.items[j].k) === plan[i].k) { idx = j; break; } }
+      it = s.items[idx];
+      f = plan[i].f;
+      o = null;
+      if (f === 'c') {
+        o = X.setChoices(s.items, idx);
+        if (!o) f = 'w';
+      }
+      out.push({ k: plan[i].k, f: f, p: f === 'c' ? str(it.w) : str(it.m), o: o, a: f === 'c' ? str(it.m) : str(it.w), x: '', pt: '' });
+    }
+    return out;
+  }
+  function sNewTry(d, sid, setId, kind, qs) {
+    var t = { id: L().uuid(), sid: sid, set_id: setId, kind: kind, day: today(), n: qs.length, qs: qs, ans: [], got: 0, sc: 0,
+              created_at: sNow(), done_at: null }, i;
+    for (i = 0; i < qs.length; i += 1) t.ans.push(null);
+    d.stry.push(t);
+    return t;
+  }
+  function sOpenTry(d, sid, pred) {
+    var best = null, i, t;
+    for (i = 0; i < d.stry.length; i += 1) {
+      t = d.stry[i];
+      if (t.sid !== sid || t.done_at != null || !pred(t)) continue;
+      if (!best || tms(t.created_at) >= tms(best.created_at)) best = t;
+    }
+    return best;
+  }
+  /* 학생 함수 공통 시작: 열쇠 · v1 동의 · (세트 동의) */
+  function sStart(d, key, needAgree) {
+    var k = findKey(d, key);
+    if (!k) return { e: { ok: false, err: 'key' } };
+    if (!agreed(d, k.sid)) return { e: { ok: false, err: 'consent' } };
+    if (needAgree && !sOk(d, k.sid)) return { e: { ok: false, err: 'agree' } };
+    return { k: k };
+  }
+  function rInfo(d, sid, ver) {
+    var o = rRow(d, sid), r = { lvl: o ? o.lvl : '', how: o ? o.how : '', ok: rOk(d, sid) };
+    if (ver) r.ver = R_VER;
+    return r;
+  }
+
+  /* ---------------------------------------------------------- S1 학생 함수 */
+
+  function lec_set_home(d, a) {
+    sGone(); sTabs(d);
+    var st = sStart(d, a.p_key, false), k, day = today(), ag, list, sets = [], i, s;
+    if (st.e) return st.e;
+    k = st.k;
+    ag = sOk(d, k.sid);
+    list = d.set.filter(function (x) { return sOpen(x, k.cls); }).sort(sOrd).slice(0, 40);
+    for (i = 0; i < list.length; i += 1) {
+      s = list[i];
+      sets.push({ id: s.id, kind: s.kind, title: s.title, n: s.n, need: L().setNeed(s.n), on: s.posted_on, pick: s.pick.length,
+                  me: ag ? sMe(d, s, k.sid, day) : null });
+    }
+    return { ok: true, today: day, agree: ag, ver: S_VER, sets: sets, due: ag ? sDueN(d, k.sid, k.cls, day) : null,
+             rec: rInfo(d, k.sid, true) };
+  }
+
+  function lec_set_agree(d, a) {
+    sGone(); sTabs(d);
+    var st = sStart(d, a.p_key, false), c;
+    if (st.e) return st.e;
+    if (a.p_ver !== S_VER) return { ok: false, err: 'ver', ver: S_VER };
+    c = findConsent(d, st.k.sid);
+    c.sv = a.p_ver;
+    c.sv_at = sNow();
+    return { ok: true, ver: a.p_ver, at: c.sv_at };
+  }
+
+  function lec_set_items(d, a) {
+    sGone(); sTabs(d);
+    var st = sStart(d, a.p_key, true), k, s, p, items = [], i, it, me;
+    if (st.e) return st.e;
+    k = st.k;
+    s = sFind(d, a.p_set);
+    if (!s || !sOpen(s, k.cls)) return { ok: false, err: 'none' };
+    if (s.kind === 'gram') return { ok: false, err: 'kind' };
+    if (s.kind === 'voc' && sOpenTry(d, k.sid, function (t) { return t.set_id === s.id && t.kind === 'test'; })) {
+      return { ok: false, err: 'testing' };
+    }
+    p = sProg(d, k.sid, s.id);
+    for (i = 0; i < s.items.length; i += 1) {
+      it = s.items[i];
+      items.push(s.kind === 'voc' ? { k: it.k, n: str(it.n), w: it.w, m: it.m } : { k: it.k, n: str(it.n), e: it.e, t: it.t, p: str(it.p) });
+    }
+    if (s.kind === 'voc') {
+      return { ok: true, id: s.id, kind: s.kind, title: s.title, n: s.n, items: items, cards: p ? p.cards : {} };
+    }
+    me = sMe(d, s, k.sid, today());
+    return { ok: true, id: s.id, kind: s.kind, title: s.title, n: s.n, items: items, pick: s.pick, cards: p ? p.cards : {},
+             recs: me.recs, rec: rInfo(d, k.sid, false) };
+  }
+
+  function lec_set_card(d, a) {
+    sGone(); sTabs(d);
+    var st = sStart(d, a.p_key, true), k, s, p, day = today(), m = a.p_marks, keys, kk, n = 0, bad = false, me, c;
+    if (st.e) return st.e;
+    k = st.k;
+    s = sFind(d, a.p_set);
+    if (!s || !sOpen(s, k.cls)) return { ok: false, err: 'none' };
+    if (s.kind === 'gram') return { ok: false, err: 'kind' };
+    if (!isObj(m) || octets(pgText(m)) > 4096) return { ok: false, err: 'input' };
+    for (kk in m) {
+      if (!has(m, kk)) continue;
+      n += 1;
+      if (m[kk] !== 0 && m[kk] !== 1) bad = true;
+    }
+    if (n > 40 || bad) return { ok: false, err: 'input' };
+    p = sProgMake(d, k.sid, s.id);
+    if (p.sv_day === day && p.sv_n >= 200) return { ok: false, err: 'limit' };
+    keys = sKeys(s);
+    c = clone(p.cards || {});
+    for (kk in m) {
+      if (!has(m, kk) || keys.indexOf(kk) < 0) continue;
+      c[kk] = L().setMark(c[kk], m[kk] === 1, s.kind === 'voc' ? 'card' : 'say', day);
+    }
+    p.cards = c;
+    p.sv_n = p.sv_day === day ? p.sv_n + 1 : 1;
+    p.sv_day = day;
+    p.last_at = sNow();
+    me = sMe(d, s, k.sid, day);
+    if (s.kind === 'voc') return { ok: true, seen: me.seen, known: me.known };
+    return { ok: true, seen: me.seen, said: me.said };
+  }
+
+  function lec_set_test(d, a) {
+    sGone(); sTabs(d);
+    var X = L(), st = sStart(d, a.p_key, true), k, s, p, t, day = today(), kn, cnt, qs;
+    if (st.e) return st.e;
+    k = st.k;
+    s = sFind(d, a.p_set);
+    if (!s || !sOpen(s, k.cls)) return { ok: false, err: 'none' };
+    if (s.kind === 'gu') return { ok: false, err: 'kind' };
+    p = sProgMake(d, k.sid, s.id);
+    kn = sKnN(p, sKeys(s));
+    t = sOpenTry(d, k.sid, function (x) { return x.set_id === s.id; });
+    if (!t) {
+      if (p.pass_at != null) return { ok: false, err: 'pass' };
+      if (s.kind === 'voc' && p.tn > 0 && kn >= X.setNeed(s.n)) {
+        p.pass_at = sNow();
+        p.best = Math.max(p.best, Math.floor((kn * 100) / s.n));
+        return { ok: false, err: 'pass' };
+      }
+      cnt = sTries(d, k.sid, s.id).filter(function (x) { return x.day === day && (x.kind === 'test' || x.kind === 'drill'); }).length;
+      if (s.kind === 'voc' && cnt >= 5) return { ok: false, err: 'limit' };
+      if (s.kind === 'gram' && cnt >= 1) return { ok: false, err: 'tomorrow' };
+      qs = sQs(s, p.kn, s.kind === 'voc' && p.tn > 0);
+      if (!qs.length) return { ok: false, err: 'none' };
+      t = sNewTry(d, k.sid, s.id, s.kind === 'voc' ? 'test' : 'drill', qs);
+      p.tn += 1;
+      p.last_at = sNow();
+    }
+    return sView(t, { set: s.id, title: s.title, total: s.n, need: X.setNeed(s.n), kn: s.kind === 'voc' ? kn : 0, round: p.tn });
+  }
+
+  function lec_set_due(d, a) {
+    sGone(); sTabs(d);
+    var X = L(), st = sStart(d, a.p_key, true), k, t, day = today(), cnt, rows = [], i, j, s, p, it, c, o, qs;
+    if (st.e) return st.e;
+    k = st.k;
+    t = sOpenTry(d, k.sid, function (x) { return x.kind === 'due'; });
+    if (!t) {
+      cnt = d.stry.filter(function (x) { return x.sid === k.sid && x.kind === 'due' && x.day === day; }).length;
+      if (cnt >= 10) return { ok: false, err: 'limit' };
+      for (i = 0; i < d.set.length; i += 1) {
+        s = d.set[i];
+        if ((s.kind !== 'voc' && s.kind !== 'gram') || !sOpen(s, k.cls) || sBusy(d, k.sid, s.id)) continue;
+        p = sProg(d, k.sid, s.id);
+        if (!p) continue;
+        for (j = 0; j < s.items.length; j += 1) {
+          it = s.items[j];
+          c = sCard(p, str(it.k));
+          if (!X.setDueOn(c, day)) continue;
+          o = s.kind === 'voc' ? null : X.setOpts(it.s);
+          rows.push({ zz: str(c.z), on: s.posted_on, cr: tms(s.created_at), o: j, q: {
+            k: str(it.k), s: s.id, kd: s.kind, t: s.title,
+            f: s.kind === 'voc' ? 'w' : (o ? 'c' : 'r'),
+            p: s.kind === 'voc' ? str(it.m) : str(it.s),
+            o: o,
+            a: s.kind === 'voc' ? str(it.w) : str(it.a),
+            x: s.kind === 'voc' ? '' : str(it.x),
+            pt: s.kind === 'voc' ? '' : str(it.p) } });
+        }
+      }
+      rows.sort(function (x, y) {
+        if (x.zz !== y.zz) return x.zz < y.zz ? -1 : 1;
+        if (x.on !== y.on) return x.on < y.on ? 1 : -1;
+        if (x.cr !== y.cr) return y.cr - x.cr;
+        return x.o - y.o;
+      });
+      qs = rows.slice(0, 20).map(function (x) { return x.q; });
+      if (!qs.length) return { ok: true, 'try': null, n: 0 };
+      t = sNewTry(d, k.sid, null, 'due', qs);
+    }
+    return sView(t, { set: null, title: '쌓인 오답', total: t.n, need: 0, kn: 0, round: 0 });
+  }
+
+  function lec_set_ans(d, a) {
+    sGone(); sTabs(d);
+    var X = L(), st = sStart(d, a.p_key, true), k, t = null, s, p, day = today(), q, an, r, sid2, kk, kn, i, now = sNow(), v = a.p_v;
+    if (st.e) return st.e;
+    k = st.k;
+    for (i = 0; i < d.stry.length; i += 1) { if (d.stry[i].id === a.p_try && d.stry[i].sid === k.sid) t = d.stry[i]; }
+    if (!t) return { ok: false, err: 'try' };
+    if (a.p_i == null || a.p_i < 0 || a.p_i >= t.n || v == null || sp(v) === '' || cps(v) > 200) return { ok: false, err: 'input' };
+    q = t.qs[a.p_i];
+    an = t.ans[a.p_i];
+    if (isObj(an)) {
+      return { ok: true, i: a.p_i, r: !!an.r, a: q.a, x: str(q.x), pt: str(q.pt), again: true, left: t.n - t.got,
+               end: sEnd(d, t, k.sid, k.cls) };
+    }
+    if (t.done_at != null) return { ok: false, err: 'done' };
+    if (t.kind === 'due' && sBusy(d, k.sid, q.s)) return { ok: false, err: 'testing' };
+    r = q.f === 'c' ? X.setNorm(v) === X.setNorm(q.a) : X.setMatch(v, q.a);
+    t.ans[a.p_i] = { v: v, r: r, at: now };
+    t.got += 1;
+    if (r) t.sc += 1;
+    t.done_at = t.got >= t.n ? now : null;
+    sid2 = t.kind === 'due' ? q.s : t.set_id;
+    kk = q.k;
+    p = sProg(d, k.sid, sid2);
+    if (p) {
+      p.cards = clone(p.cards || {});
+      p.cards[kk] = X.setMark(p.cards[kk], r, t.kind, day);
+      if (t.kind === 'test') {
+        if (r) { if (p.kn.indexOf(kk) < 0) p.kn.push(kk); }
+        else p.kn = p.kn.filter(function (x) { return x !== kk; });
+      }
+      p.last_at = now;
+    }
+    if (t.done_at != null && t.kind !== 'due') {
+      s = sFind(d, t.set_id);
+      p = sProg(d, k.sid, t.set_id);
+      if (p && s) {
+        kn = sKnN(p, sKeys(s));
+        if (p.f1 == null) p.f1 = Math.floor((t.sc * 100) / t.n);
+        p.last_sc = t.sc;
+        p.best = Math.max(p.best, t.kind === 'test' ? Math.floor((kn * 100) / Math.max(s.n, 1)) : Math.floor((t.sc * 100) / t.n));
+        if (p.pass_at == null && (t.kind === 'test' ? kn >= X.setNeed(s.n) : t.sc >= X.setNeed(t.n))) p.pass_at = now;
+      }
+    }
+    return { ok: true, i: a.p_i, r: r, a: q.a, x: str(q.x), pt: str(q.pt), again: false, left: t.n - t.got,
+             end: sEnd(d, t, k.sid, k.cls) };
+  }
+
+  function lec_rec_agree(d, a) {
+    sGone(); sTabs(d);
+    var st = sStart(d, a.p_key, true), o;
+    if (st.e) return st.e;
+    if (a.p_ver !== R_VER) return { ok: false, err: 'ver', ver: R_VER };
+    o = rRow(d, st.k.sid);
+    if (!o || o.lvl !== 'h') return { ok: false, err: 'level' };
+    o.how = 'self'; o.ver = a.p_ver; o.ok_at = sNow(); o.ok_by = 'self';
+    return { ok: true, how: 'self', at: o.ok_at };
+  }
+
+  function lec_rec_off(d, a) {
+    sGone(); sTabs(d);
+    var k = findKey(d, a.p_key), o, n = 0, i;
+    if (!k) return { ok: false, err: 'key' };
+    o = rRow(d, k.sid);
+    if (o) { o.how = ''; o.ok_at = null; o.ok_by = ''; }
+    for (i = 0; i < d.srec.length; i += 1) {
+      if (d.srec[i].sid === k.sid && (d.srec[i].st === 'wait' || d.srec[i].st === 'done')) { d.srec[i].st = 'old'; n += 1; }
+    }
+    return { ok: true, n: n };
+  }
+
+  function lec_rec_begin(d, a) {
+    sGone(); sTabs(d);
+    var st = sStart(d, a.p_key, true), k, s, n, i, hex = '', path, r, mid = atMs(0, 0, 0), ms = nowMs();
+    if (st.e) return st.e;
+    k = st.k;
+    s = sFind(d, a.p_set);
+    if (!s || s.kind !== 'gu' || !sOpen(s, k.cls)) return { ok: false, err: 'none' };
+    if (a.p_k == null || s.pick.indexOf(a.p_k) < 0) return { ok: false, err: 'pick' };
+    if (!rOk(d, k.sid)) return { ok: false, err: 'rec_ok' };
+    if (a.p_mime == null || R_TYPES.indexOf(a.p_mime) < 0) return { ok: false, err: 'mime' };
+    if (a.p_bytes == null || a.p_bytes < 1 || a.p_bytes > 1048576 || a.p_ms == null || a.p_ms < 0 || a.p_ms > 46000) {
+      return { ok: false, err: 'size' };
+    }
+    n = d.srec.filter(function (x) { return x.sid === k.sid && tms(x.at) >= mid; }).length;
+    if (n >= 10) return { ok: false, err: 'limit' };
+    /* 같은 문장을 다시 보내면(올리기 실패 뒤 다시 보내기) 앞 올리기 표는 지울 것(old) · 다음 정리에서 파일까지 지움 */
+    for (i = 0; i < d.srec.length; i += 1) {
+      if (d.srec[i].sid === k.sid && d.srec[i].set_id === s.id && d.srec[i].k === a.p_k && d.srec[i].st === 'wait') d.srec[i].st = 'old';
+    }
+    for (i = 0; i < 32; i += 1) hex += '0123456789abcdef'.charAt(Math.floor(Math.random() * 16));
+    path = s.id + '/' + hex + (a.p_mime === 'audio/webm' ? '.webm' : (a.p_mime === 'audio/mp4' ? '.m4a' : '.ogg'));
+    r = { id: L().uuid(), sid: k.sid, set_id: s.id, k: a.p_k, path: path, mime: a.p_mime, bytes: a.p_bytes, ms: a.p_ms, st: 'wait',
+          exp_at: pgts(ms + 10 * MINUTE), at: pgts(ms), done_at: null, mark: '', why: 0, heard_by: '', heard_at: null };
+    d.srec.push(r);
+    return { ok: true, id: r.id, path: path, exp_at: r.exp_at };
+  }
+
+  function lec_rec_done(d, a) {
+    sGone(); sTabs(d);
+    var k = findKey(d, a.p_key), rr = null, i, x;
+    if (!k) return { ok: false, err: 'key' };
+    for (i = 0; i < d.srec.length; i += 1) { if (d.srec[i].id === a.p_id && d.srec[i].sid === k.sid) rr = d.srec[i]; }
+    if (!rr || rr.st !== 'wait') return { ok: false, err: 'none' };
+    if (nowMs() > tms(rr.exp_at) + 5 * MINUTE) return { ok: false, err: 'late' };
+    if (!has(d.recobj, rr.path)) return { ok: false, err: 'file' };
+    for (i = 0; i < d.srec.length; i += 1) {
+      x = d.srec[i];
+      if (x.sid === rr.sid && x.set_id === rr.set_id && x.k === rr.k && x.st === 'done' && x.id !== rr.id) x.st = 'old';
+    }
+    rr.st = 'done'; rr.done_at = sNow(); rr.mark = ''; rr.why = 0; rr.heard_by = ''; rr.heard_at = null;
+    return { ok: true, st: 'sent' };
+  }
+
+  /* Storage 정책 전용: 이 이름이 지금 열린 올리기 표인가 */
+  function rSlot(d, name) {
+    var i, x;
+    for (i = 0; i < d.srec.length; i += 1) {
+      x = d.srec[i];
+      if (x.path === name && x.st === 'wait' && tms(x.exp_at) > nowMs()) return true;
+    }
+    return false;
+  }
+  function lec_rec_slot(d, a) { sGone(); sTabs(d); return rSlot(d, a.p_name); }
+
+  /* ---------------------------------------------------------- S1 선생님(관리자) 함수 */
+
+  function sSetOut(s, withItems) {
+    var o = { id: s.id, kind: s.kind, title: s.title, class_ids: s.class_ids, posted_on: s.posted_on, hidden: s.hidden, n: s.n,
+              need: L().setNeed(s.n), pick: s.pick };
+    if (withItems === 'all') o.items = s.items;
+    else if (withItems === 'gu') o.items = s.kind === 'gu' ? s.items : null;
+    return o;
+  }
+
+  function lec_set_is_admin() { sGone(); return sAdmin(); }
+
+  function lec_set_list_staff(d) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var items = [], list = d.set.slice().sort(sOrd), i, s, o, did, open, recs, pass = 0, fail = 0, j, p, t, r, un, all = 0, seen;
+    function unheard(set) {
+      var latest = {}, keys = [], n = 0, x, q, kk;
+      for (q = 0; q < d.srec.length; q += 1) {
+        x = d.srec[q];
+        if (x.set_id !== set.id || x.st !== 'done' || x.sid === '' || set.pick.indexOf(x.k) < 0) continue;
+        kk = x.sid + '\u0000' + x.k;
+        if (!has(latest, kk)) { latest[kk] = x; keys.push(kk); continue; }
+        if ((x.done_at == null ? -Infinity : tms(x.done_at)) > (latest[kk].done_at == null ? -Infinity : tms(latest[kk].done_at))) latest[kk] = x;
+      }
+      for (q = 0; q < keys.length; q += 1) { if (latest[keys[q]].mark === '') n += 1; }
+      return n;
+    }
+    for (i = 0; i < list.length; i += 1) {
+      s = list[i];
+      did = {}; open = {}; recs = {}; pass = 0; fail = 0;
+      for (j = 0; j < d.sprog.length; j += 1) {
+        p = d.sprog[j];
+        if (p.set_id !== s.id) continue;
+        seen = false;
+        for (r in p.cards) { if (has(p.cards, r)) { seen = true; break; } }
+        if (p.tn > 0 || seen) did[p.sid] = 1;
+        if (p.pass_at != null) pass += 1;
+        if (p.tn > 0 && p.pass_at == null) fail += 1;
+      }
+      for (j = 0; j < d.stry.length; j += 1) {
+        t = d.stry[j];
+        if (t.set_id !== s.id) continue;
+        did[t.sid] = 1;
+        if (t.done_at == null) open[t.sid] = 1;
+      }
+      for (j = 0; j < d.srec.length; j += 1) {
+        r = d.srec[j];
+        if (r.set_id !== s.id || (r.st !== 'done' && r.st !== 'gone') || r.sid === '') continue;
+        did[r.sid] = 1;
+        recs[r.sid] = 1;
+      }
+      un = unheard(s);
+      all += un;
+      o = sSetOut(s, null);
+      o.made_by = s.made_by; o.created_at = s.created_at; o.updated_at = s.updated_at;
+      o.cnt = { did: Object.keys(did).length, pass: pass, open: Object.keys(open).length, fail: fail, recs: Object.keys(recs).length, unheard: un };
+      items.push(o);
+    }
+    return { ok: true, today: today(), unheard: all, items: items };
+  }
+
+  function lec_set_get(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var s = sFind(d, a.p_set), o;
+    if (!s) return { ok: false, err: 'none' };
+    o = sSetOut(s, 'all');
+    o.made_by = s.made_by; o.created_at = s.created_at; o.updated_at = s.updated_at;
+    return { ok: true, set: o };
+  }
+
+  /* lec__set_txt · lec__set_check(서버와 같은 차례 · 첫 틀린 원소에서 멈춤) */
+  function sTxt(e, f) {
+    var v = isObj(e) ? e[f] : undefined;
+    if (typeof v !== 'string' && !(typeof v === 'number' && isFinite(v))) return '';
+    return sp(String(v).replace(/[\t\n\u000B\f\r]/g, ' '));
+  }
+  function sCheck(kind, items) {
+    var X = L(), out = [], i, e, why, n, va, vb, vc, vd, pg, bk, op, m, re;
+    for (i = 0; i < items.length; i += 1) {
+      e = items[i];
+      why = '';
+      n = sTxt(e, 'n');
+      if (kind === 'voc') {
+        va = sTxt(e, 'w'); vb = sTxt(e, 'm');
+        if (!isObj(e) || cps(va) < 1 || cps(va) > 100) why = 'w';
+        else if (cps(vb) < 1 || cps(vb) > 200) why = 'm';
+        else if (cps(n) > 8) why = 'len';
+        out.push({ n: n, w: va, m: vb });
+      } else if (kind === 'gu') {
+        va = sTxt(e, 'e'); vb = sTxt(e, 't'); vc = sTxt(e, 'p');
+        if (!isObj(e) || cps(va) < 1 || cps(va) > 300) why = 'e';
+        else if (cps(vb) < 1 || cps(vb) > 300) why = 't';
+        else if (cps(n) > 8 || cps(vc) > 60) why = 'len';
+        out.push({ n: n, e: va, t: vb, p: vc });
+      } else {
+        va = sTxt(e, 's'); vb = sTxt(e, 'a'); vc = sTxt(e, 'x'); vd = sTxt(e, 'p');
+        pg = 0; bk = [];
+        re = /[(]([^()]*\/[^()]*)[)]/g;
+        while ((m = re.exec(va)) !== null) pg += 1;
+        re = /\[([^\]]*)\]/g;
+        while ((m = re.exec(va)) !== null) bk.push(m[1]);
+        if (!isObj(e) || cps(va) < 1 || cps(va) > 300) why = 's';
+        else if (cps(vb) < 1 || cps(vb) > 100) why = 'a';
+        else if (pg + bk.length !== 1) why = 'opt';
+        else if (pg === 1) {
+          op = X.setOpts(va);
+          if (op.length < 2 || op.length > 5 || op.indexOf('') >= 0 || op.indexOf(vb) < 0) why = 'opt';
+        } else if (sp(bk[0]) === '') why = 'blank';
+        if (why === '' && (cps(n) > 8 || cps(vc) > 300 || cps(vd) > 40)) why = 'len';
+        out.push({ n: n, s: va, a: vb, x: vc, p: vd });
+      }
+      if (why !== '') return { ok: false, err: 'items', at: i, why: why };
+    }
+    return { ok: true, items: out };
+  }
+
+  function lec_set_put(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var X = L(), s = null, title = sp(a.p_title == null ? '' : a.p_title), raw, cls = [], i, c, items = a.p_items, n, chk, keyed,
+        pick = [], pk, on, now = sNow(), id;
+    raw = c2ArrArg(a.p_cls, 'text', 'p_cls');
+    on = c2DateArg(a.p_on, 'p_on');
+    pk = c2ArrArg(a.p_pick, 'int', 'p_pick');
+    if (a.p_id != null) {
+      s = sFind(d, a.p_id);
+      if (!s) return { ok: false, err: 'none' };
+      if (s.kind !== a.p_kind) return { ok: false, err: 'kind' };
+    }
+    if (a.p_kind == null || !has(S_LIM, a.p_kind)) return { ok: false, err: 'kind' };
+    if (cps(title) < 1 || cps(title) > 60) return { ok: false, err: 'title' };
+    raw = raw || [];
+    for (i = 0; i < raw.length; i += 1) {
+      c = sp(raw[i] == null ? '' : raw[i]);
+      if (c === '' || c === '*' || cls.indexOf(c) >= 0) continue;
+      cls.push(c);
+    }
+    if (raw.indexOf('*') >= 0 || cls.length < 1 || cls.length > 30) return { ok: false, err: 'cls' };
+    if (!isArr(items) || octets(pgText(items)) > 262144) return { ok: false, err: 'input' };
+    n = items.length;
+    if (n === 0) return { ok: false, err: 'items' };
+    if (n > S_LIM[a.p_kind]) return { ok: false, err: 'limit' };
+    chk = sCheck(a.p_kind, items);
+    if (!chk.ok) return chk;
+    keyed = X.setKeys(s ? s.items : [], chk.items, a.p_kind);
+    if (a.p_kind === 'gu') {
+      if (pk == null || !pk.length) {
+        for (i = 0; i < Math.min(n, 2); i += 1) pick.push(keyed[i].k);
+      } else {
+        if (pk.length > 2 || pk.indexOf(null) >= 0) return { ok: false, err: 'pick' };
+        for (i = 0; i < pk.length; i += 1) {
+          if (pk[i] < 0 || pk[i] >= n || pk.indexOf(pk[i]) !== i) return { ok: false, err: 'pick' };
+        }
+        for (i = 0; i < pk.length; i += 1) pick.push(keyed[pk[i]].k);
+      }
+    }
+    if (!s) {
+      id = X.uuid();
+      d.set.push({ id: id, kind: a.p_kind, title: title, class_ids: cls, posted_on: on == null ? today() : on, hidden: false,
+                   items: keyed, n: n, pick: pick, made_by: 'Benjamin', created_at: now, updated_at: now });
+    } else {
+      id = s.id;
+      s.title = title; s.class_ids = cls; s.posted_on = on == null ? s.posted_on : on; s.items = keyed; s.n = n; s.pick = pick;
+      s.updated_at = now;
+    }
+    return { ok: true, id: id, n: n, pick: pick, items: keyed };
+  }
+
+  function lec_set_hide(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var s = sFind(d, a.p_set);
+    if (!s) return { ok: false, err: 'none' };
+    s.hidden = a.p_hidden == null ? true : a.p_hidden;
+    s.updated_at = sNow();
+    return { ok: true, hidden: s.hidden };
+  }
+
+  function lec_set_del(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var id = a.p_set, n = 0, i;
+    if (!sFind(d, id)) return { ok: false, err: 'none' };
+    for (i = 0; i < d.srec.length; i += 1) {
+      if (d.srec[i].set_id === id && (d.srec[i].st === 'wait' || d.srec[i].st === 'done')) { d.srec[i].st = 'old'; n += 1; }
+    }
+    d.srec = d.srec.filter(function (x) { return !(x.set_id === id && x.st === 'gone'); });
+    d.set = d.set.filter(function (x) { return x.id !== id; });
+    d.sprog = d.sprog.filter(function (x) { return x.set_id !== id; });
+    d.stry = d.stry.filter(function (x) { return x.set_id !== id; });
+    return { ok: true, recs: n };
+  }
+
+  function lec_set_staff(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var s = sFind(d, a.p_set), day = today(), sids = [], rows = [], often = [], recok = [], i, j, sid, me, last, nm, kk, best, x, rs, r, cnt, p;
+    if (!s) return { ok: false, err: 'none' };
+    function add(v) { if (sids.indexOf(v) < 0) sids.push(v); }
+    for (i = 0; i < d.sprog.length; i += 1) { if (d.sprog[i].set_id === s.id) add(d.sprog[i].sid); }
+    for (i = 0; i < d.stry.length; i += 1) { if (d.stry[i].set_id === s.id) add(d.stry[i].sid); }
+    for (i = 0; i < d.srec.length; i += 1) { if (d.srec[i].set_id === s.id && d.srec[i].sid !== '') add(d.srec[i].sid); }
+    sids.sort(cmpC);
+    for (i = 0; i < sids.length; i += 1) {
+      sid = sids[i];
+      nm = null; best = -Infinity;
+      for (j = 0; j < d.key.length; j += 1) {
+        if (d.key[j].sid === sid && (nm === null || tms(d.key[j].last_at) > best)) { nm = d.key[j].sname; best = tms(d.key[j].last_at); }
+      }
+      if (nm == null) nm = sid.indexOf('|') >= 0 ? sid.slice(sid.indexOf('|') + 1) : sid;
+      last = -Infinity;
+      p = sProg(d, sid, s.id);
+      if (p) last = Math.max(last, tms(p.last_at));
+      for (j = 0; j < d.stry.length; j += 1) { if (d.stry[j].set_id === s.id && d.stry[j].sid === sid) last = Math.max(last, tms(d.stry[j].created_at)); }
+      for (j = 0; j < d.srec.length; j += 1) { if (d.srec[j].set_id === s.id && d.srec[j].sid === sid) last = Math.max(last, tms(d.srec[j].at)); }
+      me = sMe(d, s, sid, day);
+      if (s.kind === 'gu') {
+        rs = [];
+        for (j = 0; j < s.pick.length; j += 1) {
+          r = rLatest(d, sid, s.id, s.pick[j]);
+          if (!r) continue;
+          /* 지운 녹음 · 30일 지난 녹음은 들을 길(path) 없음 */
+          rs.push({ id: r.id, k: r.k, path: r.st === 'gone' || (r.done_at != null && tms(r.done_at) < nowMs() - 30 * DAY) ? '' : r.path,
+                    mime: r.mime, ms: r.ms, at: r.done_at, st: r.st,
+                    mark: r.mark, why: r.why, heard_at: r.heard_at });
+        }
+        me.recs = rs;
+      }
+      x = { sid: sid, sname: nm, last: isFinite(last) ? pgts(last) : null };
+      x[s.kind] = me;
+      rows.push(x);
+    }
+    if (s.kind === 'voc' || s.kind === 'gram') {
+      x = [];
+      for (i = 0; i < s.items.length; i += 1) {
+        kk = str(s.items[i].k);
+        cnt = 0;
+        for (j = 0; j < d.sprog.length; j += 1) {
+          p = d.sprog[j];
+          if (p.set_id === s.id && isObj(sCard(p, kk)) && has(p.cards[kk], 'w')) cnt += 1;
+        }
+        x.push({ k: kk, w: cpLeft(s.kind === 'voc' ? s.items[i].w : s.items[i].s, 40), n: cnt, o: i });
+      }
+      x.sort(function (u, v) { return u.n !== v.n ? v.n - u.n : u.o - v.o; });
+      x = x.slice(0, 5);
+      for (i = 0; i < x.length; i += 1) { if (x[i].n > 0) often.push({ k: x[i].k, w: x[i].w, n: x[i].n }); }
+    }
+    for (i = 0; i < d.recok.length; i += 1) {
+      r = d.recok[i];
+      recok.push({ sid: r.sid, lvl: r.lvl, how: r.how, ok: rOk(d, r.sid), at: r.ok_at });
+    }
+    recok.sort(function (u, v) { return cmpC(u.sid, v.sid); });
+    return { ok: true, today: day, set: sSetOut(s, 'gu'), rows: rows, often: often, recok: recok };
+  }
+
+  function lec_rec_mark(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var r = null, i, m = a.p_mark, y = a.p_why;
+    if (m == null || (m !== '' && m !== 'ok' && m !== 'again')) return { ok: false, err: 'mark' };
+    if (y == null || y < 0 || y > 4 || (m === 'ok' && y !== 0)) return { ok: false, err: 'input' };
+    for (i = 0; i < d.srec.length; i += 1) {
+      if (d.srec[i].id === a.p_id && (d.srec[i].st === 'done' || d.srec[i].st === 'gone')) r = d.srec[i];
+    }
+    if (!r) return { ok: false, err: 'none' };
+    r.mark = m; r.why = y; r.heard_by = m === '' ? '' : 'Benjamin'; r.heard_at = m === '' ? null : sNow();
+    return { ok: true, mark: m, why: y };
+  }
+
+  function lec_rec_guard(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var sk = a.p_skey, o, i;
+    if (sk == null || sp(sk) === '' || a.p_on == null) return { ok: false, err: 'input' };
+    if (a.p_on) {
+      if (a.p_how == null || ['paper', 'sms', 'phone'].indexOf(a.p_how) < 0) return { ok: false, err: 'how' };
+      o = rRow(d, sk);
+      if (!o) { o = { sid: sk, lvl: '', lvl_at: null, how: '', ver: '', ok_at: null, ok_by: '' }; d.recok.push(o); }
+      o.how = a.p_how; o.ver = R_VER; o.ok_at = sNow(); o.ok_by = 'Benjamin';
+      return { ok: true, how: a.p_how, at: o.ok_at };
+    }
+    o = rRow(d, sk);
+    if (o) { o.how = ''; o.ok_at = null; o.ok_by = ''; }
+    for (i = 0; i < d.srec.length; i += 1) {
+      if (d.srec[i].sid === sk && (d.srec[i].st === 'wait' || d.srec[i].st === 'done')) d.srec[i].st = 'old';
+    }
+    return { ok: true, how: '', at: null };
+  }
+
+  function lec_rec_lvl(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var rows = a.p_rows, i, e, last = {}, order = [], n = 0, o, s, l, now = sNow();
+    if (!isArr(rows)) return { ok: false, err: 'input' };
+    if (rows.length > 1000) return { ok: false, err: 'input' };
+    for (i = 0; i < rows.length; i += 1) {
+      e = rows[i];
+      if (!isObj(e) || typeof e.s !== 'string' || sp(e.s) === '' || typeof e.l !== 'string' || ['', 'e', 'm', 'h'].indexOf(e.l) < 0) {
+        return { ok: false, err: 'input' };
+      }
+    }
+    for (i = 0; i < rows.length; i += 1) {
+      if (!has(last, '#' + rows[i].s)) order.push(rows[i].s);
+      last['#' + rows[i].s] = rows[i].l;
+    }
+    for (i = 0; i < order.length; i += 1) {
+      s = order[i];
+      l = last['#' + s];
+      o = rRow(d, s);
+      if (!o && l !== '') {
+        d.recok.push({ sid: s, lvl: l, lvl_at: now, how: '', ver: '', ok_at: null, ok_by: '' });
+        n += 1;
+      } else if (o && o.lvl !== l) {
+        o.lvl = l; o.lvl_at = now;
+        n += 1;
+      }
+    }
+    return { ok: true, n: n };
+  }
+
+  function lec_rec_expired(d) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var t = nowMs(), list;
+    list = d.srec.filter(function (x) {
+      return x.st === 'old' ||
+        (x.st === 'wait' && tms(x.exp_at) < t - 10 * MINUTE) ||
+        (x.st === 'done' && x.done_at != null && tms(x.done_at) < t - 30 * DAY) ||
+        ((x.st === 'wait' || x.st === 'done') && !sFind(d, x.set_id));
+    });
+    list.sort(function (u, v) { return tms(u.at) - tms(v.at); });
+    /* f = 파일이 저장 곳에 아직 있음(lec__rec_has) · false 면 지울 파일 없이 줄만 정리 */
+    return { ok: true, items: list.slice(0, 500).map(function (x) { return { id: x.id, path: x.path, f: rHas(d, x.path) }; }) };
+  }
+  /* lec__rec_has: 빈 이름 = 없음 */
+  function rHas(d, path) {
+    return typeof path === 'string' && path !== '' && has(d.recobj, path);
+  }
+
+  function lec_rec_gone(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var ids = c2ArrArg(a.p_ids, 'uuid', 'p_ids'), n = 0, keep = 0, i, x;
+    if (ids == null || ids.length > 1000) return { ok: false, err: 'input' };
+    /* 파일이 아직 남은 줄은 그대로(지우기가 조용히 빈손이었던 것 · 다음 정리에서 다시) */
+    for (i = 0; i < d.srec.length; i += 1) {
+      x = d.srec[i];
+      if (ids.indexOf(x.id) >= 0 && (x.st === 'old' || x.st === 'wait' || x.st === 'done') && rHas(d, x.path)) keep += 1;
+    }
+    d.srec = d.srec.filter(function (y) {
+      if (ids.indexOf(y.id) >= 0 && (y.st === 'old' || y.st === 'wait' || y.sid === '' || !sFind(d, y.set_id)) && !rHas(d, y.path)) {
+        n += 1;
+        return false;
+      }
+      return true;
+    });
+    for (i = 0; i < d.srec.length; i += 1) {
+      if (ids.indexOf(d.srec[i].id) >= 0 && d.srec[i].st === 'done' && !rHas(d, d.srec[i].path)) { d.srec[i].st = 'gone'; n += 1; }
+    }
+    return { ok: true, n: n, keep: keep };
+  }
+
+  /* ---------------------------------------------------------- 이름 옮김 · 동의 지움(트리거 lec__set_move · lec__set_gone) */
+
+  function s1Move(d, oldSid, newSid) {
+    var i, o, n;
+    if (oldSid == null || newSid == null || oldSid === newSid || oldSid === '' || newSid === '') return;
+    sTabs(d);
+    d.sprog = d.sprog.filter(function (x) { return !(x.sid === oldSid && sProg(d, newSid, x.set_id)); });
+    for (i = 0; i < d.sprog.length; i += 1) { if (d.sprog[i].sid === oldSid) d.sprog[i].sid = newSid; }
+    for (i = 0; i < d.stry.length; i += 1) { if (d.stry[i].sid === oldSid) d.stry[i].sid = newSid; }
+    for (i = 0; i < d.srec.length; i += 1) { if (d.srec[i].sid === oldSid) d.srec[i].sid = newSid; }
+    n = rRow(d, newSid);
+    o = rRow(d, oldSid);
+    if (n) d.recok = d.recok.filter(function (x) { return x.sid !== oldSid; });
+    else if (o) o.sid = newSid;
+  }
+  function s1Gone(d, sid) {
+    var i, x;
+    sTabs(d);
+    d.sprog = d.sprog.filter(function (y) { return y.sid !== sid; });
+    d.stry = d.stry.filter(function (y) { return y.sid !== sid; });
+    d.srec = d.srec.filter(function (y) { return !(y.sid === sid && y.st === 'gone'); });
+    for (i = 0; i < d.srec.length; i += 1) {
+      x = d.srec[i];
+      if (x.sid !== sid) continue;
+      if (x.st === 'wait' || x.st === 'done') x.st = 'old';
+      x.sid = '';
+    }
+    d.recok = d.recok.filter(function (y) { return y.sid !== sid; });
+  }
+  /* move() 앞뒤(lec__move: 열쇠 sid 바꿈 → 동의 줄 옮김 또는 옛 줄 지움 · 트리거가 그때마다 부름) */
+  function s1Before(d, oldSid, newSid) {
+    var i, key = false;
+    for (i = 0; i < (d.key || []).length; i += 1) { if (d.key[i].sid === oldSid) key = true; }
+    return { key: key, oc: !!findConsent(d, oldSid), nc: !!findConsent(d, newSid) };
+  }
+  function s1After(d, oldSid, newSid, b) {
+    if (!b) return;
+    if (b.key) s1Move(d, oldSid, newSid);
+    if (b.oc) { if (b.nc) s1Gone(d, oldSid); else s1Move(d, oldSid, newSid); }
+  }
+
+  /* ---------------------------------------------------------- 녹음 저장 곳(Storage 버킷 lec-rec 흉내) */
+
+  /* 소리 만들기: 8 kHz · 16비트 · 1.2초 · 높이는 path 로 정함(바깥 파일 0) */
+  function tone(path) {
+    var s = str(path), h = 0, i, sr = 8000, n = 9600, f, v, env, parts;
+    function u16(x) { return String.fromCharCode(x & 255, (x >>> 8) & 255); }
+    function u32(x) { return String.fromCharCode(x & 255, (x >>> 8) & 255, (x >>> 16) & 255, (x >>> 24) & 255); }
+    for (i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) % 1000;
+    f = 330 + h * 0.5;
+    parts = ['RIFF' + u32(36 + n * 2) + 'WAVE' + 'fmt ' + u32(16) + u16(1) + u16(1) + u32(sr) + u32(sr * 2) + u16(2) + u16(16) +
+             'data' + u32(n * 2)];
+    for (i = 0; i < n; i += 1) {
+      env = Math.min(1, i / 400, (n - i) / 400);
+      v = Math.round(Math.sin(2 * Math.PI * f * i / sr) * 8000 * env);
+      if (v < 0) v += 65536;
+      parts.push(u16(v));
+    }
+    return 'data:audio/wav;base64,' + w.btoa(parts.join(''));
+  }
+  function rBucket() { if (RECFAIL || NOSET || OLD) throw httpErr(400, '404', 'Bucket not found'); }
+
+  /* ---------------------------------------------------------- 시연 자료(한 번만) */
+
+  function s1Ensure(d) {
+    if (!d || d.s1 === 1) return false;
+    var X = w.Lec;
+    if (!X || typeof X.setKeys !== 'function' || typeof X.uuid !== 'function') return false;
+    var BD = 's1002|이바다', SB = 's1004|최새봄', i, c, p, k, cards, kn, d1 = dayStr(-1), d2 = dayStr(-2), d3 = dayStr(-3);
+    sTabs(d);
+    var W = ('abandon 버리다|accurate 정확한|achieve 이루다|adapt 적응하다|affect 영향을 주다|ancient 고대의|annual 해마다의|' +
+             'anxious 불안한|appreciate 고마워하다|approach 다가가다|assume 가정하다|attempt 시도하다|available 이용할 수 있는|' +
+             'avoid 피하다|behavior 행동|benefit 이익|capable 할 수 있는|challenge 도전|compare 비교하다|complex 복잡한|' +
+             'concern 걱정|consider 고려하다|contain 담고 있다|contribute 기여하다|convince 설득하다|crucial 아주 중요한|' +
+             'decline 줄어들다|define 정의하다|demand 요구하다|depend 의존하다|determine 결정하다|efficient 효율적인|' +
+             'encourage 격려하다|enormous 거대한|environment 환경|essential 꼭 필요한|evidence 증거|expand 넓히다|' +
+             'familiar 익숙한|flexible 유연한|generate 만들어 내다|identify 확인하다').split('|');
+    var voc = [];
+    for (i = 0; i < W.length; i += 1) {
+      c = W[i].indexOf(' ');
+      voc.push({ n: String(18 + Math.floor(i / 6)), w: W[i].slice(0, c), m: W[i].slice(c + 1) });
+    }
+    var gu = [
+      { n: '1', e: 'Reading every day / makes your vocabulary richer.', t: '날마다 읽으면 어휘가 풍부해진다.', p: '동명사 주어 · 5형식' },
+      { n: '2', e: 'The book / that I borrowed yesterday / is very interesting.', t: '내가 어제 빌린 책은 아주 재미있다.', p: '관계대명사 that' },
+      { n: '3', e: 'It is important / to keep a promise.', t: '약속을 지키는 것은 중요하다.', p: '가주어 it · 진주어 to부정사' },
+      { n: '4', e: 'She was so tired / that she fell asleep early.', t: '그녀는 너무 피곤해서 일찍 잠들었다.', p: 'so 형용사 that' },
+      { n: '5', e: 'Not only did he help us, / but he also gave us advice.', t: '그는 우리를 도왔을 뿐 아니라 조언도 해 주었다.', p: '부정어 도치' },
+      { n: '6', e: 'If I had more time, / I would learn to play the guitar.', t: '시간이 더 있다면 기타 치는 법을 배울 텐데.', p: '가정법 과거' },
+      { n: '7', e: 'The more you practice, / the easier it becomes.', t: '연습할수록 더 쉬워진다.', p: 'the 비교급, the 비교급' },
+      { n: '8', e: 'Having finished his homework, / he went out to play.', t: '숙제를 끝낸 뒤 그는 놀러 나갔다.', p: '완료 분사구문' }
+    ];
+    var gram = [
+      { n: '1', s: 'The girl (sitting / sat) on the bench is my sister.', a: 'sitting', x: '소녀가 앉아 있는 것이므로 능동의 현재분사', p: '현재분사' },
+      { n: '2', s: 'I had my bike (repair / repaired) yesterday.', a: 'repaired', x: '자전거는 고쳐지는 것이므로 과거분사', p: '사역동사 have' },
+      { n: '3', s: 'The news was very (surprising / surprised).', a: 'surprising', x: '소식이 놀라움을 주므로 현재분사', p: '감정 분사' },
+      { n: '4', s: 'Each of the students (has / have) a laptop.', a: 'has', x: 'each of 뒤 복수 명사가 와도 단수 취급', p: '수일치' },
+      { n: '5', s: 'The number of tourists (is / are) increasing.', a: 'is', x: 'the number of 는 단수 취급', p: '수일치' },
+      { n: '6', s: 'Neither he nor I (was / were) ready.', a: 'was', x: '동사는 가까운 주어 I 에 맞춤', p: '상관접속사 수일치' },
+      { n: '7', s: 'A lot of the money (is / are) gone.', a: 'is', x: 'a lot of 뒤 셀 수 없는 명사 money 에 맞춤', p: '수일치' },
+      { n: '8', s: 'This is a letter [writing] in English.', a: 'written', x: '편지는 쓰이는 것이므로 과거분사', p: '과거분사' },
+      { n: '9', s: 'I was [exciting] about the trip.', a: 'excited', x: '내가 신나는 감정을 느끼므로 과거분사', p: '감정 분사' },
+      { n: '10', s: 'The books on the desk [is] mine.', a: 'are', x: '주어는 복수 books', p: '수일치' },
+      { n: '11', s: 'Everyone in my class [are] kind.', a: 'is', x: 'everyone 은 단수 취급', p: '수일치' },
+      { n: '12', s: '[Seeing] from the hill, the town looks beautiful.', a: 'Seen', x: '마을이 보이는 것이므로 과거분사로 시작', p: '분사구문' }
+    ];
+    function mk(id, kind, title, items, off, hh, pick) {
+      var ks = X.setKeys([], items, kind), t = pgts(atMs(off, hh, 0));
+      d.set = d.set.filter(function (x) { return x.id !== id; });
+      d.set.push({ id: id, kind: kind, title: title, class_ids: ['c-g1a'], posted_on: dayStr(off), hidden: false, items: ks, n: ks.length,
+                   pick: pick, made_by: 'Benjamin', created_at: t, updated_at: t });
+    }
+    mk(S1ID.SV, 'voc', '고1 11월 모의 18~24번', voc, -2, 21, []);
+    mk(S1ID.SG, 'gu', '11월 주요 구문', gu, -1, 21, ['k1', 'k2']);
+    mk(S1ID.SR, 'gram', '분사 · 수일치 드릴', gram, -1, 22, []);
+    function prog(sid, setId, o) {
+      var t = pgts(atMs(-1, 20, 30)), q = { sid: sid, set_id: setId, cards: {}, kn: [], tn: 0, f1: null, last_sc: null, best: 0,
+            pass_at: null, sv_day: null, sv_n: 0, first_at: pgts(atMs(-2, 20, 0)), last_at: t }, x;
+      for (x in o) { if (has(o, x)) q[x] = o[x]; }
+      d.sprog = d.sprog.filter(function (y) { return !(y.sid === sid && y.set_id === setId); });
+      d.sprog.push(q);
+    }
+    /* 이바다 단어: tn 2 · f1 74 · kn k1~k35 · k1~k20 외움 · k36~k39 어제 쌓인 오답 */
+    cards = {}; kn = [];
+    for (i = 1; i <= 42; i += 1) {
+      k = 'k' + i;
+      if (i <= 20) cards[k] = { s: 1, d: [d2, d1], t: d1 };
+      else if (i <= 35) cards[k] = { s: 1, d: [d2], t: d2 };
+      else if (i <= 39) cards[k] = { s: 1, w: 1, z: d1 };
+      else cards[k] = { s: 1 };
+      if (i <= 35) kn.push(k);
+    }
+    prog(BD, S1ID.SV, { cards: cards, kn: kn, tn: 2, f1: 74, last_sc: 15, best: 83 });
+    /* 이바다 구문: 따라 말하기 k1~k5 */
+    cards = {};
+    for (i = 1; i <= 5; i += 1) cards['k' + i] = { s: 1, g: 1 };
+    prog(BD, S1ID.SG, { cards: cards, sv_day: d1, sv_n: 1 });
+    /* 이바다 문법: 어제 드릴 10/12 · k3 · k9 쌓인 오답 */
+    cards = {};
+    for (i = 1; i <= 12; i += 1) cards['k' + i] = i === 3 || i === 9 ? { w: 1, z: d1 } : { d: [d1], t: d1 };
+    prog(BD, S1ID.SR, { cards: cards, tn: 1, f1: 83, last_sc: 10, best: 83 });
+    /* 최새봄 단어: 통과(tn 1 · f1 93 · kn 40) · k41 k42 쌓인 오답 */
+    cards = {}; kn = [];
+    for (i = 1; i <= 42; i += 1) {
+      k = 'k' + i;
+      if (i <= 40) { cards[k] = { s: 1, d: [d3, d1], t: d1 }; kn.push(k); } else cards[k] = { s: 1, w: 1, z: d1 };
+    }
+    prog(SB, S1ID.SV, { cards: cards, kn: kn, tn: 1, f1: 93, last_sc: 40, best: 95, pass_at: pgts(atMs(-1, 19, 40)) });
+    /* 최새봄 구문: k1 k2 말함 */
+    prog(SB, S1ID.SG, { cards: { k1: { s: 1, g: 1 }, k2: { s: 1, g: 1 } }, sv_day: d1, sv_n: 1 });
+    /* 녹음 넷: 이바다 k1 낸 것(안 들음) · k2 다시(끊어 읽기) / 최새봄 k1 좋아요 · k2 낸 것(안 들음) */
+    function rec(id, n, sid, k2, off, hh, mm, mark, why) {
+      var path = S1ID.SG + '/5e72' + pad(String(n), 28) + '.webm', at = atMs(off, hh, mm);
+      d.srec = d.srec.filter(function (x) { return x.id !== id; });
+      d.srec.push({ id: id, sid: sid, set_id: S1ID.SG, k: k2, path: path, mime: 'audio/webm', bytes: 28000 + n * 1000, ms: 4000 + n * 300,
+                    st: 'done', exp_at: pgts(at + 10 * MINUTE), at: pgts(at), done_at: pgts(at + MINUTE), mark: mark, why: why,
+                    heard_by: mark ? 'Benjamin' : '', heard_at: mark ? pgts(atMs(off, hh + 1, mm)) : null });
+      d.recobj[path] = { size: 28000 + n * 1000, mime: 'audio/webm', at: pgts(at) };
+    }
+    rec(S1ID.R1, 1, BD, 'k1', -1, 21, 20, '', 0);
+    rec(S1ID.R2, 2, BD, 'k2', -1, 21, 24, 'again', 1);
+    rec(S1ID.R3, 3, SB, 'k1', -1, 20, 10, 'ok', 0);
+    rec(S1ID.R4, 4, SB, 'k2', -1, 20, 14, '', 0);
+    /* 세트 동의 · 녹음 본인 동의(고등) */
+    function ok(sid, off, hh) {
+      var cs = findConsent(d, sid), o;
+      if (cs) { cs.sv = S_VER; cs.sv_at = pgts(atMs(off, hh, 0)); }
+      d.recok = d.recok.filter(function (x) { return x.sid !== sid; });
+      o = { sid: sid, lvl: 'h', lvl_at: pgts(atMs(off, hh, 0)), how: 'self', ver: R_VER, ok_at: pgts(atMs(off, hh, 5)), ok_by: 'self' };
+      d.recok.push(o);
+    }
+    ok(BD, -2, 20);
+    ok(SB, -2, 19);
+    d.s1 = 1;
+    return true;
+  }
+
+  IMPL.lec_set_home = lec_set_home;
+  IMPL.lec_set_agree = lec_set_agree;
+  IMPL.lec_set_items = lec_set_items;
+  IMPL.lec_set_card = lec_set_card;
+  IMPL.lec_set_test = lec_set_test;
+  IMPL.lec_set_due = lec_set_due;
+  IMPL.lec_set_ans = lec_set_ans;
+  IMPL.lec_rec_agree = lec_rec_agree;
+  IMPL.lec_rec_off = lec_rec_off;
+  IMPL.lec_rec_begin = lec_rec_begin;
+  IMPL.lec_rec_done = lec_rec_done;
+  IMPL.lec_rec_slot = lec_rec_slot;
+  SIG.lec_set_home = { p_key: 'text' };
+  SIG.lec_set_agree = { p_key: 'text', p_ver: 'text' };
+  SIG.lec_set_items = { p_key: 'text', p_set: 'uuid' };
+  SIG.lec_set_card = { p_key: 'text', p_set: 'uuid', p_marks: 'json' };
+  SIG.lec_set_test = { p_key: 'text', p_set: 'uuid' };
+  SIG.lec_set_due = { p_key: 'text' };
+  SIG.lec_set_ans = { p_key: 'text', p_try: 'uuid', p_i: 'int', p_v: 'text' };
+  SIG.lec_rec_agree = { p_key: 'text', p_ver: 'text' };
+  SIG.lec_rec_off = { p_key: 'text' };
+  SIG.lec_rec_begin = { p_key: 'text', p_set: 'uuid', p_k: 'text', p_mime: 'text', p_bytes: 'int', p_ms: 'int' };
+  SIG.lec_rec_done = { p_key: 'text', p_id: 'uuid' };
+  SIG.lec_rec_slot = { p_name: 'text' };
+  SIG.lec_set_is_admin = {};
+  SIG.lec_set_list_staff = {};
+  SIG.lec_set_get = { p_set: 'uuid' };
+  SIG.lec_set_put = { p_id: 'uuid', p_kind: 'text', p_title: 'text', p_cls: 'textarr', p_on: 'date', p_items: 'json', p_pick: 'intarr' };
+  SIG.lec_set_hide = { p_set: 'uuid', p_hidden: 'bool' };
+  SIG.lec_set_del = { p_set: 'uuid' };
+  SIG.lec_set_staff = { p_set: 'uuid' };
+  SIG.lec_rec_mark = { p_id: 'uuid', p_mark: 'text', p_why: 'int' };
+  SIG.lec_rec_guard = { p_skey: 'text', p_how: 'text', p_on: 'bool' };
+  SIG.lec_rec_lvl = { p_rows: 'json' };
+  SIG.lec_rec_expired = {};
+  SIG.lec_rec_gone = { p_ids: 'uuidarr' };
+  STAFF.lec_set_is_admin = lec_set_is_admin;
+  STAFF.lec_set_list_staff = lec_set_list_staff;
+  STAFF.lec_set_get = lec_set_get;
+  STAFF.lec_set_put = lec_set_put;
+  STAFF.lec_set_hide = lec_set_hide;
+  STAFF.lec_set_del = lec_set_del;
+  STAFF.lec_set_staff = lec_set_staff;
+  STAFF.lec_rec_mark = lec_rec_mark;
+  STAFF.lec_rec_guard = lec_rec_guard;
+  STAFF.lec_rec_lvl = lec_rec_lvl;
+  STAFF.lec_rec_expired = lec_rec_expired;
+  STAFF.lec_rec_gone = lec_rec_gone;
+
+  /* 녹음 듣기(관리자 · 서명 주소 흉내 = 소리 data URL) · 없는 파일 · 지운 줄('') · 관리자 아님 = 거절 */
+  staff.recUrl = function (path) {
+    return withDb(function (d) {
+      rBucket();
+      sTabs(d);
+      if (!sAdmin()) throw httpErr(400, 'not_found', 'Object not found');
+      if (typeof path !== 'string' || path === '' || !has(d.recobj, path)) throw httpErr(400, 'not_found', 'Object not found');
+      return tone(path);
+    });
+  };
+  /* 녹음 파일 지우기(관리자 · 지운 것 [{name}] · 관리자 아님 = [](행 보안)) */
+  staff.recDel = function (paths) {
+    return withDb(function (d) {
+      var out = [], i, p;
+      rBucket();
+      sTabs(d);
+      if (!sAdmin()) return out;
+      paths = isArr(paths) ? paths : [];
+      for (i = 0; i < paths.length; i += 1) {
+        p = paths[i];
+        if (typeof p === 'string' && has(d.recobj, p)) { delete d.recobj[p]; out.push({ name: p }); }
+      }
+      return out;
+    });
+  };
+  /* 학생 녹음 올리기(Storage POST 흉내): 버킷 · 꼴 · 크기 · 열린 표(lec_rec_slot) · 덮어쓰기 없음 */
+  w.LecMock.recPut = function (path, size, mime) {
+    return withDb(function (d) {
+      rBucket();
+      sTabs(d);
+      if (R_TYPES.indexOf(mime) < 0) throw httpErr(415, 'invalid_mime_type', 'mime type ' + mime + ' is not supported');
+      if (!(size >= 0) || size > 1048576) throw httpErr(413, 'EntityTooLarge', 'The object exceeded the maximum allowed size');
+      if (!rSlot(d, path)) throw httpErr(403, 'Unauthorized', 'new row violates row-level security policy');
+      if (has(d.recobj, path)) throw httpErr(409, 'Duplicate', 'The resource already exists');
+      d.recobj[path] = { size: size, mime: mime, at: sNow() };
+      return { Key: 'lec-rec/' + path };
+    });
+  };
+  w.LecMock.tone = tone;
+  w.LecMock.s1ids = S1ID;
+  w.LecMock.noSet = function (on) { if (on !== undefined) NOSET = !!on; return NOSET; };
+  w.LecMock.recFail = function (on) { if (on !== undefined) RECFAIL = !!on; return RECFAIL; };
 })(window);

@@ -2161,3 +2161,908 @@
   };
   for (var name in api) { if (Object.prototype.hasOwnProperty.call(api, name)) Lec[name] = api[name]; }
 })(window);
+
+/* ======================================================= S1 (11-17) 단어 · 구문 · 문법
+   - 학생(첫 인자 key · 모두 Promise · throw 없음): setHome(key) = 공부 묶음 목록(서버에 함수가 없거나 실패 = null ·
+     함수가 없으면 이 화면에서 다시 안 부름) · setAgree · setItems · setCard · setTest · setDue · setAns · recAgree · recOff ·
+     recBegin · recDone · recPut · recSend(실패 = {ok:false, err})
+   - 선생님(관리자 · 첫 인자 call = 화면의 서버 부르기): setListStaff · setGet · setPut · setHide · setDel · setStaff ·
+     recMark · recGuard · recLvl · recClean
+   - 판정(class-setup.sql S1 절과 같은 셈 · 같은 값 표 _check/class_set_vectors.json): setNorm · setMatch · setNeed · setMark …
+   - 미리 보기 안쪽(w.__lecPvIn) = 학생 함수는 서버도 가짜 서버도 부르지 않음(setHome null · 나머지 {ok:false, err:'preview'}) */
+(function (w) {
+  'use strict';
+
+  var Lec = w.Lec;
+  if (!Lec) return;
+
+  var SET_VER = 's1-2026-11', REC_VER = 'r1-2026-11';
+  var SET_LIM = { voc: 300, gu: 30, gram: 50 };
+  var REC_MAX_BYTES = 1048576, REC_MAX_MS = 45000;
+  var REC_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg'];
+  var REC_PATH = /^[0-9a-f-]{36}\/[0-9a-f]{32}\.(webm|m4a|ogg)$/;
+  var REC_WHY = ['', '끊어 읽기', '강세 · 억양', '빠진 말 · 틀린 말', '소리'];
+  /* 붙여 넣은 글을 알아본 까닭(위젯 글 그대로) · forced = 선생님이 종류를 고름 */
+  var SET_RS = {
+    voc: '한 줄이 한두 낱말이라 어휘로 읽었어요',
+    gu: '한 줄이 문장이라 주요구문으로 읽었어요',
+    gram: '괄호 안에 / 보기나 [ ]가 있어 문법으로 읽었어요',
+    forced: '선생님이 고른 종류로 읽어요'
+  };
+  /* 학생 오류 → 학생 화면 한 줄(계약서 §4-13 · 녹음 limit 은 화면이 따로 «오늘은 녹음을 더 보낼 수 없어요.») */
+  var SET_ERR = {
+    testing: '시험을 마치면 외우기를 볼 수 있어요.',
+    limit: '오늘은 여기까지예요. 내일 다시 해요.',
+    rec_limit: '오늘은 녹음을 더 보낼 수 없어요.',
+    tomorrow: '내일 다시 볼 수 있어요.',
+    pass: '이미 통과했어요.',
+    none: '지금은 열 수 없어요.',
+    kind: '지금은 열 수 없어요.',
+    'try': '지금은 열 수 없어요.',
+    done: '지금은 열 수 없어요.',
+    rec_ok: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.',
+    level: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.',
+    size: '45초 안으로 다시 녹음해 주세요.',
+    mime: '이 폰에서는 녹음을 보낼 수 없어요.',
+    upload: '보내지 못했어요.',
+    file: '보내지 못했어요.',
+    late: '보내지 못했어요.',
+    network: '보내지 못했어요.',
+    other: '잠시 뒤 다시 해 주세요.'
+  };
+  var SET_NOTE = {
+    title: '단어 · 구문 · 문법 기록 안내',
+    items: [
+      '기록하는 것: 단어 카드에서 누른 알아요 · 다시, 시험과 문법 문제에서 고르거나 쓴 답과 맞고 틀린 것, 푼 날짜와 시각',
+      '보는 사람: 원장 선생님',
+      '보관: 선생님이 공부 자료를 지우면 그 기록도 함께 지우고, 학원을 그만두면 30일 안에 지웁니다',
+      '지우기: 지워 달라고 하면 30일 안에 지웁니다'
+    ],
+    btn: '동의하고 시작'
+  };
+  var REC_NOTE = {
+    title: '녹음 제출 안내',
+    items: [
+      '녹음하는 것: 구문을 외워서 말한 목소리와 보낸 시각',
+      '왜: 선생님이 끊어 읽기와 발음을 듣고 알려 주려고',
+      '듣는 사람: 원장 선생님',
+      '보관: 보낸 날부터 30일 뒤 지웁니다',
+      '저장하는 곳: Supabase(클라우드 저장소)',
+      '안 해도 됩니다: 동의하지 않아도 공부는 그대로 하고, 녹음 제출 단추가 보이지 않습니다',
+      '만 14세 미만은 보호자 동의서를 내야 열립니다',
+      '끄기: 원장 선생님께 말하면 바로 끄고, 보낸 녹음도 지웁니다'
+    ],
+    btn: '동의하고 녹음 열기',
+    guard: '녹음 제출은 보호자 동의서를 낸 뒤에 열려요.'
+  };
+
+  function str(v) { return v == null ? '' : String(v); }
+  function isArr(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+  function isObj(v) { return !!v && typeof v === 'object' && !isArr(v); }
+  function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function sp(s) { return str(s).replace(/^ +| +$/g, ''); }          /* 서버 btrim(보통 칸만) */
+  function clen(s) { return Lec.clen ? Lec.clen(str(s)) : str(s).length; }
+  function copy(o) { var r = {}, k; for (k in o) { if (has(o, k)) r[k] = o[k]; } return r; }
+  function rndOf(r) { return typeof r === 'function' ? r : Math.random; }
+  function shuffle(a, rnd) {
+    var i, j, t;
+    rnd = rndOf(rnd);
+    for (i = a.length - 1; i > 0; i -= 1) {
+      j = Math.floor(rnd() * (i + 1));
+      if (!(j >= 0 && j <= i)) j = i;
+      t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ------------------------------------------------------------- 판정(서버와 같은 셈) */
+
+  function nfc(t) {
+    var s = str(t);
+    try { return s.normalize ? s.normalize('NFC') : s; } catch (e) { return s; }
+  }
+  /* 둥근 따옴표 · 프라임 → ' " · 붙는 빈칸(NBSP · 전각) → 빈칸 · 물결 셋 지움(SQL translate 와 같은 목록) */
+  var NQ = {};
+  NQ[String.fromCharCode(8217)] = "'"; NQ[String.fromCharCode(8216)] = "'"; NQ[String.fromCharCode(700)] = "'";
+  NQ[String.fromCharCode(8242)] = "'"; NQ[String.fromCharCode(8220)] = '"'; NQ[String.fromCharCode(8221)] = '"';
+  NQ[String.fromCharCode(8243)] = '"'; NQ[String.fromCharCode(160)] = ' '; NQ[String.fromCharCode(12288)] = ' ';
+  NQ['~'] = ''; NQ[String.fromCharCode(8764)] = ''; NQ[String.fromCharCode(12316)] = '';
+  /* 쓰기 답 맞추기 글: NFC → 따옴표 · 빈칸 · 물결 → A~Z 만 소문자 → 빈칸 무리(여섯 글자) 하나로 → 앞뒤 빈칸 → 끝 마침표 → 앞뒤 빈칸 */
+  function setNorm(t) {
+    var s = nfc(t), o = '', i, c, n;
+    for (i = 0; i < s.length; i += 1) {
+      c = s.charAt(i);
+      if (has(NQ, c)) { o += NQ[c]; continue; }
+      n = s.charCodeAt(i);
+      o += n >= 65 && n <= 90 ? String.fromCharCode(n + 32) : c;
+    }
+    o = o.replace(/[ \t\n\u000B\f\r]+/g, ' ').replace(/^ +| +$/g, '');
+    return o.replace(/\.+$/, '').replace(/^ +| +$/g, '');
+  }
+  /* 한 답의 꼴: 괄호와 그 안을 뺀 것 · 괄호 글자만 뺀 것(빈 것 뺌) */
+  function setVars(t) {
+    var s = str(t), a = setNorm(s.replace(/[(][^()]*[)]/g, ' ')), b = setNorm(s.replace(/[()]/g, '')), o = [];
+    if (a !== '') o.push(a);
+    if (b !== '' && b !== a) o.push(b);
+    return o;
+  }
+  /* 정답 글의 모든 꼴(«/» 로 나눈 조각마다) */
+  function setAlts(ans) {
+    var parts = str(ans).split('/'), o = [], i, v, j;
+    for (i = 0; i < parts.length; i += 1) {
+      v = setVars(parts[i]);
+      for (j = 0; j < v.length; j += 1) { if (o.indexOf(v[j]) < 0) o.push(v[j]); }
+    }
+    return o;
+  }
+  /* 학생 답(나누지 않음)의 꼴 하나가 정답 꼴 하나와 같으면 맞음 */
+  function setMatch(v, ans) {
+    var a = setVars(v), b = setAlts(ans), i;
+    for (i = 0; i < a.length; i += 1) { if (b.indexOf(a[i]) >= 0) return true; }
+    return false;
+  }
+  /* 통과 수 = 90% 올림(정수 셈) */
+  function setNeed(n) {
+    n = Math.floor(+n || 0);
+    return n <= 0 ? 0 : Math.floor((n * 9 + 9) / 10);
+  }
+  /* 문법 고르기 보기: 첫 ( a / b ) 묶음을 «/» 로 나눔 · 없으면 null */
+  function setOpts(s) {
+    var m = /[(]([^()]*\/[^()]*)[)]/.exec(str(s)), o, i;
+    if (!m) return null;
+    o = m[1].split('/');
+    for (i = 0; i < o.length; i += 1) o[i] = sp(o[i]);
+    return o;
+  }
+  /* 화면 칸 그리기: 고르기 = ( / ) 묶음 자리(o 보기) · 고쳐 쓰기 = [낱말] 자리(mid) · 둘 다 없으면 f '' */
+  function gramParts(s) {
+    var t = str(s), m = /[(]([^()]*\/[^()]*)[)]/.exec(t), b;
+    if (m) return { f: 'c', pre: t.slice(0, m.index), mid: m[1], post: t.slice(m.index + m[0].length), o: setOpts(t) };
+    b = /\[([^\]]*)\]/.exec(t);
+    if (b) return { f: 'r', pre: t.slice(0, b.index), mid: sp(b[1]), post: t.slice(b.index + b[0].length), o: null };
+    return { f: '', pre: t, mid: '', post: '', o: null };
+  }
+  function countRe(re, s) {
+    var n = 0, m;
+    re.lastIndex = 0;
+    while ((m = re.exec(s)) !== null) { n += 1; if (m[0] === '') re.lastIndex += 1; }
+    return n;
+  }
+
+  /* 쓰기 답 · 고르기 문항의 꼴: 세트 안 문항 차례 i(0부터) 짝수 = 'c'(뜻 고르기) · 홀수 = 'w'(영어 쓰기) */
+  function setFm(i) { return (Math.floor(+i || 0) % 2 === 0) ? 'c' : 'w'; }
+  /* 첫 시도: 모든 문항 · 꼴 fm(i) · 섞음 */
+  function setFirst(items, rnd) {
+    var o = [], i;
+    items = isArr(items) ? items : [];
+    for (i = 0; i < items.length; i += 1) o.push({ k: str(items[i] && items[i].k), f: setFm(i) });
+    return shuffle(o, rnd);
+  }
+  /* 다시 보기: 틀린 것(kn 에 없는 것) 전부 'w' + 맞힌 것 가운데 무작위 min(틀린 수, 맞힌 수)개(꼴 fm(i)) · 섞음 */
+  function setRetake(items, kn, rnd) {
+    var ks = {}, wr = [], kk = [], i, k;
+    items = isArr(items) ? items : [];
+    kn = isArr(kn) ? kn : [];
+    for (i = 0; i < kn.length; i += 1) ks['#' + str(kn[i])] = 1;
+    for (i = 0; i < items.length; i += 1) {
+      k = str(items[i] && items[i].k);
+      if (ks['#' + k]) kk.push({ k: k, f: setFm(i) }); else wr.push({ k: k, f: 'w' });
+    }
+    shuffle(kk, rnd);
+    return shuffle(wr.concat(kk.slice(0, Math.min(wr.length, kk.length))), rnd);
+  }
+  /* 'c' 보기 넷: 맞는 뜻 + 맞춤 글이 서로 다르고 맞는 뜻과도 다른 뜻 셋(무작위) · 섞음 · 셋이 안 되면 null */
+  function setChoices(items, idx, rnd) {
+    var it, me, groups = {}, keys = [], i, g, out;
+    items = isArr(items) ? items : [];
+    it = items[idx];
+    if (!isObj(it)) return null;
+    me = setNorm(it.m);
+    for (i = 0; i < items.length; i += 1) {
+      if (!isObj(items[i])) continue;
+      g = setNorm(items[i].m);
+      if (g === me) continue;
+      if (!has(groups, '#' + g)) { groups['#' + g] = []; keys.push('#' + g); }
+      groups['#' + g].push(str(items[i].m));
+    }
+    if (keys.length < 3) return null;
+    shuffle(keys, rnd);
+    out = [str(it.m)];
+    for (i = 0; i < 3; i += 1) {
+      g = groups[keys[i]];
+      out.push(g[Math.min(g.length - 1, Math.floor(rndOf(rnd)() * g.length))]);
+    }
+    return shuffle(out, rnd);
+  }
+
+  /* 카드 날짜 칸: 날을 더하고 겹침 빼고 오름차순 · 마지막 n 개 */
+  function addDay(arr, day, n) {
+    var a = isArr(arr) ? arr : [], o = [], i, v;
+    for (i = 0; i < a.length; i += 1) { v = str(a[i]); if (o.indexOf(v) < 0) o.push(v); }
+    if (o.indexOf(day) < 0) o.push(day);
+    o.sort();
+    return o.slice(Math.max(0, o.length - n));
+  }
+  /* 카드 한 칸 고치기(새 객체): card = 외우기 · say = 따라 말하기 · test · drill · due = 시험 · 드릴 · 쌓인 오답 */
+  function setMark(card, ok, src, day) {
+    var c = copy(isObj(card) ? card : {}), y;
+    day = str(day);
+    if (src === 'card' || src === 'say') {
+      c.s = 1;
+      if (ok && src === 'say') c.g = 1;
+      else if (ok) c.d = addDay(c.d, day, 3);
+      return c;
+    }
+    if (!ok) {
+      delete c.d; delete c.t; delete c.y;
+      c.w = (typeof c.w === 'number' && isFinite(c.w) ? Math.floor(c.w) : 0) + 1;
+      c.z = day;
+      return c;
+    }
+    c.d = addDay(c.d, day, 3);
+    if (src !== 'due') c.t = day;
+    if (str(c.z) !== '' && day > str(c.z)) {
+      y = addDay(c.y, day, 2);
+      if (y.length >= 2) { delete c.z; delete c.y; } else c.y = y;
+    }
+    return c;
+  }
+  /* 외움 = 맞힌 날 둘 이상 + 시험 · 드릴에서 맞힌 날 있음 */
+  function setMemo(c) { return isObj(c) && isArr(c.d) && c.d.length >= 2 && str(c.t) !== ''; }
+  /* 쌓인 오답에 있음 */
+  function setInDue(c) { return isObj(c) && str(c.z) !== ''; }
+  /* 오늘 쌓인 오답에 나옴 = 들어간 날이 오늘 앞 · 오늘 아직 안 맞힘 */
+  function setDueOn(c, day) {
+    var z;
+    if (!isObj(c)) return false;
+    z = str(c.z);
+    day = str(day);
+    return z !== '' && z < day && !(isArr(c.y) && c.y.indexOf(day) >= 0);
+  }
+
+  /* 문항 칸 글(서버 lec__set_txt: 글자 · 숫자만 · 탭 · 줄바꿈 → 빈칸 · 앞뒤 빈칸 지움) */
+  function itxt(e, f) {
+    var v = isObj(e) ? e[f] : undefined;
+    if (typeof v !== 'string' && !(typeof v === 'number' && isFinite(v))) return '';
+    return sp(String(v).replace(/[\t\n\u000B\f\r]/g, ' '));
+  }
+  function guessKind(a) {
+    var i;
+    a = isArr(a) ? a : [];
+    for (i = 0; i < a.length; i += 1) {
+      if (isObj(a[i]) && has(a[i], 'w')) return 'voc';
+      if (isObj(a[i]) && has(a[i], 'e')) return 'gu';
+    }
+    return 'gram';
+  }
+  /* 열쇠 맞춤 글: 단어 = 단어 · 구문 = 영어(«/» 지움) · 문법 = 문제 */
+  function ktext(kind, e) {
+    if (kind === 'voc') return setNorm(itxt(e, 'w'));
+    if (kind === 'gu') return setNorm(itxt(e, 'e').replace(/\//g, ' '));
+    return setNorm(itxt(e, 's'));
+  }
+  /* 문항 열쇠 매기기(서버 lec__set_keys 와 같은 셈): 새 문항마다 아직 안 쓴 옛 문항 가운데 맞춤 글이 같은 첫 것의 열쇠 ·
+     없으면 가장 큰 번호 + 1 · kind 를 안 주면 문항 칸으로 짐작 */
+  function setKeys(oldItems, newItems, kind) {
+    var ok = [], ot = [], used = [], max = 0, out = [], i, j, e, k, t, r;
+    oldItems = isArr(oldItems) ? oldItems : [];
+    newItems = isArr(newItems) ? newItems : [];
+    kind = kind === 'voc' || kind === 'gu' || kind === 'gram' ? kind : guessKind(newItems.length ? newItems : oldItems);
+    for (i = 0; i < oldItems.length; i += 1) {
+      e = oldItems[i];
+      k = isObj(e) ? str(e.k) : '';
+      if (/^k[0-9]{1,6}$/.test(k)) {
+        max = Math.max(max, parseInt(k.slice(1), 10));
+        ok.push(k); ot.push(ktext(kind, e)); used.push(false);
+      }
+    }
+    for (i = 0; i < newItems.length; i += 1) {
+      e = newItems[i];
+      t = ktext(kind, e);
+      k = null;
+      for (j = 0; j < ok.length; j += 1) {
+        if (!used[j] && ot[j] === t) { k = ok[j]; used[j] = true; break; }
+      }
+      if (k === null) { max += 1; k = 'k' + max; }
+      r = isObj(e) ? copy(e) : {};
+      r.k = k;
+      out.push(r);
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------------- 붙여 넣기(위젯 그대로) */
+
+  /* 엑셀 · 구글 시트 복사 꼴(TSV)로 줄 나누기: 따옴표로 시작하는 칸은 닫는 따옴표(뒤가 탭 · 줄 끝 · 글 끝)까지 줄을 넘어 읽고 "" → " ·
+     엑셀이 따옴표로 감싸는 칸(안에 줄바꿈 · 탭 · 따옴표가 있음)만 그렇게 읽음 · 닫는 따옴표가 없거나 뒤에 글이 붙으면 따옴표 그대로(위젯 글)
+     → [{s: 줄 글, c: 칸들 | null(탭도 따옴표 칸도 없는 줄), nl: 칸 안 줄바꿈을 이었음}] */
+  function tsvLines(text) {
+    var t = str(text).replace(/\r\n?/g, '\n'), len = t.length, out = [], p = 0, st, cells, nl, qd, v, j, q, dq, ch;
+    while (p <= len) {
+      st = p; cells = []; nl = false; qd = false;
+      for (;;) {
+        v = null;
+        if (t.charAt(p) === '"') {
+          j = p + 1; q = ''; dq = false;
+          while (j < len) {
+            ch = t.charAt(j);
+            if (ch === '"') {
+              if (t.charAt(j + 1) === '"') { q += '"'; dq = true; j += 2; continue; }
+              break;
+            }
+            q += ch;
+            j += 1;
+          }
+          if (j < len && (j + 1 === len || t.charAt(j + 1) === '\t' || t.charAt(j + 1) === '\n') &&
+              (dq || q.indexOf('\n') >= 0 || q.indexOf('\t') >= 0)) {
+            if (q.indexOf('\n') >= 0) nl = true;
+            qd = true;
+            v = q.replace(/[ \t]*\n[ \t]*/g, ' ').replace(/\t/g, ' ');
+            p = j + 1;
+          }
+        }
+        if (v === null) {
+          j = p;
+          while (j < len && t.charAt(j) !== '\t' && t.charAt(j) !== '\n') j += 1;
+          v = t.slice(p, j);
+          p = j;
+        }
+        cells.push(v);
+        if (p < len && t.charAt(p) === '\t') { p += 1; continue; }
+        break;
+      }
+      out.push({ s: t.slice(st, p), c: cells.length > 1 || qd ? cells : null, nl: nl });
+      p += 1;
+    }
+    return out;
+  }
+  /* 빈 줄 뺌 · 탭이 있으면 탭(엑셀 따옴표 칸은 tsvLines) · 없으면 빈칸 둘 이상이나 « | » · 칸 trim ·
+     칸이 둘 이상이고 첫 칸이 번호(1~4자리 · «1.» «1)» 꼴도)면 번호 · 첫 칸이 «1. 낱말» 꼴이면 번호를 떼어 냄 · 칸 안 줄바꿈을 이은 줄은 nl: true */
+  function setParse(text) {
+    var out = [], lines = tsvLines(text), i, s, c, n, j, m, r;
+    for (i = 0; i < lines.length; i += 1) {
+      s = lines[i].s;
+      if (!s.trim()) continue;
+      c = lines[i].c ? lines[i].c.slice() : s.split(/ {2,}| \| /);
+      for (j = 0; j < c.length; j += 1) c[j] = c[j].trim();
+      n = '';
+      if (c.length > 1 && (m = /^(\d{1,4})[.)]?$/.exec(c[0]))) { n = m[1]; c.shift(); }
+      else if (c.length > 1 && (m = /^(\d{1,4})[.)]\s+(\S.*)$/.exec(c[0]))) { n = m[1]; c[0] = m[2]; }
+      r = { n: n, c: c };
+      if (lines[i].nl) r.nl = true;
+      out.push(r);
+    }
+    return out;
+  }
+  /* 문법 = 괄호 안 / 보기나 [ ] 가 반 넘게 · 구문 = 낱말 수 가운데 값 5 이상이거나 문장 끝 줄 60% 이상 · 그 밖 단어 */
+  function setDetect(rows) {
+    var g = 0, s = 0, wc = [], i, a;
+    rows = isArr(rows) ? rows : [];
+    if (!rows.length) return '';
+    for (i = 0; i < rows.length; i += 1) {
+      a = (rows[i] && isArr(rows[i].c) && rows[i].c[0]) || '';
+      a = str(a);
+      if (/\([^()]*\/[^()]*\)|\[[^\[\]]+\]/.test(a)) g += 1;
+      wc.push(a.split(/\s+/).filter(Boolean).length);
+      if (/[.?!]["']?$/.test(a)) s += 1;
+    }
+    if (g >= rows.length / 2) return 'gram';
+    wc.sort(function (x, y) { return x - y; });
+    if (wc[Math.floor(wc.length / 2)] >= 5 || s >= rows.length * 0.6) return 'gu';
+    return 'voc';
+  }
+  function cols(r) { return r && isArr(r.c) ? r.c : []; }
+  function cell(c, i) { return str(c[i]); }
+  /* 저장 전 경고: bad[i] = 'ng'(빼고 저장 · 서버가 받지 않는 줄) | 'am'(그대로 저장 · 주의) · msgs = [{c, t}] */
+  function setWarn(kind, rows) {
+    var bad = {}, msgs = [], i, c, n, a, s, o, pg, bk, m, x, lo, seen = {}, key, cnt = {}, ng = 0, am = 0, re;
+    rows = isArr(rows) ? rows : [];
+    function hit(name) { cnt[name] = (cnt[name] || 0) + 1; }
+    for (i = 0; i < rows.length; i += 1) {
+      c = cols(rows[i]);
+      n = str(rows[i] && rows[i].n);
+      if (rows[i] && rows[i].nl) hit('nl');
+      if (kind === 'voc') {
+        if (!cell(c, 1)) { bad[i] = 'ng'; hit('vm'); }
+        else if (!cell(c, 0)) { bad[i] = 'ng'; hit('vw'); }
+        else if (clen(c[0]) > 100 || clen(c[1]) > 200 || clen(n) > 8) { bad[i] = 'ng'; hit('long'); }
+        key = cell(c, 0).toLowerCase();
+        if (has(seen, '#' + key)) {
+          if (!bad[i]) bad[i] = 'am';
+          if (!bad[seen['#' + key]]) bad[seen['#' + key]] = 'am';
+        } else seen['#' + key] = i;
+      } else if (kind === 'gu') {
+        if (!cell(c, 1)) { bad[i] = 'ng'; hit('gt'); }
+        else if (!cell(c, 0)) { bad[i] = 'ng'; hit('ge'); }
+        else if (clen(c[0]) > 300 || clen(c[1]) > 300 || clen(cell(c, 2)) > 60 || clen(n) > 8) { bad[i] = 'ng'; hit('long'); }
+      } else if (kind === 'gram') {
+        s = cell(c, 0); a = cell(c, 1); x = cell(c, 2);
+        o = setOpts(s);
+        pg = countRe(/[(]([^()]*\/[^()]*)[)]/g, s);
+        re = /\[([^\]]*)\]/g;
+        bk = countRe(re, s);
+        if (!a || (o && o.indexOf(a) < 0)) { bad[i] = 'ng'; hit('ga'); }
+        else if (pg + bk === 0) { bad[i] = 'ng'; hit('g0'); }
+        else if (pg + bk > 1) { bad[i] = 'ng'; hit('g2'); }
+        else if (pg === 1 && (o.length < 2 || o.length > 5 || o.indexOf('') >= 0)) { bad[i] = 'ng'; hit('go'); }
+        else if (bk === 1 && (m = /\[([^\]]*)\]/.exec(s)) && sp(m[1]) === '') { bad[i] = 'ng'; hit('gb'); }
+        else if (clen(s) > 300 || clen(a) > 100 || clen(x) > 300 || clen(cell(c, 3)) > 40 || clen(n) > 8) { bad[i] = 'ng'; hit('long'); }
+        else if (x.length > 60) { bad[i] = 'am'; hit('gx'); }
+      }
+    }
+    for (lo in bad) {
+      if (!has(bad, lo)) continue;
+      if (bad[lo] === 'ng') ng += 1; else am += 1;
+    }
+    function msg(k, cl, t) { if (cnt[k]) msgs.push({ c: cl, t: t + ' ' + cnt[k] }); }
+    if (kind === 'voc') {
+      msg('vm', 'ng', '뜻 빈칸');
+      msg('vw', 'ng', '단어 빈칸');
+      if (am) msgs.push({ c: 'am', t: '같은 단어 ' + am });
+    }
+    if (kind === 'gu') {
+      msg('gt', 'ng', '해석 빈칸');
+      msg('ge', 'ng', '문장 빈칸');
+    }
+    if (kind === 'gram') {
+      msg('ga', 'ng', '답이 없거나 보기에 없어요');
+      msg('g0', 'ng', '( / )나 [ ]가 없어요');
+      msg('g2', 'ng', '( / )나 [ ]는 한 줄에 하나만');
+      msg('go', 'ng', '보기는 둘에서 다섯');
+      msg('gb', 'ng', '[ ] 안이 비었어요');
+    }
+    msg('long', 'ng', '너무 긴 칸');
+    if (kind === 'gram') msg('gx', 'am', '해설이 폰에서 세 줄 넘어요');
+    /* 엑셀 칸 안 줄바꿈(Alt+Enter)은 한 칸으로 읽고 빈칸 하나로 이음(줄은 빼지 않음 · 알려만 줌) */
+    msg('nl', 'am', '칸 안 줄바꿈은 한 줄로 이었어요');
+    return { bad: bad, ng: ng, am: am, msgs: msgs };
+  }
+  /* 저장할 문항: setWarn 이 'ng' 로 본 줄만 뺌(같은 판정) · 빈 칸은 '' */
+  function setItemsFrom(kind, rows) {
+    var w0 = setWarn(kind, rows), out = [], i, c, n;
+    rows = isArr(rows) ? rows : [];
+    for (i = 0; i < rows.length; i += 1) {
+      if (w0.bad[i] === 'ng') continue;
+      c = cols(rows[i]);
+      n = str(rows[i] && rows[i].n);
+      if (kind === 'voc') out.push({ n: n, w: cell(c, 0), m: cell(c, 1) });
+      else if (kind === 'gu') out.push({ n: n, e: cell(c, 0), t: cell(c, 1), p: cell(c, 2) });
+      else if (kind === 'gram') out.push({ n: n, s: cell(c, 0), a: cell(c, 1), x: cell(c, 2), p: cell(c, 3) });
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------------- 외우기 한 판 */
+
+  /* 안 넘긴 것(차례) → 넘겼으나 외움 아님 → 외움 · 앞 size(기본 20) */
+  function setDeck(items, cards, size) {
+    var a = [], b = [], c = [], i, k, cd;
+    items = isArr(items) ? items : [];
+    cards = isObj(cards) ? cards : {};
+    size = size == null ? 20 : Math.max(0, Math.floor(+size || 0));
+    for (i = 0; i < items.length; i += 1) {
+      k = str(items[i] && items[i].k);
+      if (!k) continue;
+      cd = has(cards, k) ? cards[k] : null;
+      if (!isObj(cd) || +cd.s !== 1) a.push(k);
+      else if (!setMemo(cd)) b.push(k);
+      else c.push(k);
+    }
+    return a.concat(b, c).slice(0, size);
+  }
+  /* 판 안 «다시»: 맨 앞을 빼고 · 다시면(이 판 3번 아래) 5장 뒤(남은 것이 적으면 끝)에 다시 넣음 */
+  function setNextQ(q, again, times) {
+    var rest = isArr(q) ? q.slice(1) : [], t = {}, k = isArr(q) && q.length ? q[0] : null, n, x;
+    if (isObj(times)) { for (x in times) { if (has(times, x)) t[x] = times[x]; } }
+    if (again && k != null) {
+      n = +t[k] || 0;
+      if (n < 3) {
+        t[k] = n + 1;
+        rest.splice(Math.min(5, rest.length), 0, k);
+      }
+    }
+    return { q: rest, times: t };
+  }
+
+  /* ------------------------------------------------------------- 인쇄 */
+
+  /* 구문 영어: «/» 를 빈칸으로 · 빈칸 무리 하나로 */
+  function sayText(e) { return str(e).replace(/\//g, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, ''); }
+  /* 따라 말하기 덩어리: «/» 로 나눔(빈 것 뺌) */
+  function sayParts(e) {
+    var a = str(e).split('/'), o = [], i, v;
+    for (i = 0; i < a.length; i += 1) {
+      v = a[i].replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+      if (v) o.push(v);
+    }
+    return o;
+  }
+  /* 히즈북스 구문 시험지와 같은 낱말 나눔 */
+  function words(en) {
+    var a = str(en).split(' '), o = [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i].trim().length) o.push(a[i]); }
+    return o;
+  }
+  var PR_LABEL = {
+    voc: { ko: '뜻 쓰기', en: '영어 쓰기', mix: '섞어서' },
+    gu: { mean: '의미 쓰기', write: '영작 (한글 → 영어)', blank: '빈칸 채우기', scr: '어순 배열' },
+    gram: { gram: '괄호 고르기 · 고쳐 쓰기' }
+  };
+  /* 시험지 문항 · 정답: opt = {keys(기본 전부) · shuffle(기본 참) · rnd} · 섞은 뒤 번호 1부터 */
+  function setPrint(set, mode, opt) {
+    var kind, items, keys, list = [], q = [], a = [], i, it, no, f, en, ws, nb, idx, mk, wl, j, sw, label;
+    set = isObj(set) ? set : {};
+    opt = isObj(opt) ? opt : {};
+    kind = str(set.kind);
+    items = isArr(set.items) ? set.items : [];
+    keys = isArr(opt.keys) ? opt.keys : null;
+    if (kind === 'voc') { if (!has(PR_LABEL.voc, mode)) mode = 'ko'; }
+    else if (kind === 'gu') { if (!has(PR_LABEL.gu, mode)) mode = 'mean'; }
+    else { kind = 'gram'; mode = 'gram'; }
+    label = PR_LABEL[kind][mode];
+    for (i = 0; i < items.length; i += 1) {
+      it = items[i];
+      if (!isObj(it)) continue;
+      if (keys && keys.indexOf(it.k) < 0) continue;
+      list.push(it);
+    }
+    if (opt.shuffle !== false) shuffle(list, opt.rnd);
+    for (i = 0; i < list.length; i += 1) {
+      it = list[i];
+      no = i + 1;
+      if (kind === 'voc') {
+        f = mode === 'mix' ? (i % 2 === 0 ? 'ko' : 'en') : mode;
+        if (f === 'ko') {
+          q.push(mode === 'mix' ? { no: no, f: f, show: str(it.w) } : { no: no, show: str(it.w) });
+          a.push(mode === 'mix' ? { no: no, f: f, show: str(it.w), ans: str(it.m) } : { no: no, show: str(it.w), ans: str(it.m) });
+        } else {
+          q.push(mode === 'mix' ? { no: no, f: f, show: str(it.m) } : { no: no, show: str(it.m) });
+          a.push(mode === 'mix' ? { no: no, f: f, show: str(it.m), ans: str(it.w) } : { no: no, show: str(it.m), ans: str(it.w) });
+        }
+      } else if (kind === 'gu') {
+        en = sayText(it.e);
+        if (mode === 'mean') {
+          q.push({ no: no, show: en });
+          a.push({ no: no, show: en, ans: str(it.t) });
+        } else if (mode === 'write') {
+          q.push({ no: no, show: str(it.t) });
+          a.push({ no: no, show: str(it.t), ans: en });
+        } else if (mode === 'blank') {
+          ws = words(en);
+          nb = Math.max(1, Math.round(ws.length * 0.4));
+          idx = [];
+          for (j = 1; j < ws.length; j += 1) idx.push(j);
+          shuffle(idx, opt.rnd);
+          idx = idx.slice(0, nb);
+          mk = {};
+          for (j = 0; j < idx.length; j += 1) mk[idx[j]] = 1;
+          wl = [];
+          for (j = 0; j < ws.length; j += 1) wl.push({ w: ws[j], b: !!mk[j] });
+          q.push({ no: no, words: wl, ko: str(it.t) });
+          a.push({ no: no, words: wl.map(function (x) { return { w: x.w, b: x.b }; }), ko: str(it.t) });
+        } else {
+          ws = words(en);
+          sw = shuffle(ws.slice(), opt.rnd);
+          if (sw.length > 1 && sw.join(' ') === ws.join(' ')) { j = sw[0]; sw[0] = sw[1]; sw[1] = j; }
+          q.push({ no: no, ko: str(it.t), toks: sw });
+          a.push({ no: no, ans: en });
+        }
+      } else {
+        f = gramParts(it.s).f;
+        q.push({ no: no, s: str(it.s), f: f });
+        a.push({ no: no, s: str(it.s), f: f, ans: str(it.a), x: str(it.x) });
+      }
+    }
+    return { label: label, count: q.length, q: q, a: a };
+  }
+
+  /* ------------------------------------------------------------- 학교급 · 소리 · 녹음 꼴 */
+
+  /* 학교 칸(줄인 이름 끝 글자) → 학년 칸 → 반 이름(초가 하나라도 있으면 e · 중 m · 고 h) · 모르면 '' */
+  function stuLevel(stu, clsNames) {
+    var k = '', last, g, i, ch, re, m, x, e = false, mm = false, h = false, nm;
+    try { k = Lec.schoolKey && Lec.stuSchool ? str(Lec.schoolKey(Lec.stuSchool(stu))) : ''; } catch (e0) { k = ''; }
+    last = k ? k.charAt(k.length - 1) : '';
+    if (last === '고') return 'h';
+    if (last === '중') return 'm';
+    if (last === '초') return 'e';
+    try { g = str(stu && (stu.grade || (isObj(stu.intake) ? stu.intake.grade : ''))); } catch (e1) { g = ''; }
+    for (i = 0; i < g.length; i += 1) {
+      ch = g.charAt(i);
+      if (ch === '고') return 'h';
+      if (ch === '중') return 'm';
+      if (ch === '초') return 'e';
+    }
+    clsNames = isArr(clsNames) ? clsNames : [];
+    for (i = 0; i < clsNames.length; i += 1) {
+      nm = str(clsNames[i]);
+      re = /([HME])\s*[1-6]|(고|중|초)\s*[1-6]/g;
+      while ((m = re.exec(nm)) !== null) {
+        x = m[1] || m[2];
+        if (x === 'E' || x === '초') e = true;
+        else if (x === 'M' || x === '중') mm = true;
+        else h = true;
+      }
+    }
+    return e ? 'e' : (mm ? 'm' : (h ? 'h' : ''));
+  }
+  /* 명단(rosterFrom 과 같은 거름 · 퇴원 · 대기 뺌 · 같은 학생 열쇠 한 사람) → [{skey, lvl}](열쇠 차례) */
+  function levelsFrom(classes) {
+    var map = {}, list = [], out = [], i, j, c, studs, s, rid, nn, sk, e, cname, gr;
+    if (!isArr(classes)) return out;
+    for (i = 0; i < classes.length; i += 1) {
+      c = classes[i];
+      if (!isObj(c)) continue;
+      studs = isArr(c.students) ? c.students : [];
+      cname = Lec.jtext(c.name);
+      for (j = 0; j < studs.length; j += 1) {
+        s = studs[j];
+        if (!isObj(s)) continue;
+        rid = Lec.jtext(s.id);
+        if (rid === null || rid === '') continue;
+        nn = Lec.norm(Lec.jtext(s.name));
+        if (nn === '') continue;
+        if (Lec.truthy(s.withdrawn) || Lec.truthy(s.pending)) continue;
+        sk = rid + '|' + nn;
+        e = map['#' + sk];
+        if (!e) { e = { skey: sk, school: '', grade: '', names: [] }; map['#' + sk] = e; list.push(e); }
+        if (!e.school) { try { e.school = str(Lec.stuSchool(s)); } catch (e2) { e.school = ''; } }
+        if (!e.grade) { gr = s.grade || (isObj(s.intake) ? s.intake.grade : ''); e.grade = str(gr); }
+        if (cname && e.names.indexOf(cname) < 0) e.names.push(cname);
+      }
+    }
+    list.sort(function (x, y) { return x.skey < y.skey ? -1 : (x.skey > y.skey ? 1 : 0); });
+    for (i = 0; i < list.length; i += 1) out.push({ skey: list[i].skey, lvl: stuLevel({ school: list[i].school, grade: list[i].grade }, list[i].names) });
+    return out;
+  }
+  /* 소리: en-US 먼저 → en-* → null(소리 단추 숨김) · 말 빠르기 0.9 는 화면 */
+  function sayVoice(voices) {
+    var en = [], i, v, n;
+    n = voices && typeof voices.length === 'number' ? voices.length : 0;
+    for (i = 0; i < n; i += 1) {
+      v = voices[i];
+      if (v && /^en/i.test(str(v.lang))) en.push(v);
+    }
+    for (i = 0; i < en.length; i += 1) { if (/^en[-_]us/i.test(str(en[i].lang))) return en[i]; }
+    return en.length ? en[0] : null;
+  }
+  /* 녹음 꼴: webm(opus) → mp4 → ''(기본) */
+  function recMime(MR) {
+    var c = ['audio/webm;codecs=opus', 'audio/mp4'], i;
+    if (!MR || typeof MR.isTypeSupported !== 'function') return '';
+    for (i = 0; i < c.length; i += 1) {
+      try { if (MR.isTypeSupported(c[i])) return c[i]; } catch (e) { /* 없음 */ }
+    }
+    return '';
+  }
+  /* 올릴 꼴: codecs 뗀 셋 가운데 하나 · 밖이면 ''(못 올림) */
+  function recBase(mime) {
+    var m = str(mime).split(';')[0].replace(/\s+/g, '').toLowerCase();
+    return REC_TYPES.indexOf(m) >= 0 ? m : '';
+  }
+
+  /* ------------------------------------------------------------- 학생: 서버 부르기 */
+
+  /* 서버에 함수가 없거나 막힘: 404 · 401 · 403 · PGRST202 · 42883 */
+  function gone(e) {
+    return !!e && (e.status === 404 || e.status === 401 || e.status === 403 || e.code === 'PGRST202' || e.code === '42883');
+  }
+  function failOf(e) {
+    if (gone(e)) return { ok: false, err: 'old' };
+    return { ok: false, err: e && e.message === 'network' ? 'network' : 'error' };
+  }
+  function pv() { return !!w.__lecPvIn; }
+  function stuCall(fn, args) {
+    var p;
+    if (pv()) return Promise.resolve({ ok: false, err: 'preview' }); /* 미리 보기 안쪽 = 부르지 않음 */
+    try { p = Lec.rpc(fn, args); } catch (e0) { return Promise.resolve(failOf(e0)); }
+    return Promise.resolve(p).then(function (r) {
+      return isObj(r) ? r : { ok: false, err: 'error' };
+    }, failOf).then(null, function () { return { ok: false, err: 'error' }; });
+  }
+  function k0(key) { return key == null ? null : str(key); }
+
+  var homeGone = false;
+  /* 공부 묶음 목록 · 서버에 함수가 없으면(옛 SQL) 이 화면에서는 다시 안 부름 · 실패 = null · ok 아님 = 그 값 */
+  function setHome(key) {
+    var p;
+    if (pv()) return Promise.resolve(null);
+    if (homeGone || key == null || key === '') return Promise.resolve(null);
+    try { p = Lec.rpc('lec_set_home', { p_key: str(key) }); } catch (e0) { return Promise.resolve(null); }
+    return Promise.resolve(p).then(function (r) {
+      return isObj(r) ? r : null;
+    }, function (e) {
+      if (gone(e)) homeGone = true;
+      return null;
+    }).then(null, function () { return null; });
+  }
+  function setAgree(key) { return stuCall('lec_set_agree', { p_key: k0(key), p_ver: SET_VER }); }
+  function setItems(key, id) { return stuCall('lec_set_items', { p_key: k0(key), p_set: id || null }); }
+  function setCard(key, id, marks) { return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: isObj(marks) ? marks : {} }); }
+  function setTest(key, id) { return stuCall('lec_set_test', { p_key: k0(key), p_set: id || null }); }
+  function setDue(key) { return stuCall('lec_set_due', { p_key: k0(key) }); }
+  function setAns(key, tryId, i, v) {
+    return stuCall('lec_set_ans', { p_key: k0(key), p_try: tryId || null, p_i: Math.floor(+i || 0), p_v: str(v) });
+  }
+  function recAgree(key) { return stuCall('lec_rec_agree', { p_key: k0(key), p_ver: REC_VER }); }
+  function recOff(key) { return stuCall('lec_rec_off', { p_key: k0(key) }); }
+  function recBegin(key, id, k, mime, bytes, ms) {
+    return stuCall('lec_rec_begin', {
+      p_key: k0(key), p_set: id || null, p_k: str(k), p_mime: str(mime),
+      p_bytes: Math.max(0, Math.floor(+bytes || 0)), p_ms: Math.max(0, Math.round(+ms || 0))
+    });
+  }
+  function recDone(key, recId) { return stuCall('lec_rec_done', { p_key: k0(key), p_id: recId || null }); }
+  /* 녹음 파일 올리기(Storage · 비공개 버킷 lec-rec · 표가 열린 이름으로 한 번 · 덮어쓰기 없음) */
+  function recPut(path, blob, mime) {
+    var base = recBase(mime), size = blob && typeof blob.size === 'number' ? blob.size : 0, M = w.LecMock, p;
+    if (pv()) return Promise.resolve({ ok: false, err: 'preview' });
+    if (!base) return Promise.resolve({ ok: false, err: 'mime' });
+    if (!REC_PATH.test(str(path))) return Promise.resolve({ ok: false, err: 'upload', status: 0 });
+    if (w.__lecOffline) return Promise.resolve({ ok: false, err: 'network' });
+    if (Lec.DEMO) {
+      if (!M || typeof M.recPut !== 'function') return Promise.resolve({ ok: false, err: 'upload', status: 0 });
+      try { p = M.recPut(str(path), size, base); } catch (e0) { return Promise.resolve({ ok: false, err: 'upload', status: (e0 && e0.status) || 0 }); }
+      return Promise.resolve(p).then(function () {
+        return w.__lecOffline ? { ok: false, err: 'network' } : { ok: true };
+      }, function (e) {
+        return { ok: false, err: 'upload', status: (e && e.status) || 0 };
+      });
+    }
+    if (typeof w.fetch !== 'function') return Promise.resolve({ ok: false, err: 'network' });
+    try {
+      p = w.fetch(Lec.SUPA_URL + '/storage/v1/object/lec-rec/' + str(path), {
+        method: 'POST',
+        headers: { 'apikey': Lec.SUPA_KEY, 'Authorization': 'Bearer ' + Lec.SUPA_KEY, 'Content-Type': base, 'x-upsert': 'false' },
+        body: blob,
+        cache: 'no-store'
+      });
+    } catch (e1) { return Promise.resolve({ ok: false, err: 'network' }); }
+    return Promise.resolve(p).then(function (r) {
+      return r && r.ok ? { ok: true } : { ok: false, err: 'upload', status: (r && r.status) || 0 };
+    }, function () {
+      return { ok: false, err: 'network' };
+    }).then(null, function () { return { ok: false, err: 'upload', status: 0 }; });
+  }
+  /* 녹음 보내기 = 표 받기 → 올리기 → 냄(앞 단계 err 그대로) */
+  function recSend(key, id, k, blob, mime, ms) {
+    var base = recBase(mime), size = blob && typeof blob.size === 'number' ? blob.size : 0;
+    if (pv()) return Promise.resolve({ ok: false, err: 'preview' });
+    if (!base) return Promise.resolve({ ok: false, err: 'mime' });
+    return recBegin(key, id, k, base, size, ms).then(function (b) {
+      if (!b || !b.ok) return b || { ok: false, err: 'error' };
+      return recPut(b.path, blob, base).then(function (u) {
+        if (!u.ok) return u;
+        return recDone(key, b.id);
+      });
+    }).then(null, function () { return { ok: false, err: 'error' }; });
+  }
+
+  /* ------------------------------------------------------------- 선생님(관리자): 서버 부르기 */
+
+  function staffGone(e) {
+    if (typeof Lec.rngGoneErr === 'function') return Lec.rngGoneErr(e);
+    return !!e && (e.status === 404 || e.code === 'PGRST202' || e.code === 'PGRST205' || e.code === '42883' || e.code === '42P01');
+  }
+  /* call(fn, args) = 선생님 화면의 서버 부르기(Promise) · 늘 {ok, …} · 실패 = 'old' | 'network' | 'error' | 'forbidden' … */
+  function staffCall(call, fn, args) {
+    var p;
+    if (typeof call !== 'function') return Promise.resolve({ ok: false, err: 'network' });
+    try { p = call(fn, args); } catch (e0) { return Promise.resolve(staffGone(e0) ? { ok: false, err: 'old' } : { ok: false, err: 'error' }); }
+    return Promise.resolve(p).then(function (r) {
+      return isObj(r) ? r : { ok: false, err: 'error' };
+    }, function (e) {
+      if (staffGone(e)) return { ok: false, err: 'old' };
+      return { ok: false, err: e && e.message === 'network' ? 'network' : 'error' };
+    }).then(null, function () { return { ok: false, err: 'error' }; });
+  }
+  function setListStaff(call) {
+    return staffCall(call, 'lec_set_list_staff', {}).then(function (r) {
+      return r.ok && !isArr(r.items) ? { ok: false, err: 'error' } : r;
+    });
+  }
+  function setGet(call, id) { return staffCall(call, 'lec_set_get', { p_set: id || null }); }
+  /* o = {id(null = 새로), kind, title, cls, on('YYYY-MM-DD' | null = 오늘 · 고칠 때 null = 그대로), items, pick(0부터 · 구문만)} */
+  function setPut(call, o) {
+    var cls = [], i;
+    o = isObj(o) ? o : {};
+    if (isArr(o.cls)) { for (i = 0; i < o.cls.length; i += 1) cls.push(str(o.cls[i])); }
+    return staffCall(call, 'lec_set_put', {
+      p_id: o.id || null, p_kind: str(o.kind), p_title: str(o.title), p_cls: cls, p_on: o.on || null,
+      p_items: isArr(o.items) ? o.items : [], p_pick: isArr(o.pick) ? o.pick : null
+    });
+  }
+  function setHide(call, id, on) { return staffCall(call, 'lec_set_hide', { p_set: id || null, p_hidden: !!on }); }
+  function setDel(call, id) { return staffCall(call, 'lec_set_del', { p_set: id || null }); }
+  function setStaff(call, id) { return staffCall(call, 'lec_set_staff', { p_set: id || null }); }
+  function recMark(call, id, mark, why) {
+    return staffCall(call, 'lec_rec_mark', { p_id: id || null, p_mark: str(mark), p_why: Math.floor(+why || 0) });
+  }
+  function recGuard(call, skey, how, on) { return staffCall(call, 'lec_rec_guard', { p_skey: str(skey), p_how: str(how), p_on: !!on }); }
+  /* 학교급 맞춤: levelsFrom 의 [{skey, lvl}] 을 그대로 받아 서버 꼴 [{s, l}] 로 · 1000줄씩 차례로 → {ok, n: 바뀐 수 합} */
+  function recLvl(call, rows) {
+    var out = [], parts = [], n = 0, i, r, s, l;
+    rows = isArr(rows) ? rows : [];
+    for (i = 0; i < rows.length; i += 1) {
+      r = rows[i];
+      if (!isObj(r)) continue;
+      s = str(r.skey);
+      if (sp(s) === '') continue;
+      l = str(r.lvl);
+      out.push({ s: s, l: l === 'e' || l === 'm' || l === 'h' ? l : '' });
+    }
+    if (!out.length) return Promise.resolve({ ok: true, n: 0 });
+    for (i = 0; i < out.length; i += 1000) parts.push(out.slice(i, i + 1000));
+    function step(j) {
+      if (j >= parts.length) return Promise.resolve({ ok: true, n: n });
+      return staffCall(call, 'lec_rec_lvl', { p_rows: parts[j] }).then(function (x) {
+        if (!x.ok) return { ok: false, err: x.err || 'error' };
+        n += +x.n || 0;
+        return step(j + 1);
+      });
+    }
+    return step(0).then(null, function () { return { ok: false, err: 'error' }; });
+  }
+  /* 지난 녹음 정리(원장님이 선생님 화면을 열 때 한 번): 지울 목록 → 파일 100개씩 del → del 이 돌려준 이름(지운 파일)의 줄만 gone ·
+     이름이 없거나 f false(파일이 이미 없음) = 지울 파일 없이 줄만 · del 실패(reject) · 빈손([]) = 그 줄은 두고 다음에 ·
+     del(paths) = 지운 것 [{name}] 또는 [이름] 으로 풀림 · 오류면 reject(class-admin DA.recDel = rq) · 서버도 파일이 남은 줄은 둠(keep) */
+  function recClean(call, del) {
+    return staffCall(call, 'lec_rec_expired', {}).then(function (r) {
+      var items, groups = [], ids = [], i;
+      if (!r.ok) return r;
+      items = isArr(r.items) ? r.items : [];
+      if (!items.length) return { ok: true, n: 0 };
+      if (typeof del !== 'function') return { ok: false, err: 'error' };
+      for (i = 0; i < items.length; i += 100) groups.push(items.slice(i, i + 100));
+      function step(j) {
+        var g, paths = [], pid = {}, x, p, id, pa;
+        if (j >= groups.length) return Promise.resolve();
+        g = groups[j];
+        for (x = 0; x < g.length; x += 1) {
+          if (!isObj(g[x]) || !str(g[x].id)) continue;
+          id = str(g[x].id);
+          pa = str(g[x].path);
+          if (!pa || g[x].f === false) { ids.push(id); continue; }
+          if (!Object.prototype.hasOwnProperty.call(pid, '#' + pa)) { pid['#' + pa] = []; paths.push(pa); }
+          pid['#' + pa].push(id);
+        }
+        if (!paths.length) return step(j + 1);
+        try { p = del(paths); } catch (e0) { p = Promise.reject(e0); }
+        return Promise.resolve(p).then(function (res) {
+          var y, nm;
+          if (!isArr(res)) return;
+          for (y = 0; y < res.length; y += 1) {
+            nm = typeof res[y] === 'string' ? res[y] : (isObj(res[y]) ? str(res[y].name) : '');
+            if (nm && Object.prototype.hasOwnProperty.call(pid, '#' + nm)) {
+              ids = ids.concat(pid['#' + nm]);
+              delete pid['#' + nm];
+            }
+          }
+        }, function () { /* 이 묶음은 다음에 */ })
+          .then(function () { return step(j + 1); });
+      }
+      return step(0).then(function () {
+        if (!ids.length) return { ok: true, n: 0 };
+        return staffCall(call, 'lec_rec_gone', { p_ids: ids }).then(function (g) {
+          return g.ok ? { ok: true, n: +g.n || 0 } : g;
+        });
+      });
+    }).then(null, function () { return { ok: false, err: 'error' }; });
+  }
+
+  var api = {
+    SET_VER: SET_VER, REC_VER: REC_VER, SET_LIM: SET_LIM, REC_MAX_BYTES: REC_MAX_BYTES, REC_MAX_MS: REC_MAX_MS, REC_WHY: REC_WHY,
+    SET_RS: SET_RS, SET_ERR: SET_ERR, SET_NOTE: SET_NOTE, REC_NOTE: REC_NOTE,
+    setParse: setParse, setDetect: setDetect, setOpts: setOpts, gramParts: gramParts, setWarn: setWarn, setItemsFrom: setItemsFrom,
+    setKeys: setKeys, setNeed: setNeed, setNorm: setNorm, setVars: setVars, setAlts: setAlts, setMatch: setMatch,
+    setFm: setFm, setFirst: setFirst, setRetake: setRetake, setChoices: setChoices,
+    setMark: setMark, setMemo: setMemo, setInDue: setInDue, setDueOn: setDueOn, setDeck: setDeck, setNextQ: setNextQ,
+    setPrint: setPrint, stuLevel: stuLevel, levelsFrom: levelsFrom, sayParts: sayParts, sayText: sayText, sayVoice: sayVoice,
+    recMime: recMime, recBase: recBase,
+    setHome: setHome, setAgree: setAgree, setItems: setItems, setCard: setCard, setTest: setTest, setDue: setDue, setAns: setAns,
+    recAgree: recAgree, recOff: recOff, recBegin: recBegin, recDone: recDone, recPut: recPut, recSend: recSend,
+    setListStaff: setListStaff, setGet: setGet, setPut: setPut, setHide: setHide, setDel: setDel, setStaff: setStaff,
+    recMark: recMark, recGuard: recGuard, recLvl: recLvl, recClean: recClean
+  };
+  for (var name in api) { if (has(api, name)) Lec[name] = api[name]; }
+})(window);
