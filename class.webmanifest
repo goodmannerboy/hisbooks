@@ -1,7 +1,7 @@
 {
   "id": "./class.html",
-  "name": "히즈 클래스",
-  "short_name": "히즈 클래스",
+  "name": "히즈클래스",
+  "short_name": "히즈클래스",
   "description": "히즈어학원 수업 영상 복습",
   "lang": "ko",
   "start_url": "./class.html",

@@ -7,11 +7,11 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#F4ECD7">
 <meta name="format-detection" content="telephone=no">
-<title>히즈 클래스</title>
+<title>히즈클래스</title>
 <meta name="description" content="히즈어학원 온라인 수업 영상 · 수업 자료 · 앱으로 설치">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="히즈어학원">
-<meta property="og:title" content="히즈 클래스">
+<meta property="og:title" content="히즈클래스">
 <meta property="og:description" content="히즈어학원 온라인 수업 영상 · 수업 자료 · 앱으로 설치">
 <meta property="og:image" content="https://goodmannerboy.github.io/hisbooks/assets/his-class-og2.png">
 <meta property="og:image:width" content="1200">
@@ -25,7 +25,7 @@
 <link rel="manifest" href="class.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="히즈 클래스">
+<meta name="apple-mobile-web-app-title" content="히즈클래스">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
 /* 홈 화면 앱(PWA · 11-16): 설치 이벤트를 맨 앞에서 받아 둠(크롬 기본 띠는 막고 «설치하기» 단추로 띄움) · 화면 코드는 window.__hisPwa 를 봄 */
@@ -654,7 +654,7 @@ window.__lecStart = function () {
     if (pwa.kind === 'al') return alHowHTML();
     if (pwa.ok) {
       return '<div class="pwdone" role="status"><img src="icon-192.png" width="64" height="64" alt="">' +
-        '<h2 id="pwaH">홈 화면에 추가했어요</h2><p>이제 홈 화면의 히즈 클래스를 누르세요</p>' +
+        '<h2 id="pwaH">홈 화면에 추가했어요</h2><p>이제 홈 화면의 히즈클래스를 누르세요</p>' +
         '<button class="btn-fill" type="button" data-act="pwaclose">확인</button></div>';
     }
     return '<h2 id="pwaH">홈 화면에 앱으로 추가</h2>' +
@@ -795,22 +795,22 @@ window.__lecStart = function () {
   /* 첫 로그인 뒤 한 단계(동의 화면과 같은 틀 · 카드와 같은 제목 · 글 · 단추 하나) */
   function showAlStep() {
     S.view = 'alstep';
-    app.innerHTML = '<div class="wrap"><div class="top">' + fishSVG() + '<span class="brand">히즈 클래스</span><span class="sp"></span></div>' +
+    app.innerHTML = '<div class="wrap"><div class="top">' + fishSVG() + '<span class="brand">히즈클래스</span><span class="sp"></span></div>' +
       '<div class="cons"><section class="card alst" aria-labelledby="alT"><div class="alh">' + icon('bell', 22) + '<h1 id="alT">' + esc(L.PUSH_TITLE) + '</h1></div>' +
       '<p class="als">' + esc(L.pushCardText(S.al.at)) + '</p>' +
       '<div class="btns"><button class="btn-fill" type="button" data-act="alstep">알림 받기</button></div></section></div></div>';
   }
-  /* 막은 뒤 판: 아이폰 = 설정 → 알림 → 히즈 클래스 → 알림 허용 · 안드로이드 = 아이콘 길게 → 앱 정보 → 알림 */
+  /* 막은 뒤 판: 아이폰 = 설정 → 알림 → 히즈클래스 → 알림 허용 · 안드로이드 = 아이콘 길게 → 앱 정보 → 알림 */
   function alHowHTML() {
     var os = pwaOs(), b;
     if (os === 'android') {
-      b = '<ol class="pwol">' + pwaStep(1, '홈 화면의 히즈 클래스 아이콘을 길게 누르세요', '') +
+      b = '<ol class="pwol">' + pwaStep(1, '홈 화면의 히즈클래스 아이콘을 길게 누르세요', '') +
         pwaStep(2, kyw(ky('', '앱 정보'), '를') + ' 누르세요', '') + pwaStep(3, kyw(ky('', '알림'), '을') + ' 켜세요', '') + '</ol>';
     } else if (os === 'ios') {
       b = '<ol class="pwol">' + pwaStep(1, kyw(ky('', '설정'), ' 앱을 여세요'), '') + pwaStep(2, kyw(ky('', '알림'), '을') + ' 누르세요', '') +
-        pwaStep(3, kyw(ky('', '히즈 클래스'), '를') + ' 누르고 ' + kyw(ky('', '알림 허용'), '을') + ' 켜세요', '') + '</ol>';
+        pwaStep(3, kyw(ky('', '히즈클래스'), '를') + ' 누르고 ' + kyw(ky('', '알림 허용'), '을') + ' 켜세요', '') + '</ol>';
     } else {
-      b = '<p class="pwld">브라우저 설정에서 히즈 클래스 알림을 허용으로 바꿔 주세요.</p>';
+      b = '<p class="pwld">브라우저 설정에서 히즈클래스 알림을 허용으로 바꿔 주세요.</p>';
     }
     return '<h2 id="pwaH">새 영상 알림 켜는 법</h2><p class="pwsb">폰 설정에서 켜야 해요. 한 번 켜면 다시 안 해도 돼요.</p>' +
       '<div class="pwbd">' + b + '</div>' +
@@ -1066,7 +1066,7 @@ window.__lecStart = function () {
     S.view = 'login';
     /* 결론안 K: 물고기 56 · 제목 28 · 등원 번호 네 칸(입력은 한 칸 그대로 · 칸 위에 투명하게 겹침 · 넷째 자리를 치면 바로 들어감) */
     var h = '<div class="wrap"><div class="login">' +
-      '<div class="head">' + fishSVG() + '<h1>히즈 클래스</h1><p class="lgs">' +
+      '<div class="head">' + fishSVG() + '<h1>히즈클래스</h1><p class="lgs">' +
       (pwaStandalone() ? '처음 한 번만 이름과 등원 번호를 넣어 주세요' : '이름과 등원 번호로 들어와요') + '</p></div>' + /* 설치 안내 결론안: 홈 화면 앱으로 처음 열면 */
       '<form id="loginForm" novalidate autocomplete="off">' +
       '<label class="fld"><span>이름</span><input id="lgName" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40"></label>' +
@@ -1315,9 +1315,9 @@ window.__lecStart = function () {
     var m = recMode(), cur = '';
     if (again && m === 'agree') cur = '지금: 기록함 · ' + esc(L.fmtMD(S.consent.at)) + ' 동의';
     var h = '<div class="wrap"><div class="top">' +
-      (again ? '<button class="backb" type="button" data-act="recback"><span class="ar" aria-hidden="true">‹</span>돌아가기</button>' : fishSVG() + '<span class="brand">히즈 클래스</span>') +
+      (again ? '<button class="backb" type="button" data-act="recback"><span class="ar" aria-hidden="true">‹</span>돌아가기</button>' : fishSVG() + '<span class="brand">히즈클래스</span>') +
       '<span class="sp"></span></div><div class="cons"><div class="card">' +
-      '<h1>히즈 클래스 기록 안내</h1><ol>' +
+      '<h1>히즈클래스 기록 안내</h1><ol>' +
       '<li>기록하는 것: 영상을 어디까지 봤는지(재생 위치·본 칸), 남긴 질문과 받은 답</li>' +
       '<li>보는 사람: 원장 선생님과 담당 선생님</li>' +
       '<li>보관: 강의가 내려가면 그 강의 기록도 함께 지우고, 학원을 그만두면 30일 안에 지웁니다</li>' +
@@ -1486,9 +1486,9 @@ window.__lecStart = function () {
     pwaAuto();
     if (S.nIds) alFlash();
   }
-  /* 머리줄(목록 · 범위 · PC 보기 같음): 물고기 24 · «히즈 클래스» · 학생 이름 · «나가기» 44×44 */
+  /* 머리줄(목록 · 범위 · PC 보기 같음): 물고기 24 · «히즈클래스» · 학생 이름 · «나가기» 44×44 */
   function topHTML(cls) {
-    return '<div class="top' + (cls ? ' ' + cls : '') + '">' + fishSVG() + '<span class="brand">히즈 클래스</span><span class="sp"></span>' +
+    return '<div class="top' + (cls ? ' ' + cls : '') + '">' + fishSVG() + '<span class="brand">히즈클래스</span><span class="sp"></span>' +
       '<span class="me">' + esc(S.name) + '</span>' + (PV ? '' : '<button class="lo" type="button" data-act="logout">나가기</button>') + '</div>';
   }
   /* 결석한 날 수업 카드에 올릴 강의: 결석 · 아직 열림 · 다 보지 않음(선생님 확인 = 끝남) · 결석한 날이 오늘~13일 전 ·
@@ -2868,7 +2868,7 @@ window.__lecStart = function () {
     }
     pendFlush();
     if (!S.key) { showLogin(''); return; }
-    app.innerHTML = '<div class="wrap"><div class="top">' + fishSVG() + '<span class="brand">히즈 클래스</span></div></div>';
+    app.innerHTML = '<div class="wrap"><div class="top">' + fishSVG() + '<span class="brand">히즈클래스</span></div></div>';
     loadHome();
   })();
 };

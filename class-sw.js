@@ -1,4 +1,4 @@
-/* 히즈 클래스 · 새 영상 알림 일꾼(class-sw.js · 11-17 · CLAUDE.md §8-205)
+/* 히즈클래스 · 새 영상 알림 일꾼(class-sw.js · 11-17 · CLAUDE.md §8-205)
    홈 화면 앱(class.html)이 «알림 받기»를 눌렀을 때만 등록합니다(범위 ./class.html · 히즈북스 앱과 상관없음).
    하는 일은 셋뿐: 알림 띄우기(push) · 알림을 누르면 강의 열기(notificationclick) · 푸시 주소가 바뀌면 다시 구독(pushsubscriptionchange)
    캐시 · fetch 처리 없음(화면은 늘 네트워크에서 그대로 받음) */

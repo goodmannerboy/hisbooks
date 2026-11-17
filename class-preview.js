@@ -1,4 +1,4 @@
-/* 히즈 클래스 · 선생님 «학생 화면 미리 보기»(11-17 · ES5)
+/* 히즈클래스 · 선생님 «학생 화면 미리 보기»(11-17 · ES5)
    class.html 이 주소에 preview=<강의 id> 가 있을 때만 읽음(그 밖의 학생 화면은 이 파일을 아예 안 읽음).
    - 바깥(class.html?preview=<id>): 선생님 세션(@his.kr)을 확인한 뒤에만 위 띠 · 기기 틀(폰 · 태블릿 · PC)을 그리고,
      안쪽 학생 화면을 iframe 으로 띄움. 세션이 없거나 선생님이 아니면 preview 를 버리고 보통 학생 화면(로그인)으로.
@@ -196,7 +196,7 @@
     try { var sv = w.localStorage.getItem(DEV_KEY); if (sv && (sv === 'pc' || has(DEVS, sv))) cur = sv; } catch (e) { /* 없음 */ }
     css('pvs-css', SHELL_CSS);
     d.documentElement.className += ' pvs';
-    d.title = '학생 화면 미리 보기 · 히즈 클래스';
+    d.title = '학생 화면 미리 보기 · 히즈클래스';
     var band = d.createElement('div'), st = d.createElement('div');
     band.className = 'pvb';
     band.innerHTML = '<div class="pvt"><b>학생 화면 미리 보기</b><span class="pvs2" id="pvSub">기록은 남지 않아요</span><span class="pvc" id="pvChip" hidden></span></div>' +

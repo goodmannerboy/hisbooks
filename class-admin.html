@@ -7,7 +7,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#F4ECD7">
 <meta name="format-detection" content="telephone=no">
-<title>히즈 클래스 관리</title>
+<title>히즈클래스 관리</title>
 <link rel="icon" type="image/png" sizes="32x32" href="his-icon-32.png?v=4">
 <link rel="icon" href="favicon.ico?v=4">
 <link rel="apple-touch-icon" href="his-icon-180.png?v=4">
@@ -1357,7 +1357,7 @@ window.__lecAdminStart = function () {
 
   function headHtml() {
     var who = S.me.admin ? S.me.name + ' 원장님' : S.me.name + ' 선생님';
-    return '<header class="hd"><div class="brand"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈 클래스 관리</h1></div>' +
+    return '<header class="hd"><div class="brand"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈클래스 관리</h1></div>' +
       '<span class="sp"></span><div class="hda"><span class="who">' + esc(who) + '</span>' +
       '<button type="button" class="btn sm" data-act="copyAddr">학생용 주소 복사</button>' +
       '<button type="button" class="btn sm txt" data-act="logout">로그아웃(히즈북스도 함께)</button></div></header>' +
@@ -1464,7 +1464,7 @@ window.__lecAdminStart = function () {
   }
   function forgetAskHtml(skey, name) {
     var c = forgetCounts(skey);
-    return '<div class="ask" role="group" aria-label="기록 지우기 확인"><p>' + esc(name + ' 학생의 히즈 클래스 기록(진도 ' + c.n + '개 · 질문 ' + c.m + '개)을 모두 지웁니다. 되돌릴 수 없어요.') + '</p>' +
+    return '<div class="ask" role="group" aria-label="기록 지우기 확인"><p>' + esc(name + ' 학생의 히즈클래스 기록(진도 ' + c.n + '개 · 질문 ' + c.m + '개)을 모두 지웁니다. 되돌릴 수 없어요.') + '</p>' +
       '<div class="row"><button type="button" class="btn sm warn" data-act="forgetYes" data-s="' + esc(skey) + '">지우기</button>' +
       '<button type="button" class="btn sm txt" data-act="forgetNo">그만두기</button></div></div>';
   }
@@ -1833,13 +1833,13 @@ window.__lecAdminStart = function () {
      주소와 공개 끝 날짜를 만드는 방식은 그대로 · 지문 번호 목록 줄은 뺌 · 학생 이름 없음 */
   function noticeText(l) {
     var d = L.fmtDay(dayOf(l)), head = (d ? d + ' ' : '') + '수업 영상(' + str(l.title) + ')', a, p = noticePaper(l), c;
-    if (isPosted(l)) a = head + '이 히즈 클래스에 올라왔어요. 복습할 때 보세요.';
-    else a = head + '은 ' + L.fmtDay(l.posted_on) + '부터 히즈 클래스에서 볼 수 있어요. 복습할 때 보세요.';
+    if (isPosted(l)) a = head + '이 히즈클래스에 올라왔어요. 복습할 때 보세요.';
+    else a = head + '은 ' + L.fmtDay(l.posted_on) + '부터 히즈클래스에서 볼 수 있어요. 복습할 때 보세요.';
     if (p) a += '\n' + p;
     if (lecFiles(l).length) a += '\n필기 PDF도 영상 화면 오른쪽 위에서 받을 수 있어요.';
-    c = '궁금한 곳은 히즈 클래스에서 질문으로 남겨 주세요.';
+    c = '궁금한 곳은 히즈클래스에서 질문으로 남겨 주세요.';
     if (l.until) c += ' ' + L.fmtMD(l.until) + '까지 볼 수 있어요.';
-    return a + '\n' + c + '\n히즈 클래스 주소 ' + STU_URL + '\n홈 화면에 히즈 클래스를 추가했다면 이 링크 말고 아이콘으로 여세요.';   /* 설치 안내 결론안(11-16): 끝 한 줄 · 주소는 그대로(?i=1 안 붙임) */
+    return a + '\n' + c + '\n히즈클래스 주소 ' + STU_URL + '\n홈 화면에 히즈클래스를 추가했다면 이 링크 말고 아이콘으로 여세요.';   /* 설치 안내 결론안(11-16): 끝 한 줄 · 주소는 그대로(?i=1 안 붙임) */
   }
   /* 둘째 줄: 워크북이 있는 지문이 없으면 «판서를 펴 두고 보세요.» · 번호가 다 같으면 «워크북 번호는 지문과 같아요.»
      · 다른 곳만 «워크북 번호가 다른 곳: 05번은 워크북 5~6번 · …»(빈 워크북은 적지 않음) */
@@ -3122,7 +3122,7 @@ window.__lecAdminStart = function () {
   /* 흰 여백 4칸 포함 · 칸이 흐려지지 않게 crispEdges */
   function insQrSvg(color) {
     var W = INS_N + 8;
-    return '<svg viewBox="-4 -4 ' + W + ' ' + W + '" shape-rendering="crispEdges" role="img" aria-label="QR: 히즈 클래스 주소" focusable="false">' +
+    return '<svg viewBox="-4 -4 ' + W + ' ' + W + '" shape-rendering="crispEdges" role="img" aria-label="QR: 히즈클래스 주소" focusable="false">' +
       '<rect x="-4" y="-4" width="' + W + '" height="' + W + '" fill="#ffffff"/><path d="' + insQrPath() + '" fill="' + color + '"/></svg>';
   }
   function insRowHtml() {
@@ -3165,7 +3165,7 @@ window.__lecAdminStart = function () {
     o.tabIndex = -1;
     o.innerHTML = '<div class="tvin"><div class="tvq">' + insQrSvg('#0C4631') + '</div>' +
       '<div class="tvt"><p class="tvh">카메라 앱으로 찍고,<br>폰 화면 안내대로</p>' +
-      '<p class="tvm">' + insIcon('camera') + '<span>히즈 클래스 · 홈 화면에 앱으로 추가</span></p></div></div>' +
+      '<p class="tvm">' + insIcon('camera') + '<span>히즈클래스 · 홈 화면에 앱으로 추가</span></p></div></div>' +
       '<button type="button" class="btn txt tvx" data-act="insTvX">닫기</button>';
     document.body.appendChild(o);
     ins.tv = o; ins.fs = false; ins.from = btn || null;
@@ -3253,7 +3253,7 @@ window.__lecAdminStart = function () {
     }
     c.fillStyle = '#F4ECD7'; c.fillRect(0, 0, W, H);
     c.textBaseline = 'middle';
-    c.fillStyle = ink; font(26, true); c.fillText('히즈 클래스를 홈 화면에', P, P + 17);
+    c.fillStyle = ink; font(26, true); c.fillText('히즈클래스를 홈 화면에', P, P + 17);
     c.fillStyle = sub; font(15, false); c.fillText('자녀 폰에서, 자녀 이름과 등원 번호로 · 반 카톡 링크를 누른 뒤', P, P + 34 + 8 + 11);
     var top = P + 34 + 8 + 22 + 22, ci, col, x0, y, j, fl, q, it, ix, iy;
     for (ci = 0; ci < 2; ci += 1) {
@@ -3317,7 +3317,7 @@ window.__lecAdminStart = function () {
   function insPrint() {
     var d = document, p = $('insp'), st = $('insps');
     if (!p) { p = d.createElement('div'); p.id = 'insp'; p.className = 'insp'; d.body.appendChild(p); }
-    p.innerHTML = '<div class="iph">히즈 클래스 · 홈 화면에 앱으로</div>' +
+    p.innerHTML = '<div class="iph">히즈클래스 · 홈 화면에 앱으로</div>' +
       '<div class="ipq">' + insQrSvg('#000000') + '<div class="ipqt">카메라 앱으로 찍고,<br>폰 화면 안내대로</div></div>' +
       '<div class="ipl">아이폰: ⋯ → 공유 → 홈 화면에 추가 → 추가</div>' +
       '<div class="ipl">갤럭시: 설치하기 → 설치 · 없으면 화면 안내대로</div>';
@@ -3481,7 +3481,7 @@ window.__lecAdminStart = function () {
 
   /* ----------------------------------------------------------- 로그인(진짜) */
   function loginShell(inner) {
-    return '<main class="login"><div class="card lg"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈 클래스 관리</h1>' + inner + '</div></main>';
+    return '<main class="login"><div class="card lg"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈클래스 관리</h1>' + inner + '</div></main>';
   }
   function showLogin(msg) {
     app.innerHTML = loginShell('<form id="lg-form" novalidate><label for="lg-id">아이디</label>' +
@@ -3525,7 +3525,7 @@ window.__lecAdminStart = function () {
       if (!ta) { for (i = 0; i < rows.length; i += 1) { if (rows[i].id === 'main' && rows[i].ta) ta = rows[i].ta; } }
       id = identityForUser(user, { teacherAccounts: ta || {} });
       if (id.user === '__no_access__') {
-        app.innerHTML = loginShell('<p>이 계정은 히즈 클래스를 관리할 수 없어요</p><button type="button" class="btn strong wide" data-act="logout">다른 아이디로 로그인</button>');
+        app.innerHTML = loginShell('<p>이 계정은 히즈클래스를 관리할 수 없어요</p><button type="button" class="btn strong wide" data-act="logout">다른 아이디로 로그인</button>');
         return;
       }
       S.me = id.user === '관리자' ? { name: id.display, admin: true } : { name: id.user, admin: false };
@@ -3851,7 +3851,7 @@ window.__lecAdminStart = function () {
     ev.preventDefault();
     edFiles(ev.dataTransfer.files);
   });
-  /* K: 서랍 안 글 칸 밖에서 붙여 넣어도 실행기 txt 면 읽음(머리줄 [제목] · [히즈 클래스] · [히즈 온라인] · [온라인 클래스] · [설명]) */
+  /* K: 서랍 안 글 칸 밖에서 붙여 넣어도 실행기 txt 면 읽음(머리줄 [제목] · [히즈클래스] · [히즈 클래스] · [히즈 온라인] · [온라인 클래스] · [설명] · 띄어쓰기 상관없음) */
   document.addEventListener('paste', function (ev) {
     var t = ev.target, d = ev.clipboardData, v;
     if (!S.ed || !S.ed.can || !inEd(t) || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || !d) return;
