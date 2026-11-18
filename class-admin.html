@@ -1140,6 +1140,32 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .15s}
 .k2 .sw.on{background:var(--acc);box-shadow:none}
 .k2 .sw.on::after{transform:translateX(16px)}
+/* 8-4 시청 현황(목업 s-watch): 칸 = 바탕 없이 점 · 고리 + 글 · 학생 = 머리 동그라미 + 이름 · 꼬리표 · 학생 찾기 칸 */
+.k2 .stbar .stqw{position:relative;display:block;margin-left:auto}
+.k2 .stbar .stqi{position:absolute;left:10px;top:50%;width:16px;height:16px;margin-top:-8px;fill:none;stroke:var(--t3);stroke-width:2;stroke-linecap:round;pointer-events:none}
+.k2 .stbar .stq{width:200px;height:34px;padding:0 12px 0 32px;border:0;border-radius:9px;background:var(--fill2);font:inherit;font-size:13px;color:var(--t1)}
+.k2 .stbar .stq::placeholder{color:var(--t3);opacity:1}
+.k2 .stbar .stq:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.k2 .stbar .stqw+.mxm{margin-left:0}
+@media (max-width:760px){.k2 .stbar .stqw{width:100%;margin-left:0}.k2 .stbar .stq{width:100%;height:44px}}
+.k2 .mt .nmw{display:flex;align-items:center;gap:10px}
+.k2 .mt .nmw .av{width:28px;height:28px}
+.k2 .mt .av[data-i]::before{content:attr(data-i)}
+.k2 .mt .nmt{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.k2 .mt .nmt .tag{margin:1px 0 0;padding:0;border:0;background:transparent;box-shadow:none;color:var(--t2);font-size:12px;line-height:16px;font-weight:400}
+.k2 .mt .nmt .tag.t-coral{color:#9A3F33}
+.k2 .stc .stq0{margin:12px 0 0;font-size:13px;line-height:18px;color:var(--t2)}
+.k2 button.cell{flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;border:1px solid transparent;background:transparent;font-weight:400}
+.k2 button.cell:hover{border-color:transparent;background:var(--fill2)}
+.k2 button.cell .rg{flex:none;width:18px;height:18px}
+.k2 button.cell.c-abs,.k2 button.cell.c-part,.k2 button.cell.c-zero{color:var(--org)}
+.k2 button.cell.c-abs>span,.k2 button.cell.c-part>span{font-weight:600}
+.k2 button.cell.c-abs:has(>svg.rg>path){color:#5F6256}
+.k2 button.cell.c-abs:has(>svg.rg>path)>span{font-weight:400}
+.k2 button.cell.c-done,.k2 button.cell.c-conf{color:#1E5A3E}
+.k2 button.cell.c-none,.k2 button.cell.c-pend,.k2 button.cell.c-in{color:#5F6256}
+.k2 .legend>span{display:inline-flex;align-items:center;gap:6px}
+.k2 .legend .rg{width:16px;height:16px;flex:none}
 /* 8 오늘(노트 0-3 · ① 2): 카드 머리 셋 = 큰 수 · 질문별 줄 · 덜 본 학생 줄(이름 먼저 · 강의별 작은 링) · 셋 + «N개 더» · 확인할 것 · 이번 주 강의 */
 .k2 .todo .ti.hd.bandn{margin:0;font-size:15px}
 .k2 .todo .ti.hd.trh .tic,.k2 .todo .ti.hd.trh .tx{color:var(--acc)}
@@ -1770,6 +1796,27 @@ window.__lecAdminStart = function () {
     return raw < DONE;
   }
   /* 칸 하나: 출결이 있으면 «교실» / «결석 · 47% · 11.14» / «결석 · 완료 · 11.07» · 모르면 지금 모양 */
+  /* 2차(8): 칸 안 점 · 고리(목업 s-watch · 모양으로도 구별 · 글은 그대로) */
+  function cellGlyph(c, st) {
+    if (c === 'in') return ring(0, 'class');
+    if (c === 'done') return ring(1, 'done');
+    if (c === 'conf') return ring(1, 'conf');
+    if (c === 'none') return ring(0, 'none');
+    if (c === 'pend' || (st && st.k === 'pend')) return ring(0, 'consent');
+    return ring(st ? (st.pct || 0) / 100 : 0, '');
+  }
+  /* 2차(8): 학생 찾기 = 이름에 든 글자로 줄만 감춤(다시 그린 뒤에도 · 표 머리 · 아래 줄은 그대로) */
+  function stuFilter() {
+    var m = $('main'), q = trim(str(S.inputs.stuq)), rs, i, n = 0, z;
+    if (!m) return;
+    rs = m.querySelectorAll('table.mt tbody tr[data-nm]');
+    for (i = 0; i < rs.length; i += 1) {
+      rs[i].hidden = !!q && rs[i].getAttribute('data-nm').indexOf(q) < 0;
+      if (!rs[i].hidden) n += 1;
+    }
+    z = m.querySelector('.stc .stq0');
+    if (z) z.hidden = !(q && !n);
+  }
   function cellOf(l, skey, s) {
     var x = attOf(l.id, skey), p = s.p, head, sub = [], when = '';
     if (!x) return { cls: s.k, inner: cellInner(s), text: statText(s) };
@@ -1949,7 +1996,7 @@ window.__lecAdminStart = function () {
     var tb = curTab();
     paint(app, '<div class="wrap k2"><div class="frame">' + sideHtml() + '<div class="mainw">' + demoHtml() + '<main id="main">' + pageHead(tb) +
       (tb === 'stat' ? statHtml() : (tb === 'qna' ? qnaHtml() : (tb === 'set' ? setHtml() : (tb === 'today' ? todayHtml() : lecHtml())))) + '</main></div></div></div>');
-    if (tb === 'stat') mxFit();
+    if (tb === 'stat') { stuFilter(); mxFit(); }
     if (S.qFocus && S.tab === 'qna') {
       var a = app.querySelectorAll('[data-th]'), i;
       for (i = 0; i < a.length; i += 1) {
@@ -2421,7 +2468,9 @@ window.__lecAdminStart = function () {
         esc(c.name) + ' <span class="cnt">' + stuIn(c.id).length + '명</span></button>';
     }
     /* 2차(⑤): 표가 오른쪽으로 넘치면 «N개 더 ›»(누르면 오른쪽으로 · 개수는 그린 뒤 mxFit 이 잼) */
-    h += '</div><button type="button" class="btn sm mxm" data-act="mxMore" hidden>더 보기</button></div>';
+    h += '</div><span class="stqw"><svg class="stqi" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>' +
+      '<input type="search" class="stq" data-k="stuq" placeholder="학생 찾기" aria-label="학생 찾기" autocomplete="off" spellcheck="false"></span>' +
+      '<button type="button" class="btn sm mxm" data-act="mxMore" hidden>더 보기</button></div>';   /* 2차(8): 학생 찾기 칸(목업 s-watch · 이 화면 안에서만 거름) */
     rows = stuIn(cid);
     cols = colsFor(cid);
     if (!rows.length) return h + '<p class="empty">이 반에 학생이 없어요.</p></section>';
@@ -2436,20 +2485,22 @@ window.__lecAdminStart = function () {
     h += '</tr></thead><tbody>';
     for (i = 0; i < rows.length; i += 1) {
       r = rows[i];
-      h += '<tr><th class="nm" scope="row"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + '</th>';
+      h += '<tr data-nm="' + esc(r.sname || '') + '"><th class="nm" scope="row"><span class="nmw"><span class="av" data-i="' + esc((r.sname || '학생').charAt(0)) + '" aria-hidden="true"></span>' +
+        '<span class="nmt"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + '</span></span></th>';
       for (j = 0; j < cols.length; j += 1) {
-        l = cols[j]; s = cellOf(l, r.skey, stat(l, r.skey));
+        l = cols[j]; n = stat(l, r.skey); s = cellOf(l, r.skey, n);
         h += '<td><button type="button" class="cell c-' + s.cls + '" data-act="cellOpen" data-s="' + esc(r.skey) + '" data-l="' + esc(l.id) + '" aria-label="' +
-          esc(r.sname + ' · ' + l.title + ' · ' + s.text) + '">' + s.inner + '</button></td>';
+          esc(r.sname + ' · ' + l.title + ' · ' + s.text) + '">' + cellGlyph(s.cls, n) + s.inner + '</button></td>';
       }
       h += '</tr>';
     }
     h += '</tbody><tfoot><tr><th class="nm" scope="row">완료</th>';
     for (j = 0; j < cols.length; j += 1) h += '<td>' + complCell(complRows(cols[j], rows)) + '</td>';
     h += '</tr></tfoot></table></div></div>';
-    h += '<p class="legend"><span><i class="c-done"></i>90% 넘게 봄(완료)</span><span><i class="c-conf"></i>선생님 확인 완료</span>' +
-      '<span><i class="c-part"></i>보는 중</span><span><i class="c-zero"></i>0%</span><span><i class="c-none"></i>기록 안 함 · 동의 전</span>' +
-      (D.att ? '<span><i class="c-in"></i>교실(그날 출석)</span><span><i class="c-abs"></i>결석한 날 · 덜 봄</span>' : '') +
+    h += '<p class="stq0" role="status" hidden>찾는 학생이 없어요</p>';   /* 2차(8): 학생 찾기에 맞는 학생이 없을 때(표 줄 수 = 학생 수 그대로) */
+    h += '<p class="legend"><span>' + ring(1, 'done') + '90% 넘게 봄(완료)</span><span>' + ring(1, 'conf') + '선생님 확인 완료</span>' +
+      '<span>' + ring(0.4, '') + '보는 중</span><span>' + ring(0, '') + '0%</span><span>' + ring(0, 'none') + ring(0, 'consent') + '기록 안 함 · 동의 전</span>' +
+      (D.att ? '<span>' + ring(0, 'class') + '교실(그날 출석)</span><span>' + ring(0.25, '') + '결석한 날 · 덜 봄</span>' : '') +
       '<span>학생 이름이나 칸을 누르면 자세히 볼 수 있어요</span></p>';
     return h + '</section>';
   }
@@ -6016,6 +6067,7 @@ window.__lecAdminStart = function () {
   function onInput(ev) {
     var t = ev.target, k = t && t.getAttribute ? t.getAttribute('data-k') : null;
     if (k) S.inputs[k] = t.value;
+    if (k === 'stuq') { stuFilter(); return; }
     /* S1 세트: 붙여 넣은 글이 바뀌면 종류 · 경고 · 미리 보기를 곧바로(새 세트는 고른 종류 · ★ 도 처음부터) */
     if (t && t.id === 'sd-txt' && S.sd && S.sd.t === 'put') {
       if (!S.sd.id) { S.sd.forced = ''; S.sd.pick = null; }
