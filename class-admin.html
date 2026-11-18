@@ -1166,6 +1166,36 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 button.cell.c-none,.k2 button.cell.c-pend,.k2 button.cell.c-in{color:#5F6256}
 .k2 .legend>span{display:inline-flex;align-items:center;gap:6px}
 .k2 .legend .rg{width:16px;height:16px;flex:none}
+/* 8-5 세트 결과(목업 s-sets): 큰 수 띠 · 학생 머리 동그라미 + 이름 · 꼬리표 두 줄 · 자주 틀린 문제 = 작은 제목 + 크림 묶음 줄 */
+.k2 .sx-sum{margin:16px 0 6px;padding:12px 16px;border-radius:12px;background:var(--group)}
+.k2 .sx-sum .s3w{display:flex;flex-wrap:wrap;align-items:center;gap:8px 32px}
+.k2 .sx-sum .s3{display:flex;align-items:center;gap:10px}
+.k2 .sx-sum .s3 b{font-weight:700;font-size:22px;line-height:28px;font-variant-numeric:tabular-nums;color:var(--t1)}
+.k2 .sx-sum .s3 b.o{color:var(--org)}
+.k2 .sx-sum .s3 b.g{color:var(--acc)}
+.k2 .sx-sum .s3t{display:flex;flex-direction:column}
+.k2 .sx-sum .s3t b{line-height:26px}
+.k2 .sx-sum .s3l{font-size:13px;line-height:18px;color:var(--t2)}
+.k2 .sx-sum .rg{flex:none;width:24px;height:24px}
+.k2 .sxt .nmw{display:flex;align-items:center;gap:10px;min-width:0}
+.k2 .sxt .av[data-i]::before{content:attr(data-i)}
+.k2 .sxt .nmt{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.k2 .sxt .nm b{font-weight:600}
+.k2 .sxt .nm .nmt .tag{margin:1px 0 0;padding:0;border:0;background:transparent;box-shadow:none;color:var(--t3);font-size:12px;line-height:16px;font-weight:400}
+.k2 .sxt .nm .nmt .tag.t-coral{color:#9A3F33}
+.k2 .sxt tbody td{height:52px}
+@media (max-width:760px){
+  .k2 .sxt td.nm:before{display:none}
+  .k2 .sxt tbody td{height:auto}
+  .k2 .sxt td.nm{padding:2px 0 6px}
+}
+.k2 .sx-of{margin:20px 0 0;color:var(--t1)}
+.k2 .sx-of .sx-oh{margin:0 0 8px;font-size:13px;line-height:18px;font-weight:600;color:var(--t1)}
+.k2 .sx-of .sx-ol{margin:0;padding:0;list-style:none;border-radius:12px;background:var(--group)}
+.k2 .sx-of .sx-p{position:relative;display:flex;align-items:baseline;gap:12px;margin:0;padding:10px 14px;border-radius:0;background:transparent;box-shadow:none;white-space:normal;font-size:14px;line-height:20px;font-weight:400;color:var(--t1)}
+.k2 .sx-of .sx-p+.sx-p::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
+.k2 .sx-of .sx-ow{flex:1;min-width:0;overflow-wrap:anywhere}
+.k2 .sx-of .sx-on{flex:none;font-size:13px;line-height:18px;font-weight:600;color:var(--org)}
 /* 8 오늘(노트 0-3 · ① 2): 카드 머리 셋 = 큰 수 · 질문별 줄 · 덜 본 학생 줄(이름 먼저 · 강의별 작은 링) · 셋 + «N개 더» · 확인할 것 · 이번 주 강의 */
 .k2 .todo .ti.hd.bandn{margin:0;font-size:15px}
 .k2 .todo .ti.hd.trh .tic,.k2 .todo .ti.hd.trh .tx{color:var(--acc)}
@@ -4558,7 +4588,7 @@ window.__lecAdminStart = function () {
     rows = sxRows(it, st);
     n = +(st.set && st.set.n) || +it.n || 0;
     pk = sxPk(it, st);
-    h += '<p class="sx-sum">' + esc(sxSumText(k, rows, pk)) + '</p>';
+    h += sxSumHtml(k, rows, pk);   /* 2차(8): 결과 위 큰 수 띠(목업 s-sets) */
     /* 구문 네 칸(S1-b · «녹음 동의» 칸 뺌): 문법 표와 같은 나눔(학생 22 · 가운데 넓은 칸 43 · 마지막 20) */
     cols = k === 'voc' ? [['학생', '22%'], ['외움', '13%'], ['시험', '34%'], ['쌓인 오답', '13%'], ['마지막', '18%']]
       : (k === 'gu' ? [['학생', '22%'], ['따라 말하기', '15%'], ['녹음 ★' + pk.length, '43%'], ['마지막', '20%']]
@@ -4577,9 +4607,11 @@ window.__lecAdminStart = function () {
     /* 단어 또는 문제 앞 40자(서버가 자름 → 끝에 …) · 하나씩 알약(문제 안의 « / »와 섞이지 않게) */
     for (i = 0; i < a.length; i += 1) {
       d = trim(a[i] && a[i].w);
-      if (d) often.push(sxPill('no', d + (k === 'gram' && d.length >= 40 ? '…' : '')));
+      if (d) often.push('<li class="sx-p no"><span class="sx-ow">' + esc(d + (k === 'gram' && d.length >= 40 ? '…' : '')) + '</span>' +
+        (+a[i].n > 0 ? '<span class="sx-on">' + esc(String(+a[i].n)) + '명</span>' : '') + '</li>');
     }
-    if (often.length) h += '<p class="sx-ft">' + (k === 'voc' ? '자주 틀린 단어' : '자주 틀린 문제') + ' ' + often.join('') + '</p>';
+    /* 2차(8): 자주 틀린 문제 = 작은 제목 + 크림 묶음 줄(목업 s-sets) · 줄 끝 = 틀린 학생 수(서버 n) */
+    if (often.length) h += '<div class="sx-ft sx-of"><h3 class="sx-oh">' + (k === 'voc' ? '자주 틀린 단어' : '자주 틀린 문제') + '</h3><ul class="sx-ol">' + often.join('') + '</ul></div>';
     return h;
   }
   /* 표 줄: 지금 반 학생(명단) 모두 + 반 밖으로 옮긴 학생의 기록 줄 · 덜 한 학생이 위 */
@@ -4610,26 +4642,40 @@ window.__lecAdminStart = function () {
     return +d.tn ? 10000 + (+d.best || 0) : 0;
   }
   function sxPk(it, st) { return st && st.set && isArr(st.set.pick) ? st.set.pick : (isArr(it.pick) ? it.pick : []); }
-  function sxSumText(k, rows, pk) {
-    var T = 0, did = 0, pass = 0, sent = 0, nw = 0, i, j, d, a, u;
+  function sxSumN(k, rows, pk) {
+    var o = { T: 0, did: 0, pass: 0, sent: 0, nw: 0 }, i, j, d, a, u;
     for (i = 0; i < rows.length; i += 1) {
       if (!rows[i].mine) continue;
-      T += 1;
+      o.T += 1;
       d = rows[i].x ? rows[i].x[k] : null;
       if (!d) continue;
-      did += 1;
-      if (k !== 'gu') { if (d.test === 'pass') pass += 1; continue; }
-      if (isArr(d.recs) && d.recs.length) sent += 1;
+      o.did += 1;
+      if (k !== 'gu') { if (d.test === 'pass') o.pass += 1; continue; }
+      if (isArr(d.recs) && d.recs.length) o.sent += 1;
       u = false;
       for (j = 0; j < pk.length; j += 1) { a = sxRecOf(d, pk[j]); if (sxLive(a) && !a.mark) u = true; }
-      if (u) nw += 1;
+      if (u) o.nw += 1;
     }
-    if (k === 'gu') return '낸 학생 ' + sent + ' / ' + T + (nw ? ' · 새 녹음 ' + nw + '명' : '');
-    return '통과 ' + pass + ' / ' + T + ' · 아직 ' + (did - pass) + ' · 안 함 ' + (T - did);
+    return o;
+  }
+  function sxSumText(k, rows, pk) {
+    var o = sxSumN(k, rows, pk);
+    if (k === 'gu') return '낸 학생 ' + o.sent + ' / ' + o.T + (o.nw ? ' · 새 녹음 ' + o.nw + '명' : '');
+    return '통과 ' + o.pass + ' / ' + o.T + ' · 아직 ' + (o.did - o.pass) + ' · 안 함 ' + (o.T - o.did);
+  }
+  /* 2차(8): 큰 수 띠 = 고리 + «통과 p/T»(구문 «낸 학생») · 아직 · 안 함(구문 = 새 녹음) · 0 이 아니면 색 · 화면 읽기는 글 한 줄(그대로) */
+  function sxSumHtml(k, rows, pk) {
+    var o = sxSumN(k, rows, pk), a = k === 'gu' ? o.sent : o.pass, h;
+    function n3(v, lb, c) { return '<span class="s3"><b' + (v ? ' class="' + c + '"' : '') + '>' + esc(String(v)) + '</b><span class="s3l">' + esc(lb) + '</span></span>'; }
+    h = '<div class="sx-sum"><span class="s3w" aria-hidden="true"><span class="s3">' + ring(o.T ? a / o.T : 0, o.T && a >= o.T ? 'done' : '') +
+      '<span class="s3t"><b>' + esc(a + '/' + o.T) + '</b><span class="s3l">' + (k === 'gu' ? '낸 학생' : '통과') + '</span></span></span>';
+    h += k === 'gu' ? n3(o.nw, '새 녹음', 'g') : n3(o.did - o.pass, '아직', 'o') + n3(o.T - o.did, '안 함', 'o');
+    return h + '</span><span class="sr">' + esc(sxSumText(k, rows, pk)) + '</span></div>';
   }
   function sxTr(k, w, n, pk) {
     var d = w.x ? w.x[k] : null, h;
-    h = '<tr><td data-l="학생" class="nm"><b>' + esc(w.name) + '</b>' + (!w.mine ? '<span class="tag t-line">지금 반 밖</span>' : (w.r ? stuTags(w.r) : '')) + '</td>';
+    h = '<tr><td data-l="학생" class="nm"><span class="nmw"><span class="av" data-i="' + esc((w.name || '학생').charAt(0)) + '" aria-hidden="true"></span><span class="nmt"><b>' + esc(w.name) + '</b>' +
+      (!w.mine ? '<span class="tag t-line">지금 반 밖</span>' : (w.r ? stuTags(w.r) : '')) + '</span></span></td>';   /* 2차(8): 학생 머리 동그라미(목업 s-sets) */
     if (k === 'voc') {
       h += '<td data-l="외움" class="num">' + (d ? esc((+d.known || 0) + ' / ' + n) : '–') + '</td><td data-l="시험">' + sxTest(k, d) + '</td>' +
         '<td data-l="쌓인 오답" class="num">' + (d ? esc(String(+d.due || 0)) : '–') + '</td>';
