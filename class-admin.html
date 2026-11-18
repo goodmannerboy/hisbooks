@@ -732,6 +732,14 @@ a{color:var(--acc)}
 .k2 .side.hd{display:block;padding:0;margin:0;background:var(--side);border-right:1px solid var(--sep)}
 .side-in{position:sticky;top:0;display:flex;flex-direction:column;min-height:100vh;max-height:100vh;overflow-y:auto;padding:14px 10px 0}
 .k2 .brand{display:flex;align-items:center;gap:8px;margin:0;padding:4px 8px 14px;text-align:left}
+/* «‹ 히즈어학원» 돌아가는 길(11-18): 사이드바 맨 위(로고 위) · 로그인 화면 왼쪽 위 · 꺾쇠 왼쪽 끝 = 물고기 로고 왼쪽 끝 · 바탕 · 테 · 밑줄 없음 */
+.hc-back{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;flex:none;height:36px;margin:0;padding:0 8px;border-radius:8px;color:#0C4631;font-size:14px;line-height:20px;font-weight:400;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.hc-back svg{display:block;width:8px;height:14px;flex:none}
+@media (hover:hover){.hc-back:hover{background:var(--fill2);color:#0C4631}}
+.hc-back:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+html.hc-going .hc-back{opacity:.5;pointer-events:none}
+.login.hb{position:relative;padding-top:52px}
+.login .hc-back{position:absolute;top:14px;left:10px}
 .k2 .brand .logo{width:40px;height:20px}
 .k2 .brand .wm{display:block;width:100px;height:auto;flex:none;color:var(--acc)}
 .brand-sub{font-size:13px;line-height:18px;font-weight:600;color:var(--t2)}
@@ -787,6 +795,11 @@ a{color:var(--acc)}
   .k2 .side.hd{border-right:0;border-bottom:1px solid var(--sep)}
   .side-in{position:static;min-height:0;max-height:none;overflow:visible;padding:10px 12px 6px}
   .k2 .brand{padding:4px 4px 8px}
+  .hc-back{position:relative;z-index:1;height:44px;padding:0 8px 0 4px;font-size:15px}
+  .side-in.hb{padding-top:0}
+  .k2 .side-in.hb .brand{padding-top:0;margin-top:-8px}
+  .login.hb{padding-top:44px}
+  .login .hc-back{position:absolute;top:0;left:12px}
   .k2 .side .tabs{flex-direction:row;flex-wrap:wrap;gap:4px}
   .k2 .side .ni{width:auto}
   .k2 .side .ni-t{flex:none}
@@ -1318,6 +1331,61 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 <div id="sd" class="dw k2" role="dialog" aria-modal="true" aria-labelledby="sd-t" tabindex="-1" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:24px">자바스크립트를 켜야 쓸 수 있어요.</p></noscript>
+<script>
+/* «‹ 히즈어학원» 돌아가는 길(11-18): 어디서 왔는지 = ?w=1 같은 창 · ?w=t 새 탭 · 없으면 이 기록(history.state.hcVia) · 그다음 적어 둔 값 · 그것도 없으면 바로 연 것
+   주소에서 w 만 지우고 그 기록에 hcVia 를 얹음(다른 state 는 그대로 · «앞으로»로 다시 와도 되살아남) · 링크 글은 window.__hcBackHtml() · 누르면 한 번만(흐리게 · pageshow 로 되돌림) */
+(function () {
+  'use strict';
+  var K = '__hc_via', via = '', busy = false, tm = 0, m, rest;
+  function ssGet() { try { return sessionStorage.getItem(K) || ''; } catch (e) { return ''; } }
+  function ssSet(v) { try { sessionStorage.setItem(K, v); } catch (e) { /* 없음 */ } }
+  function stGet() { var s = null; try { s = history.state; } catch (e) { s = null; } return (s && typeof s === 'object' && (s.hcVia === 'same' || s.hcVia === 'tab')) ? s.hcVia : ''; }
+  function stWith(v) {
+    var o = {}, s = null, k;
+    try { s = history.state; } catch (e) { s = null; }
+    if (s && typeof s === 'object') { for (k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) o[k] = s[k]; } }
+    o.hcVia = v;
+    return o;
+  }
+  m = /[?&]w=(1|t)(?:&|$)/.exec(location.search);
+  if (m) {
+    via = m[1] === '1' ? 'same' : 'tab';
+    ssSet(via);
+    rest = location.search.replace(/^\?/, '').split('&').filter(function (x) { return x && !/^w=/.test(x); }).join('&');
+    try { history.replaceState(stWith(via), '', location.pathname + (rest ? '?' + rest : '') + location.hash); } catch (e) { /* 없음 */ }
+  } else via = stGet() || ssGet();
+  if (via !== 'same' && via !== 'tab') via = 'direct';
+  function mm(q) { try { return !!(window.matchMedia && window.matchMedia(q).matches); } catch (e) { return false; } }
+  function pcLike() { return mm('(hover: hover) and (pointer: fine)') && !(navigator.standalone === true || mm('(display-mode: standalone)')); }
+  var SVG = '<svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true" focusable="false"><path d="M7 1 1 7l6 6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  window.__hcBackHtml = function () {
+    if (via === 'tab' && !pcLike()) return '';
+    return '<a class="hc-back" href="./" title="히즈어학원으로 돌아가기" aria-label="히즈어학원으로 돌아가기" data-hc-back="1">' + SVG + '<span>히즈어학원</span></a>';
+  };
+  function dim(on) { var c = document.documentElement.classList; if (on) c.add('hc-going'); else c.remove('hc-going'); }
+  function home() { tm = 0; try { location.href = './'; } catch (e) { /* 없음 */ } }
+  function go() {
+    if (busy) return;
+    busy = true;
+    dim(true);
+    if (via === 'same' && history.length > 1) { history.back(); return; }
+    if (via === 'tab') { try { window.close(); } catch (e) { /* 없음 */ } tm = setTimeout(home, 250); return; }
+    home();
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target, a = null;
+    while (t && t.nodeType === 1) { if (t.hasAttribute('data-hc-back')) { a = t; break; } t = t.parentNode; }
+    if (!a) return;
+    if (busy) { e.preventDefault(); e.stopPropagation(); return; }
+    if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    go();
+  }, true);
+  window.addEventListener('pagehide', function () { if (tm) { clearTimeout(tm); tm = 0; } });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) { busy = false; dim(false); if (tm) { clearTimeout(tm); tm = 0; } } });
+})();
+</script>
 <script>
 (function () {
   'use strict';
@@ -2112,7 +2180,8 @@ window.__lecAdminStart = function () {
       return '<button type="button" class="tab ni' + (on ? ' on' : '') + '"' + (on ? ' aria-current="page"' : '') + ' data-act="tab" data-v="' + k + '">' + nIcon(ic) +
         '<span class="ni-t' + (n != null ? ' j' : '') + '">' + label + (n != null ? ' <span class="bdg' + (warn ? ' warn' : '') + '">' + n + '</span>' : '') + '</span></button>';
     }
-    return '<header class="hd side" aria-label="히즈클래스 관리 메뉴"><div class="side-in">' +
+    var hb = window.__hcBackHtml ? window.__hcBackHtml() : '';
+    return '<header class="hd side" aria-label="히즈클래스 관리 메뉴"><div class="side-in' + (hb ? ' hb' : '') + '">' + hb +
       '<p class="brand"><img class="logo" src="his_fish_green.png" alt="히즈어학원" width="40" height="20"><span class="sr">히즈클래스 관리</span>' + WM_SVG +
       '<span class="brand-sub" aria-hidden="true">관리</span></p>' +
       '<nav class="tabs" aria-label="화면">' + t('today', 'today', '오늘') + t('lec', 'lecture', '강의') + t('stat', 'watch', '시청 현황') + t('qna', 'qna', '질문', wn, wn > 0) +
@@ -2120,7 +2189,7 @@ window.__lecAdminStart = function () {
       '<p class="side-sec">학생 앱</p><button type="button" class="ni" data-act="copyAddr">' + nIcon('link') + '<span class="ni-t">학생용 주소 복사</span></button>' +
       (S.addrShow ? '<div class="addr side-url"><label for="addr-in">학생용 주소</label><input id="addr-in" type="text" readonly value="' + esc(STU_URL) + '"></div>' : '') +
       '<div class="who"><span class="av" aria-hidden="true">' + esc(who.charAt(0)) + '</span><span class="who-b"><span class="who-n">' + esc(who) + '</span>' +
-      '<button type="button" class="who-out" data-act="logout">로그아웃 · 히즈북스도 함께</button></span></div></div></header>';
+      '<button type="button" class="who-out" data-act="logout">로그아웃 · 히즈어학원 앱도 함께</button></span></div></div></header>';
   }
   /* 쪽 머리(2차): 큰 제목 28/700 + 옅은 수 · 오른쪽 도구 줄(다시 불러오기 · 쪽마다 주요 단추) */
   function pageHead(tb) {
@@ -6303,7 +6372,8 @@ window.__lecAdminStart = function () {
 
   /* ----------------------------------------------------------- 로그인(진짜) */
   function loginShell(inner) {
-    return '<main class="login"><div class="card lg"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈클래스 관리</h1>' + inner + '</div></main>';
+    var hb = window.__hcBackHtml ? window.__hcBackHtml() : '';
+    return '<main class="login' + (hb ? ' hb' : '') + '">' + hb + '<div class="card lg"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈클래스 관리</h1>' + inner + '</div></main>';
   }
   function showLogin(msg) {
     app.innerHTML = loginShell('<form id="lg-form" novalidate><label for="lg-id">아이디</label>' +
