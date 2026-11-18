@@ -846,6 +846,9 @@ html.hc-going .hc-back{opacity:.5;pointer-events:none}
 .thm-p{position:absolute;right:7px;top:12px;width:18px;height:26px;border-radius:1.5px;background-color:#FFFFFF;
   background-image:linear-gradient(rgba(11,61,46,.30),rgba(11,61,46,.30)),linear-gradient(rgba(11,61,46,.22),rgba(11,61,46,.22));
   background-size:10px 1.5px,7px 1.5px;background-position:4px 7px,4px 11px;background-repeat:no-repeat;box-shadow:0 .5px 1px rgba(70,52,12,.22),0 0 0 .5px rgba(70,52,12,.12)}
+/* 11-18 썸네일(원장님 «썸네일로 넣어»): 영상 그림을 크림 칸 위에 한 장(칸 크기 · 둥글기 그대로) · 그림 위 안쪽 선 1px .10 · 안 뜨면 그림만 빠져 크림 칸 그대로 */
+.thm-i{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
+.thm.has-i::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(70,52,12,.10);pointer-events:none}
 .k2 .lt td.ttl{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
 .k2 .lt .ttl-a{display:block;max-width:100%;padding:0;border:0;background:none;color:var(--t1);font-weight:600;font-size:15px;line-height:20px;text-decoration:none;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;cursor:pointer}
@@ -973,7 +976,12 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   body.ins-on .ia{display:none}
   .mainw:has(.ia){margin-right:var(--ins-w)}
 }
-.in-h{display:flex;align-items:flex-start;gap:12px;margin:0 0 14px}
+/* 1600 오른쪽 칸 머리(11-18 썸네일): 그림 320×180(칸 360 − 안쪽 20×2) · 둥글기 12 · 제목 · 교재는 그 아래 · 크림 칸도 같은 크기(이름표 22/700) */
+.in-h{display:block;margin:0 0 14px}
+.in-h>.thm{width:100%;height:auto;aspect-ratio:16/9;margin:0 0 12px;border-radius:12px}
+.in-h>.thm .thm-n{left:20px;top:40%;font-size:22px;line-height:28px;font-weight:700}
+.in-h>.thm .thm-p{right:6%;top:9%;width:28%;height:80%;border-radius:2px;background-size:50% 2px,34% 2px;background-position:16% 14%,16% 22%}
+.in-h .in-t{margin-top:0}
 .in-ht{flex:1 1 auto;min-width:0}
 .in-t{margin:2px 0 2px;font-weight:700;font-size:17px;line-height:22px;color:var(--t1);overflow-wrap:anywhere}
 .in-b{margin:0;font-size:13px;line-height:18px;color:var(--t2)}
@@ -2468,9 +2476,13 @@ window.__lecAdminStart = function () {
     if (m) { x = (m[1] + m[2]).replace(/\s+/g, '').replace(/[∼\-–]/g, '~'); return (x.length > 6 ? m[1] : x) + '번'; }
     return s.slice(0, 4) || '강의';
   }
-  /* 두 앱 한 부품: 크림 종이 + 왼쪽 짧은 이름표 + 오른쪽 흰 판서 종이(그림 · 바깥 요청 0) */
-  function thumbHtml(l) {
-    return '<span class="thm" aria-hidden="true"><span class="thm-n">' + esc(thLabel(l.title)) + '</span><span class="thm-p"></span></span>';
+  /* 두 앱 한 부품: 크림 종이 + 왼쪽 짧은 이름표 + 오른쪽 흰 판서 종이
+     11-18 원장님 «썸네일로 넣어»: 그 위에 영상 그림 한 장(L.ytThumb) · 작은 칸 = mqdefault · 1600 오른쪽 칸(big) = maxres → sd → mq
+     · 안 뜨면 class-api.js 가 그림을 떼어 크림 칸 그대로 */
+  function thumbHtml(l, big) {
+    var src = L.ytThumb(l.yt, big ? 'maxresdefault' : 'mqdefault');
+    return '<span class="thm' + (src ? ' has-i' : '') + '" aria-hidden="true"><span class="thm-n">' + esc(thLabel(l.title)) + '</span><span class="thm-p"></span>' +
+      (src ? '<img class="thm-i" src="' + esc(src) + '" data-thq="' + (big ? 'sddefault mqdefault' : '') + '" alt="" loading="lazy" decoding="async">' : '') + '</span>';
   }
   /* 작은 고리(18 · 반지름 7.5): part = 주황 · gray = 회색(출결 전) · done = 초록 체크 */
   function ring(f, k) {
@@ -2596,7 +2608,7 @@ window.__lecAdminStart = function () {
   function iaHtml(l) {
     if (!l) return '';
     var c = compl(l, ''), q = lecQ(l.id), dc = defCls(l), n = lecDays(l).length, lid = esc(l.id), h;
-    h = '<aside class="ia" aria-label="' + esc('고른 강의 · ' + (l.title || '')) + '"><div class="in-h">' + thumbHtml(l) +
+    h = '<aside class="ia" aria-label="' + esc('고른 강의 · ' + (l.title || '')) + '"><div class="in-h">' + thumbHtml(l, true) +
       '<div class="in-ht"><p class="in-t">' + esc(l.title || '(제목 없음)') + '</p><p class="in-b">' + esc(l.book || '–') + '</p></div></div>' +
       '<div class="in-act"><a class="btn" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" aria-label="' + esc(stvAria(l)) + '">학생 화면' + nIcon('arrow') + '</a>' +
       '<button type="button" class="btn" data-act="mnEdit" data-l="' + lid + '">' + nIcon('pencil') + (canEditLec(l) ? '고치기' : '보기') + '</button>' +

@@ -418,6 +418,32 @@
     return m ? m[1] : '';
   }
 
+  /* 11-18 썸네일(원장님 «썸네일로 넣어»): 영상 그림 주소(열쇠 · 요금 없음 · 두 앱이 같이 씀)
+     size = mqdefault(320×180) · sddefault(640×480 · 위아래 검은 띠라 16:9 로 잘라 씀) · maxresdefault(1280×720 · 없을 수 있음) · 영상 id 를 못 찾으면 '' */
+  function ytThumb(v, size) {
+    var id = ytId(v);
+    return id ? 'https://i.ytimg.com/vi/' + id + '/' + (/^(?:mq|hq|sd|maxres)default$/.test(size || '') ? size : 'mqdefault') + '.jpg' : '';
+  }
+  /* 그림이 안 뜨면(받기 실패 · 없는 영상 = 120×90 회색 그림) data-thq 의 다음 크기로 · 다 안 되면 그림을 떼어 밑의 크림 칸이 보이게(두 앱 한 곳) */
+  function thumbFix(e) {
+    var im = e.target, q, nx, p;
+    if (!im || im.tagName !== 'IMG' || !im.hasAttribute('data-thq')) return;
+    if (e.type === 'load' && im.naturalWidth > 120) return;
+    q = im.getAttribute('data-thq').split(' ').filter(function (x) { return !!x; });
+    if (q.length) {
+      nx = q.shift();
+      im.setAttribute('data-thq', q.join(' '));
+      im.src = im.src.replace(/[^\/]+\.jpg$/, nx + '.jpg');
+      return;
+    }
+    p = im.parentNode;
+    if (p) { p.classList.remove('has-i'); p.removeChild(im); }
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('load', thumbFix, true);
+    document.addEventListener('error', thumbFix, true);
+  }
+
   function hms(s) {
     var p = s.split(':'), t = 0, i, v;
     for (i = 0; i < p.length; i += 1) {
@@ -1265,6 +1291,7 @@
     untilNote: untilNote,
 
     ytId: ytId,
+    ytThumb: ytThumb,
     parseRunner: parseRunner,
     parseOnline: parseOnline,
     noLabel: noLabel,

@@ -549,6 +549,10 @@ html.stg .ky{background:#1A3B2C;color:#F4ECD7}
 .art-bar{flex:1 1 auto;height:4px;border-radius:2px;background:rgba(11,61,46,.16);overflow:hidden}
 .art-bar i{display:block;height:100%;border-radius:2px;background:var(--artT)}
 .art-left{flex:0 0 auto;font-size:13px;line-height:18px;font-weight:600;white-space:nowrap}
+/* 11-18 썸네일(원장님 «썸네일로 넣어»): 크림 그림 위에 영상 그림 한 장 · 진도 막대 · «N분 남음»은 그 위에 그대로 · 안쪽 선 1px .10 · 안 뜨면 그림만 빠져 크림 그림 그대로 */
+.art>.art-i{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block;z-index:1}
+.art.has-i .art-pg{z-index:2}
+.art.has-i::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(70,52,12,.10);z-index:3;pointer-events:none}
 .eb{display:flex;align-items:center;flex-wrap:wrap;gap:2px 12px;font-size:13px;line-height:18px;font-weight:600;color:var(--ink2)}
 .ebi{display:inline-flex;align-items:center;gap:6px}
 .edot{display:inline-block;flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:currentColor}
@@ -605,7 +609,7 @@ html.stg .ky{background:#1A3B2C;color:#F4ECD7}
 .grp{margin:0}
 .grp h2{margin:32px 0 8px;padding:0;font-size:20px;line-height:26px;font-weight:600;letter-spacing:-.01em;color:var(--acc)}
 .rows{background:var(--card);border:1px solid var(--edge);border-radius:16px;overflow:hidden}
-.row{position:relative;display:grid;grid-template-columns:56px minmax(0,1fr);align-items:start;gap:14px;padding:16px;text-decoration:none;color:inherit;transition:background-color .24s}
+.row{position:relative;display:grid;grid-template-columns:128px minmax(0,1fr);align-items:start;gap:12px;padding:16px;text-decoration:none;color:inherit;transition:background-color .24s}
 .row + .row:before{content:"";position:absolute;left:16px;right:0;top:0;border-top:1px solid rgba(70,52,12,.16)}
 a.row:active{background:var(--press)}
 a.row:focus-visible{outline-offset:-2px}
@@ -613,6 +617,13 @@ a.row:focus-visible{outline-offset:-2px}
 .tile b{font-size:22px;line-height:24px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tile b.l{font-size:15px;line-height:20px}
 .tile small{font-size:12px;line-height:14px;font-weight:600}
+/* 11-18 목록 줄 썸네일 128×72(원장님 «썸네일로 넣어» · S1b): 영상 그림 + 오른쪽 아래 길이 딱지만(진도 막대 없음) · 안 뜨면 그 칸을 단원 타일이 채움 · 안쪽 선 1px .10 */
+.sth{position:relative;display:block;width:128px;height:72px;border-radius:10px;overflow:hidden;background:var(--art)}
+.sth>.tile{width:100%;height:100%;border-radius:0}
+.sth>.sth-i{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block;z-index:1}
+.sth::after{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(70,52,12,.10);z-index:3;pointer-events:none}
+.sth-d{position:absolute;right:4px;bottom:4px;z-index:2;padding:1px 4px;border-radius:4px;background:rgba(26,26,24,.72);color:#FFFFFF;font-size:11px;line-height:14px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.row.off .sth>.sth-i{opacity:.55}
 .row .mn{min-width:0;padding-top:1px}
 .row .rs{display:flex;align-items:center;flex-wrap:wrap;gap:2px 12px;margin:0 0 2px;font-size:13px;line-height:18px;font-weight:600;color:var(--ink2)}
 .row .rs .tag{padding:0;border-radius:0;background:none;font-size:13px;font-weight:600;line-height:18px;vertical-align:0}
@@ -2398,6 +2409,13 @@ window.__lecStart = function () {
     return '<span class="tile" role="img" aria-label="' + esc(u.sr) + '"><b' + (u.n.length > 2 ? ' class="l"' : '') + '>' +
       esc(u.n) + '</b><small>' + esc(u.u) + '</small></span>';
   }
+  /* 11-18 목록 줄 썸네일 128×72(원장님 «썸네일로 넣어»): 단원 타일 위에 영상 그림(mqdefault) + 오른쪽 아래 길이 딱지 · 안 뜨면 class-api.js 가 그림을 떼어 타일이 칸을 채움 */
+  function thumbHTML(l) {
+    var src = L.ytThumb(l.yt, 'mqdefault');
+    return '<span class="sth">' + tileHTML(l) +
+      (src ? '<img class="sth-i" src="' + esc(src) + '" data-thq="" alt="" loading="lazy" decoding="async">' : '') +
+      (+l.dur > 0 ? '<span class="sth-d" aria-hidden="true">' + esc(L.fmtDur(+l.dur)) + '</span>' : '') + '</span>';
+  }
   /* 둘째 줄(이스케이프한 HTML) «52:11 · 목차 5» · 날짜 없음(타일 = 단원) · 조각마다 한 덩어리로 묶어 줄바꿈으로 갈리지 않게
      검수 A L2: 내 반 수업일이 둘 이상이면 앞에 «수업일 외 1일» */
   function metaOf(l, at) {
@@ -2460,11 +2478,13 @@ window.__lecStart = function () {
     '<line x1="10" x2="94" y1="74" y2="74"/><line x1="10" x2="94" y1="87" y2="87"/><line x1="10" x2="70" y1="100" y2="100"/><line x1="10" x2="94" y1="113" y2="113"/>' +
     '<line x1="10" x2="94" y1="126" y2="126"/></g><path d="M12 48c10-3 22-3 34 0" stroke="#0B3D2E" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
     '<path d="M40 87c12-2 26-2 40 1" stroke="#1D5BA6" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>';
+  /* 11-18 원장님 «썸네일로 넣어»: 크림 그림 위에 영상 그림(maxres → sd → mq) · 안 뜨면 class-api.js 가 그림을 떼어 크림 그림 그대로 */
   function artHTML(l, rec) {
-    var pct = rec ? Math.max(0, Math.min(100, +l.pct || 0)) : 0, lt = leftOf(l, rec);
-    return '<span class="art" aria-hidden="true"><span class="art-tx">' + (l.book ? '<span class="art-bk">' + esc(l.book) + '</span>' : '') +
+    var pct = rec ? Math.max(0, Math.min(100, +l.pct || 0)) : 0, lt = leftOf(l, rec), src = L.ytThumb(l.yt, 'maxresdefault');
+    return '<span class="art' + (src ? ' has-i' : '') + '" aria-hidden="true"><span class="art-tx">' + (l.book ? '<span class="art-bk">' + esc(l.book) + '</span>' : '') +
       '<span class="art-rg">' + esc(l.title) + '</span></span><span class="art-paper">' + PAPER_SVG + '</span>' +
       '<svg class="art-sig" viewBox="0 0 848 412" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="' + FISH_D + '"/></svg>' +
+      (src ? '<img class="art-i" src="' + esc(src) + '" data-thq="sddefault mqdefault" alt="" loading="lazy" decoding="async">' : '') +
       '<span class="art-pg"><span class="art-bar"><i style="width:' + pct + '%"></i></span>' + (lt ? '<span class="art-left">' + esc(lt) + '</span>' : '') + '</span></span>';
   }
   /* 맨 위 카드 몸(2차 · TV 이어 보기): 그림 · 상태 점 글 «결석한 날 수업 · 11.16(월)» · 제목 22 · «학습중 23% · 마지막 11.15(일)» · 캡슐 단추 · 권하는 말 */
@@ -2752,7 +2772,7 @@ window.__lecStart = function () {
     var dn = rec && !l.ended && done;
     var al = l.ended ? '' : attLine(l, a, rec, st, dn), mt = metaOf(l, a), lt;
     /* 2차(11-18) 줄 = Podcasts 에피소드 꼴: 숫자 칸 56 · 위 상태 점 글(새 강의 · 새 답변 · 결석한 날 · 학습중) · 제목 17/600 · 정보 15 · 아래 캡슐 «▶ 39분 남음»(막대) / «▶ 1시간 5분» · 다 봤으면 «✓ 복습 완료» 줄 */
-    var inner = tileHTML(l) + '<div class="mn">' + (tags || al ? '<div class="rs">' + tags + al + '</div>' : '') + '<div class="tt">' + esc(l.title) + '</div>' +
+    var inner = thumbHTML(l) + '<div class="mn">' + (tags || al ? '<div class="rs">' + tags + al + '</div>' : '') + '<div class="tt">' + esc(l.title) + '</div>' +
       (mt ? '<div class="mt">' + mt + '</div>' : '');
     if (l.ended) {
       inner += '<span class="tag end">' + M.endedChip + '</span>';
