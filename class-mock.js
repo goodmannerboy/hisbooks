@@ -786,10 +786,12 @@
     k.sch = schOf(d, k.sid);   /* K1: cls 처럼 앱을 열 때 맞춤 */
     k.last_at = now;
 
-    var list = [], l, p, n, j, q;
+    var list = [], l, p, n, j, q, mine = false;
     for (i = 0; i < d.lecture.length; i += 1) {
       l = d.lecture[i];
       if (!isOpen(l, cls, k.sch)) continue;
+      /* §8-227 al_mine = 내 반을 겨눈 열린 강의가 있음(위 isOpen 이 학교까지 봄 · lec_push_on 의 show 와 같은 강의 규칙 · 켬 · 열쇠는 안 봄 · «전체» 강의는 안 셈) */
+      if (!mine && pCls(l.class_ids).some(function (c) { return (cls || []).indexOf(c) >= 0; })) mine = true;
       p = findProgress(d, k.sid, l.id);
       n = 0;
       for (j = 0; j < d.qna.length; j += 1) {
@@ -824,7 +826,8 @@
       ok: true, me: { name: sname },
       consent: cs ? { choice: cs.choice, ver: cs.ver, at: cs.at } : null,
       consent_ver: CONSENT_VER,
-      lectures: out
+      lectures: out,
+      al_mine: mine
     };
   }
 
