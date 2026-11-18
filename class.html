@@ -74,10 +74,6 @@ h1,h2,.tt{text-wrap:balance}
 .btn-sm{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--sl);border-radius:12px;background:transparent;color:var(--ink);font-size:15px;font-weight:700;padding:0 16px}
 .sub{font-size:13px;color:var(--ink2)}
 .err{font-size:13px;font-weight:700;color:var(--cT);min-height:20px;margin:8px 0 0}
-.foot{margin:28px 0 0;text-align:center;font-size:13px;color:var(--ink2)}
-.foot a{font-weight:600;color:var(--acc)}
-.foot a.hit:after{top:-14px;bottom:-14px}
-.foot .now{display:block;margin-top:2px}
 /* 들어오기 */
 .login{max-width:400px;margin:0 auto;padding:64px 12px 0}
 .login .head{display:flex;flex-direction:column;align-items:center;text-align:center}
@@ -421,6 +417,53 @@ a.row:focus-visible{outline-offset:-2px}
   .stopw.m{display:none}
   .stopw.w{display:block;margin:0 0 14px}
 }
+/* 2차(11-18) 머리: 목록 = 큰 이름 «HIS CLASS»(세리프 글자 그림 170 · 화면 읽기 «히즈클래스») + 오른쪽 이름 동그라미(누르면 이름 시트)
+   내리면 위에 작은 막대(이름 104 · 크림 .92 · 아래 선) · PC 보기 = 왼쪽 위 작은 이름 · 이름 시트 = 아래에서 올라오는 판(크림 바탕 · 안 칸 흰색) */
+.lth{min-height:64px;padding:12px 0 0}
+.lt.wmt{display:flex;align-items:center;min-height:41px;margin:0;line-height:0;color:var(--acc)}
+.lt.wmt .wm{display:block;width:170px;height:auto}
+.av{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;margin-right:-4px;padding:0;border:0;border-radius:50%;background:none}
+.av span{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--accB);color:var(--acc);font-size:13px;line-height:18px;font-weight:600;white-space:nowrap}
+.av.sm span{width:32px;height:32px;font-size:12px}
+.cbar{position:fixed;left:0;right:0;top:0;z-index:40;display:flex;align-items:center;justify-content:center;height:52px;background:rgba(250,246,236,.92);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line);color:var(--acc);visibility:hidden;opacity:0;transition:opacity .2s,visibility .2s}
+.cbar.on{visibility:visible;opacity:1}
+.cbar .wm{display:block;width:104px;height:auto}
+.cbar .av{position:absolute;right:max(16px,env(safe-area-inset-right));top:4px}
+.pch .wmt{display:flex;align-items:center;line-height:0;color:var(--acc)}
+.pch .wmt .wm{display:block;width:104px;height:auto}
+.pwa.pwme{padding:0}
+.pwme .pwc.msh{max-width:560px;padding:8px 16px calc(24px + env(safe-area-inset-bottom));border-radius:16px 16px 0 0;background:var(--bg);box-shadow:0 -1px 12px rgba(0,0,0,.08)}
+@media (min-width:700px){.pwa.pwme{align-items:center;padding:24px}.pwme .pwc.msh{padding-bottom:24px;border-radius:16px}}
+.msh .grab{display:block;width:36px;height:5px;margin:0 auto;border-radius:3px;background:rgba(0,0,0,.18)}
+.msh .xbtn{position:absolute;right:8px;top:8px;display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:none;color:var(--ink2)}
+.msh .xbtn span{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--fill)}
+.msh .me1{display:flex;flex-direction:column;align-items:center;padding:20px 0 4px}
+.msh .mav{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:var(--accB);color:var(--acc);font-size:17px;line-height:22px;font-weight:600}
+.msh h2{margin:10px 0 0;font-size:20px;line-height:26px;font-weight:700;letter-spacing:-.01em}
+.msh .cells{margin-top:20px;border-radius:12px;background:var(--card);box-shadow:inset 0 0 0 1px var(--edge);overflow:hidden}
+.msh .cells + .cells{margin-top:16px}
+.msh .cell{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:50px;margin:0;padding:0 14px 0 16px;border:0;background:none;color:var(--ink);font-size:17px;line-height:22px;font-weight:400;text-align:left;text-decoration:none}
+.msh .cell + .cell:before{content:"";position:absolute;left:50px;right:0;top:0;border-top:1px solid var(--line)}
+.msh .cell:focus-visible{outline-offset:-2px}
+.msh .cell svg{flex:0 0 auto;display:block;color:var(--acc)}
+.msh .cell .ct{flex:1 1 auto;min-width:0}
+.msh .cell svg.chev{color:var(--ink2)}
+.msh .cell.red,.msh .cell.red svg{color:var(--cT)}
+/* 2차(11-18) 기록 안내: 한 장(아이콘 칸 64 · 제목 28/700 가운데 · 줄마다 이름 17/600 + 설명 15 양쪽 정렬) · 동의 날짜는 맨 아래 한 줄 · 다시 읽기 = 아래 «닫기» 하나 */
+.cons.ob{display:flex;flex-direction:column;align-items:center;padding:40px 8px 0}
+.ob-ic{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:18px;background:var(--accB);color:var(--acc)}
+.cons.ob h1{margin:18px 0 0;font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.015em;text-align:center}
+.cons ol.cis{width:100%;margin:24px 0 0}
+.cons ol.cis li,.cons ol.cis li:first-child{display:block;padding:12px 0;border:0;text-align:left}
+.cons ol.cis li:before{content:none}
+.cis .ci-t{display:block;font-size:17px;line-height:22px;font-weight:600}
+.cis .ci-d{display:block;margin-top:2px;font-size:15px;line-height:21px;color:var(--ink2);text-align:justify}
+.cons.ob .cur{width:100%;margin:8px 0 0;padding:12px 0 0;border-top:1px solid var(--line);font-size:13px;line-height:18px;font-weight:600;color:var(--ink2)}
+.cons.ob .btns{width:100%;margin-top:24px}
+.cons.ob .btn-fill{min-height:50px;border-radius:25px;font-size:17px;font-weight:600}
+.cons.ob .err{width:100%}
+.obf{max-width:560px;margin:32px auto 0}
+.btn-gray{display:flex;align-items:center;justify-content:center;width:100%;height:50px;border:0;border-radius:25px;background:var(--fill);color:var(--ink);font-size:17px;line-height:22px;font-weight:600}
 /* 2차(11-18) 재생 무대: 폰 · PC 모두 화면 전체 딥그린(위 #123224 → 38% #0D241A → #09160F · 영상 칸만 검정 · PC 오른쪽 밝은 칸 없음)
    글 #F3F1EA / #B9C2BB / #9DA9A0 · 강조 #8FD0AE · 주황 #F0B26B · 카드 .07 · 유리 단추 .11 · 고른 칸 .15 · 선 .10 · 큰 단추 = 크림(#F3F1EA · 딥그린 글) */
 html.stg body{background-color:#09160F;background-image:linear-gradient(180deg,#123224 0%,#0D241A 38%,#09160F 100%);background-repeat:no-repeat;background-size:100% 100vh}
@@ -810,14 +853,6 @@ window.__lecStart = function () {
     return Math.round((x - y) / 86400000);
   }
 
-  function footHTML() {
-    if (PV) return '';
-    var m = recMode(), line = '';
-    if (m === 'agree') line = '지금: 기록함 · ' + esc(L.fmtMD(S.consent.at)) + ' 동의';
-    return '<div class="foot"><a href="#rec" class="hit">기록 안내</a>' +
-           (line ? '<span class="now">' + line + '</span>' : '') + '</div>';
-  }
-
   /* ------------------------------------------------------------ 홈 화면에 앱으로 추가(PWA · 11-16)
      단추 = 들어오기 «들어가기» 아래 · 목록 맨 아래(홈 화면 앱으로 열었으면 둘 다 안 보임)
      판 = 카카오톡 안 › 설치 이벤트 받음(«설치하기») › 아이폰·아이패드 › 삼성 인터넷 › 안드로이드 크롬 › 그 밖(브라우저 메뉴) 가운데 하나만
@@ -942,6 +977,7 @@ window.__lecStart = function () {
   /* 판 안 전체: 설치가 끝났으면(받아들임 · appinstalled) 실제 아이콘 + «홈 화면에 추가했어요» + [확인] */
   function pwaCardHTML() {
     if (pwa.kind === 'al') return alHowHTML();
+    if (pwa.kind === 'me') return meSheetHTML();
     if (pwa.ok) {
       return '<div class="pwdone" role="status"><img src="app-icon-192.png" width="64" height="64" alt="">' +
         '<h2 id="pwaH">홈 화면에 추가했어요</h2><p>이제 홈 화면의 히즈클래스를 누르세요</p>' +
@@ -962,10 +998,10 @@ window.__lecStart = function () {
     pwa.ok = false;
     pwa.kind = kind || ''; /* 'al' = 새 영상 알림 켜는 법(같은 판 모양) */
     var d = document.createElement('div');
-    d.className = 'pwa';
+    d.className = kind === 'me' ? 'pwa pwme' : 'pwa';
     d.id = 'pwaSheet';
     d.innerHTML = '<div class="pwbg" data-act="pwaclose"></div>' +
-      '<div class="card cons pwc" id="pwaCard" role="dialog" aria-modal="true" aria-labelledby="pwaH" tabindex="-1">' +
+      '<div class="' + (kind === 'me' ? 'pwc msh' : 'card cons pwc') + '" id="pwaCard" role="dialog" aria-modal="true" aria-labelledby="pwaH" tabindex="-1">' +
       pwaCardHTML() + '</div>';
     document.body.appendChild(d);
     pwa.el = d;
@@ -1325,6 +1361,9 @@ window.__lecStart = function () {
   }
   function icon(name, n) {
     var P = {
+      chev: '<path d="M9 6l6 6-6 6"/>',
+      out: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/>',
+      doc: '<path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/>',
       play: '<path d="M7 4v16l13-8z"/>',
       pen: '<path d="M4 20h4L18.5 9.5a2.83 2.83 0 1 0-4-4L4 16v4"/><path d="M13.5 6.5l4 4"/>',
       book: '<path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1m3 0v16"/><path d="M13 8h2"/><path d="M13 12h2"/>',
@@ -1616,18 +1655,18 @@ window.__lecStart = function () {
     S.view = again ? 'rec' : 'consent';
     var m = recMode(), cur = '';
     if (again && m === 'agree') cur = '지금: 기록함 · ' + esc(L.fmtMD(S.consent.at)) + ' 동의';
-    var h = '<div class="wrap"><div class="top">' +
-      (again ? '<button class="backb" type="button" data-act="recback"><span class="ar" aria-hidden="true">‹</span>돌아가기</button>' : fishSVG() + '<span class="brand">히즈클래스</span>') +
-      '<span class="sp"></span></div><div class="cons"><div class="card">' +
-      '<h1>히즈클래스 기록 안내</h1><ol>' +
-      '<li>기록하는 것: 영상을 어디까지 봤는지(재생 위치·본 칸), 남긴 질문과 받은 답</li>' +
-      '<li>보는 사람: 원장 선생님과 담당 선생님</li>' +
-      '<li>보관: 강의가 내려가면 그 강의 기록도 함께 지우고, 학원을 그만두면 30일 안에 지웁니다</li>' +
-      '<li>지우기: 지워 달라고 하면 30일 안에 지웁니다</li>' +
+    /* 2차(11-18): 한 장 꼴 · 줄 글은 그대로(이름 뒤 «: »는 화면 읽기 몫으로 남김) · 날짜 줄은 맨 아래 · 다시 읽기 = 아래 «닫기» 하나 */
+    var ci = function (t, d) { return '<li><span class="ci-t">' + t + '<span class="sr">: </span></span><span class="ci-d">' + d + '</span></li>'; };
+    var h = '<div class="wrap"><div class="cons ob"><span class="ob-ic" aria-hidden="true">' + icon('doc', 30) + '</span>' +
+      '<h1>히즈클래스 기록 안내</h1><ol class="cis">' +
+      ci('기록하는 것', '영상을 어디까지 봤는지(재생 위치·본 칸), 남긴 질문과 받은 답') +
+      ci('보는 사람', '원장 선생님과 담당 선생님') +
+      ci('보관', '강의가 내려가면 그 강의 기록도 함께 지우고, 학원을 그만두면 30일 안에 지웁니다') +
+      ci('지우기', '지워 달라고 하면 30일 안에 지웁니다') +
       '</ol>' + (cur ? '<p class="cur">' + cur + '</p>' : '') +
       (again ? '' : '<div class="btns"><button class="btn-fill" type="button" data-act="agree">동의하고 들어가기</button></div>' +
       '<p id="cErr" class="err" role="alert"></p>') +
-      '</div></div></div>';
+      '</div>' + (again ? '<div class="obf"><button class="btn-gray" type="button" data-act="recback">닫기</button></div>' : '') + '</div>';
     app.innerHTML = h;
     pwaAuto();
   }
@@ -1838,7 +1877,7 @@ window.__lecStart = function () {
     var arr = listBase().reverse(); /* 서버는 오래된 차례 → 새것부터 · 미리 보기: 학생에게 아직 안 보이는 강의는 목록에 없음 */
     PYN = pyeonMap(listBase()); /* 단원 타일 «N / 편» 차례(서버 차례 = 오래된 것부터) */
     var today = L.isoDay();
-    var h = '<div class="wrap">' + topHTML();
+    var h = cbarHTML() + '<div class="wrap">' + topHTML();
     var am = attMap(), ab = absList(arr, am, today), i;
     /* 2차(11-18): 큰 카드 하나 = 결석한 날 수업 › (없으면) 이어서 보기 › (없으면) 없음 · 그 아래 «새 답변» 줄 · 그 아래 학교 시험 링 카드
        결석 카드가 있으면 «이어서 보기»와 «결석한 날 수업 N편 더»는 그 카드 안의 줄(카드 장수에 안 셈 · 검수 A M6) */
@@ -1866,16 +1905,47 @@ window.__lecStart = function () {
     } else {
       h += grpHTML(arr, rec, today, am);
     }
-    h += pwaBtnHTML('l') + alHowRowHTML() + footHTML() + '</div>';
+    h += pwaBtnHTML('l') + alHowRowHTML() + '</div>';
     alShown = alState();
     app.innerHTML = h;
+    cbarSync();
     pwaAuto();
     if (S.nIds) alFlash();
   }
-  /* 머리줄(목록 · 범위 · PC 보기 같음): 물고기 24 · «히즈클래스» · 학생 이름 · «나가기» 44×44 */
+  /* 2차(11-18) 머리: 목록 = 큰 이름 «HIS CLASS»(글자 그림 · 화면 읽기 «히즈클래스») + 이름 동그라미(누르면 이름 시트 · «나가기» · «기록 안내»는 시트 안)
+     PC 보기(pch) = 왼쪽 위 작은 이름 · 미리 보기 = 동그라미 누름 없음(나가기 없음) */
+  function avTxt() {
+    var n = String(S.name || '').replace(/\s+/g, '');
+    return /^[\uAC00-\uD7A3]{3,4}$/.test(n) ? n.slice(1, 3) : n.slice(0, 2);
+  }
+  function avHTML(sm) {
+    var c = 'av' + (sm ? ' sm' : '');
+    if (PV) return '<span class="' + c + '" aria-hidden="true"><span>' + esc(avTxt()) + '</span></span>';
+    return '<button class="' + c + '" type="button" data-act="me" aria-haspopup="dialog" aria-label="' + esc(S.name) + ' · 내 메뉴"><span>' + esc(avTxt()) + '</span></button>';
+  }
   function topHTML(cls) {
-    return '<div class="top' + (cls ? ' ' + cls : '') + '">' + fishSVG() + '<span class="brand">히즈클래스</span><span class="sp"></span>' +
-      '<span class="me">' + esc(S.name) + '</span>' + (PV ? '' : '<button class="lo" type="button" data-act="logout">나가기</button>') + '</div>';
+    if (cls === 'pch') return '<div class="top pch"><span class="wmt" role="img" aria-label="히즈클래스">' + WM_SVG + '</span><span class="sp"></span>' + avHTML(true) + '</div>';
+    return '<div class="top lth"><h1 class="lt wmt"><span class="sr">히즈클래스</span>' + WM_SVG + '</h1><span class="sp"></span>' + avHTML(false) + '</div>';
+  }
+  /* 큰 이름이 위로 지나가면 작은 막대(목록만 · .wrap 밖) */
+  function cbarHTML() { return '<div class="cbar" id="cbar">' + WM_SVG + avHTML(true) + '</div>'; }
+  function cbarSync() {
+    var c = $('cbar'), t = c ? app.querySelector('.lth') : null, on;
+    if (!c) return;
+    on = !!t && t.getBoundingClientRect().bottom < 4;
+    if (on !== (c.className === 'cbar on')) c.className = on ? 'cbar on' : 'cbar';
+  }
+  window.addEventListener('scroll', cbarSync, { passive: true });
+  /* 이름 시트(설치 판과 같은 틀 · kind 'me'): 이름 · 홈 화면에 앱으로 추가 · 새 영상 알림 켜는 법(그 단추가 목록에 있을 때만) · 기록 안내 · 나가기 */
+  function meSheetHTML() {
+    var ch = icon('chev', 16).replace('<svg ', '<svg class="chev" '), c1 = '';
+    if (pwaBtnHTML('l')) c1 += '<button class="cell" type="button" data-act="mepwa">' + icon('phone', 22) + '<span class="ct">홈 화면에 앱으로 추가</span>' + ch + '</button>';
+    if (alHowRowHTML()) c1 += '<button class="cell" type="button" data-act="meal">' + icon('bell', 22) + '<span class="ct">새 영상 알림 켜는 법</span>' + ch + '</button>';
+    return '<span class="grab" aria-hidden="true"></span><button class="xbtn" type="button" data-act="pwaclose" aria-label="닫기"><span>' + icon('x', 16) + '</span></button>' +
+      '<div class="me1"><span class="mav" aria-hidden="true">' + esc(avTxt()) + '</span><h2 id="pwaH">' + esc(S.name) + '</h2></div>' +
+      (c1 ? '<div class="cells">' + c1 + '</div>' : '') +
+      '<div class="cells"><a class="cell" href="#rec" data-act="merec">' + icon('doc', 22) + '<span class="ct">기록 안내</span>' + ch + '</a></div>' +
+      '<div class="cells"><button class="cell red" type="button" data-act="logout">' + icon('out', 22) + '<span class="ct">나가기</span></button></div>';
   }
   /* 결석한 날 수업 카드에 올릴 강의: 결석 · 아직 열림 · 다 보지 않음(선생님 확인 = 끝남) · 결석한 날이 오늘~13일 전 ·
      최근 결석한 날 → 많이 본 것 → id 차례 */
@@ -2013,7 +2083,7 @@ window.__lecStart = function () {
       '<span class="me">' + esc(S.name) + '</span></div>' +
       '<div class="rhead"><h1>' + esc(ex.c.title) + '</h1><p>' + esc(examSub(ex.c, rec)) + (rec ? ' · 덜 본 영상부터' : '') + '</p></div>';
     /* 11-17: 목록과 같은 교재 묶음(타일이 날짜 대신 단원이라 «18~32번» 모의고사 둘도 교재 머리글로 가름) · 줄 차례는 위 그대로(덜 본 것부터) */
-    h += grpHTML(ls, rec, today, am) + footHTML() + '</div>';
+    h += grpHTML(ls, rec, today, am) + '</div>';
     app.innerHTML = h;
     pwaAuto();
   }
@@ -3836,7 +3906,7 @@ window.__lecStart = function () {
       '<div class="tabs" role="tablist"><button type="button" role="tab" data-act="tab" data-tab="toc" id="tabToc" class="on">목차</button>' +
       '<button type="button" role="tab" data-act="tab" data-tab="qna" id="tabQna">질문</button></div>' +
       '<div class="tbody" id="tbody"></div></div></div>' +
-      footHTML() + '</div>';
+      '</div>';
     app.innerHTML = h;
     try { window.scrollTo(0, 0); } catch (e) { /* 없음 */ }
     startTrack(l);
@@ -4715,7 +4785,11 @@ window.__lecStart = function () {
       showLogin('');
     } else if (act === 'agree') { choose('agree', el); }
     else if (act === 'recback') { goList(); }
-    else if (act === 'logout') { logout(); }
+    else if (act === 'logout') { pwaClose(false); logout(); }
+    else if (act === 'me') { pwaOpen(el, 'me'); }
+    else if (act === 'mepwa') { pwaClose(false); pwaOpen($('pwaBtn'), ''); }
+    else if (act === 'meal') { pwaClose(false); pwaOpen($('alHow'), 'al'); }
+    else if (act === 'merec') { pwaClose(false); location.hash = '#rec'; } /* <a> 기본 이동은 위에서 막힘 → 주소를 직접 #rec 로(hashchange → 기록 안내 판) */
     else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; S.set = null; spkFresh(); clearHash(); showLogin(''); }
     else if (act === 'retry') { loadHome(); }
     else if (act === 'list') { goList(); }
