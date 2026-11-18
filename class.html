@@ -464,6 +464,24 @@ a.row:focus-visible{outline-offset:-2px}
 .cons.ob .err{width:100%}
 .obf{max-width:560px;margin:32px auto 0}
 .btn-gray{display:flex;align-items:center;justify-content:center;width:100%;height:50px;border:0;border-radius:25px;background:var(--fill);color:var(--ink);font-size:17px;line-height:22px;font-weight:600}
+/* 2차(11-18) 알림 묻기(첫 로그인 한 단계) · 목록 알림 카드 · 설치 판: 글 · 차례 · 단추는 그대로 · 모양만(설치→알림 흐름 결론안 12가지는 안 넣음)
+   묻기 = 한 장(종 아이콘 칸 64 · 제목 28/700 가운데 · 설명 17 양쪽 정렬 · 큰 단추 50) · 카드 = 흰 칸(테 .10) · 설치 판 = 크림 바탕 · 단계 칸 흰색 */
+.cons .alst{display:flex;flex-direction:column;align-items:center;padding:56px 8px 0;border:0;background:none}
+.alst .alh{flex-direction:column;gap:0;color:var(--acc)}
+.alst .alh svg{box-sizing:content-box;width:30px;height:30px;padding:17px;border-radius:18px;background:var(--accB)}
+.alst .alh h1{margin:18px 0 0;font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.015em;text-align:center}
+.alst .als{width:100%;margin:12px 0 0;font-size:17px;line-height:25px}
+.alst .btns{width:100%;margin-top:28px}
+.alst .btn-fill,.pwc .btn-fill{min-height:50px;border-radius:25px;font-size:17px;font-weight:600}
+.alc .alh{color:var(--acc)}
+.alc .alh h2{font-size:17px;font-weight:600;line-height:22px}
+.alc .als{font-size:15px;line-height:21px}
+.alb .btn-fill{border-radius:22px;font-weight:600}
+.pwa .pwc.card{padding:20px 16px;border:0;border-radius:16px;background:var(--bg);box-shadow:0 -1px 12px rgba(0,0,0,.08)}
+.pwc h2{font-size:22px;line-height:28px}
+.pwc .pwsb{margin:0 0 14px;font-size:15px;line-height:21px}
+.pwc .pwol{padding:14px 14px 2px;border-radius:12px;background:var(--card);box-shadow:inset 0 0 0 1px var(--edge)}
+.pwc .pwol .no{font-weight:600}
 /* 2차(11-18) 재생 무대: 폰 · PC 모두 화면 전체 딥그린(위 #123224 → 38% #0D241A → #09160F · 영상 칸만 검정 · PC 오른쪽 밝은 칸 없음)
    글 #F3F1EA / #B9C2BB / #9DA9A0 · 강조 #8FD0AE · 주황 #F0B26B · 카드 .07 · 유리 단추 .11 · 고른 칸 .15 · 선 .10 · 큰 단추 = 크림(#F3F1EA · 딥그린 글) */
 html.stg body{background-color:#09160F;background-image:linear-gradient(180deg,#123224 0%,#0D241A 38%,#09160F 100%);background-repeat:no-repeat;background-size:100% 100vh}
@@ -692,6 +710,8 @@ button.s1t:active{background:var(--press)}
 .sdl b{display:inline-block;min-width:56px;font-size:13px;font-weight:700;color:var(--ink2)}
 .sdm{color:var(--cT);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
 .sdr{color:var(--gT);font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+/* 2차(11-18) 13px 이하 글자는 굵기 600 까지(결론안 §4) */
+.lo,.err,.dchip,.cons .cur,.cons li:before,.qh .who,.pill,.q .scb,.acts .ask,.slab,.vno,.rg64 span,.smsg,.sdl b,.pwc .pwol .no{font-weight:600}
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{transition:none !important;animation:none !important;scroll-behavior:auto !important}
 }
@@ -1123,7 +1143,7 @@ window.__lecStart = function () {
   /* 첫 로그인 뒤 한 단계(동의 화면과 같은 틀 · 카드와 같은 제목 · 글 · 단추 하나) */
   function showAlStep() {
     S.view = 'alstep';
-    app.innerHTML = '<div class="wrap"><div class="top">' + fishSVG() + '<span class="brand">히즈클래스</span><span class="sp"></span></div>' +
+    app.innerHTML = '<div class="wrap">' + wmTopHTML() +
       '<div class="cons"><section class="card alst" aria-labelledby="alT"><div class="alh">' + icon('bell', 22) + '<h1 id="alT">' + esc(L.PUSH_TITLE) + '</h1></div>' +
       '<p class="als">' + esc(L.pushCardText(S.al.at)) + '</p>' +
       '<div class="btns"><button class="btn-fill" type="button" data-act="alstep">알림 받기</button></div></section></div></div>';
@@ -1927,6 +1947,8 @@ window.__lecStart = function () {
     if (cls === 'pch') return '<div class="top pch"><span class="wmt" role="img" aria-label="히즈클래스">' + WM_SVG + '</span><span class="sp"></span>' + avHTML(true) + '</div>';
     return '<div class="top lth"><h1 class="lt wmt"><span class="sr">히즈클래스</span>' + WM_SVG + '</h1><span class="sp"></span>' + avHTML(false) + '</div>';
   }
+  /* 이름 단추 없는 머리(불러오는 동안 · 첫 로그인 알림 단계) = 홈과 같은 자리 · 같은 «HIS CLASS» */
+  function wmTopHTML() { return '<div class="top lth"><span class="lt wmt" role="img" aria-label="히즈클래스">' + WM_SVG + '</span></div>'; }
   /* 큰 이름이 위로 지나가면 작은 막대(목록만 · .wrap 밖) */
   function cbarHTML() { return '<div class="cbar" id="cbar">' + WM_SVG + avHTML(true) + '</div>'; }
   function cbarSync() {
@@ -5013,7 +5035,7 @@ window.__lecStart = function () {
     }
     pendFlush();
     if (!S.key) { showLogin(''); return; }
-    app.innerHTML = '<div class="wrap"><div class="top">' + fishSVG() + '<span class="brand">히즈클래스</span></div></div>';
+    app.innerHTML = '<div class="wrap">' + wmTopHTML() + '</div>';
     loadHome();
   })();
 };
