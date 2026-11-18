@@ -799,6 +799,112 @@ a{color:var(--acc)}
   .who-out,.ibtn{min-height:44px;min-width:44px}
   .k2 .btn,.k2 .btn.sm{min-height:44px}
 }
+/* ── ② 강의: 썸네일 줄 목록(표 짜임 그대로 · 줄 = 격자 64 · 줄 안 테두리 상자 0 · 묶음 = 이번 주 · 지난주 · 달) ── */
+.k2 .card.lec{container-type:inline-size}
+.k2 .lt{display:block;width:100%;max-width:1284px;border-collapse:separate;font-size:13px;--cols:88px minmax(190px,420px) 76px 56px 132px 150px 40px minmax(84px,1fr) 30px}
+.k2 .lt thead,.k2 .lt tbody{display:block}
+.k2 .lt tr{display:grid;grid-template-columns:var(--cols);column-gap:12px;align-items:center;padding:0 8px;margin:0;border:0;border-radius:0;background:none}
+.k2 .lt th,.k2 .lt td{display:block;padding:0;border:0;min-width:0;width:auto;text-align:left;vertical-align:middle}
+.k2 .lt td[data-l]:before{content:none;display:none}
+.k2 .lt .bk,.k2 .lt .cl,.k2 .lt .subc{display:none}
+.k2 .lt thead tr{height:28px;margin-top:4px;border-bottom:1px solid var(--sep)}
+.k2 .lt thead th{font-weight:600;font-size:12px;line-height:16px;color:var(--t3);white-space:nowrap}
+.k2 .lt thead .c2{grid-column:span 2}
+.k2 .lt tr.gh{display:block;padding:14px 8px 4px}
+.k2 .lt tbody:first-of-type tr.gh{padding-top:8px}
+.k2 .lt tr.gh th{font-weight:600;font-size:13px;line-height:18px;color:var(--t2)}
+.k2 .lt tr.lr{position:relative;height:64px;border-radius:10px}
+.k2 .lt tr.lr+tr.lr::before{content:"";position:absolute;left:108px;right:8px;top:0;border-top:1px solid var(--sep)}
+.k2 .lt tr.lr:hover{background:var(--fill)}
+.k2 .lt tr.lr.sel{background:var(--acc-tint)}
+.k2 .lt tr.lr:hover::before,.k2 .lt tr.lr:hover+tr.lr::before,.k2 .lt tr.lr.sel::before,.k2 .lt tr.lr.sel+tr.lr::before{opacity:0}
+.thm{display:block;position:relative;flex:none;width:88px;height:50px;border-radius:6px;background:var(--th-bg);box-shadow:inset 0 0 0 1px var(--th-line);overflow:hidden}
+.thm-n{position:absolute;left:7px;top:16px;font-weight:600;font-size:13px;line-height:18px;color:var(--th-ink);white-space:nowrap;letter-spacing:-.01em}
+.thm-p{position:absolute;right:7px;top:12px;width:18px;height:26px;border-radius:1.5px;background-color:#FFFFFF;
+  background-image:linear-gradient(rgba(11,61,46,.30),rgba(11,61,46,.30)),linear-gradient(rgba(11,61,46,.22),rgba(11,61,46,.22));
+  background-size:10px 1.5px,7px 1.5px;background-position:4px 7px,4px 11px;background-repeat:no-repeat;box-shadow:0 .5px 1px rgba(70,52,12,.22),0 0 0 .5px rgba(70,52,12,.12)}
+.k2 .lt td.ttl{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.k2 .lt .ttl-a{display:block;max-width:100%;padding:0;border:0;background:none;color:var(--t1);font-weight:600;font-size:15px;line-height:20px;text-decoration:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;cursor:pointer}
+.k2 .lt .ttl-a:hover{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.k2 .lt .ttl-a:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.k2 .lt .sub{display:block;max-width:100%;margin:0;padding:0;border:0;font-size:13px;line-height:18px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k2 .lt .dt,.k2 .lt .len{display:flex;flex-direction:column;font-size:13px;line-height:18px;color:var(--t2);white-space:nowrap}
+.k2 .lt .l2{font-size:12px;line-height:16px;color:var(--t3)}
+.stx{display:inline-flex;align-items:center;gap:6px;font-size:13px;line-height:18px;white-space:nowrap;color:var(--t1)}
+.stx .i{width:14px;height:14px}
+.stx.t3,.t3{color:var(--t3)} .t2{color:var(--t2)} .stx.blu,.blu{color:var(--blu)}
+.sd{width:8px;height:8px;flex:none;display:block}
+.rg{width:18px;height:18px;flex:none;display:block}
+.rg-sp{width:18px;flex:none;display:block}
+.k2 .lt .rb{display:inline-flex;align-items:center;gap:8px;min-height:40px;margin-left:-6px;padding:2px 6px;border:0;border-radius:8px;background:none;color:var(--t1);text-align:left;cursor:pointer}
+.k2 .lt span.rb{cursor:default}
+.k2 .lt button.rb:hover{background:var(--fill2)}
+.k2 .lt .rb:focus-visible,.k2 .lt .qc:focus-visible,.k2 .stu:focus-visible,.k2 .more:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.k2 .lt .cq b{font-weight:400;font-size:13px;line-height:18px;white-space:nowrap}
+.k2 .lt .cq small{font-size:12px;line-height:16px;color:var(--t3);white-space:nowrap}
+.k2 .lt .rb.mut .cq b,.k2 .lt span.rb{color:var(--t2)}
+.qc{position:relative;display:inline-flex;align-items:center;gap:4px;height:30px;margin-left:-6px;padding:0 6px;border:0;border-radius:8px;background:none;color:var(--t2);font-size:13px;line-height:18px;cursor:pointer}
+.qc .i{width:16px;height:16px;color:var(--t3)}
+.qc:hover{background:var(--fill2)}
+.qc.wait,.qc.wait .i{color:var(--org);font-weight:600}
+.qd{position:absolute;left:17px;top:6px;width:7px;height:7px;border-radius:50%;background:var(--org-dot);box-shadow:0 0 0 1.5px var(--bg)}
+.k2 .lt td.vb{justify-self:end;width:auto;text-align:left}
+.stu{display:inline-flex;align-items:center;gap:3px;height:30px;padding:0 8px;border-radius:8px;color:var(--acc);font-weight:400;font-size:13px;line-height:18px;text-decoration:none;white-space:nowrap}
+.stu:hover{background:var(--acc-tint)}
+.stu .i{width:14px;height:14px;color:var(--acc)}
+.k2 .lt td.mo{position:relative}
+.ibtn.more{width:30px;height:30px}
+/* «…» 메뉴 */
+.k2 .menu{position:absolute;right:0;top:34px;z-index:30;min-width:230px;padding:6px;border-radius:12px;background:var(--pop-bg);box-shadow:var(--shadow),0 0 0 1px var(--sep)}
+.k2 .menu.up{top:auto;bottom:34px}
+.k2 .menu [role=menuitem]{display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:7px;background:transparent;color:var(--t1);
+  font:inherit;font-size:13px;line-height:18px;text-align:left;white-space:nowrap;cursor:pointer}
+.k2 .menu [role=menuitem] .i{width:16px;height:16px;color:var(--t2)}
+.k2 .menu .mk{margin-left:auto;padding-left:16px;font-size:12px;line-height:16px;color:var(--t3)}
+.k2 .menu [role=menuitem]:hover,.k2 .menu [role=menuitem]:focus{background:var(--acc);color:#FFFFFF;outline:none}
+.k2 .menu [role=menuitem]:hover .i,.k2 .menu [role=menuitem]:focus .i,.k2 .menu [role=menuitem]:hover .mk,.k2 .menu [role=menuitem]:focus .mk{color:#FFFFFF}
+.k2 .menu .red-t,.k2 .menu .red-t .i{color:var(--red)}
+.k2 .menu .red-t:hover,.k2 .menu .red-t:focus{background:var(--red);color:#FFFFFF}
+.k2 .menu hr{border:0;border-top:1px solid var(--sep);margin:5px 4px}
+/* 좁은 목록(인스펙터를 연 1280 등): 수업일 · 길이 · 공개를 둘째 줄로 */
+@container (max-width:980px){
+  .k2 .lt{--cols:88px minmax(0,1fr) 150px 40px 84px 30px}
+  .k2 .lt .dt,.k2 .lt .len,.k2 .lt .pub,.k2 .lt .sub{display:none}
+  .k2 .lt .subc{display:flex;align-items:center;gap:0 6px;max-width:100%;font-size:13px;line-height:18px;color:var(--t2);white-space:nowrap;overflow:hidden}
+}
+/* 넓은 목록(1920): 늘어나는 빈 열을 빼고 제목 열만 넓힘 */
+@container (min-width:1180px){
+  .k2 .lt{--cols:88px minmax(190px,1fr) 96px 72px 150px 180px 56px 84px 30px}
+}
+/* 다른 선생님 수업(.lo): 같은 결(머리카락 선 · 상자 없음) */
+.k2 .oth{margin-top:28px}
+.k2 .oth h2{font-weight:700;font-size:17px;line-height:22px;margin:0 0 6px}
+.k2 .lo th{font-weight:600;font-size:12px;line-height:16px;color:var(--t3);border-bottom:1px solid var(--sep)}
+.k2 .lo td{border-bottom:1px solid var(--sep);font-size:13px;color:var(--t2)}
+.k2 .lo td.ttl{color:var(--t1)}
+.k2 .lo td.ttl a{color:var(--t1);font-weight:600;text-decoration:none}
+/* 폰 · 좁은 창: 줄 = 썸네일 · 제목 · «…» / 완료 / 질문 · 학생 화면 */
+@media (max-width:760px){
+  .k2 .lt thead{display:none}
+  .k2 .lt tr.lr{height:auto;grid-template-columns:64px minmax(0,1fr) auto 44px;grid-auto-rows:auto;row-gap:2px;padding:10px 4px}
+  .k2 .lt tr.lr+tr.lr::before{left:80px}
+  .k2 .lt .thm{width:64px;height:36px}
+  .k2 .lt .thm .thm-n{top:9px;left:6px;font-size:12px;line-height:16px}
+  .k2 .lt .thm .thm-p{display:none}
+  .k2 .lt td.thc{grid-row:1/span 2;align-self:start}
+  .k2 .lt td.ttl{grid-column:2/4}
+  .k2 .lt td.mo{grid-column:4;grid-row:1;justify-self:end}
+  .k2 .lt td.cqc{grid-column:2/5}
+  .k2 .lt td.qcc{grid-column:2}
+  .k2 .lt td.vb{grid-column:3/5}
+  .k2 .lt .dt,.k2 .lt .len,.k2 .lt .pub,.k2 .lt .sub{display:none}
+  .k2 .lt .subc{display:block;font-size:13px;line-height:18px;color:var(--t2);white-space:normal}
+  .k2 .lt .subc .stx{white-space:normal}
+  .k2 .lt .rb,.qc,.stu,.ibtn.more{min-height:44px}
+  .ibtn.more{width:44px}
+  .k2 .lo td.vb .stu{min-height:44px}
+}
 </style>
 </head>
 <body>
@@ -881,7 +987,7 @@ window.__lecAdminStart = function () {
 
   var S = {
     me: null, as: '', tab: 'today', todo: null, todoErr: false, open: {}, statCls: '',
-    qf: 'all', qLec: '', qFocus: '', drawer: null, stack: [], dSig: '', inputs: {}, busy: {},
+    qf: 'all', qLec: '', qFocus: '', menu: '', drawer: null, stack: [], dSig: '', inputs: {}, busy: {},
     ask: {}, cf: null, pm: {}, link: {}, sess: null, ed: null, addrShow: false, loadedAt: 0, retry: null,
     att: null,
     /* C2 시험 범위: rng = {rows, ex, today}(못 받으면 null) · rngOld = 서버에 범위 함수가 없음(이 화면에서는 다시 묻지 않음) ·
@@ -1630,6 +1736,11 @@ window.__lecAdminStart = function () {
       more: '<circle cx="6.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="17.5" cy="12" r="1.3" fill="currentColor" stroke="none"/>',
       chev: '<path d="M9.5 6.5 15 12l-5.5 5.5"/>',
       arrow: '<path d="M8 16 16 8M9.5 8H16v6.5"/>',
+      clock: '<circle cx="12" cy="12" r="8.2"/><path d="M12 7.6V12l2.8 1.8"/>',
+      eyeoff: '<path d="M3.5 12s3-6 8.5-6c1.6 0 3 .5 4.2 1.2M20.5 12s-3 6-8.5 6c-1.6 0-3-.5-4.2-1.2"/><path d="M4.5 4.5l15 15"/>',
+      pencil: '<path d="M4.5 19.5l1-4L15.8 5.2a2 2 0 0 1 2.9 0l.1.1a2 2 0 0 1 0 2.9L8.5 18.5z"/><path d="M14 7l3 3"/>',
+      copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15.5 8.5V6.7a2.2 2.2 0 0 0-2.2-2.2H6.7a2.2 2.2 0 0 0-2.2 2.2v6.6a2.2 2.2 0 0 0 2.2 2.2h1.8"/>',
+      trash: '<path d="M4.5 7h15M9.5 7V5.2c0-.6.5-1.2 1.2-1.2h2.6c.7 0 1.2.6 1.2 1.2V7M6.5 7l.9 11.4c.1 1 .9 1.6 1.8 1.6h5.6c.9 0 1.7-.6 1.8-1.6L17.5 7"/>',
       x: '<path d="M7 7l10 10M17 7 7 17"/>'
     };
     return '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (p[n] || '') + '</svg>';
@@ -1755,41 +1866,114 @@ window.__lecAdminStart = function () {
   }
 
   /* ---------------------------------------------------------------- 강의 탭 */
+  /* 2차(11-18): 공개 상태 = 작은 점 + 글(알약 없음) · 공개 예정 = 파랑 시계 · 공개 끝 = 빈 점 · 숨김 = 눈 감음 */
   function pubHtml(l) {
-    if (l.hidden) return '<span class="tag t-neutral">숨김</span>';
-    if (!isPosted(l)) return '<span class="tag t-sky">공개 예정 ' + esc(L.fmtDay(l.posted_on)) + '</span>';
-    if (isEnded(l)) return '<span class="tag t-neutral">공개 끝</span>';
-    return '<span class="tag t-sage">공개</span>' + (l.until ? ' <span class="mut sm">' + esc(L.fmtMD(l.until)) + '까지</span>' : '');
+    if (l.hidden) return '<span class="stx t3">' + nIcon('eyeoff') + '숨김</span>';
+    if (!isPosted(l)) return '<span class="stx blu">' + nIcon('clock') + '공개 예정 ' + esc(L.fmtDay(l.posted_on)) + '</span>';
+    if (isEnded(l)) return '<span class="stx t3"><svg class="sd" viewBox="0 0 10 10" aria-hidden="true" focusable="false"><circle cx="5" cy="5" r="3.6" fill="none" stroke="var(--gray-dot)" stroke-width="1.4"/></svg>공개 끝</span>';
+    return '<span class="stx"><svg class="sd" viewBox="0 0 10 10" aria-hidden="true" focusable="false"><circle cx="5" cy="5" r="4" fill="var(--grn-dot)"/></svg>공개' +
+      (l.until ? '<span class="t2"> · ' + esc(L.fmtMD(l.until)) + '까지</span>' : '') + '</span>';
   }
+  /* 썸네일 이름표(학생 앱 단원 타일과 같은 셈 · 맨 앞 번호 + 회 · 강 · 과 · 번) · 없으면 제목 앞 네 글자 */
+  var UNIT_RE = /^(\d{1,3}(?:\s*·\s*\d{1,3})*)\s*(회|강|과|단원|차시)/,
+    UNIT_EN = /^(unit|lesson)\s*(\d{1,3}(?:\s*·\s*\d{1,3})*)/i,
+    UNIT_NO = /^(\d{1,3})((?:\s*[~∼\-–]\s*\d{1,3})?(?:\s*·\s*\d{1,3}(?:\s*[~∼\-–]\s*\d{1,3})?)*)\s*번/;
+  function thLabel(title) {
+    var s = str(title).replace(/^\s+/, ''), m = s.match(UNIT_RE), x;
+    if (m) { x = m[1].replace(/\s+/g, ''); return (x.length > 5 ? x.split('·')[0] : x) + m[2]; }
+    m = s.match(UNIT_EN);
+    if (m) { x = m[2].replace(/\s+/g, ''); return (x.length > 5 ? x.split('·')[0] : x) + (m[1].toLowerCase() === 'unit' ? '강' : '과'); }
+    m = s.match(UNIT_NO);
+    if (m) { x = (m[1] + m[2]).replace(/\s+/g, '').replace(/[∼\-–]/g, '~'); return (x.length > 6 ? m[1] : x) + '번'; }
+    return s.slice(0, 4) || '강의';
+  }
+  /* 두 앱 한 부품: 크림 종이 + 왼쪽 짧은 이름표 + 오른쪽 흰 판서 종이(그림 · 바깥 요청 0) */
+  function thumbHtml(l) {
+    return '<span class="thm" aria-hidden="true"><span class="thm-n">' + esc(thLabel(l.title)) + '</span><span class="thm-p"></span></span>';
+  }
+  /* 작은 고리(18 · 반지름 7.5): part = 주황 · gray = 회색(출결 전) · done = 초록 체크 */
+  function ring(f, k) {
+    var c = 47.12, a = Math.max(0, Math.min(1, +f || 0)) * c;
+    if (k === 'done') {
+      return '<svg class="rg" viewBox="0 0 18 18" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="8" fill="var(--grn-dot)"/>' +
+        '<path d="M5.4 9.2l2.4 2.4 4.8-5" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+    return '<svg class="rg" viewBox="0 0 18 18" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="7.5" fill="none" stroke="' + (k === 'gray' ? 'var(--ring-track)' : 'var(--org-track)') + '" stroke-width="2"/>' +
+      (a > 0.01 ? '<circle cx="9" cy="9" r="7.5" fill="none" stroke="' + (k === 'gray' ? 'var(--gray-dot)' : 'var(--org-dot)') + '" stroke-width="2" stroke-linecap="round" stroke-dasharray="' +
+        a.toFixed(2) + ' ' + c + '" transform="rotate(-90 9 9)"/>' : '') + '</svg>';
+  }
+  function complRing(c) {
+    if (!c.known) return ring(c.m ? c.n / c.m : 0, 'gray');
+    if (!c.abs) return '<span class="rg-sp" aria-hidden="true"></span>';
+    return c.absDone >= c.abs ? ring(1, 'done') : ring(c.absDone / c.abs, 'part');
+  }
+  /* 줄 묶음: 다가오는 수업(다음 주부터) · 이번 주 · 지난주 · 달(올해가 아니면 해도) · 날짜 없음 — 수업일(없으면 공개일) 기준 */
+  function wkMon(iso) {
+    var p = str(iso).split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    return addDays(iso, -((d.getUTCDay() + 6) % 7));
+  }
+  function grpOf(l) {
+    var d = str(dayOf(l)).slice(0, 10), t = today(), m0 = wkMon(t);
+    if (!isDay(d)) return '날짜 없음';
+    if (d >= addDays(m0, 7)) return '다가오는 수업';
+    if (d >= m0) return '이번 주';
+    if (d >= addDays(m0, -7)) return '지난주';
+    return (d.slice(0, 4) === t.slice(0, 4) ? '' : d.slice(0, 4) + '년 ') + (+d.slice(5, 7)) + '월';
+  }
+  function canEditLec(l) { return !!(S.me.admin || str(l.created_by) === S.me.name); }
   function lecRow(l) {
-    var c = compl(l, ''), q = lecQ(l.id), dc = defCls(l), lid = esc(l.id);
-    return '<tr>' +
-      '<td data-l="수업일" class="dt">' + esc((L.fmtDay(dayOf(l)) || '–') + (l.lesson_on && lecDays(l).length > 1 ? ' 외 ' + (lecDays(l).length - 1) + '일' : '')) + '</td>' +
-      '<td data-l="제목" class="ttl"><button type="button" class="lnk" data-act="editLec" data-l="' + lid + '">' + esc(l.title || '(제목 없음)') + '</button></td>' +
-      '<td data-l="교재">' + esc(l.book || '–') + '</td>' +
-      '<td data-l="반">' + esc(clsNames(l.class_ids) || '–') + '</td>' +
-      '<td data-l="길이" class="num">' + (l.dur > 0 ? esc(L.fmtDur(l.dur)) : '–') + '</td>' +
-      '<td data-l="공개 상태">' + pubHtml(l) + '</td>' +
-      '<td data-l="완료">' + (dc ? '<button type="button" class="btn sm' + (c.known ? ' cqb' : '') + '" data-act="colOpen" data-l="' + lid + '" data-c="' + esc(dc) + '">' + complCell(c) + '</button>' :
-        '<span class="mut">' + complCell(c) + '</span>') + '</td>' +
-      '<td data-l="질문">' + (q.all ? '<button type="button" class="btn sm" data-act="qLec" data-l="' + lid + '">질문 ' + q.all +
-        (q.wait ? ' <span class="tag t-honey">대기 ' + q.wait + '</span>' : '') + '</button>' : '<span class="mut">질문 0</span>') + '</td>' +
-      '<td class="vb">' + stvLink(l) + '</td></tr>';
+    var c = compl(l, ''), q = lecQ(l.id), dc = defCls(l), lid = esc(l.id), n = lecDays(l).length, more = l.lesson_on && n > 1 ? '외 ' + (n - 1) + '일' : '';
+    var day = L.fmtDay(dayOf(l)) || '–', cn = clsNames(l.class_ids) || '–', title = l.title || '(제목 없음)';
+    var on = S.menu === l.id;
+    return '<tr class="lr' + (S.drawer && S.drawer.t === 'col' && S.drawer.l === l.id ? ' sel' : '') + '" data-row="' + lid + '">' +
+      '<td class="thc">' + thumbHtml(l) + '</td>' +
+      '<td data-l="제목" class="ttl"><button type="button" class="lnk ttl-a" data-act="editLec" data-l="' + lid + '" title="' + esc(title) + '">' + esc(title) + '</button>' +
+        '<span class="sub">' + esc((l.book || '–') + ' · ' + cn) + '</span>' +
+        '<span class="subc" aria-hidden="true">' + esc(day + (more ? ' ' + more : '') + ' · ' + cn) + ' · ' + pubHtml(l) + '</span></td>' +
+      '<td data-l="교재" class="bk">' + esc(l.book || '–') + '</td>' +
+      '<td data-l="반" class="cl">' + esc(cn) + '</td>' +
+      '<td data-l="수업일" class="dt">' + esc(day) + (more ? '<span class="l2"> ' + esc(more) + '</span>' : '') + '</td>' +
+      '<td data-l="길이" class="num len">' + (l.dur > 0 ? esc(L.fmtDur(l.dur)) : '–') + '</td>' +
+      '<td data-l="공개 상태" class="pub">' + pubHtml(l) + '</td>' +
+      '<td data-l="완료" class="cqc">' + (dc ? '<button type="button" class="rb' + (c.known ? ' cqb' : '') + '" data-act="colOpen" data-l="' + lid + '" data-c="' + esc(dc) + '">' + complRing(c) + complCell(c) + '</button>' :
+        '<span class="rb mut">' + complRing(c) + complCell(c) + '</span>') + '</td>' +
+      '<td data-l="질문" class="qcc">' + (q.all ? '<button type="button" class="qc' + (q.wait ? ' wait' : '') + '" data-act="qLec" data-l="' + lid + '" title="이 강의 질문 ' + q.all + (q.wait ? ' · 답 기다림 ' + q.wait : '') + '">' +
+        nIcon('qna') + (q.wait ? '<span class="qd" aria-hidden="true"></span>' : '') + '<span aria-hidden="true">' + q.all + '</span><span class="sr">질문 ' + q.all + (q.wait ? ' · 답 기다림 ' + q.wait : '') + '</span></button>' :
+        '<span class="sr">질문 0</span>') + '</td>' +
+      '<td class="vb">' + stvLink(l) + '</td>' +
+      '<td class="mo"><button type="button" class="ibtn more" data-act="rowMenu" data-l="' + lid + '" aria-haspopup="menu" aria-expanded="' + (on ? 'true' : 'false') + '" aria-label="' + esc(title) + ' 더 보기">' +
+        nIcon('more') + '</button>' + (on ? rowMenuHtml(l) : '') + '</td></tr>';
+  }
+  /* «…» 메뉴(진짜 메뉴 · 항목 tabindex=-1 · ↑↓ Home End · Esc = «…»로 · Tab = 닫힘) · 고칠 수 없는 강의는 보기 · 공지 복사만 */
+  function rowMenuHtml(l) {
+    var lid = esc(l.id), ed = canEditLec(l);
+    function it(act, ic, label, cls, mk) {
+      return '<button type="button" role="menuitem" tabindex="-1" class="' + (cls || '') + '" data-act="' + act + '" data-l="' + lid + '">' + nIcon(ic) + '<span>' + label + '</span>' + (mk ? '<span class="mk">' + mk + '</span>' : '') + '</button>';
+    }
+    return '<div class="menu" role="menu" aria-label="' + esc((l.title || '') + ' 더 보기') + '">' +
+      it('mnEdit', 'pencil', ed ? '고치기' : '보기', '', '두 번 누름') + (ed ? it('mnPost', 'cal', '공개일 · 숨기기 바꾸기') : '') +
+      it('mnCopy', 'copy', '반 공지 문구 복사') + (ed ? '<hr>' + it('mnDel', 'trash', '강의 지우기', 'red-t') : '') + '</div>';
   }
   /* «학생 화면»(11-17): 그 강의를 학생 화면 그대로 새 탭에서(폰 · 태블릿 · PC 틀 · 기록 0) · 평범한 링크(창을 늦게 여는 일 없음 · 줄 누름과 따로) */
   function stvHref(l) {   /* 연습 화면은 보는 사람(as)도 실어 보냄 → 미리 보기 «닫기»가 같은 탭에서 돌아올 때 그 사람으로 */
     return 'class.html?preview=' + encodeURIComponent(l.id) + (demo ? '&demo=1' + (S.as && S.as !== 'benjamin' ? '&as=' + encodeURIComponent(S.as) : '') : '');
   }
   function stvLink(l) {
-    return '<a class="btn sm stv" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" title="학생 화면" aria-label="' + esc((l.title || '') + ' 학생 화면 · 새 탭') + '">학생 화면' + kIcon('ext') + '</a>';
+    return '<a class="stu stv" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" title="학생 화면" aria-label="' + esc((l.title || '') + ' 학생 화면 · 새 탭') + '">학생 화면' + nIcon('arrow') + '</a>';
   }
+  /* 2차: 썸네일 줄 목록(표 짜임 그대로 · 줄은 CSS 격자) · 묶음마다 tbody 하나(머리 = 이번 주 · 지난주 · 달) */
   function lecHtml() {
-    var list = D.vis.slice().sort(lecSort), h, i;
+    var list = D.vis.slice().sort(lecSort), h, i, g, pg = null;
     h = '<section class="card lec" aria-label="강의 ' + list.length + '개">';   /* 2차: 제목 · «시험 범위» · «새 강의»는 쪽 머리(pageHead) */
     if (!list.length) return h + '<p class="empty">아직 올린 강의가 없어요. «새 강의»를 눌러 첫 강의를 올려 보세요.</p></section>' + othHtml();
-    h += '<table class="lt"><thead><tr><th scope="col">수업일</th><th scope="col">제목</th><th scope="col">교재</th><th scope="col">반</th>' +
-      '<th scope="col">길이</th><th scope="col">공개 상태</th><th scope="col">완료</th><th scope="col">질문</th><th scope="col"><span class="sr">학생 화면</span></th></tr></thead><tbody>';
-    for (i = 0; i < list.length; i += 1) h += lecRow(list[i]);
+    h += '<table class="lt"><thead><tr><th scope="col" class="c2">강의</th><th scope="col" class="bk">교재</th><th scope="col" class="cl">반</th>' +
+      '<th scope="col" class="dt">수업일</th><th scope="col" class="len">길이</th><th scope="col" class="pub">공개</th><th scope="col">완료</th><th scope="col">질문</th>' +
+      '<th scope="col"><span class="sr">학생 화면</span></th><th scope="col"><span class="sr">더 보기</span></th></tr></thead>';
+    for (i = 0; i < list.length; i += 1) {
+      g = grpOf(list[i]);
+      if (g !== pg) { h += (pg === null ? '' : '</tbody>') + '<tbody><tr class="gh"><th colspan="12" scope="rowgroup">' + esc(g) + '</th></tr>'; pg = g; }
+      h += lecRow(list[i]);
+    }
     return h + '</tbody></table></section>' + othHtml();
   }
 
@@ -5048,10 +5232,20 @@ window.__lecAdminStart = function () {
       if (el.getAttribute && el.getAttribute('data-act')) { a = el.getAttribute('data-act'); break; }
       el = el.parentNode;
     }
+    /* 2차 «…» 메뉴: 메뉴 밖을 누르면 닫힘(누른 것은 그대로 함) */
+    if (S.menu && !(el && el.closest && el.closest('#main .menu')) && a !== 'rowMenu') { S.menu = ''; render(); }
     if (!a || el.disabled) return;
     var s = attr(el, 'data-s'), l = attr(el, 'data-l'), c = attr(el, 'data-c'), v = attr(el, 'data-v'), q = attr(el, 'data-q');
     var inDw = !!($('dw') && $('dw').contains(el)), r, t, k, note, chips, i;
     switch (a) {
+      case 'rowMenu': if (S.menu === l) closeMenu(true); else openMenu(l); break;
+      case 'mnEdit': S.menu = ''; render(); openEditor(l); break;
+      case 'mnPost': S.menu = ''; render(); openEditor(l); if ($('ed-post')) { try { $('ed-post').focus(); $('ed-post').scrollIntoView({ block: 'center' }); } catch (e) {} } break;
+      case 'mnCopy': S.menu = ''; render(); if (D.lmap[l]) copyText(noticeText(D.lmap[l]), function () { return null; }); break;
+      case 'mnDel':
+        S.menu = ''; render(); openEditor(l);
+        if (S.ed && S.ed.can && $('ed-foot')) { S.ed.delAsk = true; $('ed-foot').innerHTML = edFootHtml(); r = $('ed-foot').querySelector('[data-act=edDelNo]'); if (r) try { r.focus(); } catch (e) {} }
+        break;
       case 'tab': S.tab = v; S.qFocus = ''; if (v === 'set') sxFix(); render(); if (v === 'set') sxStaff(false); break;
       case 'reload': refresh(true); break;
       case 'retry': if (S.retry) S.retry(); break;
@@ -5382,8 +5576,57 @@ window.__lecAdminStart = function () {
     if (b && !b.disabled) b.click();
     return !!b;
   }
+  /* 2차 «…» 메뉴: 열면 첫 항목에 초점 · 닫을 때 back 이면 «…» 단추로 초점 */
+  function menuBtn(id) { return document.querySelector('#main [data-act=rowMenu][data-l="' + String(id).replace(/["\\]/g, '') + '"]'); }
+  function menuItems() { var m = document.querySelector('#main .menu'); return m ? [].slice.call(m.querySelectorAll('[role=menuitem]')) : []; }
+  function openMenu(id) {
+    S.menu = id; render();
+    var m = document.querySelector('#main .menu'), r, it = menuItems();
+    if (m) { r = m.getBoundingClientRect(); if (r.bottom > window.innerHeight - 8 && r.height + 48 < r.top) m.className += ' up'; }
+    if (it[0]) try { it[0].focus(); } catch (e) {}
+  }
+  function closeMenu(back) {
+    var id = S.menu, b;
+    if (!id) return false;
+    S.menu = ''; render();
+    if (back) { b = menuBtn(id); if (b) try { b.focus(); } catch (e) {} }
+    return true;
+  }
+  /* 메뉴에서 Tab: 닫고 «…» 다음(Shift 면 앞) 누를 곳으로 */
+  function focusStep(from, back) {
+    var a = [].slice.call(document.querySelectorAll('#app button:not([disabled]), #app a[href], #app input:not([disabled]), #app select, #app textarea')).filter(function (e) { return e.offsetParent !== null; });
+    var i = a.indexOf(from), n = a[i + (back ? -1 : 1)];
+    if (n) try { n.focus(); } catch (e) {}
+  }
+  function menuKey(ev) {
+    var t = ev.target, it, ix, id, b;
+    if (!S.menu) {
+      if ((ev.key === 'ArrowDown' || ev.key === 'Down') && t && t.getAttribute && t.getAttribute('data-act') === 'rowMenu') { ev.preventDefault(); openMenu(t.getAttribute('data-l')); return true; }
+      return false;
+    }
+    it = menuItems(); ix = it.indexOf(document.activeElement);
+    if (ev.key === 'Escape' || ev.key === 'Esc') { ev.preventDefault(); closeMenu(true); return true; }
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp' || ev.key === 'Down' || ev.key === 'Up' || ev.key === 'Home' || ev.key === 'End') {
+      ev.preventDefault();
+      if (!it.length) return true;
+      if (ev.key === 'Home') ix = 0;
+      else if (ev.key === 'End') ix = it.length - 1;
+      else if (ev.key === 'ArrowDown' || ev.key === 'Down') ix = (ix + 1) % it.length;
+      else ix = ix <= 0 ? it.length - 1 : ix - 1;
+      try { it[ix].focus(); } catch (e) {}
+      return true;
+    }
+    if (ev.key === 'Tab') {
+      ev.preventDefault();
+      id = S.menu; closeMenu(false); b = menuBtn(id);
+      if (b) { if (ev.shiftKey) { try { b.focus(); } catch (e) {} } else focusStep(b, false); }
+      return true;
+    }
+    return false;
+  }
   function onKey(ev) {
     var t = ev.target, k = t && t.getAttribute ? t.getAttribute('data-k') : '', rk, r9;
+    if (menuKey(ev)) return;
     /* S1 녹음 듣기: Space · M · R · 1~4 · Enter(글 칸 · Ctrl · Alt 와 함께면 그냥 둠 · 누르고 있으면 한 번만) */
     if (S.sd && S.sd.t === 'rec' && !(ev.ctrlKey || ev.metaKey || ev.altKey) && !(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) {
       rk = rvKeyOf(ev);
@@ -5427,6 +5670,12 @@ window.__lecAdminStart = function () {
   function edDropOk(ev) { return S.ed && S.ed.can && (inTxt(ev) || inEd(ev.target)) && ev.dataTransfer && ev.dataTransfer.types && String(ev.dataTransfer.types).indexOf('Files') >= 0; }
   function edDragMark(on) { var e = $('ed'); if (e) { if (on) { if (!/\bdg\b/.test(e.className)) e.className += ' dg'; } else e.className = e.className.replace(/\s*\bdg\b/g, ''); } }
   document.addEventListener('click', onClick);
+  /* 2차: 강의 줄을 두 번 누르면 고치기(단추 · 링크 · 입력 칸 위는 빼고) */
+  document.addEventListener('dblclick', function (ev) {
+    var t = ev.target, tr = t && t.closest ? t.closest('#main tr[data-row]') : null;
+    if (!tr || (t.closest && t.closest('button, a, input, select, textarea, .menu'))) return;
+    S.menu = ''; openEditor(tr.getAttribute('data-row'));
+  });
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
   document.addEventListener('keydown', onKey);
