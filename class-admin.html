@@ -522,8 +522,10 @@ b,strong,.bandn strong{font-weight:700}
 .insr[hidden]{display:none}
 .insr .btn{border-color:#EFE6CF;background:#EFE6CF;color:#0C4631;font-size:13px;font-weight:400}
 .insr .btn:hover{border-color:#CBBF9A}
-.insr .mut{flex:1 1 100%;min-width:0;font-size:12px;color:#5F6256}
+.insr .mut{flex:1 1 100%;min-width:0;font-size:12px;font-weight:600;color:#5F6256}   /* 설치 흐름 고침(11-18): 13px 이하 = 600(2차) */
 .insr .mut>span{white-space:nowrap}
+.sec.nt .insr{column-gap:6px}   /* 설치 흐름 고침(11-18): 강의 열 서랍(1280 = 289px)에서 세 단추가 한 줄 */
+.sec.nt .insr .btn{padding:0 7px;gap:4px}
 html.tvon,html.tvon body{overflow:hidden}
 .instv{position:fixed;left:0;top:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;justify-content:center;background:#F4ECD7;color:#0C4631;outline:none}
 .instv .tvin{display:flex;align-items:center;justify-content:center;gap:5vw;padding:0 6vw}
