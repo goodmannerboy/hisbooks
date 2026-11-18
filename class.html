@@ -402,7 +402,8 @@ a.row:focus-visible{outline-offset:-2px}
 /* 폰 · 영상 고정(질문 칸을 누르면 풂) */
 @media (max-width:1099px){
   .pgrid .pl{display:contents}
-  .vid{position:-webkit-sticky;position:sticky;top:0;z-index:3;width:auto;margin:0 -20px;padding-top:calc(56.25% + 18px);border-radius:0}
+  /* 2차(11-18) 옆 여백 20: 퍼센트는 부모 안쪽 폭(W − 40) 기준 → 40 × 9/16 = 22.5 를 더해야 화면 폭 16:9 */
+  .vid{position:-webkit-sticky;position:sticky;top:0;z-index:3;width:auto;margin:0 -20px;padding-top:calc(56.25% + 22.5px);border-radius:0}
   .pgrid.nostk .vid{position:relative}
 }
 @media (max-width:359px){.top{gap:6px}.me{max-width:34vw}}
