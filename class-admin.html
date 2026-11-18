@@ -1342,6 +1342,15 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .todo .twc:hover{background:var(--fill)}
 @container (max-width:860px){.k2 .todo .twr{grid-template-columns:88px minmax(0,1fr) 170px auto}.k2 .todo .twd,.k2 .todo .twn,.k2 .todo .twp{display:none}}
 @container (max-width:560px){.k2 .todo .twr{grid-template-columns:88px minmax(0,1fr) auto}.k2 .todo .twc{display:none}}
+/* K1(11-18) 강의마다 볼 학교: 표 제목 옆 캡슐(좁힌 강의만 · 12/600 · #EFEDE5/#57534A · 높이 20) · 서랍 학교 줄(숫자 흐리게 var(--t3)) · 학교 빈칸 안내 13/600 · 저장 옆 «보이는 학생 N명» 13/600 · 시청 현황 대상 아님 «–» */
+.k2 .lt .ttr{display:flex;align-items:center;gap:6px;max-width:100%;min-width:0}
+.k2 .lt .ttr .ttl-a{min-width:0}
+.sch-t{flex:none;display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;background:#EFEDE5;color:#57534A;font-size:12px;line-height:20px;font-weight:600;white-space:nowrap}
+#ed-schf[hidden],#ed-aud[hidden]{display:none!important}
+#ed-sch .chip:not(.on) .cnt{color:var(--t3)}
+.schn{margin:6px 0 0;font-size:13px;line-height:18px;font-weight:600;color:var(--t2)}
+.edaud{flex:none;font-size:13px;line-height:18px;font-weight:600;color:var(--t2);white-space:nowrap}
+.cell.c-na{cursor:default;color:var(--t3);background:transparent;border-color:transparent}
 </style>
 </head>
 <body>
@@ -1759,6 +1768,12 @@ window.__lecAdminStart = function () {
     }
     return false;
   }
+  /* K1(11-18) 볼 학교: 강의 칸(빈 = 반 전체) · 이 학생에게 보이나(서버 lec__sch_ok 와 같은 셈 · 학교 빈칸 학생은 다 보임) · 캡슐 · 공지 글
+     canStu(서버 lec__can · 선생님 권한)는 그대로 · 표 · 완료 분모 · 덜 본 학생 · 학생 서랍 목록만 거름 */
+  function lecSch(l) { return l && isArr(l.school_keys) ? l.school_keys : []; }
+  function schIn(l, skey) { return !L.schOk || L.schOk(lecSch(l), (D.sch && D.sch[skey]) || []); }
+  function schLab(k) { return L.schLabel ? L.schLabel(k) : str(k); }
+  function schNames(keys) { return (keys || []).map(schLab).join('·'); }
   function build(raw) {
     var d = {
       classes: isArr(raw[0]) ? raw[0] : [], lectures: raw[1] || [], progress: raw[2] || [],
@@ -1810,6 +1825,13 @@ window.__lecAdminStart = function () {
       d.files = has(d.lectures[i], 'files');
       if (d.files) break;
     }
+    /* K1(11-18) 강의마다 볼 학교: 학생 열쇠 → 학교 열쇠(서버 lec__schs 와 같은 셈) · school_keys 칸이 있는지(강의가 없으면 모름 null · false 면 학교 줄을 안 그림) */
+    d.sch = L.schMap ? L.schMap(d.classes) : {};
+    d.sk = null;
+    for (i = 0; i < d.lectures.length; i += 1) {
+      d.sk = has(d.lectures[i], 'school_keys');
+      if (d.sk) break;
+    }
     buildAtt(d);
     D = d;
     d.vis = d.lectures.filter(lecVisible);
@@ -1850,7 +1872,7 @@ window.__lecAdminStart = function () {
     return str(g.school_nm || g.k) + ' ' + str(g.g) + '학년 ' + str(g.label || g.name) + ' · 시험 ' + rngWhen(g) + ' · 받는 학생 ' + g.rids.length + '명' + (u ? ' · 학년 모름 ' + u + '명' : '');
   }
   /* 고른 강의: 후보 가운데 체크한 것(후보 차례) + 저장한 줄에 있던 강의 가운데 이 화면 후보에 없는 것(숨김 · 공개 끝 · 남의 반 강의 · 그대로 둠) */
-  function rngCandsOf(g) { return L.rngCands(D.vis, g.cids, g.exam_on, D.rg.today, g.end_on, rngRow(g)); }
+  function rngCandsOf(g) { return L.rngCands(D.vis, g.cids, g.exam_on, D.rg.today, g.end_on, rngRow(g), g.k); }   /* K1: 묶음 학교(g.k)가 빠진 강의는 후보 아님 */
   /* 체크 = 바탕(L.rngBase: 저장한 줄 + 저장 뒤 올라온 강의 · 줄이 없으면 처음부터 체크) 위에 사람이 켜고 끈 것(S.rngSel[key] = {id: true|false})
      S.rngSel 에는 사람이 바꾼 것만 둠 · 그래서 서랍을 연 뒤 강의가 올라오거나 저장이 바뀌어도 바탕이 따라감(C2 검수 M1 · L6) */
   function rngSelOf(g, cands) {
@@ -1972,6 +1994,7 @@ window.__lecAdminStart = function () {
      확인 전 · 기록 안 함 아님 · 시작 전 아님 · 보강 아님 · 올린 강의) · 출결이 없으면 지금처럼 */
   function behindOf(l, skey, s) {
     var x, raw;
+    if (!schIn(l, skey)) return false;   /* K1: 볼 학교가 아닌 학생은 «덜 본 학생»에서 뺌 */
     if (!D.att) return isBehind(s);
     x = attOf(l.id, skey);
     if (!x || x.a !== 'abs' || x.mk || D.ns[skey]) return false;
@@ -2088,7 +2111,7 @@ window.__lecAdminStart = function () {
     var ids = l.class_ids || [], all = ids.indexOf('*') >= 0, out = [], i, j, r, c;
     for (i = 0; i < D.roster.length; i += 1) {
       r = D.roster[i];
-      if (!started(r)) continue;
+      if (!started(r) || !schIn(l, r.skey)) continue;   /* K1: 볼 학교가 아닌 학생은 완료 분모에서 뺌 */
       for (j = 0; j < r.cls.length; j += 1) {
         c = r.cls[j];
         if (D.myIds.indexOf(c) < 0) continue;
@@ -2160,6 +2183,7 @@ window.__lecAdminStart = function () {
   }
   function canStuIn(l, r) {
     var ids = l.class_ids || [], all = ids.indexOf('*') >= 0, j, c;
+    if (!schIn(l, r.skey)) return false;   /* K1 */
     for (j = 0; j < r.cls.length; j += 1) {
       c = r.cls[j];
       if (D.myIds.indexOf(c) >= 0 && (all || ids.indexOf(c) >= 0)) return true;
@@ -2384,6 +2408,7 @@ window.__lecAdminStart = function () {
       for (j = 0; j < rs.length; j += 1) {
         r = rs[j];
         if (b.names.indexOf(r.sname) < 0) continue;
+        if (!schIn(l, r.skey)) continue;   /* K1: 같은 이름이 다른 학교면 볼 학교 학생만 */
         if (band && D.att && !absOn(l.id, r.skey)) continue;   /* 같은 이름이 둘이면 그날 결석한 학생만 */
         s = stat(l, r.skey);
         x = by[r.skey];
@@ -2522,10 +2547,11 @@ window.__lecAdminStart = function () {
   function lecRow(l) {
     var c = compl(l, ''), q = lecQ(l.id), dc = defCls(l), lid = esc(l.id), n = lecDays(l).length, more = l.lesson_on && n > 1 ? '외 ' + (n - 1) + '일' : '';
     var day = L.fmtDay(dayOf(l)) || '–', cn = clsNames(l.class_ids) || '–', title = l.title || '(제목 없음)';
-    var on = S.menu === l.id;
+    var on = S.menu === l.id, sk = lecSch(l);
     return '<tr class="lr' + (selLec() === l.id ? ' sel' : '') + '" data-row="' + lid + '">' +
       '<td class="thc">' + thumbHtml(l) + '</td>' +
-      '<td data-l="제목" class="ttl"><button type="button" class="lnk ttl-a" data-act="editLec" data-l="' + lid + '" title="' + esc(title) + '">' + esc(title) + '</button>' +
+      '<td data-l="제목" class="ttl">' + (sk.length ? '<span class="ttr">' : '') + '<button type="button" class="lnk ttl-a" data-act="editLec" data-l="' + lid + '" title="' + esc(title) + '">' + esc(title) + '</button>' +
+        (sk.length ? '<span class="sch-t" title="' + esc('볼 학교 ' + schNames(sk)) + '">' + esc(schNames(sk)) + '</span></span>' : '') +   /* K1 캡슐 */
         '<span class="sub">' + esc((l.book || '–') + ' · ' + cn) + '</span>' +
         '<span class="subc" aria-hidden="true">' + esc(day + (more ? ' ' + more : '') + ' · ' + cn) + ' · ' + pubHtml(l) + '</span></td>' +
       '<td data-l="교재" class="bk">' + esc(l.book || '–') + '</td>' +
@@ -2681,14 +2707,16 @@ window.__lecAdminStart = function () {
       h += '<tr data-nm="' + esc(r.sname || '') + '"><th class="nm" scope="row"><span class="nmw"><span class="av" data-i="' + esc((r.sname || '학생').charAt(0)) + '" aria-hidden="true"></span>' +
         '<span class="nmt"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + '</span></span></th>';
       for (j = 0; j < cols.length; j += 1) {
-        l = cols[j]; n = stat(l, r.skey); s = cellOf(l, r.skey, n);
+        l = cols[j];
+        if (!schIn(l, r.skey)) { h += '<td><span class="cell c-na" title="볼 학교가 아니에요"><span aria-hidden="true">–</span><span class="sr">' + esc(r.sname + ' · ' + l.title + ' · 대상 아님') + '</span></span></td>'; continue; }   /* K1 */
+        n = stat(l, r.skey); s = cellOf(l, r.skey, n);
         h += '<td><button type="button" class="cell c-' + s.cls + '" data-act="cellOpen" data-s="' + esc(r.skey) + '" data-l="' + esc(l.id) + '" aria-label="' +
           esc(r.sname + ' · ' + l.title + ' · ' + s.text) + '">' + cellGlyph(s.cls, n) + s.inner + '</button></td>';
       }
       h += '</tr>';
     }
     h += '</tbody><tfoot><tr><th class="nm" scope="row">완료</th>';
-    for (j = 0; j < cols.length; j += 1) h += '<td>' + complCell(complRows(cols[j], rows)) + '</td>';
+    for (j = 0; j < cols.length; j += 1) h += '<td>' + complCell(complRows(cols[j], rows.filter(function (y) { return schIn(cols[j], y.skey); }))) + '</td>';   /* K1: 분모 = 볼 학교 학생 */
     h += '</tr></tfoot></table></div></div>';
     h += '<p class="stq0" role="status" hidden>찾는 학생이 없어요</p>';   /* 2차(8): 학생 찾기에 맞는 학생이 없을 때(표 줄 수 = 학생 수 그대로) */
     h += '<p class="legend"><span>' + ring(1, 'done') + '90% 넘게 봄(완료)</span><span>' + ring(1, 'conf') + '선생님 확인 완료</span>' +
@@ -2989,6 +3017,7 @@ window.__lecAdminStart = function () {
     var d = L.fmtDay(dayOf(l)), head = (d ? d + ' ' : '') + '수업 영상(' + str(l.title) + ')', a, p = noticePaper(l), c;
     if (isPosted(l)) a = head + '이 히즈클래스에 올라왔어요. 복습할 때 보세요.';
     else a = head + '은 ' + L.fmtDay(l.posted_on) + '부터 히즈클래스에서 볼 수 있어요. 복습할 때 보세요.';
+    if (lecSch(l).length) a = '[' + schNames(lecSch(l)) + '] ' + a;   /* K1: 볼 학교를 고른 강의 */
     if (p) a += '\n' + p;
     if (lecFiles(l).length) a += '\n필기 PDF도 영상 화면 오른쪽 위에서 받을 수 있어요.';
     c = '궁금한 곳은 히즈클래스에서 질문으로 남겨 주세요.';
@@ -3073,7 +3102,7 @@ window.__lecAdminStart = function () {
     cls = colClasses(l);
     cid = cls.indexOf(d.c) >= 0 ? d.c : (cls[0] || '');
     d.c = cid;
-    rows = cid ? stuIn(cid) : [];
+    rows = cid ? stuIn(cid).filter(function (y) { return schIn(l, y.skey); }) : [];   /* K1: 볼 학교 학생만 */
     for (i = 0; i < rows.length; i += 1) {
       s = stat(l, rows[i].skey);
       x = behindOf(l, rows[i].skey, s);
@@ -3081,7 +3110,7 @@ window.__lecAdminStart = function () {
       if (f === 'all' || (f === 'done' && isDone(s)) || (f === 'behind' && x)) list.push({ r: rows[i], s: s });
     }
     x = complRows(l, rows);
-    h = dHead(l.title, [L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업' : '', cid ? D.cname[cid] : '', x.big, x.small], thumbHtml(l));
+    h = dHead(l.title, [L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업' : '', cid ? D.cname[cid] : '', schNames(lecSch(l)), x.big, x.small], thumbHtml(l));
     h += '<div class="db">';
     /* 2차 인스펙터 머리 단추: 학생 화면(새 탭) · 고치기(보기) — 반 공지 문구 복사는 아래 그 자리에 */
     h += '<div class="in-act two"><a class="btn" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" aria-label="' + esc(stvAria(l)) + '">학생 화면' + nIcon('arrow') + '</a>' +
@@ -3323,7 +3352,8 @@ window.__lecAdminStart = function () {
       hidden: !!(l && l.hidden), chs: [], shown: '', durAuto: false, delAsk: false,
       days: lecDays(l), runner: null, runN: runCount(l), clsTouched: false, cands: [], pickNote: '', dcls: lclsCopy(l), dclsTouched: {},
       run: runCopy(l && l.runner ? l.runner.items : null), runMeta: runMetaOf(l ? l.runner : null), runDirty: false,
-      pdf: pdfInit(l), pdfOrig: pdfOrigOf(l), pdfSeq: 0
+      pdf: pdfInit(l), pdfOrig: pdfOrigOf(l), pdfSeq: 0,
+      sch: l && isArr(l.school_keys) ? l.school_keys.slice() : [], pushN: null, pushK: '', pushOff: false   /* K1 볼 학교 · 알림 수 */
     };
     ids = l ? (l.class_ids || []) : [];
     for (i = 0; i < ids.length; i += 1) {
@@ -3524,6 +3554,7 @@ window.__lecAdminStart = function () {
     h += '<div class="fld"><label for="ed-title">제목<span class="req">꼭</span></label><input id="ed-title" type="text" maxlength="120" value="' + esc(l ? l.title : '') + '"' + dis + '></div>';
     h += '<div class="fld"><label for="ed-book">교재</label><input id="ed-book" type="text" maxlength="120" value="' + esc(l ? l.book : '') + '"' + dis + '></div></div><div class="eg">';
     h += '<div class="fld"><span class="fl" id="ed-cls-l">볼 반<span class="req">꼭</span></span><div id="ed-cls">' + edClsHtml() + '</div></div>';
+    h += '<div class="fld" id="ed-schf"' + (edSchOn() ? '' : ' hidden') + '>' + edSchHtml() + '</div>';   /* K1: 볼 학교(고른 반에 학교 2곳 이상일 때만) */
     h += '<div class="fld"><span class="fl" id="ed-days-l">수업일(교실에서 이 수업을 한 날)</span><div id="ed-days" role="group" aria-labelledby="ed-days-l">' + edDaysHtml() + '</div></div>';
     h += '<div class="fld"><label for="ed-dur">길이<span class="req">꼭</span></label><input id="ed-dur" type="text" inputmode="numeric" placeholder="예: 47:00" value="' + esc(l && l.dur > 0 ? L.fmtDur(l.dur) : '') + '"' + dis + '>' +
       '<p class="msg mut sm">영상을 열면 저절로 채워져요.</p></div></div>';
@@ -3596,6 +3627,99 @@ window.__lecAdminStart = function () {
     if (!D.my.length && !S.me.admin) h += '<p class="mut sm">맡은 반이 없어요.</p>';
     if (S.ed.other.length) h += '<p class="mut sm">' + esc('다른 선생님 반 ' + clsNames(S.ed.other) + '도 함께 봐요.') + '</p>';
     return h;
+  }
+  /* K1(11-18) 볼 학교 줄: 고른 반 학생(전체 명단 · 다른 선생님 반 포함)의 학교 열쇠(D.sch) · «반 전체 5» + 학교 칩 «대동고 2»(여럿 고름) · 학교 빈칸 안내
+     보이는 때 = «전체»가 아니고 · 칸이 있는 DB(D.sk 가 false 아님) · 고른 반에 학교 2곳 이상(또는 이미 고른 학교가 있음 = 고친 강의를 그대로 두게)
+     제목으로 미리 고르기 · 지난번 기억 없음(결론안 첫 판) */
+  function edAllCls() { return !!(S.ed.cls['*'] || S.ed.other.indexOf('*') >= 0); }
+  function edStu() {
+    var ids = edClsIds(), all = edAllCls(), out = [], i, j, r;
+    for (i = 0; i < D.rosterAll.length; i += 1) {
+      r = D.rosterAll[i];
+      if (all) { out.push(r); continue; }
+      for (j = 0; j < r.cls.length; j += 1) { if (ids.indexOf(r.cls[j]) >= 0) { out.push(r); break; } }
+    }
+    return out;
+  }
+  function edSchInfo() {
+    var st = edStu(), cnt = {}, keys = [], blank = 0, real = 0, i, j, ks, k;
+    for (i = 0; i < st.length; i += 1) {
+      ks = (D.sch && D.sch[st[i].skey]) || [];
+      if (!ks.length) blank += 1;
+      for (j = 0; j < ks.length; j += 1) {
+        k = ks[j];
+        if (!has(cnt, k)) { cnt[k] = 0; keys.push(k); real += 1; }
+        cnt[k] += 1;
+      }
+    }
+    for (i = 0; i < edSel().length; i += 1) { k = edSel()[i]; if (!has(cnt, k)) { cnt[k] = 0; keys.push(k); } }
+    keys.sort(function (a, b) { return cnt[b] - cnt[a] || cmpKo(schLab(a), schLab(b)) || (a < b ? -1 : a > b ? 1 : 0); });
+    return { n: st.length, cnt: cnt, keys: keys, blank: blank, real: real };
+  }
+  function edSel() { return S.ed && isArr(S.ed.sch) ? S.ed.sch : []; }   /* 공지 카드(edNotice)의 S.ed 에는 sch 가 없음 */
+  function edSchOn() {
+    if (!S.ed || !isArr(S.ed.sch) || !L.schMap || D.sk === false || edAllCls()) return false;
+    return S.ed.sch.length > 0 || edSchInfo().real >= 2;
+  }
+  /* 저장할 칸: 줄이 숨으면(«전체» · 학교 한 곳) 빈 칸 = 반 전체 */
+  function edSchEff() { return edSchOn() ? edSel().slice().sort() : []; }
+  function edSchHtml() {
+    var o = edSchInfo(), dis = S.ed.can ? '' : ' disabled', none = !edSel().length, h, i, k, on;
+    h = '<span class="fl" id="ed-sch-l">볼 학교</span><div id="ed-sch"><div class="chips" role="group" aria-labelledby="ed-sch-l">' +
+      '<button type="button" class="chip' + (none ? ' on' : '') + '" aria-pressed="' + (none ? 'true' : 'false') + '" data-act="edSch" data-c="*"' + dis + '>반 전체 <span class="cnt">' + o.n + '</span></button>';
+    for (i = 0; i < o.keys.length; i += 1) {
+      k = o.keys[i];
+      on = edSel().indexOf(k) >= 0;
+      h += '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="edSch" data-c="' + esc(k) + '" title="' + esc(k) + '"' + dis + '>' +
+        esc(schLab(k)) + ' <span class="cnt">' + o.cnt[k] + '</span></button>';
+    }
+    h += '</div>';
+    if (o.blank) h += '<p class="schn">학교 안 적힌 학생 ' + o.blank + '명은 모든 영상이 보여요</p>';
+    return h + '</div>';
+  }
+  function edSchToggle(c) {
+    var i;
+    if (c === '*') { S.ed.sch = []; return; }
+    i = S.ed.sch.indexOf(c);
+    if (i >= 0) S.ed.sch.splice(i, 1); else S.ed.sch.push(c);
+    S.ed.sch.sort();
+  }
+  function edSchPaint() {
+    var f = $('ed-schf');
+    if (f && S.ed) { f.hidden = !edSchOn(); f.innerHTML = edSchHtml(); }
+    edAudPaint();
+  }
+  /* 저장 옆 «보이는 학생 N명 · 알림 N명»: 보이는 학생 = 고른 반(«전체»면 모든 반) 학생 중 볼 학교에 드는 학생(학교 빈칸 포함)
+     알림 = 새 강의만 · 서버 lec_push_count(알림 켬 · 볼 학교 · 숨김 아님) · 알림이 꺼졌거나 함수가 없으면 안 붙임 */
+  function edAudText() {
+    var st, sk, n = 0, i;
+    if (!S.ed || !S.ed.can || (!edAllCls() && !edClsIds().length)) return '';
+    st = edStu(); sk = edSchEff();
+    for (i = 0; i < st.length; i += 1) { if (!L.schOk || L.schOk(sk, (D.sch && D.sch[st[i].skey]) || [])) n += 1; }
+    return '보이는 학생 ' + n + '명' + (!S.ed.id && !S.ed.hidden && S.ed.pushN != null ? ' · 알림 ' + S.ed.pushN + '명' : '');
+  }
+  var audT = 0;
+  function edAudSet() { var e = $('ed-aud'), t = edAudText(); if (e) { e.textContent = t; e.hidden = !t; } }
+  function edAudPaint() {
+    var ids, sk, k, ed = S.ed;
+    if (!ed) return;
+    edAudSet();
+    if (ed.id || !ed.can || ed.hidden || ed.pushOff || !edAudText()) return;
+    ids = edAllCls() ? ['*'] : edClsIds();
+    sk = edSchEff();
+    k = ids.join(',') + '|' + sk.join(',');
+    if (k === ed.pushK) return;
+    ed.pushK = k;
+    if (ed.pushN != null) { ed.pushN = null; edAudSet(); }
+    clearTimeout(audT);
+    audT = setTimeout(function () {
+      if (S.ed !== ed || ed.pushK !== k) return;
+      DA.rpc('lec_push_count', { p_cls: ids, p_sk: sk }).then(function (r) {
+        if (S.ed !== ed || ed.pushK !== k) return;
+        ed.pushN = r && r.ok && r.show && isFinite(+r.n) ? +r.n : null;
+        edAudSet();
+      }, function () { if (S.ed === ed) { ed.pushOff = true; ed.pushN = null; edAudSet(); } });
+    }, 300);
   }
   /* K 목차 표: 번호 · 시작 · 멈춤 · 판서 · 워크북 · 학생 화면 지문 줄(미리 보기) · × — 한 목차 줄 = 한 줄 */
   function edChsHtml() {
@@ -3696,7 +3820,8 @@ window.__lecAdminStart = function () {
   function edFootHtml() {
     if (!S.ed.can) return '<button type="button" class="btn" data-act="edClose">닫기</button>';
     /* K 아래 줄: 요약 «목차 5 · 멈춤 5 · 길이 52:11 · 고1 A반 · Ctrl+Enter로 올리기» · 그만두기 · 강의 올리기(굵은 단추 하나) */
-    var h = '<span id="ed-sum" class="edsum">' + esc(edSumText()) + '</span>';
+    var h = '<span id="ed-sum" class="edsum">' + esc(edSumText()) + '</span>', au = edAudText();
+    h += '<span id="ed-aud" class="edaud" role="status"' + (au ? '' : ' hidden') + '>' + esc(au) + '</span>';   /* K1 */
     if (S.ed.id) {
       h += S.ed.delAsk ?
         '<div class="ask" role="group" aria-label="강의 지우기 확인"><p>정말 지울까요? 시청 기록과 질문' + (S.ed.pdfOrig ? ', 필기 PDF도 함께 지워져요' : '도 함께 지워져요') + '</p><div class="row">' +
@@ -3727,7 +3852,7 @@ window.__lecAdminStart = function () {
     a.push('Ctrl+Enter로 ' + (S.ed.id ? '저장' : '올리기'));
     return a.join(' · ');
   }
-  function edSum() { var e = $('ed-sum'); if (e && S.ed && S.ed.chs) e.textContent = edSumText(); }
+  function edSum() { var e = $('ed-sum'); if (e && S.ed && S.ed.chs) e.textContent = edSumText(); edAudPaint(); }
   function edNotes() {
     if (!S.ed) return;
     var post = trim(edVal('ed-post')), until = trim(edVal('ed-until')), t = today();
@@ -3841,6 +3966,7 @@ window.__lecAdminStart = function () {
         }
         $('ed-cls').innerHTML = edClsHtml();
         $('ed-days').innerHTML = edDaysHtml();
+        edSchPaint();   /* K1 */
       }
     }
     pdfWarnPaint();
@@ -4163,6 +4289,9 @@ window.__lecAdminStart = function () {
     /* P1 필기 PDF: 저장된 것과 달라졌을 때만 보냄(옛 DB 면 아래 PGRST204 에서 빼고 다시) */
     var pdfOld = S.ed.pdfOrig || '', pc = pdfCur(), pdfDropped = false;
     if (pdfOn() && (pc ? pc.p : '') !== pdfOld) row.files = pc ? [pdfItem(pc)] : [];
+    /* K1(11-18) 볼 학교: 칸이 있으면 늘 보냄(빈 [] = 반 전체) · 모르면 고른 학교가 있을 때만 · 옛 DB(PGRST204)면 빼고 다시 */
+    var skv = edSchEff(), skDropped = false;
+    if (D.sk === true || (D.sk !== false && skv.length)) row.school_keys = skv;
     var isNew = !S.ed.id, edId = S.ed.id;
     function done(rw, saved) {
       S.busy.ed = 0;
@@ -4170,7 +4299,7 @@ window.__lecAdminStart = function () {
       if (isNew && rw) { S.edDraft = null; dfDrop('ed'); }   /* 올린 새 강의 칸은 남겨 둔 글에서 지움(§8-220) */
       if (isNew && rw) edNotice(rw, saved && saved.id);
       else closeEditor();
-      toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : '') + (pdfDropped ? ' · 필기 PDF는 저장되지 않았어요' : ''));
+      toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : '') + (pdfDropped ? ' · 필기 PDF는 저장되지 않았어요' : '') + (skDropped ? ' · 볼 학교는 저장되지 않았어요' : ''));
       /* PDF 를 바꾸거나 뺐으면 옛 파일은 저장이 된 뒤에 · 다른 강의가 안 쓸 때만 지움 */
       if (rw && has(rw, 'files') && pdfOld && !pdfHas(rw.files, pdfOld)) pdfDrop(pdfOld, edId, true);
       refresh();
@@ -4181,7 +4310,7 @@ window.__lecAdminStart = function () {
         var m, drop, r2 = {}, k2, cut = false;
         if (!(e && e.code === 'PGRST204') || n > 2) throw e;
         m = /'([A-Za-z_]+)' column/.exec(str(e.message) + ' ' + str(e.detail));
-        drop = m && m[1] === 'files' ? ['files'] : m && m[1] === 'lesson_cls' ? ['lesson_cls'] : m ? ['lesson_more', 'runner', 'lesson_cls'] : ['lesson_more', 'runner', 'lesson_cls', 'files'];
+        drop = m && m[1] === 'school_keys' ? ['school_keys'] : m && m[1] === 'files' ? ['files'] : m && m[1] === 'lesson_cls' ? ['lesson_cls'] : m ? ['lesson_more', 'runner', 'lesson_cls'] : ['lesson_more', 'runner', 'lesson_cls', 'files', 'school_keys'];
         for (k2 in rw) {
           if (!has(rw, k2) || k2 === 'id') continue;
           if (drop.indexOf(k2) >= 0) { cut = true; continue; }
@@ -4191,6 +4320,7 @@ window.__lecAdminStart = function () {
         if (has(rw, 'lesson_cls') && drop.indexOf('lesson_cls') >= 0) { D.lcls = false; if (lcn) lcDropped = true; }
         if (drop.indexOf('lesson_more') >= 0) { D.c1 = false; if (more.length) dropped = true; }
         if (has(rw, 'files') && drop.indexOf('files') >= 0) { D.files = false; pdfDropped = true; }
+        if (has(rw, 'school_keys') && drop.indexOf('school_keys') >= 0) { D.sk = false; if (rw.school_keys.length) skDropped = true; }   /* K1 */
         return attempt(r2, n + 1);
       });
     }
@@ -6894,7 +7024,8 @@ window.__lecAdminStart = function () {
         $('ed-chs').innerHTML = edChsHtml();
         chLive();
         break;
-      case 'edCls': if (S.ed) { S.ed.cls[c] = !S.ed.cls[c]; S.ed.clsTouched = true; $('ed-cls').innerHTML = edClsHtml(); readDays(); $('ed-days').innerHTML = edDaysHtml(); refocus('ed-cls', 'data-c', c); edSum(); } break;
+      case 'edCls': if (S.ed) { S.ed.cls[c] = !S.ed.cls[c]; S.ed.clsTouched = true; $('ed-cls').innerHTML = edClsHtml(); readDays(); $('ed-days').innerHTML = edDaysHtml(); refocus('ed-cls', 'data-c', c); edSchPaint(); edSum(); } break;
+      case 'edSch': if (S.ed && S.ed.can) { edSchToggle(c); edSchPaint(); refocus('ed-sch', 'data-c', c); } break;   /* K1 */
       case 'edDcls':
         /* C1 고침(11-16) 수업일마다 반: 누른 반을 그날에서 빼거나 넣음 · 한 반은 남김 · 모든 반이면 저장 안 함(= 모든 반) */
         if (!S.ed || !S.ed.can) break;
@@ -6928,7 +7059,7 @@ window.__lecAdminStart = function () {
         r = $('ed-days').querySelector('[data-di]');
         if (r) r.focus();
         break;
-      case 'edHidden': if (S.ed) { S.ed.hidden = !S.ed.hidden; $('ed-hid').innerHTML = edHidHtml(); refocus('ed-hid', 'data-act', 'edHidden'); } break;
+      case 'edHidden': if (S.ed) { S.ed.hidden = !S.ed.hidden; $('ed-hid').innerHTML = edHidHtml(); refocus('ed-hid', 'data-act', 'edHidden'); edAudPaint(); } break;
       case 'edFile': r = $('ed-file'); if (r) r.click(); break;
       case 'edPdfPick': r = $('ed-pdfile'); if (r) r.click(); break;
       case 'edPdfOff': pdfOff(); break;

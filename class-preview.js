@@ -59,10 +59,14 @@
     for (i = 0; i < ids.length && !cid; i += 1) { if (ids[i] !== '*' && has(known, str(ids[i]))) cid = str(ids[i]); }
     for (i = 0; i < ids.length && !cid; i += 1) { if (ids[i] !== '*') cid = str(ids[i]); }
     var cname = cid ? str(has(known, cid) ? known[cid].name : '') : (star ? '전체 반' : '');
-    function open(l) {   /* 서버 lec__open 과 같은 셈(학생 반 = cid) */
+    /* K1(11-18) 볼 학교: 학교를 고른 강의면 그 첫 학교 학생으로 봄(띠에 «반 · 학교») · 반 전체 강의면 학교 거름 없음 */
+    var sch = isArr(tgt.school_keys) && tgt.school_keys.length ? [str(tgt.school_keys[0])] : [];
+    if (sch.length && cname) cname += ' · ' + (L.schLabel ? L.schLabel(sch[0]) : sch[0]);
+    function open(l) {   /* 서버 lec__open_s 와 같은 셈(학생 반 = cid · 학교 = sch) */
       if (!l || l.hidden) return false;
       var po = str(l.posted_on) || t, cs = isArr(l.class_ids) ? l.class_ids : [];
       if (po > t || !cs.length) return false;
+      if (L.schOk && !L.schOk(l.school_keys, sch)) return false;
       if (cs.indexOf('*') >= 0) return true;
       return !!cid && cs.indexOf(cid) >= 0;
     }

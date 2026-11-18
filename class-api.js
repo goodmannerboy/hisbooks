@@ -1489,6 +1489,45 @@
     try { return String((stu && (stu.school || (stu.intake && stu.intake.school))) || '').trim(); } catch (e) { return ''; }
   }
 
+  /* K1(11-18) 강의마다 볼 학교 — 서버 lec__schs · lec__sch_ok 와 같은 셈(class-setup.sql 맨 앞 K1 · CLAUDE.md 학교 칸 절)
+     schMap(classes) = {학생 열쇠(skey): [학교 열쇠 · 겹침 없이 · 차례]} · 명단 거름은 rosterFrom 과 같음 · 빈 목록 = 학교 빈칸
+     (같은 학생이 두 반에 다른 학교로 적히면 둘 다 · 학교 열쇠 = schoolKey(stuSchool(학생)))
+     schOk(keys, sch) = 강의 칸이 비었거나(반 전체) · 학생 학교가 빈칸이거나 · 겹치면 보임(틀려도 «더 보이는» 쪽)
+     schLabel(k) = 칩 · 캡슐 글: 맨 앞 «포항»은 남는 글이 3자 이상일 때만 뗌(포항대동고 → 대동고 · 포항고 · 포항여고는 그대로) */
+  function schMap(classes) {
+    var out = {}, i, j, c, studs, s, rid, nn, sk, k;
+    if (!isArr(classes)) return out;
+    for (i = 0; i < classes.length; i += 1) {
+      c = classes[i];
+      studs = isObj(c) && isArr(c.students) ? c.students : [];
+      for (j = 0; j < studs.length; j += 1) {
+        s = studs[j];
+        if (!isObj(s)) continue;
+        rid = Lec.jtext(s.id);
+        if (rid === null || rid === '') continue;
+        nn = Lec.norm(Lec.jtext(s.name));
+        if (nn === '') continue;
+        if (Lec.truthy(s.withdrawn) || Lec.truthy(s.pending)) continue;
+        sk = rid + '|' + nn;
+        if (!has(out, sk)) out[sk] = [];
+        k = schoolKey(stuSchool(s));
+        if (k && out[sk].indexOf(k) < 0) out[sk].push(k);
+      }
+    }
+    for (sk in out) { if (has(out, sk)) out[sk].sort(cmpS); }
+    return out;
+  }
+  function schOk(keys, sch) {
+    var i;
+    if (!isArr(keys) || !keys.length || !isArr(sch) || !sch.length) return true;
+    for (i = 0; i < keys.length; i += 1) { if (sch.indexOf(keys[i]) >= 0) return true; }
+    return false;
+  }
+  function schLabel(k) {
+    k = str(k);
+    return k.indexOf('포항') === 0 && k.length - 2 >= 3 ? k.slice(2) : k;
+  }
+
   /* 앱 _gradeFromClass: 반 이름의 H2 · M3 · E5 · «2학년» */
   function gradeFromClass(cls, school) {
     try {
@@ -1751,8 +1790,9 @@
      near = 수업일이 시험 첫날 70일 전 ~ 시험 끝 날 전(endOn 을 주면) · checked = near 이면서 «모든 반»이 아님(처음부터 체크 · C2 검수 L7)
      until = 공개 끝 날(없으면 null · 서랍의 «MM.DD까지») · at = 올린 시각(created_at · 저장 뒤 올린 강의 고르기 · M1)
      row = 저장한 줄(주면 · M2): 공개 끝이 지난 강의도 줄의 시험 끝 날까지(그날 포함)는 남김 — 줄에 든 강의이거나 저장 뒤 올라온
-     처음부터 체크 강의(M1 · 서버 lec__ext_to 와 같은 뜻) · 남긴 것은 ext = true(서버가 학생에게 시험 끝 날까지 보여 주는 강의) */
-  function rngCands(lectures, cids, examOn, today, endOn, row) {
+     처음부터 체크 강의(M1 · 서버 lec__ext_to 와 같은 뜻) · 남긴 것은 ext = true(서버가 학생에게 시험 끝 날까지 보여 주는 강의)
+     sk = 묶음의 학교 열쇠(주면 · K1 11-18): 볼 학교를 골라 그 학교가 빠진 강의는 후보에서 뺌(그 학교 학생에게 안 보이는 강의 · 서버 M1 과 같은 뜻) */
+  function rngCands(lectures, cids, examOn, today, endOn, row, sk) {
     var td = isoOf(today == null ? Lec.isoDay() : today), ex = isoOf(examOn), en = isoOf(endOn), from = ex ? addDays(ex, -70) : '',
       out = [], i, l, ids, all, day, near, ext, keep = {}, rex = '', ren = '', st = NaN, at;
     if (!isArr(lectures)) return out;
@@ -1769,6 +1809,7 @@
       ids = isArr(l.class_ids) ? l.class_ids : [];
       all = ids.indexOf('*') >= 0;
       if (!all && !meets(ids, cids)) continue;
+      if (sk && !schOk(l.school_keys, [str(sk)])) continue;
       day = lecDay(l);
       near = !!(ex && day && day >= from && (!en || day < en));
       ext = false;
@@ -2045,6 +2086,7 @@
 
   var api = {
     examNorm: examNorm, examCalc: examCalc, schoolKey: schoolKey, schoolDisp: schoolDisp, schoolShort: schoolShort, stuSchool: stuSchool,
+    schMap: schMap, schOk: schOk, schLabel: schLabel,
     gradeFromClass: gradeFromClass, stuGrade: stuGrade,
     RNG_VER: RNG_VER, grpT: grpT,
     examMerge: examMerge, examPick: examPick, examName: examName, examGroups: examGroups, isoOf: isoOf, addDays: addDays,

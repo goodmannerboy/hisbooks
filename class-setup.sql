@@ -4,8 +4,8 @@
 -- 1) supabase.com 로그인 → 히즈북스 프로젝트 → 왼쪽 «SQL Editor»
 -- 2) «New query» → 이 파일 전체(Ctrl+A → Ctrl+C)를 붙여 넣고 «Run»
 --    (경고 창이 뜨면 «Run this query»)
--- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 8/8 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림 · 녹음 저장 곳 · 30일 지난 녹음» 표가 나오면 통과입니다.
---    (스스로 점검 여덟은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
+-- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 9/9 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림 · 녹음 저장 곳 · 30일 지난 녹음» 표가 나오면 통과입니다.
+--    (스스로 점검 아홉은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
 --    빨간 오류가 나오면 아무것도 바뀌지 않은 것입니다(통째로 되돌려짐).
 --    «PDF 저장 곳» 칸이 «됨»이 아니면 강의 필기 PDF 저장 곳(Storage)만 못 만든 것입니다 · 강의실은 그대로 씁니다
 --    (그때는 대시보드 Storage 에서 버킷 · 정책을 만듭니다 · 차례는 맨 아래 P1 절 머리글)
@@ -55,6 +55,8 @@ create table if not exists public.lec_lecture (
 );
 -- 공개 끝 날짜(비면 끝 없음 · 한국 시각 오늘이 이 날을 넘으면 끝난 강의)
 alter table public.lec_lecture add column if not exists until date;
+-- 볼 학교(11-18 K1): 반 안에서 이 강의를 볼 학교 열쇠(앱 schoolKey) · 빈 목록 = 반 전체(지금과 같음 · 맨 앞 K1 속 함수 머리글)
+alter table public.lec_lecture add column if not exists school_keys text[] not null default '{}';
 
 create table if not exists public.lec_progress (
   sid         text not null,
@@ -122,6 +124,8 @@ create table if not exists public.lec_key (
 alter table public.lec_key add column if not exists rid text not null default '';
 alter table public.lec_key add column if not exists pin text not null default '';
 alter table public.lec_key add column if not exists dev text not null default '';
+-- 학생 학교 열쇠(11-18 K1 · cls 처럼 첫 화면 lec_home 이 열 때마다 맞춤 · 빈 목록 = 학교 빈칸 = 모든 강의)
+alter table public.lec_key add column if not exists sch text[] not null default '{}';
 -- 열쇠는 해시만(kh = sha256 16진 64자). 예전 판(열쇠 그대로 key 칸)이면 해시로 바꾸고 key 칸을 지움
 --   (학생 기기에 있는 열쇠는 그대로 쓰임 · 함수가 받은 열쇠를 해시해서 찾음)
 alter table public.lec_key add column if not exists kh text;
@@ -268,6 +272,136 @@ language sql stable set search_path = public as $$
      and coalesce(cardinality(cls), 0) > 0
      and ((l.class_ids && cls) or '*' = any (l.class_ids))
 $$;
+
+-- ---- K1 (11-18) 강의마다 볼 학교(원장님 «썸네일로 넣어» 다음 학교 칸 · 결론안 P1 · CLAUDE.md §8 학교 칸 절)
+--   같은 반 안에서 학교로 나눔: 강의 school_keys(빈 목록 = 반 전체 = 지금과 같음) · 학생 학교 열쇠 = 앱 schoolKey 와 글자 그대로(lec__skey)
+--   보이는 규칙 하나(lec__sch_ok): 강의 칸이 비었거나 · 학생 학교가 빈칸이거나 · 학생 학교 열쇠가 칸 안에 있으면 보임(틀려도 «더 보이는» 쪽)
+--   학생 쪽은 lec__open 대신 lec__open_s(옛 lec__open 은 그대로 둠) · 선생님 쪽 셈(덜 본 학생 · 결석 띠 · 알림 받는 사람 · 알림 수 ·
+--   시험 범위 M1)도 같은 규칙 · 학생 열쇠의 sch 는 cls 처럼 첫 화면(lec_home)이 열 때마다 맞춤 · 스스로 점검은 맨 끝 K1
+drop function if exists public.lec__skey(text);
+drop function if exists public.lec__stu_school(jsonb);
+drop function if exists public.lec__schs(jsonb);
+drop function if exists public.lec__sch_of(text);
+drop function if exists public.lec__sch_ok(text[], text[]);
+drop function if exists public.lec__open_s(public.lec_lecture, text[], text[]);
+drop function if exists public.lec__push_n_s(jsonb, text[], text[], text[]);   -- 만드는 곳은 N1 절(알림 표 뒤)
+drop function if exists public.lec_push_count(text[], text[]);                 -- 만드는 곳은 N1 절(lec_push_state 뒤)
+
+-- 학교 열쇠(앱 _schoolKey · class-api.js schoolKey 를 글자 그대로): 보통 칸만 빼고 «고등학교 → 고» 줄임 · 끝의 숫자 · 학년 · 반 떼기
+--   길이는 JS 처럼 UTF-16 칸으로 셈(U+10000 넘는 글자 = 2칸 · 떼는 글자는 모두 한 칸 글자라 그 수는 그대로)
+create or replace function public.lec__skey(s text) returns text
+language plpgsql immutable set search_path = public as $$
+declare
+  x    text := replace(coalesce(s, ''), ' ', '');
+  sup  integer := 0;
+  n    integer;
+  ch   integer;
+  pv   integer;
+  g    boolean := true;
+  ok   boolean := false;
+begin
+  if x = '' then
+    return '';
+  end if;
+  x := replace(replace(replace(replace(replace(x, '여자고등학교', '여고'), '여자중학교', '여중'),
+               '고등학교', '고'), '중학교', '중'), '초등학교', '초');
+  for i in 1 .. char_length(x) loop
+    if ascii(substr(x, i, 1)) > 65535 then
+      sup := sup + 1;
+    end if;
+  end loop;
+  while g and char_length(x) + sup > 1 loop
+    g := false;
+    n := char_length(x) + sup;
+    ch := ascii(right(x, 1));
+    if ch between 48 and 57 or ch in (40, 41, 44, 45, 46, 47, 91, 93) then
+      x := left(x, -1); g := true; continue;
+    end if;
+    if n > 2 and right(x, 2) = '학년' then
+      x := left(x, -2); g := true; continue;
+    end if;
+    pv := ascii(substr(x, char_length(x) - 1, 1));
+    if n > 2 and ch = ascii('년') and pv between 48 and 57 then
+      x := left(x, -1); g := true; continue;
+    end if;
+    if n > 2 and ch = ascii('반') then
+      if pv between 48 and 57 then
+        x := left(x, -1); g := true; continue;
+      end if;
+      if n > 3 and pv between ascii('가') and ascii('하') then
+        x := left(x, -2); g := true; continue;
+      end if;
+    end if;
+  end loop;
+  for i in 1 .. char_length(x) loop
+    ch := ascii(substr(x, i, 1));
+    if ch between ascii('가') and ascii('힣') or ch between 65 and 90 or ch between 97 and 122 then
+      ok := true;
+      exit;
+    end if;
+  end loop;
+  if not ok or char_length(x) + sup < 2 then
+    return '';
+  end if;
+  return x;
+end
+$$;
+
+-- 학생의 학교 글(앱 _stuSchool): school 이 «참»이면 그것 · 아니면 intake.school · 앞뒤 빈칸 떼기(JS trim 과 같은 글자)
+create or replace function public.lec__stu_school(p_stu jsonb) returns text
+language sql immutable set search_path = public as $$
+  select btrim(case when public.lec__truthy(p_stu -> 'school') then coalesce(p_stu ->> 'school', '')
+                    when public.lec__truthy(p_stu #> '{intake,school}') then coalesce(p_stu #>> '{intake,school}', '')
+                    else '' end,
+               chr(9) || chr(10) || chr(11) || chr(12) || chr(13) || chr(32) || chr(160) || chr(5760) ||
+               chr(8192) || chr(8193) || chr(8194) || chr(8195) || chr(8196) || chr(8197) || chr(8198) || chr(8199) ||
+               chr(8200) || chr(8201) || chr(8202) || chr(8232) || chr(8233) || chr(8239) || chr(8287) || chr(12288) || chr(65279))
+$$;
+
+-- 받은 main 묶음에서 학생마다 학교 열쇠들(lec__ros 와 같은 거름 · 같은 학생이 여러 반이면 모두 모음 · 빈 열쇠는 뺌 · 빈 목록 = 학교 빈칸)
+create or replace function public.lec__schs(p_main jsonb)
+returns table (skey text, sch text[])
+language sql immutable set search_path = public as $$
+  select st.rid || '|' || st.nname,
+         coalesce(array_agg(distinct st.k) filter (where st.k <> ''), '{}')
+    from (select s ->> 'id'                                    as rid,
+                 public.lec__norm(s ->> 'name')                as nname,
+                 public.lec__skey(public.lec__stu_school(s))   as k
+            from jsonb_array_elements(case when jsonb_typeof(p_main -> 'classes') = 'array' then p_main -> 'classes' else '[]'::jsonb end) as c
+           cross join lateral jsonb_array_elements(case when jsonb_typeof(c -> 'students') = 'array' then c -> 'students' else '[]'::jsonb end) as s
+           where jsonb_typeof(s) = 'object'
+             and coalesce(s ->> 'id', '') <> ''
+             and public.lec__norm(s ->> 'name') <> ''
+             and not public.lec__truthy(s -> 'withdrawn')
+             and not public.lec__truthy(s -> 'pending')) st
+   group by st.rid, st.nname
+$$;
+
+-- 학생 열쇠(skey) 하나의 학교 열쇠들(app_state main 을 읽음 · 명단에 없으면 빈 목록)
+create or replace function public.lec__sch_of(p_sid text) returns text[]
+language sql stable security definer set search_path = public as $$
+  select coalesce((select h.sch
+                     from public.app_state a
+                    cross join lateral public.lec__schs(a.data) h
+                    where a.id = 'main' and h.skey = p_sid
+                    limit 1), '{}'::text[])
+$$;
+
+-- 보이는 규칙 하나: 강의 칸이 비었거나(반 전체) · 학생 학교가 빈칸이거나 · 겹치면 보임
+create or replace function public.lec__sch_ok(keys text[], sch text[]) returns boolean
+language sql immutable set search_path = public as $$
+  select coalesce(cardinality(keys), 0) = 0 or coalesce(cardinality(sch), 0) = 0 or keys && sch
+$$;
+
+-- 학생이 이 강의를 볼 수 있나(lec__open + 볼 학교) · 학생 함수는 모두 이것으로
+create or replace function public.lec__open_s(l public.lec_lecture, cls text[], sch text[]) returns boolean
+language sql stable set search_path = public as $$
+  select public.lec__open(l, cls) and public.lec__sch_ok(l.school_keys, sch)
+$$;
+
+revoke all on function public.lec__skey(text), public.lec__stu_school(jsonb), public.lec__schs(jsonb), public.lec__sch_of(text),
+                       public.lec__sch_ok(text[], text[]), public.lec__open_s(public.lec_lecture, text[], text[])
+  from public, anon, authenticated;
 
 -- 학생 명단(퇴원 · 반배정 대기 빼고): 학생 구분 열쇠 · 학생 id · 이름 · 맞춘 이름 · 번호 뒤 4자리들 · 반 id들
 create or replace function public.lec__roster()
@@ -554,8 +688,8 @@ begin
   delete from public.lec_fail where who in (v_who, 'k:' || v_skey);
   v_key := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
   -- 표에는 해시만 · 열쇠 그대로는 이 기기에 한 번 돌려줄 뿐
-  insert into public.lec_key (kh, sid, rid, pin, sname, cls, dev)
-  values (public.lec__kh(v_key), v_skey, v_rid, v_pin, v_sname, coalesce(v_cls, '{}'), left(coalesce(p_dev, ''), 40));
+  insert into public.lec_key (kh, sid, rid, pin, sname, cls, sch, dev)
+  values (public.lec__kh(v_key), v_skey, v_rid, v_pin, v_sname, coalesce(v_cls, '{}'), public.lec__sch_of(v_skey), left(coalesce(p_dev, ''), 40));
   return jsonb_build_object('ok', true, 'key', v_key, 'name', v_sname);
 end
 $$;
@@ -576,6 +710,7 @@ declare
   v_csname text;
   v_cpins  text[];
   v_ccls   text[];
+  v_sch    text[];
 begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then
@@ -603,7 +738,8 @@ begin
     update public.lec_key set cls = '{}', last_at = now() where kh = k.kh;
     return jsonb_build_object('ok', false, 'err', 'gone');
   end if;
-  update public.lec_key set sname = v_sname, cls = coalesce(v_cls, '{}'), last_at = now() where kh = k.kh;
+  v_sch := public.lec__sch_of(k.sid);
+  update public.lec_key set sname = v_sname, cls = coalesce(v_cls, '{}'), sch = v_sch, last_at = now() where kh = k.kh;
   return jsonb_build_object(
     'ok', true,
     'me', jsonb_build_object('name', v_sname),
@@ -624,7 +760,7 @@ begin
              ) order by coalesce(l.lesson_on, l.posted_on), l.created_at)
         from public.lec_lecture l
         left join public.lec_progress p on p.lecture_id = l.id and p.sid = k.sid
-       where public.lec__open(l, v_cls)
+       where public.lec__open_s(l, v_cls, v_sch)
     ), '[]'::jsonb));
 end
 $$;
@@ -685,7 +821,7 @@ begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then return jsonb_build_object('ok', false, 'err', 'key'); end if;
   select * into l from public.lec_lecture x
-   where x.id = p_lecture and public.lec__open(x, k.cls);
+   where x.id = p_lecture and public.lec__open_s(x, k.cls, k.sch);
   if not found then return jsonb_build_object('ok', false, 'err', 'lecture'); end if;
   if public.lec__ended(l) then return jsonb_build_object('ok', false, 'err', 'ended'); end if;
   if not public.lec__agreed(k.sid) then return jsonb_build_object('ok', false, 'err', 'no_consent'); end if;
@@ -761,7 +897,7 @@ begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then return jsonb_build_object('ok', false, 'err', 'key'); end if;
   select * into l from public.lec_lecture x
-   where x.id = p_lecture and public.lec__open(x, k.cls);
+   where x.id = p_lecture and public.lec__open_s(x, k.cls, k.sch);
   if not found then return jsonb_build_object('ok', false, 'err', 'lecture'); end if;
 
   -- 이번에 처음 읽는 답이 달린 내 질문(unread): 읽음 표시 전에 모아 둠
@@ -825,7 +961,7 @@ begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then return jsonb_build_object('ok', false, 'err', 'key'); end if;
   select * into l from public.lec_lecture x
-   where x.id = p_lecture and public.lec__open(x, k.cls);
+   where x.id = p_lecture and public.lec__open_s(x, k.cls, k.sch);
   if not found then return jsonb_build_object('ok', false, 'err', 'lecture'); end if;
   if public.lec__ended(l) then return jsonb_build_object('ok', false, 'err', 'ended'); end if;
   if not public.lec__agreed(k.sid) then return jsonb_build_object('ok', false, 'err', 'no_consent'); end if;
@@ -1046,8 +1182,8 @@ begin
   select t.skey, t.rid, t.sname, t.cls into r from public.lec__roster() t where t.skey = p_skey limit 1;
   if not found then return jsonb_build_object('ok', false, 'err', 'nomatch'); end if;
   v_key := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
-  insert into public.lec_key (kh, sid, rid, pin, sname, cls, dev, made_by)
-  values (public.lec__kh(v_key), r.skey, r.rid, '', r.sname, coalesce(r.cls, '{}'), '개인 링크', v_name);
+  insert into public.lec_key (kh, sid, rid, pin, sname, cls, sch, dev, made_by)
+  values (public.lec__kh(v_key), r.skey, r.rid, '', r.sname, coalesce(r.cls, '{}'), public.lec__sch_of(r.skey), '개인 링크', v_name);
   return jsonb_build_object('ok', true, 'key', v_key);
 end
 $$;
@@ -1123,21 +1259,24 @@ begin
     from w;
 
   with ro as (select r.skey, r.sname, r.cls from public.lec__roster() r),
+       sc as (select h.skey, h.sch from public.app_state a cross join lateral public.lec__schs(a.data) h where a.id = 'main'),
        cl as (select k.id, k.name from public.lec__classes() k where v_admin or k.owner = v_name),
-       lec as (select l.id, l.title, l.class_ids, l.created_at, coalesce(l.lesson_on, l.posted_on) as day
+       lec as (select l.id, l.title, l.class_ids, l.school_keys, l.created_at, coalesce(l.lesson_on, l.posted_on) as day
                  from public.lec_lecture l
                 where not l.hidden
                   and coalesce(l.posted_on, v_today) <= v_today
                   and not public.lec__ended(l)
                   and coalesce(l.lesson_on, l.posted_on) between v_today - 13 and v_today),
-       pr as (select lec.id as lid, lec.title, lec.day, lec.created_at as lca, cl.id as cid, cl.name as cname
+       pr as (select lec.id as lid, lec.title, lec.day, lec.created_at as lca, cl.id as cid, cl.name as cname, lec.school_keys as sk
                 from lec join cl on (cl.id = any (lec.class_ids) or '*' = any (lec.class_ids))),
        st as (select pr.lid, pr.cid, r.skey, r.sname
                 from pr join ro r on pr.cid = any (r.cls)
+                left join sc on sc.skey = r.skey
                 left join public.lec_progress g on g.sid = r.skey and g.lecture_id = pr.lid
                 left join public.lec_consent cs on cs.sid = r.skey
                where coalesce(g.pct, 0) < 90 and g.done_by is null
-                 and coalesce(cs.choice, '') <> 'none')
+                 and coalesce(cs.choice, '') <> 'none'
+                 and public.lec__sch_ok(pr.sk, sc.sch))
   select coalesce(jsonb_agg(jsonb_build_object(
                     'cls', pr.cid, 'cname', pr.cname, 'lecture', pr.lid, 'title', pr.title, 'day', pr.day,
                     'n', x.n, 'names', x.names)
@@ -1687,18 +1826,20 @@ language plpgsql stable set search_path = public as $$
 declare
   v_rid   text;
   v_cls   text[];
+  v_sch   text[];
   v_cdays jsonb := '{}'::jsonb;
   v_days  date[];
   v_data  jsonb;
   v_items jsonb := '[]'::jsonb;
 begin
   select r.rid, r.cls into v_rid, v_cls from public.lec__ros(p_main) r where r.skey = p_sid limit 1;
+  select h.sch into v_sch from public.lec__schs(p_main) h where h.skey = p_sid limit 1;
   if v_rid is not null and coalesce(cardinality(v_cls), 0) > 0 then
     with lday as (
       select l.id, l.class_ids, u.x as day, public.lec__lcls(l.lesson_cls, u.x) as lc
         from public.lec_lecture l
        cross join lateral (select distinct v.x from unnest(array_append(coalesce(l.lesson_more, '{}'::date[]), l.lesson_on)) as v(x)) u
-       where public.lec__open(l, v_cls) and u.x between p_today - 62 and p_today
+       where public.lec__open_s(l, v_cls, v_sch) and u.x between p_today - 62 and p_today
     ), cd as (
       select distinct c.cid, lday.day
         from lday
@@ -1720,7 +1861,7 @@ begin
       select l.id, l.class_ids, u.x as day, public.lec__lcls(l.lesson_cls, u.x) as lc
         from public.lec_lecture l
        cross join lateral (select distinct v.x from unnest(array_append(coalesce(l.lesson_more, '{}'::date[]), l.lesson_on)) as v(x)) u
-       where public.lec__open(l, v_cls) and u.x between p_today - 62 and p_today
+       where public.lec__open_s(l, v_cls, v_sch) and u.x between p_today - 62 and p_today
     ), lec as (
       select lday.id, array_agg(lday.day order by lday.day) as days
         from lday
@@ -1837,9 +1978,11 @@ begin
     with a as (
       select * from public.lec__att_core(v_data, v_rids, v_cids, v_cdays, p_today, p_now)
     ), ro as (
-      select r.skey, r.rid, r.cls from public.lec__ros(p_main) r where r.cls && v_scope
+      select r.skey, r.rid, r.cls, coalesce(h.sch, '{}'::text[]) as sch
+        from public.lec__ros(p_main) r left join public.lec__schs(p_main) h on h.skey = r.skey
+       where r.cls && v_scope
     ), lday as (
-      select l.id, l.class_ids, u.x as day, public.lec__lcls(l.lesson_cls, u.x) as lc
+      select l.id, l.class_ids, l.school_keys as sk, u.x as day, public.lec__lcls(l.lesson_cls, u.x) as lc
         from public.lec_lecture l
        cross join lateral (select distinct v.x from unnest(array_append(coalesce(l.lesson_more, '{}'::date[]), l.lesson_on)) as v(x)) u
        where u.x between p_today - 62 and p_today
@@ -1851,6 +1994,7 @@ begin
         from lday
         join ro on exists (select 1 from unnest(ro.cls) as c(cid)
                             where c.cid = any (v_scope) and (c.cid = any (lday.class_ids) or '*' = any (lday.class_ids)))
+               and public.lec__sch_ok(lday.sk, ro.sch)
         join a on a.o_rid = ro.rid and a.o_day = lday.day and a.o_cid = any (ro.cls)
               and a.o_cid = any (coalesce(lday.lc, lday.class_ids))
               and (a.o_cid = any (lday.class_ids) or '*' = any (lday.class_ids))
@@ -2715,7 +2859,7 @@ begin
                                                then l.runner -> 'items' else '[]'::jsonb end) with ordinality as t(e, e_o)
                where jsonb_typeof(e) = 'object') as p
         from public.lec_lecture l
-       where public.lec__open(l, k.cls)
+       where public.lec__open_s(l, k.cls, k.sch)
          and not public.lec__ended(l)   -- 끝난 강의는 플레이어를 열지 않으므로 지문 줄도 안 보냄(검수 B2 L-8)
          and (case when jsonb_typeof(l.runner -> 'items') = 'array'
                    then jsonb_array_length(l.runner -> 'items') else 0 end) > 0
@@ -2943,10 +3087,11 @@ begin
           on l.id = any (g.lecture_ids)
           or (l.created_at > g.saved_at
               and not ('*' = any (l.class_ids))
+              and (cardinality(l.school_keys) = 0 or g.school_key = any (l.school_keys))
               and coalesce((select max(v.x) from unnest(array_append(coalesce(l.lesson_more, '{}'::date[]), l.lesson_on)) as v(x)),
                            l.posted_on) between g.exam_on - 70 and g.end_on - 1)
         left join public.lec_progress p on p.lecture_id = l.id and p.sid = k.sid
-       where public.lec__open(l, k.cls)
+       where public.lec__open_s(l, k.cls, k.sch)
          and not public.lec__ended(l)
        group by g.id, g.name, g.exam_on, g.end_on
     ) x;
@@ -3048,6 +3193,7 @@ begin
             (v_oldat is not null and l.created_at > v_oldat
              and not l.hidden and not public.lec__ended(l) and not ('*' = any (l.class_ids))
              and l.class_ids && v_rcls
+             and (cardinality(l.school_keys) = 0 or v_school = any (l.school_keys))
              and coalesce((select max(v.x) from unnest(array_append(coalesce(l.lesson_more, '{}'::date[]), l.lesson_on)) as v(x)),
                           l.posted_on) between v_oldex - 70 and v_olden - 1) as m1) f
    where (l.id = any (coalesce(p_lectures, '{}')) and f.vis)
@@ -3643,6 +3789,7 @@ language sql stable security definer set search_path = public as $$
    where l.id = any (g.lecture_ids)
       or (l.created_at > g.saved_at
           and not ('*' = any (l.class_ids))
+          and (cardinality(l.school_keys) = 0 or g.school_key = any (l.school_keys))
           and coalesce((select max(v.x) from unnest(array_append(coalesce(l.lesson_more, '{}'::date[]), l.lesson_on)) as v(x)),
                        l.posted_on) between g.exam_on - 70 and g.end_on - 1)
 $$;
@@ -3673,6 +3820,7 @@ declare
   v_csname text;
   v_cpins  text[];
   v_ccls   text[];
+  v_sch    text[];
 begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then
@@ -3700,7 +3848,8 @@ begin
     update public.lec_key set cls = '{}', last_at = now() where kh = k.kh;
     return jsonb_build_object('ok', false, 'err', 'gone');
   end if;
-  update public.lec_key set sname = v_sname, cls = coalesce(v_cls, '{}'), last_at = now() where kh = k.kh;
+  v_sch := public.lec__sch_of(k.sid);
+  update public.lec_key set sname = v_sname, cls = coalesce(v_cls, '{}'), sch = v_sch, last_at = now() where kh = k.kh;
   return jsonb_build_object(
     'ok', true,
     'me', jsonb_build_object('name', v_sname),
@@ -3722,7 +3871,7 @@ begin
         from public.lec_lecture l
         left join public.lec_progress p on p.lecture_id = l.id and p.sid = k.sid
        cross join lateral (select case when l.until is not null then public.lec__ext_to(l.*, k) end as ext) e
-       where public.lec__open(l, v_cls)
+       where public.lec__open_s(l, v_cls, v_sch)
     ), '[]'::jsonb));
 end
 $$;
@@ -3757,7 +3906,7 @@ begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then return jsonb_build_object('ok', false, 'err', 'key'); end if;
   select * into l from public.lec_lecture x
-   where x.id = p_lecture and public.lec__open(x, k.cls);
+   where x.id = p_lecture and public.lec__open_s(x, k.cls, k.sch);
   if not found then return jsonb_build_object('ok', false, 'err', 'lecture'); end if;
   if public.lec__ended_k(l, k) then return jsonb_build_object('ok', false, 'err', 'ended'); end if;
   if not public.lec__agreed(k.sid) then return jsonb_build_object('ok', false, 'err', 'no_consent'); end if;
@@ -3839,7 +3988,7 @@ begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then return jsonb_build_object('ok', false, 'err', 'key'); end if;
   select * into l from public.lec_lecture x
-   where x.id = p_lecture and public.lec__open(x, k.cls);
+   where x.id = p_lecture and public.lec__open_s(x, k.cls, k.sch);
   if not found then return jsonb_build_object('ok', false, 'err', 'lecture'); end if;
   if public.lec__ended_k(l, k) then return jsonb_build_object('ok', false, 'err', 'ended'); end if;
   if not public.lec__agreed(k.sid) then return jsonb_build_object('ok', false, 'err', 'no_consent'); end if;
@@ -3890,7 +4039,7 @@ begin
                                                then l.runner -> 'items' else '[]'::jsonb end) with ordinality as t(e, e_o)
                where jsonb_typeof(e) = 'object') as p
         from public.lec_lecture l
-       where public.lec__open(l, k.cls)
+       where public.lec__open_s(l, k.cls, k.sch)
          and not public.lec__ended_k(l.*, k)   -- 끝난 강의는 플레이어를 열지 않으므로 지문 줄도 안 보냄(검수 B2 L-8) · 시험 범위 강의는 끝 날까지(M2)
          and (case when jsonb_typeof(l.runner -> 'items') = 'array'
                    then jsonb_array_length(l.runner -> 'items') else 0 end) > 0
@@ -3932,10 +4081,11 @@ begin
           on l.id = any (g.lecture_ids)
           or (l.created_at > g.saved_at
               and not ('*' = any (l.class_ids))
+              and (cardinality(l.school_keys) = 0 or g.school_key = any (l.school_keys))
               and coalesce((select max(v.x) from unnest(array_append(coalesce(l.lesson_more, '{}'::date[]), l.lesson_on)) as v(x)),
                            l.posted_on) between g.exam_on - 70 and g.end_on - 1)
         left join public.lec_progress p on p.lecture_id = l.id and p.sid = k.sid
-       where public.lec__open(l, k.cls)
+       where public.lec__open_s(l, k.cls, k.sch)
          and not public.lec__ended_k(l.*, k)
        group by g.id, g.name, g.exam_on, g.end_on
     ) x;
@@ -4011,6 +4161,7 @@ begin
              and not l.hidden and (not public.lec__ended(l.*) or (now() at time zone 'Asia/Seoul')::date <= v_olden)
              and not ('*' = any (l.class_ids))
              and l.class_ids && v_rcls
+             and (cardinality(l.school_keys) = 0 or v_school = any (l.school_keys))
              and coalesce((select max(v.x) from unnest(array_append(coalesce(l.lesson_more, '{}'::date[]), l.lesson_on)) as v(x)),
                           l.posted_on) between v_oldex - 70 and v_olden - 1) as m1) f
    where (l.id = any (coalesce(p_lectures, '{}')) and f.vis)
@@ -4421,7 +4572,7 @@ begin
                where jsonb_typeof(e) = 'object'
                  and coalesce(e ->> 'p', '') ~ '^[0-9a-f]{64}[.]pdf$') as f
         from public.lec_lecture l
-       where public.lec__open(l.*, k.cls)
+       where public.lec__open_s(l.*, k.cls, k.sch)
          and not public.lec__ended_k(l.*, k)   -- 끝난 강의는 플레이어를 열지 않으므로 PDF 도 안 보냄 · 시험 범위 강의는 끝 날까지(M2)
     ) x
    where jsonb_array_length(x.f) > 0;
@@ -4802,6 +4953,8 @@ declare
   v_today  date := (now() at time zone 'Asia/Seoul')::date;
   v_end    boolean;
   v_fresh  boolean;
+  v_wide   boolean;
+  v_skip   text[];
 begin
   begin
     select * into cf from public.lec_push_cfg where id = 1;
@@ -4829,10 +4982,15 @@ begin
     select * into qq from public.lec_push_queue where lecture_id = new.id for update;
     v_has := found;
     v_done := case when v_has then qq.done_cls else '{}'::text[] end;
+    -- 볼 학교를 넓힘(11-18 K1 · 빈 목록 = 반 전체): 이미 보낸 반도 다시 줄에 넣음 · 이미 받은 폰(lec_push_log)과 이미 연 학생은
+    --   lec__push_take 가 빼므로 새로 든 학생에게만 감 · 좁히면 그대로
+    v_wide := cardinality(old.school_keys) > 0
+              and (cardinality(new.school_keys) = 0 or not (new.school_keys <@ old.school_keys));
+    v_skip := case when v_wide then '{}'::text[] else v_done end;
 
     -- 기다리는 줄: 반 = 지금 반 - 이미 보낸 반 · 때를 다시 셈 · 숨김 = hold · 반 없음 = gone
     if v_has and qq.status = 'wait' then
-      v_tg := public.lec__push_minus(v_eff, v_done);
+      v_tg := public.lec__push_minus(v_eff, v_skip);
       update public.lec_push_queue set
         status     = case when new.hidden then 'hold'
                           when cardinality(v_tg) = 0 then (case when cardinality(v_done) > 0 then 'sent' else 'gone' end)
@@ -4848,15 +5006,15 @@ begin
     -- 숨긴 채 고침: 숨김 줄은 반만 맞춤 · 다른 줄은 그대로
     if new.hidden then
       if v_has and qq.status = 'hold' then
-        update public.lec_push_queue set cls = public.lec__push_minus(v_eff, v_done), updated_at = now()
+        update public.lec_push_queue set cls = public.lec__push_minus(v_eff, v_skip), updated_at = now()
          where lecture_id = new.id;
       end if;
       return null;
     end if;
 
     -- 보이는 채 고침: 숨김을 풀었으면 아직 안 보낸 반 모두 · 아니면 새로 더한 반만
-    if (v_has and qq.status = 'hold') or old.hidden then
-      v_tg := public.lec__push_minus(v_eff, v_done);
+    if (v_has and qq.status = 'hold') or old.hidden or v_wide then
+      v_tg := public.lec__push_minus(v_eff, v_skip);
     else
       v_tg := public.lec__push_minus(public.lec__push_minus(v_eff, public.lec__push_cls(old.class_ids)), v_done);
     end if;
@@ -4886,7 +5044,7 @@ end
 $$;
 
 drop trigger if exists lec_lecture_push on public.lec_lecture;
-create trigger lec_lecture_push after insert or update of hidden, class_ids, posted_on, until on public.lec_lecture
+create trigger lec_lecture_push after insert or update of hidden, class_ids, posted_on, until, school_keys on public.lec_lecture
   for each row execute function public.lec__push_mark();
 
 -- 설정 바꿈: mode 가 바뀐 때를 적음 · 끄면 기다리던 알림을 모두 off(다시 켜도 그 알림은 안 감)
@@ -4931,7 +5089,7 @@ begin
   return jsonb_build_object(
     'ok', true, 'on', true,
     'show', cf.vapid_pub is not null
-            and exists (select 1 from public.lec_lecture l where public.lec__open(l, k.cls) and l.class_ids && k.cls),
+            and exists (select 1 from public.lec_lecture l where public.lec__open_s(l, k.cls, k.sch) and l.class_ids && k.cls),
     'key', cf.vapid_pub, 'ep', v_ep, 'at', public.lec__push_hm(cf.morning_at));
 end
 $$;
@@ -4993,6 +5151,20 @@ language sql stable security definer set search_path = public as $$
      and (p_names is null or public.lec__norm(r.sname) = any (p_names))
 $$;
 
+-- 알림을 켠 학생 수 · 강의의 볼 학교까지(11-18 K1 · lec_push_state 가 씀 · lec__push_n 은 그대로 둠 · 같은 모양 drop 은 맨 앞 K1)
+create or replace function public.lec__push_n_s(p_main jsonb, p_cls text[], p_names text[], p_sk text[])
+returns integer
+language sql stable security definer set search_path = public as $$
+  select count(distinct r.skey)::integer
+    from public.lec__ros(p_main) r
+    left join public.lec__schs(p_main) h on h.skey = r.skey
+    join public.lec_key k on k.sid = r.skey
+    join public.lec_push_sub s on s.kh = k.kh
+   where r.cls && coalesce(p_cls, '{}'::text[])
+     and (p_names is null or public.lec__norm(r.sname) = any (p_names))
+     and public.lec__sch_ok(p_sk, h.sch)
+$$;
+
 -- 선생님: 이 강의의 알림 상태(서랍 줄) · 꺼짐 · 시험 중 관리자 아닌 선생님 · «전체»만인 강의 = show false(줄 없음)
 --   when: now(1분 안) · today(오늘 아침) · day(앞날 아침) · 글은 화면이 due_day · due_hm(서버 시각)으로 씀
 --   again: 숨김을 풀면 알림이 갈지(안 보낸 반이 있고 공개일이 3일 안)
@@ -5050,9 +5222,36 @@ begin
     'sent_day', case when v_sent is not null then public.lec__push_day(v_sent::date) end,
     'sent_hm', case when v_sent is not null then to_char(v_sent, 'FMHH24:MI') end,
     'cls', to_jsonb(v_tg),
-    'n', public.lec__push_n(coalesce(v_main, '{}'::jsonb), v_tg,
-                            case when cf.mode = 'test' then public.lec__push_names(cf.test_names) end),
+    'n', public.lec__push_n_s(coalesce(v_main, '{}'::jsonb), v_tg,
+                              case when cf.mode = 'test' then public.lec__push_names(cf.test_names) end, ll.school_keys),
     'again', cardinality(v_left) > 0 and ll.posted_on >= v_today - 3 and not public.lec__ended(ll));
+end
+$$;
+
+-- 선생님(11-18 K1): 새 강의 서랍 저장 옆 «보이는 학생 N명 · 알림 N명» 의 알림 수 · 저장 전 고른 반 · 볼 학교로
+--   lec_push_state 의 n 과 같은 셈(알림을 켠 학생 · 시험 중이면 시험 학생만) · 꺼짐 · 시험 중 관리자 아님 = show 거짓(서랍은 알림 수를 안 씀)
+create or replace function public.lec_push_count(p_cls text[], p_sk text[])
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  st      record;
+  cf      public.lec_push_cfg;
+  v_main  jsonb;
+begin
+  select * into st from public.lec__staff() limit 1;
+  if not found then
+    return jsonb_build_object('ok', false, 'err', 'forbidden');
+  end if;
+  select * into cf from public.lec_push_cfg where id = 1;
+  if not found or cf.mode = 'off' or (cf.mode = 'test' and not st.admin) then
+    return jsonb_build_object('ok', true, 'mode', coalesce(cf.mode, 'off'), 'show', false);
+  end if;
+  select a.data into v_main from public.app_state a where a.id = 'main';
+  return jsonb_build_object(
+    'ok', true, 'mode', cf.mode, 'show', true,
+    'n', public.lec__push_n_s(coalesce(v_main, '{}'::jsonb), public.lec__push_cls(p_cls),
+                              case when cf.mode = 'test' then public.lec__push_names(cf.test_names) end,
+                              coalesce(p_sk, '{}'::text[])));
 end
 $$;
 
@@ -5134,7 +5333,9 @@ begin
         from public.lec_push_sub s
         join public.lec_key k on k.kh = s.kh
         join public.lec__ros(p_main) r on r.skey = k.sid
+        left join public.lec__schs(p_main) h on h.skey = r.skey
        where r.cls && v_cls
+         and public.lec__sch_ok(ll.school_keys, h.sch)
          and (v_names is null or public.lec__norm(r.sname) = any (v_names))
          and not exists (select 1 from public.lec_progress p
                           where p.sid = k.sid and p.lecture_id = qq.lecture_id and p.first_at is not null)
@@ -5283,7 +5484,8 @@ $$;
 revoke all on function public.lec__push_cls(text[]), public.lec__push_minus(text[], text[]), public.lec__push_union(text[], text[]),
                        public.lec__push_names(text[]), public.lec__push_day(date), public.lec__push_hm(time),
                        public.lec_push_due(timestamptz, date, time, time), public.lec__push_mark(), public.lec__push_cfg_set(),
-                       public.lec__push_n(jsonb, text[], text[]), public.lec__push_take(jsonb, timestamptz),
+                       public.lec__push_n(jsonb, text[], text[]), public.lec__push_n_s(jsonb, text[], text[], text[]),
+                       public.lec__push_take(jsonb, timestamptz),
                        public.lec__push_keys(), public.lec__push_setkeys(text, text), public.lec__push_claim(),
                        public.lec__push_done(jsonb, jsonb), public.lec_push_tick(), public.lec__push_status()
   from public, anon, authenticated;
@@ -5294,6 +5496,8 @@ grant execute on function public.lec_push_on(text), public.lec_push_save(text, t
   to anon, authenticated;
 revoke all on function public.lec_push_state(uuid) from anon;
 grant execute on function public.lec_push_state(uuid) to authenticated;
+revoke all on function public.lec_push_count(text[], text[]) from public, anon;
+grant execute on function public.lec_push_count(text[], text[]) to authenticated;
 do $$
 begin
   if exists (select 1 from pg_roles where rolname = 'service_role') then
@@ -8913,10 +9117,235 @@ begin
 end
 $$;
 
+-- ---------------------------------------------------------------- K1 (11-18) 강의마다 볼 학교 · 아홉째 스스로 점검
+-- 칸 · 함수는 제자리에서 고침(맨 앞 «K1» 속 함수 · 학생 함수 · 선생님 셈 · 알림 · 시험 범위 M1) · 이 절은 스스로 점검 하나뿐
+--   학교 열쇠 표의 답 = class-api.js schoolKey 를 Chromium 에서 부른 답(JS 길이 = UTF-16 칸 · U+10000 넘는 글자 줄 포함)
+--   가짜 main(대동고 · 영신고 · 학교 빈칸 · 두 반에 다른 학교로 적힌 학생 · 퇴원) · 학생 함수(질문 목록) · 알림(받는 사람 · 켠 학생 수 ·
+--   학교를 넓히면 새로 든 학생에게만 · 좁히면 그대로) · 끝에 모두 되돌림
+do $$
+declare
+  r       jsonb;
+  v_t     text;
+  v_n     integer;
+  v_main  jsonb;
+  v_c     text := 'c-selftest-k1' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
+  v_ka    text := 'selftest' || replace(gen_random_uuid()::text, '-', '');
+  v_kb    text := 'selftest' || replace(gen_random_uuid()::text, '-', '');
+  v_kc    text := 'selftest' || replace(gen_random_uuid()::text, '-', '');
+  v_ep    text := 'https://fcm.googleapis.com/fcm/send/selftest-k1-' || replace(gen_random_uuid()::text, '-', '');
+  v_sa    bigint;
+  v_sb    bigint;
+  v_sc    bigint;
+  v_l0    uuid;
+  v_l1    uuid;
+  v_row   public.lec_push_queue;
+  v_today date := (now() at time zone 'Asia/Seoul')::date;
+  v_x     timestamptz;
+begin
+  begin
+    -- 1) 학교 열쇠 = 앱 schoolKey 와 같은 답
+    select string_agg(format('%s → %s(앱 %s)', t.a, public.lec__skey(t.a), t.b), ' · ') into v_t
+      from (values
+        ('대동고등학교', '대동고'),
+        ('포항대동고등학교 2학년', '포항대동고'),
+        ('포항 영신고 1-3', '포항영신고'),
+        ('영신고2학년3반', '영신고'),
+        ('한빛여자고등학교', '한빛여고'),
+        ('한빛여자중학교 3학년', '한빛여중'),
+        ('포항중앙고 가반', '포항중앙고'),
+        ('중앙고가반', '중앙고'),
+        ('포항고', '포항고'),
+        ('항도중학교', '항도중'),
+        ('대도초등학교 5학년', '대도초'),
+        ('세명고(1)', '세명고'),
+        ('동지고[2]', '동지고'),
+        ('동지여고 1.', '동지여고'),
+        ('A고', 'A고'),
+        ('ab', 'ab'),
+        ('a', ''),
+        ('1학년', ''),
+        ('12', ''),
+        ('', ''),
+        (' ', ''),
+        ('  대 동 고  ', '대동고'),
+        ('고1', ''),
+        ('포항제철고3년', '포항제철고'),
+        ('가반', '가반'),
+        ('대동고 2-1반', '대동고'),
+        ('포항여자고등학교', '포항여고'),
+        ('중앙고/2', '중앙고'),
+        ('중앙고,3', '중앙고'),
+        ('대동고' || chr(12288) || '1', '대동고' || chr(12288)),
+        (chr(128512) || '반', chr(128512) || '반'),
+        (chr(128512) || '1', ''),
+        ('a' || chr(128512), 'a' || chr(128512)),
+        ('가' || chr(128512) || '반', '가' || chr(128512) || '반'),
+        ('대동고2학년', '대동고'),
+        ('대동고 학년', '대동고'),
+        ('반', ''),
+        ('1반', '1반'),
+        ('대동고3-2', '대동고'),
+        ('HIS고 1학년', 'HIS고')
+      ) as t(a, b)
+     where public.lec__skey(t.a) is distinct from t.b;
+    if v_t is not null then
+      raise exception '점검 실패(K1 학교 열쇠): %', v_t;
+    end if;
+    if public.lec__skey(null) is distinct from '' then
+      raise exception '점검 실패(K1 학교 열쇠 · 빈 값)';
+    end if;
+
+    -- 2) 학생 학교 글(앱 _stuSchool): school 이 «참»이면 그것(빈칸만 있어도 intake 는 안 봄) · 아니면 intake.school · 앞뒤 빈칸 뗌
+    if public.lec__stu_school(jsonb_build_object('school', ' 대동고 ')) is distinct from '대동고'
+       or public.lec__stu_school(jsonb_build_object('school', '', 'intake', jsonb_build_object('school', '영신고'))) is distinct from '영신고'
+       or public.lec__stu_school(jsonb_build_object('school', '   ', 'intake', jsonb_build_object('school', '영신고'))) is distinct from ''
+       or public.lec__stu_school(jsonb_build_object('intake', '영신고')) is distinct from ''
+       or public.lec__stu_school('{}'::jsonb) is distinct from ''
+       or public.lec__stu_school(jsonb_build_object('school', chr(12288) || '중앙고' || chr(160))) is distinct from '중앙고' then
+      raise exception '점검 실패(K1 학생 학교 글)';
+    end if;
+
+    -- 3) 보이는 규칙: 강의 칸 빔 · 학생 학교 빈칸 · 겹침 = 보임
+    if not public.lec__sch_ok('{}', array['a']) or not public.lec__sch_ok(array['a'], '{}') or not public.lec__sch_ok(null, null)
+       or not public.lec__sch_ok(array['a'], array['b', 'a']) or public.lec__sch_ok(array['a'], array['b']) then
+      raise exception '점검 실패(K1 보이는 규칙)';
+    end if;
+    if public.lec__sch_of('selftest-k1-none|없음') is distinct from '{}'::text[] then
+      raise exception '점검 실패(K1 명단에 없는 학생의 학교)';
+    end if;
+
+    -- 4) 가짜 main: 대동고(intake 만 적힌 학생 · 다른 반엔 영신고로 적힘) · 영신고 · 학교 빈칸 · 퇴원(빠짐)
+    v_main := jsonb_build_object('classes', jsonb_build_array(
+      jsonb_build_object('id', v_c, 'name', '점검K1', 'students', jsonb_build_array(
+        jsonb_build_object('id', 'selftest-k1a', 'name', '점검가', 'school', '포항대동고등학교 1학년'),
+        jsonb_build_object('id', 'selftest-k1b', 'name', '점검나', 'school', '포항영신고 1-2'),
+        jsonb_build_object('id', 'selftest-k1c', 'name', '점검다', 'school', ''),
+        jsonb_build_object('id', 'selftest-k1d', 'name', '점검라', 'intake', jsonb_build_object('school', '포항대동고')),
+        jsonb_build_object('id', 'selftest-k1e', 'name', '점검마', 'school', '포항중앙고', 'withdrawn', true))),
+      jsonb_build_object('id', v_c || 'x', 'name', '점검K1x', 'students', jsonb_build_array(
+        jsonb_build_object('id', 'selftest-k1d', 'name', '점검라', 'school', '포항영신고')))));
+    select string_agg(h.skey || '=' || coalesce((select string_agg(u.k, '+' order by u.k collate "C") from unnest(h.sch) as u(k)), ''),
+                      ' ' order by h.skey collate "C") into v_t
+      from public.lec__schs(v_main) h;
+    if v_t is distinct from 'selftest-k1a|점검가=포항대동고 selftest-k1b|점검나=포항영신고 selftest-k1c|점검다= selftest-k1d|점검라=포항대동고+포항영신고'
+       or (select count(*) from public.lec__schs(v_main)) <> (select count(*) from public.lec__ros(v_main)) then
+      raise exception '점검 실패(K1 가짜 main 학교): %', v_t;
+    end if;
+
+    -- 5) 학생 함수: 반 전체 강의 l0 · 대동고만 강의 l1 · 열쇠 셋(대동고 · 영신고 · 학교 빈칸)
+    update public.lec_push_cfg
+       set mode = 'on', test_names = '{}', night_from = '01:00', morning_at = '08:00',
+           vapid_pub = coalesce(vapid_pub, 'B' || repeat('A', 86)), vapid_priv = coalesce(vapid_priv, 'B' || repeat('A', 42))
+     where id = 1;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on)
+    values ('selftest-k1-l0', 'selftest000', 100, array[v_c], v_today) returning id into v_l0;
+    insert into public.lec_lecture (title, yt, dur, class_ids, lesson_on, school_keys)
+    values ('selftest-k1-l1', 'selftest000', 100, array[v_c], v_today, array['포항대동고']) returning id into v_l1;
+    insert into public.lec_key (kh, sid, rid, pin, sname, cls, sch) values
+      (public.lec__kh(v_ka), 'selftest-k1a|점검가', 'selftest-k1a', '', '점검가', array[v_c], array['포항대동고']),
+      (public.lec__kh(v_kb), 'selftest-k1b|점검나', 'selftest-k1b', '', '점검나', array[v_c], array['포항영신고']),
+      (public.lec__kh(v_kc), 'selftest-k1c|점검다', 'selftest-k1c', '', '점검다', array[v_c], '{}');
+    r := public.lec_qna_list(v_ka, v_l1);
+    if not coalesce((r ->> 'ok')::boolean, false) then raise exception '점검 실패(K1 대동고 학생 · 대동고 강의): %', r; end if;
+    r := public.lec_qna_list(v_kb, v_l1);
+    if (r ->> 'err') is distinct from 'lecture' then raise exception '점검 실패(K1 영신고 학생에게 대동고 강의가 열림): %', r; end if;
+    r := public.lec_qna_list(v_kb, v_l0);
+    if not coalesce((r ->> 'ok')::boolean, false) then raise exception '점검 실패(K1 영신고 학생 · 반 전체 강의): %', r; end if;
+    r := public.lec_qna_list(v_kc, v_l1);
+    if not coalesce((r ->> 'ok')::boolean, false) then raise exception '점검 실패(K1 학교 빈칸 학생 · 대동고 강의): %', r; end if;
+
+    -- 6) 알림 켠 학생 수(폰 셋 · 넣는 길은 표에 바로)
+    insert into public.lec_push_sub (kh, endpoint, p256dh, auth) values (public.lec__kh(v_ka), v_ep || '-a', 'B' || repeat('A', 86), 'B' || repeat('A', 21))
+      returning id into v_sa;
+    insert into public.lec_push_sub (kh, endpoint, p256dh, auth) values (public.lec__kh(v_kb), v_ep || '-b', 'B' || repeat('A', 86), 'B' || repeat('A', 21))
+      returning id into v_sb;
+    insert into public.lec_push_sub (kh, endpoint, p256dh, auth) values (public.lec__kh(v_kc), v_ep || '-c', 'B' || repeat('A', 86), 'B' || repeat('A', 21))
+      returning id into v_sc;
+    if public.lec__push_n_s(v_main, array[v_c], null, '{}') <> 3
+       or public.lec__push_n_s(v_main, array[v_c], null, array['포항대동고']) <> 2
+       or public.lec__push_n_s(v_main, array[v_c], null, array['포항중앙고']) <> 1
+       or public.lec__push_n_s(v_main, array[v_c], array['점검나'], array['포항대동고']) <> 0 then
+      raise exception '점검 실패(K1 켠 학생 수)';
+    end if;
+
+    -- 7) 받는 사람: 대동고 강의 = 대동고 · 학교 빈칸 학생만(영신고 빠짐)
+    update public.lec_push_queue set status = 'gone', due_at = null where lecture_id = v_l0;
+    v_x := ((v_today + 1) + time '12:00') at time zone 'Asia/Seoul';
+    update public.lec_push_queue set due_at = v_x - interval '1 minute' where lecture_id = v_l1 and status = 'wait';
+    select * into v_row from public.lec_push_queue where lecture_id = v_l1;
+    if v_row.status is distinct from 'wait' or v_row.cls is distinct from array[v_c] then
+      raise exception '점검 실패(K1 올림 = 기다림): % %', v_row.status, v_row.cls;
+    end if;
+    r := public.lec__push_take(v_main, v_x);
+    if (select count(*) from public.lec_push_log where lecture_id = v_l1) <> 2
+       or exists (select 1 from public.lec_push_log where lecture_id = v_l1 and sub_id = v_sb)
+       or (select status from public.lec_push_queue where lecture_id = v_l1) is distinct from 'sent' then
+      raise exception '점검 실패(K1 받는 사람): %', left(r::text, 400);
+    end if;
+
+    -- 8) 학교를 넓힘(대동고 → 대동고 · 영신고) = 다시 기다림 · 보내면 새로 든 영신고 폰에만
+    update public.lec_lecture set school_keys = array['포항대동고', '포항영신고'] where id = v_l1;
+    select * into v_row from public.lec_push_queue where lecture_id = v_l1;
+    if v_row.status is distinct from 'wait' or v_row.cls is distinct from array[v_c] then
+      raise exception '점검 실패(K1 넓힘 = 다시 기다림): % %', v_row.status, v_row.cls;
+    end if;
+    update public.lec_push_queue set due_at = v_x + interval '59 minutes' where lecture_id = v_l1;
+    r := public.lec__push_take(v_main, v_x + interval '1 hour');
+    select count(*) into v_n from jsonb_array_elements(r -> 'items') as t(x)
+     where (x ->> 'sub')::bigint in (v_sa, v_sc);
+    if v_n <> 0
+       or (select x -> 'ids' from jsonb_array_elements(r -> 'items') as t(x) where (x ->> 'sub')::bigint = v_sb)
+            is distinct from jsonb_build_array(v_l1)
+       or (select count(*) from public.lec_push_log where lecture_id = v_l1) <> 3 then
+      raise exception '점검 실패(K1 넓힘 · 새로 든 학생에게만): %', left(r::text, 400);
+    end if;
+
+    -- 9) 학교를 좁힘 · 그대로 저장 = 알림 줄 그대로(보냄)
+    update public.lec_lecture set school_keys = array['포항대동고'] where id = v_l1;
+    update public.lec_lecture set title = 'selftest-k1-l1b', class_ids = array[v_c], hidden = false, school_keys = array['포항대동고'] where id = v_l1;
+    if (select status from public.lec_push_queue where lecture_id = v_l1) is distinct from 'sent' then
+      raise exception '점검 실패(K1 좁힘 · 그대로 = 알림 줄 그대로)';
+    end if;
+
+    -- 10) 서랍 알림 수(선생님 함수): 로그인 없으면 막음 · 원장님은 수(진짜 명단이라 값은 안 견줌)
+    perform set_config('request.jwt.claims', '', true);
+    r := public.lec_push_count(array[v_c], array['포항대동고']);
+    if (r ->> 'err') is distinct from 'forbidden' then raise exception '점검 실패(K1 로그인 없이 알림 수): %', r; end if;
+    perform set_config('request.jwt.claims', '{"role":"authenticated","email":" Benjamin@his.kr "}', true);
+    r := public.lec_push_count(array[v_c], array['포항대동고']);
+    if not coalesce((r ->> 'ok')::boolean, false) or not coalesce((r ->> 'show')::boolean, false)
+       or jsonb_typeof(r -> 'n') is distinct from 'number' then
+      raise exception '점검 실패(K1 알림 수): %', r;
+    end if;
+    perform set_config('request.jwt.claims', '', true);
+    if has_function_privilege('anon', 'public.lec_push_count(text[], text[])', 'execute')
+       or not has_function_privilege('authenticated', 'public.lec_push_count(text[], text[])', 'execute') then
+      raise exception '점검 실패(K1 알림 수 권한)';
+    end if;
+
+    -- 11) 속 함수 전부(K1 새 속 함수 포함): anon · authenticated 가 직접 못 부름
+    select string_agg(p.oid::regprocedure::text, ', ' order by p.oid::regprocedure::text) into v_t
+      from pg_proc p
+     where p.pronamespace = 'public'::regnamespace
+       and left(p.proname, 5) = 'lec__'
+       and p.proname <> 'lec__is_staff'
+       and p.prorettype <> 'trigger'::regtype
+       and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'));
+    if v_t is not null then
+      raise exception '점검 실패(K1 · 속 함수를 밖에서 부를 수 있음): %', v_t;
+    end if;
+
+    raise exception 'LEC_SELFTEST_OK';
+  exception when others then
+    if sqlerrm <> 'LEC_SELFTEST_OK' then raise; end if;
+  end;
+end
+$$;
+
 notify pgrst, 'reload schema';
 
 select '강의실 준비 끝' as "결과",
-       '점검 8/8 통과' as "점검",
+       '점검 9/9 통과' as "점검",
        (select count(*) from public.lec__roster()) as "학생 수",
        (select count(*) from public.lec_lecture) as "강의 수",
        public.lec__pdf_store() as "PDF 저장 곳",

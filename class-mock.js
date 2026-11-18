@@ -196,8 +196,16 @@
     if (c2Ensure(d)) save(d);   /* C2 시연 자료(아래 C2 절) */
     if (c2Many(d)) save(d);     /* ?manyexams=1 = 시험 여럿(아래 C2 절) · 아니면 넣었던 것을 걷어 냄 */
     if (pdfEnsure(d)) save(d);  /* P1: files 칸 · 저장 곳 목록 */
+    if (skEnsure(d)) save(d);   /* K1: school_keys 칸(서버 기본값 '{}' 과 같게) */
     if (s1Ensure(d)) save(d);   /* S1: 단어 · 구문 · 문법 시연 자료(아래 S1 절) */
     return d;
+  }
+  function skEnsure(d) {
+    var ch = false, i;
+    for (i = 0; i < d.lecture.length; i += 1) {
+      if (!isArr(d.lecture[i].school_keys)) { d.lecture[i].school_keys = []; ch = true; }
+    }
+    return ch;
   }
   function pdfEnsure(d) {
     var ch = false, i;
@@ -242,7 +250,8 @@
       hidden: !!o.hidden, created_by: str(o.created_by),
       created_at: o.created_at || t, updated_at: o.updated_at || t,
       lesson_more: o.lesson_more || [], runner: o.runner || {}, lesson_cls: o.lesson_cls || {},
-      files: o.files || []   /* P1(11-16) 필기 PDF [{p, n, b}] */
+      files: o.files || [],   /* P1(11-16) 필기 PDF [{p, n, b}] */
+      school_keys: o.school_keys || []   /* K1(11-18) 볼 학교 */
     };
   }
 
@@ -539,12 +548,18 @@
     return null;
   }
 
-  /* lec__open */
-  function isOpen(l, cls) {
+  /* K1(11-18) 볼 학교: 학생 열쇠 → 학교 열쇠(lec__sch_of · lec__schs) · 강의 칸과 맞대기(lec__sch_ok · 빈 칸 = 반 전체 · 학교 빈칸 학생은 다 보임) */
+  function schMapOf(d) { return L().schMap ? L().schMap(d.classes) : {}; }
+  function schOf(d, skey) { return schMapOf(d)[skey] || []; }
+  function schOk(l, sch) { return !L().schOk || L().schOk(l && l.school_keys, sch || []); }
+
+  /* lec__open_s(K1 · 옛 lec__open + 볼 학교 · sch 를 안 주면 학교 빈칸처럼 다 보임) */
+  function isOpen(l, cls, sch) {
     if (!l || l.hidden) return false;
     var t = today(), po = l.posted_on || t, ids = l.class_ids || [], i;
     if (po > t) return false;
     if (!cls || !cls.length) return false;
+    if (!schOk(l, sch)) return false;
     if (ids.indexOf('*') >= 0) return true;
     for (i = 0; i < cls.length; i += 1) { if (ids.indexOf(cls[i]) >= 0) return true; }
     return false;
@@ -738,7 +753,7 @@
     d.fail = d.fail.filter(function (x) { return x.who !== who && x.who !== 'k:' + r.skey; });
     var key = X.hex64();
     d.key.push({
-      kh: kh(key), sid: r.skey, rid: r.rid, pin: pin, sname: r.sname, cls: (r.cls || []).slice(),
+      kh: kh(key), sid: r.skey, rid: r.rid, pin: pin, sname: r.sname, cls: (r.cls || []).slice(), sch: schOf(d, r.skey),
       dev: X.left(str(a.p_dev), 40), made_by: '', created_at: pgts(now), last_at: pgts(now)
     });
     return { ok: true, key: key, name: r.sname };
@@ -768,12 +783,13 @@
     }
     k.sname = sname;
     k.cls = (cls || []).slice();
+    k.sch = schOf(d, k.sid);   /* K1: cls 처럼 앱을 열 때 맞춤 */
     k.last_at = now;
 
     var list = [], l, p, n, j, q;
     for (i = 0; i < d.lecture.length; i += 1) {
       l = d.lecture[i];
-      if (!isOpen(l, cls)) continue;
+      if (!isOpen(l, cls, k.sch)) continue;
       p = findProgress(d, k.sid, l.id);
       n = 0;
       for (j = 0; j < d.qna.length; j += 1) {
@@ -834,7 +850,7 @@
     var k = findKey(d, a.p_key);
     if (!k) return { ok: false, err: 'key' };
     var l = findLecture(d, a.p_lecture);
-    if (!l || !isOpen(l, k.cls)) return { ok: false, err: 'lecture' };
+    if (!l || !isOpen(l, k.cls, k.sch)) return { ok: false, err: 'lecture' };
     if (endedK(d, l, k)) return { ok: false, err: 'ended' };
     if (!agreed(d, k.sid)) return { ok: false, err: 'no_consent' };
     if (a.p_session == null) return { ok: false, err: 'input' };
@@ -915,7 +931,7 @@
     var k = findKey(d, a.p_key);
     if (!k) return { ok: false, err: 'key' };
     var l = findLecture(d, a.p_lecture);
-    if (!l || !isOpen(l, k.cls)) return { ok: false, err: 'lecture' };
+    if (!l || !isOpen(l, k.cls, k.sch)) return { ok: false, err: 'lecture' };
     var i, x, q, unread = [];
     /* 이번에 처음 읽는 답이 달린 내 질문(unread): 읽음 표시와 함께 모음 */
     for (i = 0; i < d.qna.length; i += 1) {
@@ -962,7 +978,7 @@
     var k = findKey(d, a.p_key);
     if (!k) return { ok: false, err: 'key' };
     var l = findLecture(d, a.p_lecture);
-    if (!l || !isOpen(l, k.cls)) return { ok: false, err: 'lecture' };
+    if (!l || !isOpen(l, k.cls, k.sch)) return { ok: false, err: 'lecture' };
     if (endedK(d, l, k)) return { ok: false, err: 'ended' };
     if (!agreed(d, k.sid)) return { ok: false, err: 'no_consent' };
     var body = X.btrim(str(a.p_body)), bn = X.clen(body);
@@ -1377,7 +1393,7 @@
     if (r && r.cls.length) {
       for (i = 0; i < d.lecture.length; i += 1) {
         l = d.lecture[i];
-        if (!isOpen(l, r.cls)) continue;
+        if (!isOpen(l, r.cls, schOf(d, r.skey))) continue;
         opens.push({ l: l, days: attWin(l, lo, t) });
         for (j = 0; j < opens[opens.length - 1].days.length; j += 1) {
           if (days.indexOf(opens[opens.length - 1].days[j]) < 0) days.push(opens[opens.length - 1].days[j]);
@@ -1411,7 +1427,7 @@
     var items = [], i, j, l, ri, e, p;
     for (i = 0; i < d.lecture.length; i += 1) {
       l = d.lecture[i];
-      if (!isOpen(l, k.cls)) continue;
+      if (!isOpen(l, k.cls, k.sch)) continue;
       if (endedK(d, l, k)) continue;   // 끝난 강의는 플레이어를 열지 않으므로 지문 줄도 안 보냄(검수 B2 L-8 · SQL 과 같음) · 시험 범위 강의는 끝 날까지(M2)
       ri = l.runner && isArr(l.runner.items) ? l.runner.items : [];
       if (!ri.length) continue;
@@ -1440,7 +1456,7 @@
     var items = [], i, j, l, fs, e, f;
     for (i = 0; i < d.lecture.length; i += 1) {
       l = d.lecture[i];
-      if (!isOpen(l, k.cls)) continue;
+      if (!isOpen(l, k.cls, k.sch)) continue;
       if (endedK(d, l, k)) continue;   // 끝난 강의는 플레이어를 열지 않으므로 PDF 도 안 보냄 · 시험 범위 강의는 끝 날까지(M2)
       fs = isArr(l.files) ? l.files : [];
       f = [];
@@ -1465,7 +1481,7 @@
     var scope = cl.map(function (c) { return c.id; });
     function inScope(cs) { for (var q = 0; q < cs.length; q += 1) { if (scope.indexOf(cs[q]) >= 0) return true; } return false; }
     function covers(ids, cid) { return ids.indexOf(cid) >= 0 || ids.indexOf('*') >= 0; }
-    var ro = roster(d).filter(function (r) { return inScope(r.cls); });
+    var ro = roster(d).filter(function (r) { return inScope(r.cls); }), sm = schMapOf(d);
     var pairs = [], seen = {}, i, j, l, ids, days = [], lecs = [], ns = [], cells = [], lectures = [], bandN = 0, items = [];
     for (i = 0; i < ro.length; i += 1) {
       for (j = 0; j < ro[i].cls.length; j += 1) {
@@ -1503,7 +1519,7 @@
         ro.forEach(function (s) {
           var hit = false, q;
           for (q = 0; q < s.cls.length; q += 1) { if (scope.indexOf(s.cls[q]) >= 0 && covers(lids, s.cls[q])) hit = true; }
-          if (!hit) return;
+          if (!hit || !schOk(L1.l, sm[s.skey])) return;   /* K1: 볼 학교 학생만 */
           var g = attAgg(rows, L1.days, lids, function (r) { return r.rid === s.rid && s.cls.indexOf(r.cid) >= 0; }, L1.l);
           if (g && g.att !== '') cells.push({ l: L1.l.id, s: s.skey, a: g.att, d: g.day, mk: g.mk });
         });
@@ -1666,6 +1682,7 @@
     if ((OLD || NOPDF) && fn === 'lec_pdf') sig = null;   /* P1 을 아직 안 넣은 서버(아래 NOPDF) */
     if ((OLD || NORANGE) && /^lec_range_/.test(fn)) sig = null;   /* C2 함수가 없는 서버(아래 C2 절) */
     if ((OLD || NOSET) && /^lec_(set|rec)_/.test(fn)) sig = null;   /* S1 함수가 없는 서버(아래 S1 절) */
+    if ((OLD || NOSK) && fn === 'lec_push_count') sig = null;   /* K1 을 아직 안 넣은 서버(위 NOSK) */
     if (!sig) throw httpErr(404, 'PGRST202', 'Could not find the function public.' + fn);
     args = args && typeof args === 'object' && !isArr(args) ? args : {};
     for (k in args) {
@@ -1708,7 +1725,9 @@
     /* C1 고침(11-16): 수업일마다 반 {"YYYY-MM-DD": [반 id]} · 없거나 빈 날 = 강의의 모든 반 */
     lesson_cls: 'json',
     /* P1(11-16): 필기 PDF [{p: sha256 64자 + '.pdf', n: 올린 파일 이름, b: 바이트}] · 둘까지(SQL check lec_lecture_files_ok) */
-    files: 'json'
+    files: 'json',
+    /* K1(11-18): 볼 학교(학교 열쇠 목록 · 빈 = 반 전체) */
+    school_keys: 'textarr'
   };
 
   /* 옛 SQL 흉내(?oldsql=1 또는 LecMock.oldSql(true)): 새 칸 · 새 함수가 없는 서버 */
@@ -1727,10 +1746,13 @@
   var STOREFAIL = false;
   /* 시험용(M-2 맞대기): 고치기 전 셈(모든 짝에 모든 날 · 수업일마다 반 안 봄) · LecMock.legacyAtt(true) */
   var LEGACY = false;
-  function isNewCol(k) { return k === 'lesson_more' || k === 'runner' || k === 'lesson_cls' || k === 'files'; }
-  function noCol(k) { return (OLD && isNewCol(k)) || (NOLCLS && k === 'lesson_cls') || (NOPDF && k === 'files'); }
+  /* K1(11-18) 볼 학교 칸(school_keys)만 없는 서버(지금 운영과 같음 · ?nosk=1 또는 LecMock.noSk(true)) */
+  var NOSK = false;
+  try { NOSK = /[?&]nosk=1(&|$)/.test(w.location.search); } catch (e) { NOSK = false; }
+  function isNewCol(k) { return k === 'lesson_more' || k === 'runner' || k === 'lesson_cls' || k === 'files' || k === 'school_keys'; }
+  function noCol(k) { return (OLD && isNewCol(k)) || (NOLCLS && k === 'lesson_cls') || (NOPDF && k === 'files') || (NOSK && k === 'school_keys'); }
   function stripNew(l) {
-    if (!(OLD || NOLCLS || NOPDF) || !l) return l;
+    if (!(OLD || NOLCLS || NOPDF || NOSK) || !l) return l;
     var o = {}, k;
     for (k in l) { if (has(l, k) && !noCol(k)) o[k] = l[k]; }
     return o;
@@ -1972,7 +1994,7 @@
 
     /* behind */
     var cl = classRows(d).filter(function (c) { return admin || c.owner === name; });
-    var pr = [], behind = [], day, ids, cons, p, c, names, list;
+    var pr = [], behind = [], day, ids, cons, p, c, names, list, sm = schMapOf(d);
     for (i = 0; i < d.lecture.length; i += 1) {
       l = d.lecture[i];
       if (l.hidden || (l.posted_on || t) > t || ended(l)) continue;
@@ -1987,6 +2009,7 @@
       list = [];
       for (j = 0; j < rs.length; j += 1) {
         if (rs[j].cls.indexOf(pr[i].c.id) < 0) continue;
+        if (!schOk(pr[i].l, sm[rs[j].skey])) continue;   /* K1 */
         p = findProgress(d, rs[j].skey, pr[i].l.id);
         cons = findConsent(d, rs[j].skey);
         if (p && (p.pct || 0) >= 90) continue;
@@ -2095,7 +2118,7 @@
     if (!r) return { ok: false, err: 'nomatch' };
     var key = X.hex64(), now = pgts(nowMs());
     d.key.push({
-      kh: kh(key), sid: r.skey, rid: r.rid, pin: '', sname: r.sname, cls: (r.cls || []).slice(),
+      kh: kh(key), sid: r.skey, rid: r.rid, pin: '', sname: r.sname, cls: (r.cls || []).slice(), sch: schOf(d, r.skey),
       dev: '개인 링크', made_by: ME.name, created_at: now, last_at: now
     });
     return { ok: true, key: key };
@@ -2209,7 +2232,7 @@
           l = {
             id: v.id || L().uuid(), title: '', book: '', yt: '', dur: 0, chapters: [], class_ids: [],
             lesson_on: null, posted_on: today(), until: null, hidden: false, created_by: '', created_at: now, updated_at: now,
-            lesson_more: [], runner: {}, lesson_cls: {}, files: []
+            lesson_more: [], runner: {}, lesson_cls: {}, files: [], school_keys: []
           };
           for (k in v) { if (has(v, k)) l[k] = v[k]; }
           d.lecture.push(l);
@@ -2346,6 +2369,8 @@
     noLcls: function (on) { if (on !== undefined) NOLCLS = !!on; return NOLCLS; },
     /* 시험용: P1(files 칸 · lec_pdf)을 안 넣은 서버 · 저장 곳을 못 만든 서버 켜기·끄기 */
     noPdf: function (on) { if (on !== undefined) NOPDF = !!on; return NOPDF; },
+    /* 시험용: K1 볼 학교 칸(school_keys)을 안 넣은 서버 켜기·끄기 */
+    noSk: function (on) { if (on !== undefined) NOSK = !!on; return NOSK; },
     storeFail: function (on) { if (on !== undefined) STOREFAIL = !!on; return STOREFAIL; }
   };
 
@@ -2442,7 +2467,8 @@
   function c2New(g, l) {
     var day = c2Day(l);
     return !!(g && g.saved_at && isFinite(tms(l.created_at)) && isFinite(tms(g.saved_at)) && tms(l.created_at) > tms(g.saved_at) &&
-      (l.class_ids || []).indexOf('*') < 0 && day && day >= c2Add(g.exam_on, -70) && day < g.end_on);
+      (l.class_ids || []).indexOf('*') < 0 && day && day >= c2Add(g.exam_on, -70) && day < g.end_on &&
+      (!isArr(l.school_keys) || !l.school_keys.length || l.school_keys.indexOf(g.school_key) >= 0));   /* K1 M1 */
   }
   /* M2(11-16 원장님 «6·9 바꿔» · 서버 lec__ext_to 와 같음): 시험 범위 강의는 시험 끝 날까지(한국 날짜 · 그날 포함)
      내 rid(또는 학생 열쇠)가 든 꺼지지 않은 줄 가운데 오늘 <= 끝 날인 줄(같은 이름 · 같은 날짜면 나중에 저장한 줄 하나)에
@@ -2624,7 +2650,7 @@
     order.forEach(function (key) {
       var g = pick[key], ls = [], done = 0;
       d.lecture.forEach(function (l) {
-        if (((g.lecture_ids || []).indexOf(l.id) >= 0 || c2New(g, l)) && isOpen(l, k.cls) && !endedK(d, l, k)) ls.push(l);
+        if (((g.lecture_ids || []).indexOf(l.id) >= 0 || c2New(g, l)) && isOpen(l, k.cls, k.sch) && !endedK(d, l, k)) ls.push(l);
       });
       if (!ls.length) return;
       ls.sort(function (x, y) {
@@ -2885,18 +2911,21 @@
       return;
     }
     done = q ? q.done : [];
+    /* K1 볼 학교를 넓힘(빈 = 반 전체): 이미 보낸 반도 다시 줄에(서버는 받은 폰 · 연 학생을 빼서 새로 든 학생에게만) · 좁히면 그대로 */
+    var osk = isArr(old.school_keys) ? old.school_keys : [], nsk = isArr(nw.school_keys) ? nw.school_keys : [];
+    var wide = osk.length > 0 && (!nsk.length || nsk.some(function (x) { return osk.indexOf(x) < 0; })), skip = wide ? [] : done;
     if (q && q.status === 'wait') {
-      tg = pMinus(eff, done);
+      tg = pMinus(eff, skip);
       q.status = nw.hidden ? 'hold' : (!tg.length ? (done.length ? 'sent' : 'gone') : (end ? 'late' : 'wait'));
       q.due = nw.hidden || !tg.length || end ? null : pDue(cf, nw.posted_on);
       q.cls = tg;
       return;
     }
     if (nw.hidden) {
-      if (q && q.status === 'hold') q.cls = pMinus(eff, done);
+      if (q && q.status === 'hold') q.cls = pMinus(eff, skip);
       return;
     }
-    tg = (q && q.status === 'hold') || old.hidden ? pMinus(eff, done) : pMinus(pMinus(eff, pCls(old.class_ids)), done);
+    tg = (q && q.status === 'hold') || old.hidden || wide ? pMinus(eff, skip) : pMinus(pMinus(eff, pCls(old.class_ids)), done);
     fresh = nw.posted_on >= dayStr(-3) && !end;
     if (!tg.length || cf.mode === 'off' || !fresh) {
       if (q && q.status === 'hold') {
@@ -2912,9 +2941,9 @@
   }
   function pOnFor(P, k) { return P.cfg.mode === 'on' || (P.cfg.mode === 'test' && P.cfg.test.indexOf(trimWs(k.sname)) >= 0); }
   /* 알림을 켠 학생 수(lec__push_n): 그 반 학생 가운데 폰을 저장한 학생 · 시험 중이면 시험 학생만 */
-  function pCount(d, P, tg) {
+  function pCount(d, P, tg, sk) {
     if (PN != null) return PN;
-    var rs = roster(d), sids = {}, n = 0, i, j, s, k;
+    var rs = roster(d), sids = {}, n = 0, i, j, s, k, sm = schMapOf(d);
     for (i = 0; i < P.sub.length; i += 1) {
       s = P.sub[i];
       if (s.sid) sids[s.sid] = 1;
@@ -2924,6 +2953,7 @@
       if (!sids[rs[i].skey]) continue;
       if (!(rs[i].cls || []).some(function (c) { return tg.indexOf(c) >= 0; })) continue;
       if (P.cfg.mode === 'test' && P.cfg.test.indexOf(trimWs(rs[i].sname)) < 0) continue;
+      if (!schOk({ school_keys: sk }, sm[rs[i].skey])) continue;   /* K1 lec__push_n_s */
       sids[rs[i].skey] = 0;
       n += 1;
     }
@@ -2938,7 +2968,7 @@
     for (i = P.sub.length - 1; i >= 0; i -= 1) { if (P.sub[i].kh === k.kh) { ep = P.sub[i].ep; break; } }
     for (i = 0; i < d.lecture.length; i += 1) {
       l = d.lecture[i];
-      if (isOpen(l, k.cls) && pCls(l.class_ids).some(function (c) { return (k.cls || []).indexOf(c) >= 0; })) { show = true; break; }
+      if (isOpen(l, k.cls, k.sch) && pCls(l.class_ids).some(function (c) { return (k.cls || []).indexOf(c) >= 0; })) { show = true; break; }
     }
     return { ok: true, on: true, show: show, key: PKEY, ep: ep, at: pHm(P.cfg.at) };
   }
@@ -2988,7 +3018,7 @@
       sent_day: sk ? X.fmtDay(sk.day) : null,
       sent_hm: sk ? pClock(sk.min) : null,
       cls: tg,
-      n: pCount(d, P, tg),
+      n: pCount(d, P, tg, l.school_keys),
       again: left.length > 0 && l.posted_on >= dayStr(-3) && !ended(l)
     };
   }
@@ -3000,6 +3030,16 @@
   SIG.lec_push_off = { p_key: 'text' };
   SIG.lec_push_state = { p_lecture: 'uuid' };
   STAFF.lec_push_state = lec_push_state;
+  /* K1(11-18) lec_push_count: 새 강의 서랍 저장 옆 «알림 N명»(고른 반 · 볼 학교) · 꺼짐 · 시험 중 관리자 아님 = show false */
+  function lec_push_count(d, a) {
+    pGone();
+    if (!ME) return { ok: false, err: 'forbidden' };
+    var P = pEnsure(d), cf = P.cfg;
+    if (cf.mode === 'off' || (cf.mode === 'test' && !ME.admin)) return { ok: true, mode: cf.mode, show: false };
+    return { ok: true, mode: cf.mode, show: true, n: pCount(d, P, pCls(a.p_cls || []), a.p_sk || []) };
+  }
+  SIG.lec_push_count = { p_cls: 'textarr', p_sk: 'textarr' };
+  STAFF.lec_push_count = lec_push_count;
 
   /* 강의 저장 · 지우기 뒤 트리거 흉내(트리거가 틀려도 저장은 그대로 · SQL 과 같음) */
   var pSave0 = staff.saveLecture, pDel0 = staff.deleteLecture;
