@@ -1092,6 +1092,31 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 @media (max-width:760px){.k2 .sxt .sx-spk{white-space:normal}}
 /* 확인 완료 = 바로 저장 → 메모 칸 머리 한 줄 */
 .k2 .cfbox .cfok{margin:0;font-size:13px;line-height:18px;font-weight:600;color:var(--acc)}
+/* 8-2 질문 두 칸(노트 0-8 · 목업 s-qna): 왼쪽 목록 340(세로 선은 쪽 끝까지) + 오른쪽 고른 질문 · 1024 아래(폰 · 좁은 창)는 목록 없이 한 칸 그대로 */
+.k2 .qn .qlist{display:none}
+@media (min-width:1024px){
+  .k2 .qn .qmail{display:grid;grid-template-columns:340px minmax(0,1fr);align-items:stretch;margin:10px 0 -62px;border-top:1px solid var(--sep);min-height:calc(100vh - 117px)}
+  .k2 .qn .qdet .thh .qr{order:9;flex-basis:100%}
+  .k2 .qn .qlist{display:block;padding:6px 8px 12px 0;border-right:1px solid var(--sep)}
+  .k2 .qn .qdet{min-width:0;padding:0 0 24px 24px}
+  .k2 .qn .qdet article.th:not(.on){display:none}
+  .k2 .qn .qdet article.th,.k2 .qn .qdet article.th.focus{max-width:760px;padding:18px 0 0;border:0;border-radius:0;background:transparent}
+}
+.k2 .qn .qi{position:relative;display:flex;align-items:flex-start;gap:10px;width:100%;padding:10px 10px 10px 4px;border:0;border-radius:10px;background:transparent;text-align:left;color:var(--t1);font:inherit;cursor:pointer}
+.k2 .qn .qlist>[role=listitem]+[role=listitem] .qi::before{content:"";position:absolute;left:46px;right:8px;top:0;border-top:1px solid var(--sep)}
+.k2 .qn .qi:hover{background:var(--fill)}
+.k2 .qn .qi.on{background:var(--acc-tint)}
+.k2 .qn .qi.on::before,.k2 .qn .qi:hover::before,.k2 .qn .qlist>[role=listitem]:has(.qi.on)+[role=listitem] .qi::before,.k2 .qn .qlist>[role=listitem]:has(.qi:hover)+[role=listitem] .qi::before{opacity:0}
+.k2 .qn .qi:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.k2 .qn .qi-d{width:8px;height:8px;margin-top:12px;border-radius:50%;flex:none}
+.k2 .qn .qi-d.w{background:var(--org-dot)}
+.k2 .qn .qi .av{margin-top:2px}
+.k2 .qn .qi-b{display:flex;flex-direction:column;flex:1;min-width:0}
+.k2 .qn .qi-1{display:flex;align-items:baseline;gap:8px;min-width:0}
+.k2 .qn .qi-1 b{font-weight:600;font-size:15px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k2 .qn .qi-w{margin-left:auto;font-size:12px;line-height:16px;color:var(--t3);white-space:nowrap}
+.k2 .qn .qi-2{font-size:13px;line-height:18px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k2 .qn .qi-3{font-size:13px;line-height:18px;color:var(--t2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 /* 8 오늘(노트 0-3 · ① 2): 카드 머리 셋 = 큰 수 · 질문별 줄 · 덜 본 학생 줄(이름 먼저 · 강의별 작은 링) · 셋 + «N개 더» · 확인할 것 · 이번 주 강의 */
 .k2 .todo .ti.hd.bandn{margin:0;font-size:15px}
 .k2 .todo .ti.hd.trh .tic,.k2 .todo .ti.hd.trh .tx{color:var(--acc)}
@@ -1219,7 +1244,7 @@ window.__lecAdminStart = function () {
 
   var S = {
     me: null, as: '', tab: 'today', todo: null, todoErr: false, open: {}, statCls: '',
-    qf: 'all', qLec: '', qFocus: '', menu: '', drawer: null, stack: [], dSig: '', inputs: {}, busy: {},
+    qf: 'all', qLec: '', qFocus: '', qSel: '', menu: '', drawer: null, stack: [], dSig: '', inputs: {}, busy: {},
     ask: {}, cf: null, pm: {}, link: {}, sess: null, ed: null, addrShow: false, loadedAt: 0, retry: null,
     att: null,
     /* C2 시험 범위: rng = {rows, ex, today}(못 받으면 null) · rngOld = 서버에 범위 함수가 없음(이 화면에서는 다시 묻지 않음) ·
@@ -2419,13 +2444,13 @@ window.__lecAdminStart = function () {
       '<span class="mut sm">' + esc(L.fmtWhen(p.created_at)) + '</span>' + (tch && p.stu_seen ? '<span class="tag t-sage">읽음</span>' : '') +
       '<span class="sp"></span>' + delCtl(p) + '</div><div class="pb">' + esc(p.body) + '</div></div>';
   }
-  function thHtml(x) {
+  function thHtml(x, sel) {
     var r = x.root, l = x.l, st = qState(x.k), h, i, rid = esc(r.id);
     /* K 머리: «답변 대기» · «내용» · «김민준 · 고1 A반 · 오늘 21:53» … 오른쪽 «강의 · 05번 · 18:10 장면 보기» · 첫 글은 상자 없이 본문만 */
     var who = [r.sname || '학생'];
     if (stuCls(r.sid)) who.push(stuCls(r.sid));
     who.push(L.fmtWhen(r.created_at));
-    h = '<article class="th' + (S.qFocus === r.id ? ' focus' : '') + '" data-th="' + rid + '">';
+    h = '<article class="th' + (S.qFocus === r.id ? ' focus' : '') + (sel === r.id ? ' on' : '') + '" data-th="' + rid + '">';
     h += '<div class="thh"><span class="tag" style="background:' + st.bg + ';color:' + st.fg + '">' + st.label + '</span>' + kindTag(x.kind) +
       (r['private'] ? '<span class="tag t-line">선생님만 보기</span>' : '') + '<span class="qw">' + esc(who.join(' · ')) + '</span><span class="sp"></span>' +
       '<span class="qr"><button type="button" class="lnk" data-act="qLec" data-l="' + esc(l.id) + '" title="' + esc(L.fmtDay(dayOf(l)) + ' 수업 · 이 강의 질문만 보기') + '">' + esc(l.title) + '</button>';
@@ -2440,6 +2465,27 @@ window.__lecAdminStart = function () {
       '<span class="mut sm">' + (r['private'] ? '이 답도 선생님만 보기로 남아요 · ' : '') + 'Ctrl+Enter로 바로 달려요</span><span class="sp"></span>' +
       '<button type="button" class="btn sm strong" data-act="answer" data-q="' + rid + '" title="Ctrl+Enter 로도 달 수 있어요">답 달기</button></div></div>';
     return h + '</article>';
+  }
+  /* 2차(8): 질문 왼쪽 목록 한 줄(노트 0-8 · 목업 s-qna) = 기다림 점 · 이름 머리 동그라미 · 이름 + 때 · 강의 · 장면 · 질문 두 줄 · 고른 줄만 Tab(↑↓ Home End 로 옮김) */
+  function qiHtml(x, on) {
+    var r = x.root, l = x.l, nm = r.sname || '학생', sc = r.at_s != null && isFinite(+r.at_s) ? L.sceneLabel(+r.at_s, l.chapters) : '';
+    return '<div role="listitem"><button type="button" class="qi' + (on ? ' on' : '') + '" data-act="qSel" data-q="' + esc(r.id) + '" data-k="qi:' + esc(r.id) + '"' +
+      (on ? ' aria-current="true"' : ' tabindex="-1"') + '><span class="qi-d' + (x.k === 'wait' ? ' w' : '') + '" aria-hidden="true"></span>' +
+      '<span class="av" aria-hidden="true">' + esc(nm.charAt(0)) + '</span><span class="qi-b"><span class="qi-1"><b>' + esc(nm) + '</b>' +
+      '<span class="qi-w">' + esc(L.fmtWhen(r.created_at)) + '</span></span><span class="qi-2">' + esc(l.title + (sc ? ' · ' + sc : '')) + '</span>' +
+      '<span class="qi-3">' + esc(r.body) + '</span><span class="sr">' + esc(qState(x.k).label) + '</span></span></button></div>';
+  }
+  function qiKey(ev, t) {
+    var a = app.querySelectorAll('.qn .qi'), i, ix = -1, n, q;
+    for (i = 0; i < a.length; i += 1) { if (a[i] === t) ix = i; }
+    if (ix < 0) return;
+    ev.preventDefault();
+    n = ev.key === 'Home' ? 0 : (ev.key === 'End' ? a.length - 1 : ix + ((ev.key === 'ArrowDown' || ev.key === 'Down') ? 1 : -1));
+    if (n < 0 || n >= a.length || n === ix) return;
+    q = a[n].getAttribute('data-q');
+    S.qSel = q; S.qFocus = ''; render();
+    a = app.querySelectorAll('.qn .qi');
+    for (i = 0; i < a.length; i += 1) { if (a[i].getAttribute('data-q') === q) { try { a[i].focus(); } catch (e) {} break; } }
   }
   function qnaHtml() {
     var list = [], scope = [], i, x, c = { all: 0, wait: 0, content: 0, tech: 0 }, f = S.qf, h, lt;
@@ -2469,8 +2515,15 @@ window.__lecAdminStart = function () {
     }
     h += '</div>';
     if (!list.length) return h + '<p class="empty">' + (f === 'wait' ? '답을 기다리는 질문이 없어요.' : '질문이 없어요.') + '</p></section>';
-    for (i = 0; i < list.length; i += 1) h += thHtml(list[i]);
-    return h + '</section>';
+    /* 2차(8): 두 칸 = 왼쪽 목록 + 오른쪽 고른 질문(넓은 화면) · 좁으면 목록 없이 질문을 차례로(한 칸 그대로) · 고른 질문 = 오늘에서 누른 것 › 고른 것 › 맨 위 */
+    var sel = '', has = {};
+    for (i = 0; i < list.length; i += 1) has[list[i].root.id] = 1;
+    sel = S.qFocus && has[S.qFocus] ? S.qFocus : (S.qSel && has[S.qSel] ? S.qSel : list[0].root.id);
+    h += '<div class="qmail"><div class="qlist" role="list" aria-label="질문 목록">';
+    for (i = 0; i < list.length; i += 1) h += qiHtml(list[i], list[i].root.id === sel);
+    h += '</div><div class="qdet">';
+    for (i = 0; i < list.length; i += 1) h += thHtml(list[i], sel);
+    return h + '</div></div></section>';
   }
 
   /* ------------------------------------------------------------------- 서랍 */
@@ -5657,7 +5710,7 @@ window.__lecAdminStart = function () {
       case 'logout': doLogout(); break;
       case 'demoReset': if (MK) { MK.reset(); } location.reload(); break;
       case 'todoQ':
-        S.tab = 'qna'; S.qf = 'wait'; S.qLec = ''; S.qFocus = ''; render(); scrollMain();
+        S.tab = 'qna'; S.qf = 'wait'; S.qLec = ''; S.qFocus = ''; S.qSel = ''; render(); scrollMain();
         /* 마우스 쓰는 PC 에서는 첫 질문의 답 칸에 바로 커서(폰은 자판이 갑자기 뜨지 않게 그대로) */
         if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
           t = document.querySelector('#main textarea[data-k^="ans:"]');
@@ -5759,6 +5812,7 @@ window.__lecAdminStart = function () {
       case 'qf': S.qf = v; S.qFocus = ''; render(); break;
       case 'qLec': closeDrawer(); S.tab = 'qna'; S.qLec = l; S.qf = 'all'; S.qFocus = ''; render(); scrollMain(); break;
       case 'qLecClear': S.qLec = ''; render(); break;
+      case 'qSel': S.qSel = q; S.qFocus = ''; render(); break;   /* 2차(8): 질문 목록 한 줄 → 오른쪽에 그 질문 */
       case 'qGo': closeDrawer(); S.tab = 'qna'; S.qLec = l; S.qf = 'all'; S.qFocus = q; render(); break;
       case 'answer':
         t = trim(S.inputs['ans:' + q]);
@@ -5769,6 +5823,7 @@ window.__lecAdminStart = function () {
         k = ansNext(q);   /* 2차(⑥): 답을 달면 아래 «답변 대기» 질문 답 칸으로(손을 떼지 않고 이어서) */
         act('ans' + q, el, DA.answer(r, t), k ? '답을 달았어요 · 다음 질문으로' : '답을 달았어요', function () {
           delete S.inputs['ans:' + q];
+          if (k) { S.qSel = k; S.qFocus = ''; render(); }   /* 2차(8): 두 칸이면 다음 질문을 오른쪽에 펴고 답 칸으로 */
           var e = k ? $('ans-' + k) : null;
           if (e) { try { e.focus(); e.scrollIntoView({ block: 'center' }); } catch (e2) {} }
         });
@@ -6051,6 +6106,7 @@ window.__lecAdminStart = function () {
   function onKey(ev) {
     var t = ev.target, k = t && t.getAttribute ? t.getAttribute('data-k') : '', rk, r9;
     if (menuKey(ev)) return;
+    if (t && t.classList && t.classList.contains('qi') && /^(ArrowDown|ArrowUp|Down|Up|Home|End)$/.test(ev.key || '')) { qiKey(ev, t); return; }   /* 2차(8): 질문 목록 ↑↓ */
     /* S1 녹음 듣기: Space · M · R · 1~4 · Enter(글 칸 · Ctrl · Alt 와 함께면 그냥 둠 · 누르고 있으면 한 번만) */
     if (S.sd && S.sd.t === 'rec' && !(ev.ctrlKey || ev.metaKey || ev.altKey) && !(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) {
       rk = rvKeyOf(ev);
