@@ -1985,7 +1985,8 @@ window.__lecStart = function () {
       '<circle class="rgT" cx="28" cy="28" r="' + r + '" fill="none" stroke-width="4"/>' +
       (f > 0 ? '<circle class="rgP" cx="28" cy="28" r="' + r + '" fill="none" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + cf.toFixed(2) +
         '" stroke-dashoffset="' + (cf * (1 - f)).toFixed(2) + '" transform="rotate(-90 28 28)"/>' : '') +
-      '</svg><span class="d' + (c.during ? ' sm' : '') + '">' + esc(c.during ? '시험 중' : c.val) + '</span></span>';
+      /* 15px 글자가 링 안쪽(지름 45)에 닿는 값(«D-DAY» 46.6px · 다섯 글자 이상)은 «시험 중»처럼 12px(11-18) */
+      '</svg><span class="d' + (c.during || String(c.val).length > 4 ? ' sm' : '') + '">' + esc(c.during ? '시험 중' : c.val) + '</span></span>';
   }
   function examCardHTML(ex, rec) {
     var c = ex.c;
