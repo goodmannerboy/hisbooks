@@ -905,16 +905,98 @@ a{color:var(--acc)}
   .ibtn.more{width:44px}
   .k2 .lo td.vb .stu{min-height:44px}
 }
+/* ③ 인스펙터 · 시트: 서랍 셋(#dw · #ed · #sd)도 2차 결(크림 · 머리카락 선 · 단추) · 서랍 몸에 .k2 를 붙여 단추 규칙을 같이 씀 */
+.k2 .btn.strong{border-color:var(--acc-line);background:var(--bg);color:var(--acc)}
+.k2 .btn.strong:hover{background:var(--acc-tint)}
+.k2 .btn.warn{border-color:#E3B4A8;background:#FBE9E3;color:#9A3F33}
+.k2 .btn.warn:hover{background:#F8DDD4;border-color:#E3B4A8}
+.dwb{background:rgba(0,0,0,.22)}
+.dw{background:var(--bg);border-left:1px solid var(--sep);border-radius:0;box-shadow:-12px 0 32px rgba(0,0,0,.10)}
+.dw .dh{align-items:flex-start;gap:12px;padding:16px 16px 12px 20px;background:var(--bg);border-bottom:1px solid var(--sep);border-radius:0}
+.dw .dh h2{font-weight:700;font-size:20px;line-height:26px;letter-spacing:-.01em;color:var(--t1)}
+.dw .dh p{margin:2px 0 0;font-size:13px;line-height:18px;color:var(--t2)}
+.dw .dh .thm{margin-top:2px}
+.dw .x{border:0;background:transparent;border-radius:8px;color:var(--t2)}
+.dw .x:hover{background:var(--fill2);color:var(--t1)}
+.dw .db{padding:14px 20px 28px}
+.dw .sec{margin-top:22px}
+.dw .sec h3{margin:0 0 8px;font-weight:600;font-size:13px;line-height:18px;color:var(--t1)}
+.dw .cr{border-bottom-color:var(--sep)}
+.dw textarea{border-color:var(--line);border-radius:10px;background:var(--group)}
+.in-act{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 6px}
+.in-act.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.k2 .in-act .btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;text-decoration:none;white-space:nowrap}
+.k2 .in-act .btn:first-child,.k2 .in-act .btn:first-child .i{color:var(--acc)}
+/* 인스펙터(860 넘음 · 열 · 칸 · 학생): 오른쪽 붙박이 330(1600 넘으면 360) · 뒤 가림 없음 · 내용은 그만큼 비켜 섬 */
+#dw.ip{width:var(--ins-w);box-shadow:none;z-index:35;container-type:inline-size}
+body.ins-on .mainw{margin-right:var(--ins-w)}
+#dw.ip .dh h2{font-size:17px;line-height:22px}
+#dw.ip .dh .thm{width:64px;height:36px}
+#dw.ip .dh .thm .thm-n{top:9px;left:6px;font-size:12px;line-height:16px}
+#dw.ip .dh .thm .thm-p{display:none}
+#dw.ip .db{padding:12px 20px 28px}
+#dw.ip .cr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#dw.ip .cr .cra{grid-column:1/-1;justify-content:flex-start}
+#dw.ip .chl li{grid-template-columns:46px minmax(0,1fr) 54px 38px}
+#dw.ip .chl .cn{white-space:normal;overflow:visible;text-overflow:clip;word-break:keep-all;overflow-wrap:anywhere}
+#dw.ip .sec>.chips{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--fill2)}
+#dw.ip .sec>.chips .chip{flex:1 1 0;min-width:0;justify-content:center;border:0;border-radius:7px;background:transparent;box-shadow:none;white-space:nowrap}
+#dw.ip .sec>.chips .chip.on{background:#FFFFFF;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+#dw.ip .sec>.chips .chip.on .cnt{color:var(--t2)}
+/* 1600 넘음: 강의 쪽 오른쪽에 고른 강의 요약이 늘 열림(인스펙터를 열면 그 자리를 넘겨줌) */
+.ia{display:none}
+@media (min-width:1600px){
+  .ia{display:block;position:fixed;top:0;right:0;bottom:0;width:var(--ins-w);overflow-y:auto;padding:18px 20px 28px;background:var(--bg);border-left:1px solid var(--sep);z-index:5}
+  body.ins-on .ia{display:none}
+  .mainw:has(.ia){margin-right:var(--ins-w)}
+}
+.in-h{display:flex;align-items:flex-start;gap:12px;margin:0 0 14px}
+.in-ht{flex:1 1 auto;min-width:0}
+.in-t{margin:2px 0 2px;font-weight:700;font-size:17px;line-height:22px;color:var(--t1);overflow-wrap:anywhere}
+.in-b{margin:0;font-size:13px;line-height:18px;color:var(--t2)}
+.in-s{display:flex;align-items:baseline;gap:8px;margin:20px 0 8px;font-weight:600;font-size:13px;line-height:18px;color:var(--t1)}
+.in-s>span{margin-left:auto;font-weight:400;color:var(--t2);text-align:right}
+.in-s b.org{font-weight:600;color:var(--org)}
+.in-none{margin:0;font-size:13px;line-height:18px;color:var(--t2)}
+.grp{border-radius:10px;background:var(--group);overflow:hidden}
+.gi{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;margin:0;padding:8px 12px 8px 14px;border:0;background:transparent;color:var(--t1);font:inherit;text-align:left;cursor:pointer}
+.gi:hover{background:var(--group-hover)}
+.gi:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.gi .i{width:18px;height:18px;flex:none;color:var(--t2)}
+.gi>.i:last-child{width:16px;height:16px;margin-left:auto;color:var(--t3)}
+.gi-t{display:flex;flex-direction:column;flex:1 1 auto;min-width:0}
+.gi-t>b{font-weight:600;font-size:15px;line-height:20px}
+.gi-t>span{font-size:13px;line-height:18px;color:var(--t2)}
+.kvs .kv{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px;padding:4px 14px;font-size:13px;line-height:18px}
+.kv+.kv::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
+.kv>span:first-child{color:var(--t2);flex:none}
+.kv>span:last-child{color:var(--t1);text-align:right;font-variant-numeric:tabular-nums;min-width:0}
+.in-by{margin:8px 2px 0;font-size:12px;line-height:16px;color:var(--t3)}
+/* 시트: 가운데 · 위 34 · 모서리 14 · 뒤 가림 rgba(0,0,0,.22) · 폰은 화면 가득 */
+#ed,#dw.sh,#sd{top:34px;bottom:auto;left:0;right:0;margin:0 auto;max-height:calc(100vh - 68px);border:0;border-radius:14px;box-shadow:var(--shadow),0 0 0 1px var(--sep)}
+#ed{width:min(760px,calc(100% - 32px))}
+#dw.sh{width:min(800px,calc(100% - 32px))}
+#sd{width:min(960px,100%)}
+#ed .dh,#dw.sh .dh,#sd .dh{border-radius:14px 14px 0 0}
+#ed .dh h2,#dw.sh .dh h2,#sd .dh h2{font-size:22px;line-height:28px}
+@media (max-width:760px){
+  #ed,#dw.sh,#sd{top:0;bottom:0;width:100%;max-height:none;border-radius:0;box-shadow:none}
+  #ed .dh,#dw.sh .dh,#sd .dh{border-radius:0}
+  #ed .dh h2,#dw.sh .dh h2,#sd .dh h2{font-size:20px;line-height:26px}
+  .dw .dh{padding:12px 12px 8px 16px}
+  .dw .db{padding:12px 16px 24px}
+  .k2 .in-act .btn{min-height:44px}
+}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="dwb" class="dwb" data-act="dClose" hidden></div>
-<div id="dw" class="dw" role="dialog" aria-modal="true" aria-labelledby="dw-t" hidden></div>
+<div id="dw" class="dw k2" role="dialog" aria-modal="true" aria-labelledby="dw-t" hidden></div>
 <div id="edb" class="dwb" data-act="edClose" hidden></div>
-<div id="ed" class="dw" role="dialog" aria-modal="true" aria-labelledby="ed-t" hidden></div>
+<div id="ed" class="dw k2" role="dialog" aria-modal="true" aria-labelledby="ed-t" hidden></div>
 <div id="sdb" class="dwb" data-act="sdClose" hidden></div>
-<div id="sd" class="dw" role="dialog" aria-modal="true" aria-labelledby="sd-t" tabindex="-1" hidden></div>
+<div id="sd" class="dw k2" role="dialog" aria-modal="true" aria-labelledby="sd-t" tabindex="-1" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:24px">자바스크립트를 켜야 쓸 수 있어요.</p></noscript>
 <script>
@@ -1925,7 +2007,7 @@ window.__lecAdminStart = function () {
     var c = compl(l, ''), q = lecQ(l.id), dc = defCls(l), lid = esc(l.id), n = lecDays(l).length, more = l.lesson_on && n > 1 ? '외 ' + (n - 1) + '일' : '';
     var day = L.fmtDay(dayOf(l)) || '–', cn = clsNames(l.class_ids) || '–', title = l.title || '(제목 없음)';
     var on = S.menu === l.id;
-    return '<tr class="lr' + (S.drawer && S.drawer.t === 'col' && S.drawer.l === l.id ? ' sel' : '') + '" data-row="' + lid + '">' +
+    return '<tr class="lr' + (selLec() === l.id ? ' sel' : '') + '" data-row="' + lid + '">' +
       '<td class="thc">' + thumbHtml(l) + '</td>' +
       '<td data-l="제목" class="ttl"><button type="button" class="lnk ttl-a" data-act="editLec" data-l="' + lid + '" title="' + esc(title) + '">' + esc(title) + '</button>' +
         '<span class="sub">' + esc((l.book || '–') + ' · ' + cn) + '</span>' +
@@ -1969,12 +2051,55 @@ window.__lecAdminStart = function () {
     h += '<table class="lt"><thead><tr><th scope="col" class="c2">강의</th><th scope="col" class="bk">교재</th><th scope="col" class="cl">반</th>' +
       '<th scope="col" class="dt">수업일</th><th scope="col" class="len">길이</th><th scope="col" class="pub">공개</th><th scope="col">완료</th><th scope="col">질문</th>' +
       '<th scope="col"><span class="sr">학생 화면</span></th><th scope="col"><span class="sr">더 보기</span></th></tr></thead>';
+    S.iaL = '';
+    if (wq() === 2) {   /* 1600 넘으면 인스펙터가 늘 열림: 마지막에 고른 강의 · 없으면 «이번 주» 첫 줄 · 없으면 맨 위 */
+      for (i = 0; i < list.length; i += 1) { if (list[i].id === S.iaPick) { S.iaL = S.iaPick; break; } }
+      for (i = 0; i < list.length && !S.iaL; i += 1) { if (grpOf(list[i]) === '이번 주') S.iaL = list[i].id; }
+      if (!S.iaL) S.iaL = list[0].id;
+    }
     for (i = 0; i < list.length; i += 1) {
       g = grpOf(list[i]);
       if (g !== pg) { h += (pg === null ? '' : '</tbody>') + '<tbody><tr class="gh"><th colspan="12" scope="rowgroup">' + esc(g) + '</th></tr>'; pg = g; }
       h += lecRow(list[i]);
     }
-    return h + '</tbody></table></section>' + othHtml();
+    return h + '</tbody></table></section>' + (S.iaL ? iaHtml(D.lmap[S.iaL]) : '') + othHtml();
+  }
+  /* 2차 인스펙터(③): 860 넘으면 열 · 칸 · 학생 서랍 = 오른쪽 붙박이(줄을 가리지 않음 · 뒤 가림 없음) · 시험 범위 · 강의 고치기 = 가운데 시트
+     1600 넘으면 강의 쪽 오른쪽에 고른 강의 요약이 늘 열림(id 없음 · 줄 단추와 다른 data-act) */
+  function wq() { var w = window.innerWidth || document.documentElement.clientWidth || 0; return w >= 1600 ? 2 : (w > 860 ? 1 : 0); }
+  function ipOf(d) { return !!d && d.t !== 'rng' && wq() > 0; }
+  function selLec() {
+    if (S.drawer && ipOf(S.drawer)) return S.drawer.t === 'stu' ? '' : str(S.drawer.l);
+    return curTab() === 'lec' ? S.iaL || '' : '';
+  }
+  function markSel() {
+    var m = $('main'), id = selLec(), rs, i;
+    if (!m) return;
+    rs = m.querySelectorAll('tr.lr[data-row]');
+    for (i = 0; i < rs.length; i += 1) {
+      if ((rs[i].getAttribute('data-row') === id) !== /\bsel\b/.test(rs[i].className)) rs[i].className = rs[i].getAttribute('data-row') === id ? 'lr sel' : 'lr';
+    }
+  }
+  function iaHtml(l) {
+    if (!l) return '';
+    var c = compl(l, ''), q = lecQ(l.id), dc = defCls(l), n = lecDays(l).length, lid = esc(l.id), h;
+    h = '<aside class="ia" aria-label="' + esc('고른 강의 · ' + (l.title || '')) + '"><div class="in-h">' + thumbHtml(l) +
+      '<div class="in-ht"><p class="in-t">' + esc(l.title || '(제목 없음)') + '</p><p class="in-b">' + esc(l.book || '–') + '</p></div></div>' +
+      '<div class="in-act"><a class="btn" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" aria-label="' + esc((l.title || '') + ' 학생 화면 · 새 탭') + '">학생 화면' + nIcon('arrow') + '</a>' +
+      '<button type="button" class="btn" data-act="mnEdit" data-l="' + lid + '">' + nIcon('pencil') + (canEditLec(l) ? '고치기' : '보기') + '</button>' +
+      '<button type="button" class="btn" data-act="mnCopy" data-l="' + lid + '">' + nIcon('copy') + '공지 복사</button></div>';
+    h += '<p class="in-s">학생별 진도</p>' + (dc ? '<div class="grp"><button type="button" class="gi" data-act="iaCol" data-l="' + lid + '" data-c="' + esc(dc) + '">' + complRing(c) +
+      '<span class="gi-t"><b>' + esc(c.big) + '</b>' + (c.known ? '<span>' + esc(c.small) + '</span>' : '') + '</span>' + nIcon('chev') + '</button></div>' :
+      '<p class="in-none">이 강의를 보는 내 반이 없어요.</p>');
+    h += '<p class="in-s">질문<span>' + (q.all ? q.all + '개' + (q.wait ? ' · <b class="org">답 기다림 ' + q.wait + '</b>' : '') : '없음') + '</span></p>' +
+      (q.all ? '<div class="grp"><button type="button" class="gi" data-act="iaQ" data-l="' + lid + '">' + nIcon('qna') + '<span class="gi-t"><b>이 강의 질문 보기</b></span>' + nIcon('chev') + '</button></div>' : '');
+    h += '<p class="in-s">정보</p><div class="grp kvs">' +
+      '<div class="kv"><span>수업일</span><span>' + esc((L.fmtDay(dayOf(l)) || '–') + (l.lesson_on && n > 1 ? ' 외 ' + (n - 1) + '일' : '')) + '</span></div>' +
+      '<div class="kv"><span>반</span><span>' + esc(clsNames(l.class_ids) || '–') + '</span></div>' +
+      '<div class="kv"><span>길이</span><span>' + (l.dur > 0 ? esc(L.fmtDur(l.dur)) : '–') + '</span></div>' +
+      '<div class="kv"><span>공개</span><span>' + pubHtml(l) + '</span></div></div>' +
+      '<p class="in-by">' + esc('올린 사람 ' + (l.created_by || '모름') + (l.created_at ? ' · ' + whenFull(l.created_at) : '')) + '</p>';
+    return h + '</aside>';
   }
 
   /* ------------------------------------------- 다른 선생님 수업(11-17 · 보기만)
@@ -2134,22 +2259,48 @@ window.__lecAdminStart = function () {
   }
   function dSig(d) { return d ? d.t + '|' + (d.l || '') + '|' + (d.s || '') + '|' + (d.c || '') : ''; }
   function renderDrawer() {
-    var dw = $('dw'), bk = $('dwb'), html, wasHidden, sig;
-    if (!S.drawer || !D) { dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; return; }
+    var dw = $('dw'), bk = $('dwb'), html, wasHidden, sig, ip;
+    if (!S.drawer || !D) { dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; dwMode(false); return; }
     html = S.drawer.t === 'col' ? colHtml(S.drawer) : (S.drawer.t === 'cell' ? cellHtml(S.drawer) : (S.drawer.t === 'rng' ? rngHtml(S.drawer) : stuHtml(S.drawer)));
-    if (!html) { S.drawer = null; S.stack = []; dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; return; }
+    if (!html) { S.drawer = null; S.stack = []; dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; dwMode(false); return; }
     wasHidden = dw.hidden;
-    dw.hidden = false; bk.hidden = false;
+    ip = dwMode(true);
+    dw.hidden = false; bk.hidden = ip;
     paint(dw, html);
     sig = dSig(S.drawer);
     if (sig !== S.dSig) { dw.scrollTop = 0; S.dSig = sig; }
     if (wasHidden) { var c = dw.querySelector('[data-act="dClose"]'); if (c) c.focus(); }
   }
+  /* 2차: 서랍 꼴 = 인스펙터(ip · 860 넘음 · 열 · 칸 · 학생) · 시트(sh · 시험 범위) · 좁으면 옛 서랍 · body.ins-on = 내용이 인스펙터만큼 비켜 섬 */
+  function dwMode(on) {
+    var dw = $('dw'), ip = on && ipOf(S.drawer), sh = on && S.drawer && S.drawer.t === 'rng', b = document.body;
+    dw.className = 'dw k2' + (ip ? ' ip' : '') + (sh ? ' sh wide' : '');
+    dw.setAttribute('aria-modal', ip ? 'false' : 'true');
+    b.className = (' ' + b.className + ' ').replace(/ ins-on /g, ' ').replace(/^\s+|\s+$/g, '') + (ip ? ' ins-on' : '');
+    markSel();
+    return ip;
+  }
+  /* 줄 한 번 누름 = 그 강의 인스펙터(두 번 누름 = 고치기 · 두 번째 누름을 기다렸다가 열어 줄이 움직이지 않음) */
+  var rowT = 0;
+  function rowClick(ev) {
+    var t = ev.target, tr = t && t.closest ? t.closest('#main tr.lr[data-row]') : null, id;
+    if (!tr || t.closest('button, a, input, select, textarea, label, .menu')) return;
+    clearTimeout(rowT);
+    if (ev.detail > 1) return;
+    id = tr.getAttribute('data-row');
+    rowT = setTimeout(function () { openRow(id); }, 260);
+  }
+  function openRow(id) {
+    var l = D && D.lmap[id], dc = l ? defCls(l) : '';
+    if (!dc) return;
+    if (wq() === 2 && S.iaPick !== id) { S.iaPick = id; render(); }
+    openDrawer({ t: 'col', l: id, c: dc, f: 'all' });
+  }
   /* sub = 글 하나 또는 덩어리 목록(덩어리 안에서는 줄을 안 바꾸고 « · »로 이음 · 폰 열 서랍 «복습 / 3명» 갈림 · 검수 2차 B L5) */
-  function dHead(title, sub) {
+  function dHead(title, sub, pre) {
     if (isArr(sub)) sub = sub.filter(function (x) { return !!x; }).map(function (x) { return '<span class="nw">' + esc(x) + '</span>'; }).join(' · ');
     else sub = sub ? esc(sub) : '';
-    return '<div class="dh">' + (S.stack.length ? '<button type="button" class="btn sm txt" data-act="dBack">← 뒤로</button>' : '') +
+    return '<div class="dh">' + (S.stack.length ? '<button type="button" class="btn sm txt" data-act="dBack">← 뒤로</button>' : '') + (pre || '') +
       '<div class="dt"><h2 id="dw-t">' + esc(title) + '</h2>' + (sub ? '<p class="mut">' + sub + '</p>' : '') + '</div>' +
       '<button type="button" class="x" data-act="dClose" aria-label="닫기">×</button></div>';
   }
@@ -2368,8 +2519,11 @@ window.__lecAdminStart = function () {
       if (f === 'all' || (f === 'done' && isDone(s)) || (f === 'behind' && x)) list.push({ r: rows[i], s: s });
     }
     x = complRows(l, rows);
-    h = dHead(l.title, [L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업' : '', cid ? D.cname[cid] : '', x.big, x.small]);
+    h = dHead(l.title, [L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업' : '', cid ? D.cname[cid] : '', x.big, x.small], thumbHtml(l));
     h += '<div class="db">';
+    /* 2차 인스펙터 머리 단추: 학생 화면(새 탭) · 고치기(보기) — 반 공지 문구 복사는 아래 그 자리에 */
+    h += '<div class="in-act two"><a class="btn" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" aria-label="' + esc((l.title || '') + ' 학생 화면 · 새 탭') + '">학생 화면' + nIcon('arrow') + '</a>' +
+      '<button type="button" class="btn" data-act="mnEdit" data-l="' + esc(l.id) + '">' + nIcon('pencil') + (canEditLec(l) ? '고치기' : '보기') + '</button></div>';
     if (cls.length > 1) {
       h += '<div class="chips" role="group" aria-label="반 고르기">';
       for (i = 0; i < cls.length; i += 1) h += '<button type="button" class="chip' + (cls[i] === cid ? ' on' : '') + '" aria-pressed="' + (cls[i] === cid ? 'true' : 'false') + '" data-act="colCls" data-c="' + esc(cls[i]) + '">' + esc(D.cname[cls[i]]) + '</button>';
@@ -5233,8 +5387,10 @@ window.__lecAdminStart = function () {
       el = el.parentNode;
     }
     /* 2차 «…» 메뉴: 메뉴 밖을 누르면 닫힘(누른 것은 그대로 함) */
+    var hadMenu = !!S.menu;
     if (S.menu && !(el && el.closest && el.closest('#main .menu')) && a !== 'rowMenu') { S.menu = ''; render(); }
-    if (!a || el.disabled) return;
+    if (!a) { if (!hadMenu) rowClick(ev); return; }
+    if (el.disabled) return;
     var s = attr(el, 'data-s'), l = attr(el, 'data-l'), c = attr(el, 'data-c'), v = attr(el, 'data-v'), q = attr(el, 'data-q');
     var inDw = !!($('dw') && $('dw').contains(el)), r, t, k, note, chips, i;
     switch (a) {
@@ -5288,6 +5444,8 @@ window.__lecAdminStart = function () {
       case 'newLec': openEditor(''); break;
       case 'editLec': openEditor(l); break;
       case 'colOpen': openDrawer({ t: 'col', l: l, c: c, f: 'all' }, inDw); break;
+      case 'iaCol': openDrawer({ t: 'col', l: l, c: c, f: 'all' }); break;   /* 2차 1600 인스펙터 «학생별 진도» */
+      case 'iaQ': closeDrawer(); S.tab = 'qna'; S.qLec = l; S.qf = 'all'; S.qFocus = ''; render(); scrollMain(); break;
       case 'colCls': if (S.drawer) { S.drawer.c = c; S.cf = null; renderDrawer(); } break;
       case 'colF': if (S.drawer) { S.drawer.f = v; renderDrawer(); } break;
       case 'cellOpen': openDrawer({ t: 'cell', s: s, l: l }, inDw); break;
@@ -5676,6 +5834,9 @@ window.__lecAdminStart = function () {
     if (!tr || (t.closest && t.closest('button, a, input, select, textarea, .menu'))) return;
     S.menu = ''; openEditor(tr.getAttribute('data-row'));
   });
+  /* 2차: 창 너비가 860 · 1600 을 넘나들면 서랍 꼴(인스펙터 · 옛 서랍)과 1600 요약을 다시 그림 */
+  var wqNow = wq();
+  window.addEventListener('resize', function () { var q = wq(); if (q !== wqNow) { wqNow = q; if (S.me && D) renderAll(); } });
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
   document.addEventListener('keydown', onKey);
