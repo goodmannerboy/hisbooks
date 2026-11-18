@@ -1068,6 +1068,28 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   .k2 .qn>.chips .chip.on{background:#FFFFFF;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.12)}
   .k2 .qn>.chips .chip .cnt,.k2 .qn>.chips .chip.on .cnt{color:var(--t2);font-weight:400}
 }
+/* ⑦ 세트: 왼쪽 목록 340 = 상자 없는 줄(고른 줄 = 옅은 면) · 오른쪽 결과 = 머리카락 선으로만 나눔 · «말해서 확인»은 한 줄 */
+.k2 .sx{grid-template-columns:340px minmax(0,1fr);gap:0 24px}
+.k2 .sx-l{gap:2px}
+.k2 .sx-l>.btn.fill{margin:0 0 10px;min-height:36px}
+.k2 .sx-it{position:relative;padding:10px 12px;border:0;border-radius:10px;background:transparent;box-shadow:none;color:var(--t1)}
+.k2 .sx-it:hover{background:var(--fill)}
+.k2 .sx-it.on{background:var(--acc-tint);box-shadow:none}
+.k2 .sx-it .t{font-weight:600;font-size:15px;line-height:20px}
+.k2 .sx-it .m,.k2 .sx-it .s{color:var(--t2)}
+.k2 .sx-it .s.g{color:var(--acc);font-weight:600}
+.k2 .sx-it.on .s.g{color:var(--acc)}
+.k2 .sx-it .sx-k,.k2 .sx-hd .sx-k{background:var(--group);color:var(--acc);font-weight:600}
+#main .k2 .sx-r.card,.k2 .sx>.sx-r.card{margin:0;padding:2px 0 0 24px;background:transparent;border:0;border-left:1px solid var(--sep);border-radius:0;box-shadow:none}
+.k2 .sx-tt h2{font-size:20px;line-height:26px}
+.k2 .sxt th{color:var(--t3);font-weight:600;font-size:12px;border-bottom-color:var(--sep)}
+.k2 .sxt td{border-bottom-color:var(--sep)}
+.k2 .sxt .sx-spk{white-space:nowrap}
+@media (max-width:1100px){
+  .k2 .sx{grid-template-columns:minmax(0,1fr);gap:16px}
+  .k2 .sx>.sx-r.card{padding:16px 0 0;border-left:0;border-top:1px solid var(--sep)}
+}
+@media (max-width:760px){.k2 .sxt .sx-spk{white-space:normal}}
 </style>
 </head>
 <body>
