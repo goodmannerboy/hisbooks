@@ -987,6 +987,44 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   .dw .db{padding:12px 16px 24px}
   .k2 .in-act .btn{min-height:44px}
 }
+/* ④ 오늘: 카드 셋(질문 · 결석한 날 덜 본 학생 · 범위를 고를 시험) + «확인할 것» · 할 일 단추(.ti)는 카드 안 줄(머리카락 선) */
+.tcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;margin:6px 0 0}
+@media (max-width:1100px){.tcards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.tcards{grid-template-columns:minmax(0,1fr)}}
+.tcd{border-radius:12px;background:var(--group);overflow:hidden}
+.k2 .todo .tch{display:flex;align-items:center;gap:6px;margin:0;padding:12px 14px 6px;font-weight:600;font-size:13px;line-height:18px;color:var(--acc)}
+.k2 .todo .tch svg{width:16px;height:16px;flex:none}
+.k2 .todo .tch b{margin-left:auto;font-weight:600;color:var(--t2)}
+.k2 .todo .bandn{color:var(--org)}
+.k2 .todo .bandn strong{font-weight:700}
+.k2 .todo .ti{position:relative;gap:10px;min-height:56px;padding:10px 14px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--t1);font-size:15px}
+.k2 .todo .ti:hover{background:var(--group-hover)}
+.k2 .todo .ti:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.k2 .todo .tcd .ti+.ti::before,.k2 .todo .tch+.ti::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
+.k2 .todo .ti .tic{width:28px;height:28px;border-radius:7px}
+.k2 .todo .ti .tic svg{width:16px;height:16px}
+.k2 .todo .ti .tx{font-size:15px;font-weight:600;line-height:20px;letter-spacing:0}
+.k2 .todo .ti .ts{margin-top:1px;font-size:13px;line-height:18px;color:var(--t2)}
+.k2 .todo .ti .tn{font-size:17px;font-weight:600;line-height:22px;letter-spacing:0}
+.k2 .todo .ti .go{color:var(--t3);font-weight:400;font-size:18px}
+.k2 .todo .ti.more{justify-content:center;min-height:44px;color:var(--t2);font-size:13px;font-weight:400}
+/* 질문 카드 머리: 아이콘 + 이름(13/600 호박) · 큰 수 28/700 + 단위 · 작은 줄 */
+.k2 .todo .ti.hd{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-areas:"ic tx tx go" "tn tu . go" "ts ts ts go";align-items:center;column-gap:6px;row-gap:0;padding:12px 14px}
+.k2 .todo .ti.hd .tcx{display:contents}
+.k2 .todo .ti.hd .tic{grid-area:ic;width:auto;height:auto;border-radius:0;background:transparent;color:var(--org)}
+.k2 .todo .ti.hd .tx{grid-area:tx;font-size:13px;line-height:18px;font-weight:600;color:var(--org)}
+.k2 .todo .ti.hd .tn{grid-area:tn;font-size:28px;line-height:34px;font-weight:700}
+.k2 .todo .ti.hd .tu{grid-area:tu;align-self:end;margin:0 0 5px;font-size:13px;line-height:18px;color:var(--t2)}
+.k2 .todo .ti.hd .ts{grid-area:ts;margin-top:2px}
+.k2 .todo .ti.hd .go{grid-area:go;align-self:start}
+.k2 .todo .tsec{margin:28px 0 10px;font-weight:700;font-size:17px;line-height:22px;color:var(--t1)}
+.tchk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.k2 .todo .tchk .ti{border-radius:12px;background:var(--group)}
+.k2 .todo .tchk .ti:hover{background:var(--group-hover)}
+.k2 .todo .sub{margin:12px 0 0;padding:4px 14px;border:0;border-radius:12px;background:var(--group)}
+.k2 .todo .sub h3{margin:8px 0 2px;font-weight:600;font-size:13px;line-height:18px;color:var(--t1)}
+.k2 .todo .srow{border-bottom-color:var(--sep)}
+@media (max-width:760px){.tchk{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -1844,9 +1882,10 @@ window.__lecAdminStart = function () {
   function ti(act, attrs, tc, tag, text, o) {
     o = o || { t: text, s: tag, ic: 'gy', i: 'cal' };
     var al = o.n != null ? ' aria-label="' + esc(o.t + ' ' + o.n + (o.u || '') + (o.s ? ' · ' + o.s : '')) + '"' : '';
-    return '<button type="button" class="ti" data-act="' + act + '"' + attrs + al + '><span class="tic i-' + o.ic + '" aria-hidden="true">' + kIcon(o.i) + '</span>' +
+    return '<button type="button" class="ti' + (o.hd ? ' hd' : '') + '" data-act="' + act + '"' + attrs + al + '><span class="tic i-' + o.ic + '" aria-hidden="true">' + kIcon(o.i) + '</span>' +
       '<span class="tcx"><span class="tx">' + esc(o.t) + '</span>' + (o.s ? '<span class="ts">' + esc(o.s) + '</span>' : '') + '</span>' +
-      (o.n != null ? '<span class="tn">' + esc(String(o.n)) + '</span>' : '') + '<span class="go" aria-hidden="true">›</span></button>';
+      (o.n != null ? '<span class="tn">' + esc(String(o.n)) + '</span>' + (o.hd && o.u ? '<span class="tu" aria-hidden="true">' + esc(o.u) + '</span>' : '') : '') +
+      '<span class="go" aria-hidden="true">›</span></button>';
   }
   /* 줄 그림(인라인 SVG · 바깥 아이콘 글꼴 없음) */
   function kIcon(n) {
@@ -1875,48 +1914,52 @@ window.__lecAdminStart = function () {
     return str(x.sname) + ' · ' + leftTime(x.secs) + ' 남음' + (lk.length > 1 ? ' 외 ' + (lk.length - 1) + '명' : '');
   }
   function todoHtml() {
-    var t = S.todo, items = [], subs = '', i, b, lim;
-    var head = '<section class="card todo" aria-label="오늘 할 일"><h2>오늘 할 일</h2>';
+    var t = S.todo, qi = '', bi = [], ri = [], ci = [], subs = '', cards = '', i, b, lim;
+    var head = '<section class="card todo" aria-label="오늘 할 일"><h2 class="sr">오늘 할 일</h2>';
     if (S.todoErr) {
       return head + '<p class="none">할 일을 불러오지 못했어요. <button type="button" class="btn sm" data-act="reload">다시 불러오기</button></p></section>';
     }
     if (!t) return '';
     var w = t.waiting || { count: 0 }, band = D && D.band, bandN = '';
-    if (w.count > 0) items.push(ti('todoQ', '', 't-honey', '질문', '답을 기다리는 질문 ' + w.count, { t: '답을 기다리는 질문', s: waitSub(w), n: w.count, u: '개', ic: 'am', i: 'msg' }));
+    if (w.count > 0) qi = ti('todoQ', '', 't-honey', '질문', '답을 기다리는 질문 ' + w.count, { t: '답을 기다리는 질문', s: waitSub(w), n: w.count, u: '개', ic: 'am', i: 'msg', hd: 1 });
     /* C1: 출결이 있으면 «결석한 날 수업 덜 본 학생»(서버 띠) · 없으면 지금처럼 lec_todo 의 덜 본 학생 */
     var bh = band ? band.items : (isArr(t.behind) ? t.behind : []);
     lim = S.open.behind ? bh.length : 4;
     for (i = 0; i < bh.length && i < lim; i += 1) {
       b = bh[i];
-      items.push(ti('todoBehind', ' data-l="' + esc(b.lecture) + '" data-c="' + esc(b.cls) + '" title="' + esc((b.names || []).join(', ')) + '"',
+      bi.push(ti('todoBehind', ' data-l="' + esc(b.lecture) + '" data-c="' + esc(b.cls) + '" title="' + esc((b.names || []).join(', ')) + '"',
         band ? 't-coral' : 't-sky', band ? '결석한 날' : '덜 본 학생', b.cname + ' · ' + b.title + ' · ' + b.n + '명',
         { t: b.title, s: b.cname + (band ? ' · 결석한 날 수업 덜 봄' : ' · 덜 본 학생'), n: b.n, u: '명', ic: 'am', i: 'clock' }));   /* 강의마다 한 칸 · 제목 = 강의 */
     }
     if (bh.length > lim) {
-      items.push('<button type="button" class="ti more" data-act="todoMore">' + (band ? '결석한 날 수업 ' : '덜 본 강의 ') + (bh.length - lim) + '개 더 보기</button>');
+      bi.push('<button type="button" class="ti more" data-act="todoMore">' + (band ? '결석한 날 수업 ' : '덜 본 강의 ') + (bh.length - lim) + '개 더 보기</button>');
     }
-    if (band && band.n > 0) bandN = '<p class="bandn">결석한 날 수업 덜 본 학생 <strong>' + band.n + '명</strong> · 강의 ' + bh.length + '개</p>';   /* 검수 A L5: 아래 항목은 강의별 */
+    if (band && band.n > 0) bandN = '<p class="bandn tch">' + kIcon('clock') + '<span>결석한 날 수업 덜 본 학생 <strong>' + band.n + '명</strong> · 강의 ' + bh.length + '개</span></p>';   /* 검수 A L5: 아래 항목은 강의별 */
     /* C2: 범위를 아직 저장하지 않은 학교 시험(시험 30일 전 ~ 시험 끝 날 · 내 반 학생이 든 시험)
        가까운 시험부터 셋 · 나머지는 «시험 범위 N개 더 고르기» 한 칸(누르면 다 펼침 · 결석한 날 «N개 더 보기»와 같음 · C2 검수 M3) */
     var rb = D && D.rg ? D.rg.band : [], rlim = S.open.rngBand ? rb.length : 3;
     for (i = 0; i < rb.length && i < rlim; i += 1) {
       b = rb[i];
-      items.push(ti('rngPick', ' data-s="' + esc(gkey(b.g)) + '" title="' + esc(rngTitle(b.g)) + '"', 't-honey',
+      ri.push(ti('rngPick', ' data-s="' + esc(gkey(b.g)) + '" title="' + esc(rngTitle(b.g)) + '"', 't-honey',
         esc(b.during ? '시험 중' : '시험 ' + b.val), b.text));
     }
     if (rb.length > rlim) {
-      items.push('<button type="button" class="ti more" data-act="rngBandMore">시험 범위 ' + (rb.length - rlim) + '개 더 고르기</button>');
+      ri.push('<button type="button" class="ti more" data-act="rngBandMore">시험 범위 ' + (rb.length - rlim) + '개 더 고르기</button>');
     }
     var lf = S.me.admin && isArr(t.left) ? t.left : [];
-    if (lf.length) items.push(ti('todoToggle', ' data-v="left" aria-expanded="' + (S.open.left ? 'true' : 'false') + '"', 't-neutral', '기록 정리', '그만둔 학생 기록 ' + lf.length + '명 · 지우기',
+    if (lf.length) ci.push(ti('todoToggle', ' data-v="left" aria-expanded="' + (S.open.left ? 'true' : 'false') + '"', 't-neutral', '기록 정리', '그만둔 학생 기록 ' + lf.length + '명 · 지우기',
       { t: '그만둔 학생 기록', s: '누르면 지울 수 있어요', n: lf.length, u: '명', ic: 'gy', i: 'box' }));
     var lk = isArr(t.locked) ? t.locked : [];
-    if (lk.length) items.push(ti('todoToggle', ' data-v="locked" aria-expanded="' + (S.open.locked ? 'true' : 'false') + '"', 't-coral', '잠금', '로그인이 잠긴 학생 ' + lk.length,
+    if (lk.length) ci.push(ti('todoToggle', ' data-v="locked" aria-expanded="' + (S.open.locked ? 'true' : 'false') + '"', 't-coral', '잠금', '로그인이 잠긴 학생 ' + lk.length,
       { t: '로그인이 잠긴 학생', s: lockSub(lk), n: lk.length, u: '명', ic: 'co', i: 'lock' }));
-    if (!items.length) return head + '<p class="none">오늘 할 일이 없어요</p></section>';
+    if (!qi && !bi.length && !ri.length && !ci.length) return head + '<p class="none">오늘 할 일이 없어요</p></section>';
     if (S.open.left && lf.length) subs += leftListHtml(lf);
     if (S.open.locked && lk.length) subs += lockedListHtml(lk);
-    return head + bandN + '<div class="tgrid">' + items.join('') + '</div>' + subs + '</section>';
+    /* 2차(④): 카드 셋(질문 · 결석한 날 덜 본 학생 · 범위를 고를 시험) + «확인할 것»(기록 정리 · 잠금) · 할 일 단추(.ti)는 그대로 카드 안 줄로 */
+    if (qi) cards += '<div class="tcd">' + qi + '</div>';
+    if (bi.length) cards += '<div class="tcd">' + (bandN || '<p class="tch">' + kIcon('clock') + '<span>덜 본 학생</span></p>') + bi.join('') + '</div>';
+    if (ri.length) cards += '<div class="tcd"><p class="tch">' + kIcon('cal') + '<span>범위를 고를 시험</span><b>' + rb.length + '개</b></p>' + ri.join('') + '</div>';
+    return head + (cards ? '<div class="tcards">' + cards + '</div>' : '') + (ci.length ? '<h3 class="tsec">확인할 것</h3><div class="tchk">' + ci.join('') + '</div>' : '') + subs + '</section>';
   }
   function forgetAskHtml(skey, name) {
     var c = forgetCounts(skey);
