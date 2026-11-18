@@ -2459,8 +2459,10 @@ window.__lecAdminStart = function () {
   function stvHref(l) {   /* 연습 화면은 보는 사람(as)도 실어 보냄 → 미리 보기 «닫기»가 같은 탭에서 돌아올 때 그 사람으로 */
     return 'class.html?preview=' + encodeURIComponent(l.id) + (demo ? '&demo=1' + (S.as && S.as !== 'benjamin' ? '&as=' + encodeURIComponent(S.as) : '') : '');
   }
+  /* 화면 읽기 꼬리: PC = «· 새 탭» · 폰 · 홈 화면 앱 = 같은 창이라 꼬리 없음(pvSame · 11-18 · §8-220) */
+  function stvAria(l) { return (l.title || '') + ' 학생 화면' + (pvSame() ? '' : ' · 새 탭'); }
   function stvLink(l) {
-    return '<a class="stu stv" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" title="학생 화면" aria-label="' + esc((l.title || '') + ' 학생 화면 · 새 탭') + '">학생 화면' + nIcon('arrow') + '</a>';
+    return '<a class="stu stv" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" title="학생 화면" aria-label="' + esc(stvAria(l)) + '">학생 화면' + nIcon('arrow') + '</a>';
   }
   /* 2차: 썸네일 줄 목록(표 짜임 그대로 · 줄은 CSS 격자) · 묶음마다 tbody 하나(머리 = 이번 주 · 지난주 · 달) */
   function lecHtml() {
@@ -2511,7 +2513,7 @@ window.__lecAdminStart = function () {
     var c = compl(l, ''), q = lecQ(l.id), dc = defCls(l), n = lecDays(l).length, lid = esc(l.id), h;
     h = '<aside class="ia" aria-label="' + esc('고른 강의 · ' + (l.title || '')) + '"><div class="in-h">' + thumbHtml(l) +
       '<div class="in-ht"><p class="in-t">' + esc(l.title || '(제목 없음)') + '</p><p class="in-b">' + esc(l.book || '–') + '</p></div></div>' +
-      '<div class="in-act"><a class="btn" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" aria-label="' + esc((l.title || '') + ' 학생 화면 · 새 탭') + '">학생 화면' + nIcon('arrow') + '</a>' +
+      '<div class="in-act"><a class="btn" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" aria-label="' + esc(stvAria(l)) + '">학생 화면' + nIcon('arrow') + '</a>' +
       '<button type="button" class="btn" data-act="mnEdit" data-l="' + lid + '">' + nIcon('pencil') + (canEditLec(l) ? '고치기' : '보기') + '</button>' +
       '<button type="button" class="btn" data-act="mnCopy" data-l="' + lid + '">' + nIcon('copy') + '공지 복사</button></div>';
     h += '<p class="in-s">학생별 진도</p>' + (dc ? '<div class="grp"><button type="button" class="gi" data-act="iaCol" data-l="' + lid + '" data-c="' + esc(dc) + '">' + complRing(c) +
@@ -2985,7 +2987,7 @@ window.__lecAdminStart = function () {
     h = dHead(l.title, [L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업' : '', cid ? D.cname[cid] : '', x.big, x.small], thumbHtml(l));
     h += '<div class="db">';
     /* 2차 인스펙터 머리 단추: 학생 화면(새 탭) · 고치기(보기) — 반 공지 문구 복사는 아래 그 자리에 */
-    h += '<div class="in-act two"><a class="btn" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" aria-label="' + esc((l.title || '') + ' 학생 화면 · 새 탭') + '">학생 화면' + nIcon('arrow') + '</a>' +
+    h += '<div class="in-act two"><a class="btn" href="' + esc(stvHref(l)) + '" target="_blank" rel="noopener" aria-label="' + esc(stvAria(l)) + '">학생 화면' + nIcon('arrow') + '</a>' +
       '<button type="button" class="btn" data-act="mnEdit" data-l="' + esc(l.id) + '">' + nIcon('pencil') + (canEditLec(l) ? '고치기' : '보기') + '</button></div>';
     if (cls.length > 1) {
       h += '<div class="chips" role="group" aria-label="반 고르기">';
@@ -3242,6 +3244,7 @@ window.__lecAdminStart = function () {
     $('ed').innerHTML = edHtml(l);
     $('ed').hidden = false; $('edb').hidden = false;
     $('ed').scrollTop = 0;
+    if (!l && S.edDraft) edDraftPut();   /* 떠났다 돌아온 새 강의 칸(§8-220) */
     edNotes();
     chLive();
     if (l) edPushEdit(l.id);
@@ -4065,6 +4068,7 @@ window.__lecAdminStart = function () {
     function done(rw, saved) {
       S.busy.ed = 0;
       /* K: 새 강의는 같은 자리(서랍)에 반 공지 카드 · 고친 저장은 지금처럼 닫음 · N1: 저장된 줄의 id 로 알림 한 줄 */
+      if (isNew && rw) { S.edDraft = null; dfDrop('ed'); }   /* 올린 새 강의 칸은 남겨 둔 글에서 지움(§8-220) */
       if (isNew && rw) edNotice(rw, saved && saved.id);
       else closeEditor();
       toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : '') + (pdfDropped ? ' · 필기 PDF는 저장되지 않았어요' : ''));
@@ -5725,7 +5729,7 @@ window.__lecAdminStart = function () {
       delete S.setFull[nid];
       msg = sd.id ? '고쳤어요 · 그대로 둔 문항의 학생 기록은 남아요'
         : (!on || on <= today() ? '저장했어요 · ' + clsNames(cls) + ' 학생 폰 목록에 바로 떠요' : '저장했어요 · ' + L.fmtDay(on) + '에 학생 폰에 떠요');
-      if (!sd.id) S.sxDraft = null;
+      if (!sd.id) { S.sxDraft = null; dfDrop('sxd'); }
       S.sd = null;
       delete S.inputs['sd:txt']; delete S.inputs['sd:title']; delete S.inputs['sd:on'];
       sxPaintSd();
@@ -5845,7 +5849,7 @@ window.__lecAdminStart = function () {
     function done() {
       sd.busy = false; sd.batch = false;
       if (S.sd !== sd) return;
-      S.sxDraft = null;
+      S.sxDraft = null; dfDrop('sxd');
       S.sd = null;
       delete S.inputs['sd:txt']; delete S.inputs['sd:title']; delete S.inputs['sd:on'];
       sxPaintSd();
@@ -6273,10 +6277,12 @@ window.__lecAdminStart = function () {
       S.loadedAt = new Date().getTime();
       S.sess = null;
       sxFix();
+      dfLoadOnce();   /* 쓰던 글(§8-220) = 첫 불러오기 때 한 번 · 그리기 전에(칸이 그려질 때 채워짐) */
       renderAll();
       if (note) toast('새로 불러왔어요');
       rngSyncNow(my);
-      hashOnce();
+      /* 미리 보기에서 돌아옴(같은 창 · §8-220) = 보던 곳이 주소 끝(#qna · #behind)보다 먼저 · 주소 끝은 한 번 쓰고 지움(다시 읽혀도 또 튀지 않게) */
+      if (pvBackOnce()) { hashDone = true; hashStrip(); } else hashOnce();
       /* S1 세트: 처음 한 번 녹음 정리(조용히) · 세트 탭이면 결과 표도 새로 */
       sxInit();
       if (S.tab === 'set') sxStaff(true);
@@ -6467,11 +6473,11 @@ window.__lecAdminStart = function () {
         k = S.cf;
         if (k.saved && !note) { S.cf = null; renderAll(); break; }   /* 이미 저장됨 · 붙일 메모 없음 = 닫기 */
         act('cf', el, DA.rpc('lec_confirm', { p_lecture: k.l, p_skey: k.s, p_note: note }), k.saved ? '메모를 붙여 확인 완료로 남겼어요' : '확인 완료로 남겼어요',
-          function () { S.cf = null; delete S.inputs.cfnote; });
+          function () { S.cf = null; delete S.inputs.cfnote; dfDrop('cfnote'); });
         break;
       case 'unconf':
         act('uncf', el, DA.rpc('lec_unconfirm', { p_lecture: l, p_skey: s }), '되돌렸어요',
-          function () { if (S.cf && S.cf.s === s && S.cf.l === l) { S.cf = null; delete S.inputs.cfnote; } });
+          function () { if (S.cf && S.cf.s === s && S.cf.l === l) { S.cf = null; delete S.inputs.cfnote; dfDrop('cfnote'); } });
         break;
       case 'ntCopy': t = el.getAttribute('data-t') || 'nt-txt'; copyText($(t) ? $(t).value : '', function () { return $(t); }); break;   /* K: 올린 뒤 카드는 data-t="ed-nt" */
       case 'insTog': insTog(el); break;   /* 설치 안내 결론안(11-16) */
@@ -6506,6 +6512,8 @@ window.__lecAdminStart = function () {
         k = ansNext(q);   /* 2차(⑥): 답을 달면 아래 «답변 대기» 질문 답 칸으로(손을 떼지 않고 이어서) */
         act('ans' + q, el, DA.answer(r, t), k ? '답을 달았어요 · 다음 질문으로' : '답을 달았어요', function () {
           delete S.inputs['ans:' + q];
+          dfDrop('ans:' + q);   /* 보낸 답은 남겨 둔 글에서도 지움(다시 읽혀도 안 뜸 · §8-220) · 칸도 비움(새로 불러오기 전에 떠나도) */
+          var ta = $('ans-' + q); if (ta) ta.value = '';
           if (k) { S.qSel = k; S.qFocus = ''; render(); }   /* 2차(8): 두 칸이면 다음 질문을 오른쪽에 펴고 답 칸으로 */
           var e = k ? $('ans-' + k) : null;
           if (e) { try { e.focus(); e.scrollIntoView({ block: 'center' }); } catch (e2) {} }
@@ -6515,7 +6523,7 @@ window.__lecAdminStart = function () {
       case 'qdelNo': S.ask.qdel = null; render(); break;
       case 'qdelYes': act('qdel', el, DA.qdelete(q), '지웠어요', function () { S.ask.qdel = null; }); break;
       /* 편집 칸 */
-      case 'edClose': closeEditor(); break;
+      case 'edClose': edDropIfNew(); closeEditor(); break;
       case 'edSave': edSave(el); break;
       case 'edDelAsk': if (S.ed) { S.ed.delAsk = true; $('ed-foot').innerHTML = edFootHtml(); } break;
       case 'edDelNo': if (S.ed) { S.ed.delAsk = false; $('ed-foot').innerHTML = edFootHtml(); } break;
@@ -6826,6 +6834,7 @@ window.__lecAdminStart = function () {
       if (k === 'cfnote' && !ev.shiftKey) { if (keyAct(t, 'cfSave', 'cfbox')) ev.preventDefault(); return; }
     }
     if (ev.key === 'Escape' || ev.keyCode === 27) {
+      edDropIfNew();
       if (closeEditor()) return;
       if (S.drawer) closeDrawer();
     }
@@ -6934,8 +6943,180 @@ window.__lecAdminStart = function () {
       if (a) { try { a.focus(); } catch (e) {} }
     }
   }
-  function hashOnce() { if (hashDone) return; hashDone = true; goHash(hash0); }
-  window.addEventListener('hashchange', function () { if (D && S.me) goHash(location.hash); });
+  /* 쓴 주소 끝은 지금 기록에서 지움(새 기록 없이 · 11-18 §8-220): 같은 창 미리 보기에서 «닫기»(뒤로)로 다시 읽혀도 #qna 로 또 튀지 않게 */
+  function hashStrip() {
+    if (!String(location.hash || '').replace(/^#/, '')) return;
+    try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) { /* 없음 */ }
+  }
+  function hashOnce() { if (hashDone) return; hashDone = true; goHash(hash0); hashStrip(); }
+  window.addEventListener('hashchange', function () { if (D && S.me) { goHash(location.hash); hashStrip(); } });
+
+  /* ------------------------------- 폰 · 홈 화면 앱에서 «학생 화면»(11-18 · §8-220 · 원장님 «핸드폰으로 학생화면 미리보기가 작동안해»)
+     새 창(target=_blank)은 홈 화면 앱에서 Safari(따로 쓰는 저장소)로 나가 선생님 로그인이 없음 → 미리 보기 대신 학생 로그인이 떴음.
+     폰(손가락) · 홈 화면 앱이면 «학생 화면» 링크 다섯 갈래(오늘 이번 주 · 강의 줄 · 인스펙터 · 열 서랍 · 다른 반 표)를 누름 하나로 잡아 같은 창(&same=1)으로 ·
+     PC(마우스)는 지금처럼 새 탭. 떠날 때 보던 쪽 · 고른 강의(강의 · 반 · 질문 · 세트) · 열린 서랍(열 · 칸 · 학생 = 폰 시트 · 넓은 화면 인스펙터) · 스크롤 ·
+     학생 찾기 글을 sessionStorage 에 적고, 미리 보기 «닫기»(뒤로)로 다시 읽히면 첫 불러오기 뒤 한 번 되살림(되살린 뒤 지움 · 2시간 · 같은 사람만).
+     그대로 남아 있던 화면(뒤로-앞으로 캐시)이면 적은 것만 지움. 쓰던 글은 아래 «쓰던 글 남기기»(언제든)가 맡음.
+     강의 고치기(#ed) · 세트 넣기(#sd) · 시험 범위 시트는 뒤를 덮어 열린 채로는 «학생 화면»을 누를 수 없음(덮개를 누르면 닫힘) → 열린 채로 되살리지 않음. */
+  var PV_BACK = 'his-cla-pvback', pvDone = false, pvBack = false, PV_KEYS = ['tab', 'iaPick', 'statCls', 'qf', 'qLec', 'qSel', 'setSel'];
+  function pvPlain(v) { try { return v == null ? null : JSON.parse(JSON.stringify(v)); } catch (e) { return null; } }
+  function pvSame() {
+    try {
+      if (window.navigator.standalone === true) return true;
+      if (window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(pointer: coarse)').matches)) return true;
+    } catch (e) { /* 없음 */ }
+    return false;
+  }
+  /* 쓰던 글 남기기(11-18 · §8-220 · 선생님 손 총괄): 학생 화면으로 갈 때 · 쪽을 떠날 때(pagehide) · 숨을 때(visibilitychange hidden =
+     갤럭시 «뒤로» · 아이폰 가장자리 쓸기 · 앱 바꾸기 · 전화)마다 쓰는 칸의 글을 sessionStorage 에 적음 —
+     질문 답(ans:) · 반 공지(nt:) · 학부모 안내(pm: + 그 학생에게 고른 강의) · 확인 메모(cfnote) · 새 세트 글(열린 시트 또는 닫아 둔 글) · 새 강의 칸(txt · 링크 · 제목 · 교재 · 길이 · 공개 · 끝).
+     다시 읽히면 첫 불러오기 때 묻지 않고 되살림(언제든 · 12시간 · 같은 사람만 · 세트 글 · 새 강의 칸은 다음 «새 세트» · «새 강의»를 열 때 채움).
+     보내거나 저장에 성공하면 그 칸 것만 지움(보낸 답이 다시 뜨지 않게) · 새 강의를 ×로 닫으면 그 글은 버림(지금처럼).
+     열린 시트 · 인스펙터 · 보던 자리는 학생 화면에서 돌아올 때만(위 PV_BACK). */
+  var DF = 'his-cla-draft', dfReady = false, DF_RE = /^(ans:|nt:|pm:|cfnote$)/;
+  function dfRead() { var o = null; try { o = JSON.parse(window.sessionStorage.getItem(DF) || 'null'); } catch (e) { o = null; } return o && typeof o === 'object' ? o : null; }
+  function dfWrite(o) {
+    var k, any = !!(o.sxd || o.ed);
+    for (k in o.inp) { if (has(o.inp, k)) any = true; }
+    try {
+      if (!any) { window.sessionStorage.removeItem(DF); return; }
+      window.sessionStorage.setItem(DF, JSON.stringify(o)); return;
+    } catch (e) { /* 너무 큼(아주 긴 세트 글 · txt) */ }
+    try { delete o.sxd; if (o.ed) o.ed.txt = ''; window.sessionStorage.setItem(DF, JSON.stringify(o)); } catch (e2) { /* 그대로 */ }
+  }
+  /* 새 강의 칸(고치기 · 보기 · 올린 뒤 공지 카드는 아님) · 다 비었으면 없음 */
+  function edCap() {
+    var e = $('ed'), o;
+    if (!S.ed || !S.ed.can || S.ed.id || S.ed.notice || !e || e.hidden) return null;
+    o = { txt: edVal('ed-txt'), yt: edVal('ed-yt'), title: edVal('ed-title'), book: edVal('ed-book'), dur: edVal('ed-dur'), post: edVal('ed-post'), until: edVal('ed-until') };
+    return trim(o.txt) || trim(o.yt) || trim(o.title) || trim(o.book) ? o : null;
+  }
+  function dfSave() {
+    var o, a, k, s, sd = S.sd;
+    if (!dfReady || !S.me) return;   /* 처음 불러오기 전(적힌 글을 아직 안 읽음)엔 덮어쓰지 않음 */
+    o = { u: S.me.name, at: new Date().getTime(), inp: {}, pm: {} };
+    /* 한글 조합 중이라 입력 사건이 아직 안 온 글: 지금 쓰는 칸 하나만 화면 값으로(다른 칸은 S.inputs = 누를 때마다 적힘) */
+    a = document.activeElement;
+    k = a && a.getAttribute ? a.getAttribute('data-k') : null;
+    if (k && !a.readOnly && !a.disabled && typeof a.value === 'string' && a.value !== a.defaultValue) S.inputs[k] = a.value;
+    for (k in S.inputs) {
+      if (!has(S.inputs, k) || !DF_RE.test(k) || typeof S.inputs[k] !== 'string' || !trim(S.inputs[k])) continue;
+      o.inp[k] = S.inputs[k];
+      if (k.indexOf('pm:') === 0) { s = k.slice(3); if (S.pm[s]) o.pm[s] = pvPlain(S.pm[s]); }
+    }
+    if (sd && sd.t === 'put' && !sd.id && !sd.batch && trim(S.inputs['sd:txt'])) {
+      o.sxd = pvPlain({ txt: S.inputs['sd:txt'], title: S.inputs['sd:title'], on: S.inputs['sd:on'], forced: sd.forced, pick: sd.pick, cls: sd.cls, cont: sd.cont, unsure: sd.unsure });
+    } else if (S.sxDraft) o.sxd = pvPlain(S.sxDraft);
+    o.ed = edCap() || (S.edDraft ? pvPlain(S.edDraft) : null);
+    dfWrite(o);
+  }
+  /* 보내거나 저장에 성공한 칸 하나만 지움(k = 칸 이름 · 'sxd' 새 세트 글 · 'ed' 새 강의 칸) */
+  function dfDrop(k) {
+    var o = dfRead();
+    if (!o) return;
+    o.inp = o.inp && typeof o.inp === 'object' ? o.inp : {};
+    if (k === 'ed') o.ed = null;
+    else if (k === 'sxd') delete o.sxd;
+    else { delete o.inp[k]; if (o.pm && k.indexOf('pm:') === 0) delete o.pm[k.slice(3)]; }
+    dfWrite(o);
+  }
+  function dfLoadOnce() {
+    var o, k, s, p;
+    if (dfReady) return;
+    dfReady = true;
+    o = dfRead();
+    if (!o || !S.me || !D || o.u !== S.me.name || !(new Date().getTime() - (+o.at || 0) < 43200000)) return;
+    if (o.inp && typeof o.inp === 'object') {
+      for (k in o.inp) {
+        if (!has(o.inp, k) || !DF_RE.test(k) || typeof o.inp[k] !== 'string' || has(S.inputs, k)) continue;
+        if (k.indexOf('pm:') === 0) {
+          /* 학부모 안내는 고른 강의와 한 짝 — 그 강의를 모르거나 다르면 다른 강의 문구에 끼지 않게 버림 */
+          s = k.slice(3); p = o.pm && o.pm[s];
+          if (!p || typeof p !== 'object' || !p.l || !D.lmap[p.l] || (S.pm[s] && S.pm[s].l !== p.l)) continue;
+          if (!S.pm[s]) S.pm[s] = p;
+        }
+        S.inputs[k] = o.inp[k];
+      }
+    }
+    if (o.sxd && typeof o.sxd === 'object' && !S.sxDraft) S.sxDraft = o.sxd;
+    if (o.ed && typeof o.ed === 'object' && !S.edDraft) S.edDraft = o.ed;
+  }
+  /* «새 강의»를 열 때 남겨 둔 칸 채우기(txt 가 있으면 읽혀 목차 · 수업일 · 반까지 → 그 뒤 손으로 고친 칸 값) */
+  function edDraftPut() {
+    var d = S.edDraft;
+    S.edDraft = null;
+    if (!d || !S.ed || !S.ed.can || S.ed.id) return;
+    if (trim(d.txt)) { setEl('ed-txt', d.txt); try { txtApply(d.txt); } catch (e) { /* 없음 */ } }
+    function put(id, v) { if (typeof v === 'string' && trim(v)) setEl(id, v); }
+    put('ed-yt', d.yt); put('ed-title', d.title); put('ed-book', d.book); put('ed-dur', d.dur); put('ed-post', d.post); put('ed-until', d.until);
+  }
+  /* 새 강의를 ×(Esc)로 닫음 = 그 글은 버림(지금처럼) · 고치기 · 올린 뒤 카드 닫기는 남겨 둔 새 강의 글을 건드리지 않음 */
+  function edDropIfNew() { if (S.ed && S.ed.can && !S.ed.id && !S.ed.notice) { S.edDraft = null; dfDrop('ed'); } }
+  /* 미리 보기에서 돌아온 쪽을 떠날 때(쓸어 뒤로 온 뒤 «앞으로» = 다시 미리 보기)는 보던 자리도 다시 적음 → 거기서 «닫기»해도 그대로 */
+  window.addEventListener('pagehide', function () { if (pvBack) pvSave(); else dfSave(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) dfSave(); });
+  function pvSave() {
+    var o = { u: S.me ? S.me.name : '', st: {}, inp: {}, y: Math.round(window.pageYOffset || document.documentElement.scrollTop || 0), at: new Date().getTime() };
+    var dr = S.drawer, dw = $('dw'), ks = ['t', 'l', 'c', 's', 'f'], i, k;
+    dfSave();   /* 쓰던 글은 따로(언제든 되살림) */
+    for (i = 0; i < PV_KEYS.length; i += 1) { if (S[PV_KEYS[i]] != null && typeof S[PV_KEYS[i]] !== 'object') o.st[PV_KEYS[i]] = str(S[PV_KEYS[i]]); }
+    o.open = pvPlain(S.open);
+    /* 보던 자리의 글(학생 찾기 따위) · 쓰던 글(DF_RE)과 시트 칸(세트 sd: · 종이 시험 lp1: · lp2: = 열 때마다 새로 채움)은 뺌 */
+    for (k in S.inputs) {
+      if (has(S.inputs, k) && !DF_RE.test(k) && !/^(sd|lp\d):/.test(k) && typeof S.inputs[k] === 'string' && trim(S.inputs[k])) o.inp[k] = S.inputs[k];
+    }
+    if (dr && /^(col|cell|stu)$/.test(str(dr.t))) {
+      o.dw = {};
+      for (i = 0; i < ks.length; i += 1) { if (dr[ks[i]] != null && typeof dr[ks[i]] !== 'object') o.dw[ks[i]] = str(dr[ks[i]]); }
+      o.dy = dw && !dw.hidden ? Math.round(dw.scrollTop || 0) : 0;
+      if (dr.t === 'stu' && dr.s && S.pm[dr.s]) o.pm = pvPlain(S.pm[dr.s]);
+      if (dr.t === 'cell' && S.cf) o.cf = pvPlain(S.cf);
+    }
+    try { window.sessionStorage.setItem(PV_BACK, JSON.stringify(o)); } catch (e) { /* 막히면 그대로 감(돌아오면 «오늘») */ }
+  }
+  function pvBackOnce() {
+    var o = null, nt = '', ne, y, dw, st, i, k;
+    if (pvDone) return false;
+    pvDone = true;
+    try { o = JSON.parse(window.sessionStorage.getItem(PV_BACK) || 'null'); window.sessionStorage.removeItem(PV_BACK); } catch (e) { o = null; }
+    if (!o || !S.me || !D || o.u !== S.me.name || !(new Date().getTime() - (+o.at || 0) < 7200000)) return false;
+    try {
+      ne = window.performance && window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation') : null;
+      nt = ne && ne[0] ? str(ne[0].type) : (window.performance && window.performance.navigation ? (window.performance.navigation.type === 2 ? 'back_forward' : 'other') : '');
+    } catch (e1) { nt = ''; }
+    /* 뒤로(미리 보기 «닫기») · 미리 보기가 선생님 화면으로 보낸 때만(그 밖에 새로 연 때 · 새로 고침은 «오늘» 그대로) */
+    if (nt === 'reload' || (nt && nt !== 'back_forward' && !/\/class\.html(?:[?#]|$)/.test(str(document.referrer)))) return false;
+    st = o.st || {};
+    if (/^(today|lec|stat|qna|set)$/.test(str(st.tab))) S.tab = st.tab;
+    for (i = 1; i < PV_KEYS.length; i += 1) { if (has(st, PV_KEYS[i])) S[PV_KEYS[i]] = str(st[PV_KEYS[i]]); }
+    if (o.open && typeof o.open === 'object') S.open = o.open;
+    if (o.inp && typeof o.inp === 'object') { for (k in o.inp) { if (has(o.inp, k) && typeof o.inp[k] === 'string' && !DF_RE.test(k)) S.inputs[k] = o.inp[k]; } }
+    if (o.pm && o.dw && o.dw.s && typeof o.pm === 'object' && o.pm.l && D.lmap[o.pm.l]) S.pm[o.dw.s] = o.pm;
+    sxFix();
+    render();
+    if (o.dw && o.dw.t) {
+      openDrawer(o.dw);
+      if (o.cf && typeof o.cf === 'object' && S.drawer && o.cf.s === S.drawer.s && o.cf.l === S.drawer.l) { o.cf.chips = o.cf.chips || {}; S.cf = o.cf; renderDrawer(); }
+      dw = $('dw');
+      if (dw && !dw.hidden && o.dy > 0) dw.scrollTop = o.dy;
+    }
+    y = Math.max(0, +o.y || 0);
+    function sc() { if (y > 0 && (window.pageYOffset || 0) < y - 2) { try { window.scrollTo(0, y); } catch (e2) { /* 없음 */ } } }
+    sc(); setTimeout(sc, 60); setTimeout(sc, 300);   /* 썸네일 · 글꼴이 늦게 와 쪽이 길어져도 */
+    pvBack = true;
+    return true;
+  }
+  document.addEventListener('click', function (ev) {
+    var a = ev.target, h;
+    while (a && a !== document && a.tagName !== 'A') a = a.parentNode;
+    if (!a || a === document) return;
+    h = a.getAttribute('href') || '';
+    if (h.indexOf('class.html?preview=') !== 0 || ev.defaultPrevented || ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || !pvSame()) return;
+    ev.preventDefault();
+    pvSave();
+    window.location.href = h + '&same=1';
+  }, true);
+  window.addEventListener('pageshow', function (ev) { if (ev && ev.persisted) { try { window.sessionStorage.removeItem(PV_BACK); } catch (e) { /* 없음 */ } } });
 
   /* ------------------------------------------------------------------ 시작 */
   if (demo) {

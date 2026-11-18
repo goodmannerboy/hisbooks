@@ -22,10 +22,10 @@
   function str(v) { return v == null ? '' : String(v); }
   function esc(s) { return str(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function flag(n) { return new RegExp('[?&]' + n + '=1(?:&|$)').test(w.location.search); }
-  /* preview · in 을 주소에서 뺌(새 기록 없이) → 보통 학생 화면이 그 주소로 시작 */
+  /* preview · in · same(폰에서 같은 창으로 들어옴 · 11-18)을 주소에서 뺌(새 기록 없이) → 보통 학생 화면이 그 주소로 시작 */
   function strip() {
     var q = String(w.location.search || '').replace(/^\?/, '').split('&'), out = [], i;
-    for (i = 0; i < q.length; i += 1) { if (q[i] && !/^(preview|in)=/.test(q[i])) out.push(q[i]); }
+    for (i = 0; i < q.length; i += 1) { if (q[i] && !/^(preview|in|same)=/.test(q[i])) out.push(q[i]); }
     try { w.history.replaceState(null, '', w.location.pathname + (out.length ? '?' + out.join('&') : '') + w.location.hash); } catch (e) { /* 없음 */ }
   }
   function plain() { strip(); if (w.__lecStart) w.__lecStart(); }
@@ -193,6 +193,9 @@
 
   function shell(id, demo, load) {
     var L = w.Lec, cur = 'phone', fr = null, P = null;
+    /* 폰 · 홈 화면 앱(11-18 · §8-220): 선생님 화면이 새 창 대신 같은 창으로 엶(&same=1) → «닫기» = 뒤로 한 번(H0 = 들어올 때 기록 길이 · 앞 기록이 있나만 봄) */
+    var same = flag('same'), H0 = 0;
+    try { H0 = w.history.length || 0; } catch (e0) { H0 = 0; }
     try { var sv = w.localStorage.getItem(DEV_KEY); if (sv && (sv === 'pc' || has(DEVS, sv))) cur = sv; } catch (e) { /* 없음 */ }
     css('pvs-css', SHELL_CSS);
     d.documentElement.className += ' pvs';
@@ -261,11 +264,23 @@
       paintBand();
       lay();
     }
-    function close() {
-      try { w.close(); } catch (e) { /* 없음 */ }
-      /* 스크립트로 닫을 수 없는 창(주소를 직접 친 탭 따위) = 선생님 화면으로 */
+    function home() {
       var as = demo ? /[?&]as=([A-Za-z0-9_]+)/.exec(w.location.search) : null;   /* 연습 화면: 보던 사람으로 */
-      setTimeout(function () { w.location.replace('class-admin.html' + (demo ? '?demo=1' + (as ? '&as=' + as[1] : '') : '')); }, 200);
+      w.location.replace('class-admin.html' + (demo ? '?demo=1' + (as ? '&as=' + as[1] : '') : ''));
+    }
+    function close() {
+      var rf = str(d.referrer);
+      /* 같은 창(폰 · 홈 화면 앱): 선생님 화면에서 왔으면 뒤로 한 번(선생님 화면이 보던 쪽 · 강의 · 스크롤을 되살림) ·
+         안에서 영상을 바꿔도(#v= · #rng · #rec) 기록 없이 바꿔치기라 늘 한 칸 → 기기 «뒤로» · 쓸기도 곧장 선생님 화면 ·
+         «들어올 때 길이까지 go(-n)»은 안에서 쓸어 뒤로 간 뒤 누르면 선생님 화면을 지나침(뒤로 가도 길이는 안 줄어듦)이라 안 씀 ·
+         대체 이동 타이머도 걸지 않음(느린 폰에서 뒤로 가기와 겹치면 기록이 꼬임) */
+      if (same && H0 > 1 && (!rf || /\/class-admin\.html(?:[?#]|$)/.test(rf))) {
+        try { w.history.back(); } catch (e2) { home(); }
+        return;
+      }
+      if (!same) { try { w.close(); } catch (e) { /* 없음 */ } }
+      /* 스크립트로 닫을 수 없는 창(주소를 직접 친 탭 따위) = 선생님 화면으로 */
+      setTimeout(home, 200);
     }
     band.addEventListener('click', function (e) {
       var n = e.target;

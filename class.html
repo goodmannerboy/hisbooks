@@ -755,7 +755,7 @@ button.s1t:active{background:var(--press)}
     } else if (pv && !demo && !staff()) pv = '';
     if (!pv) {
       var q = Q.replace(/^\?/, '').split('&'), o = [], j;
-      for (j = 0; j < q.length; j += 1) { if (q[j] && !/^(preview|in)=/.test(q[j])) o.push(q[j]); }
+      for (j = 0; j < q.length; j += 1) { if (q[j] && !/^(preview|in|same)=/.test(q[j])) o.push(q[j]); }   /* same = 폰에서 같은 창(11-18 · §8-220) */
       try { history.replaceState(null, '', location.pathname + (o.length ? '?' + o.join('&') : '') + location.hash); } catch (e3) { /* 없음 */ }
     }
   }
@@ -4819,7 +4819,7 @@ window.__lecStart = function () {
     else if (act === 'me') { pwaOpen(el, 'me'); }
     else if (act === 'mepwa') { pwaClose(false); pwaOpen($('pwaBtn'), ''); }
     else if (act === 'meal') { pwaClose(false); pwaOpen($('alHow'), 'al'); }
-    else if (act === 'merec') { pwaClose(false); location.hash = '#rec'; } /* <a> 기본 이동은 위에서 막힘 → 주소를 직접 #rec 로(hashchange → 기록 안내 판) */
+    else if (act === 'merec') { pwaClose(false); if (PV) location.replace('#rec'); else location.hash = '#rec'; } /* <a> 기본 이동은 위에서 막힘 → 주소를 직접 #rec 로(hashchange → 기록 안내 판) · 미리 보기는 기록 없이 바꿔치기(바깥 «닫기» = 뒤로 한 번 · §8-220) */
     else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; S.set = null; spkFresh(); clearHash(); showLogin(''); }
     else if (act === 'retry') { loadHome(); }
     else if (act === 'list') { goList(); }
