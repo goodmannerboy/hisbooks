@@ -3960,6 +3960,53 @@
     return { ok: true, today: day, set: sSetOut(s, 'gu'), rows: rows, often: often };
   }
 
+  /* 선생님 종이 «쌓인 오답 시험»: 반 하나에 낸 단어 · 문법 세트(숨김 · 앞날 뺌)에서 학생마다 z 가 있는 카드 · 읽기만(서버와 같음) */
+  function lec_set_wrong_staff(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var X = L(), cls = sp(a.p_cls), day = today(), by = {}, sids = [], rows = [], i, j, q, s, p, it, c, sid, nm, best, list;
+    if (cls === '' || cls === '*') return { ok: false, err: 'cls' };
+    for (i = 0; i < d.set.length; i += 1) {
+      s = d.set[i];
+      if ((s.kind !== 'voc' && s.kind !== 'gram') || s.hidden || str(s.posted_on) > day || !isArr(s.class_ids) || s.class_ids.indexOf(cls) < 0) continue;
+      for (j = 0; j < d.sprog.length; j += 1) {
+        p = d.sprog[j];
+        if (p.set_id !== s.id) continue;
+        for (q = 0; q < s.items.length; q += 1) {
+          it = s.items[q];
+          c = sCard(p, str(it.k));
+          if (!isObj(c) || str(c.z) === '') continue;
+          if (!has(by, p.sid)) { by[p.sid] = []; sids.push(p.sid); }
+          by[p.sid].push({ zz: str(c.z), on: s.posted_on, cr: tms(s.created_at), o: q, q: {
+            k: str(it.k), s: s.id, kd: s.kind, t: s.title,
+            f: s.kind === 'voc' ? 'w' : (X.setOpts(it.s) ? 'c' : 'r'),
+            q: s.kind === 'voc' ? str(it.m) : str(it.s),
+            a: s.kind === 'voc' ? str(it.w) : str(it.a),
+            pt: s.kind === 'voc' ? '' : str(it.p),
+            z: str(c.z) } });
+        }
+      }
+    }
+    sids.sort(cmpC);
+    for (i = 0; i < sids.length; i += 1) {
+      sid = sids[i];
+      nm = null; best = -Infinity;
+      for (j = 0; j < d.key.length; j += 1) {
+        if (d.key[j].sid === sid && (nm === null || tms(d.key[j].last_at) > best)) { nm = d.key[j].sname; best = tms(d.key[j].last_at); }
+      }
+      if (nm == null) nm = sid.indexOf('|') >= 0 ? sid.slice(sid.indexOf('|') + 1) : sid;
+      list = by[sid];
+      list.sort(function (x, y) {
+        if (x.zz !== y.zz) return x.zz < y.zz ? -1 : 1;
+        if (x.on !== y.on) return x.on < y.on ? 1 : -1;
+        if (x.cr !== y.cr) return y.cr - x.cr;
+        return x.o - y.o;
+      });
+      rows.push({ sid: sid, sname: nm, n: list.length, items: list.map(function (x) { return x.q; }) });
+    }
+    return { ok: true, today: day, cls: cls, rows: rows };
+  }
+
   function lec_rec_mark(d, a) {
     sGone(); sTabs(d);
     if (!sAdmin()) return { ok: false, err: 'forbidden' };
@@ -4203,6 +4250,7 @@
   SIG.lec_set_hide = { p_set: 'uuid', p_hidden: 'bool' };
   SIG.lec_set_del = { p_set: 'uuid' };
   SIG.lec_set_staff = { p_set: 'uuid' };
+  SIG.lec_set_wrong_staff = { p_cls: 'text' };
   SIG.lec_rec_mark = { p_id: 'uuid', p_mark: 'text', p_why: 'int' };
   SIG.lec_rec_expired = {};
   SIG.lec_rec_gone = { p_ids: 'uuidarr' };
@@ -4213,6 +4261,7 @@
   STAFF.lec_set_hide = lec_set_hide;
   STAFF.lec_set_del = lec_set_del;
   STAFF.lec_set_staff = lec_set_staff;
+  STAFF.lec_set_wrong_staff = lec_set_wrong_staff;
   STAFF.lec_rec_mark = lec_rec_mark;
   STAFF.lec_rec_expired = lec_rec_expired;
   STAFF.lec_rec_gone = lec_rec_gone;

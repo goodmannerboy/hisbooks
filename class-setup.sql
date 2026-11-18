@@ -6018,6 +6018,7 @@ drop function if exists public.lec_set_put(uuid, text, text, text[], date, jsonb
 drop function if exists public.lec_set_hide(uuid, boolean);
 drop function if exists public.lec_set_del(uuid);
 drop function if exists public.lec_set_staff(uuid);
+drop function if exists public.lec_set_wrong_staff(text);
 drop function if exists public.lec_rec_mark(uuid, text, integer);
 drop function if exists public.lec_rec_guard(text, text, boolean);
 drop function if exists public.lec_rec_lvl(jsonb);
@@ -7286,6 +7287,56 @@ begin
 end
 $$;
 
+-- 선생님(관리자): 반 하나에 낸 단어 · 문법 세트에서 학생마다 쌓인 오답(종이 «쌓인 오답 시험»용 · 읽기만 · 카드는 안 고침)
+--   쌓인 오답 = 카드에 z(마지막으로 틀린 날)가 있는 문항(학생 «쌓인 오답»과 같은 규칙 · 시험 중인 세트도 넣음) ·
+--   숨김 · 앞날 공개 세트는 뺌 · 문항 차례 = 학생 «쌓인 오답» 판과 같음(오래전에 틀린 것 먼저) · 오답이 없는 학생은 줄이 없음 ·
+--   지금 이 반 학생인지(퇴원 · 반 옮김)는 화면이 히즈북스 명단으로 거름
+create or replace function public.lec_set_wrong_staff(p_cls text)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  v_day  date := public.lec__set_today();
+  v_cls  text := btrim(coalesce(p_cls, ''));
+  v_rows jsonb;
+begin
+  if not public.lec_set_is_admin() then
+    return jsonb_build_object('ok', false, 'err', 'forbidden');
+  end if;
+  if v_cls = '' or v_cls = '*' then
+    return jsonb_build_object('ok', false, 'err', 'cls');
+  end if;
+  with q as (
+    select xp.sid,
+           jsonb_build_object(
+             'k', u.e ->> 'k', 's', xs.id, 'kd', xs.kind, 't', xs.title,
+             'f', case when xs.kind = 'voc' then 'w' when public.lec__set_opts(u.e ->> 's') is null then 'r' else 'c' end,
+             'q', case when xs.kind = 'voc' then u.e ->> 'm' else u.e ->> 's' end,
+             'a', case when xs.kind = 'voc' then u.e ->> 'w' else u.e ->> 'a' end,
+             'pt', case when xs.kind = 'voc' then '' else coalesce(u.e ->> 'p', '') end,
+             'z', xp.cards -> (u.e ->> 'k') ->> 'z') as j,
+           xp.cards -> (u.e ->> 'k') ->> 'z' as zz, xs.posted_on as on_, xs.created_at as cr, u.o
+      from public.lec_set xs
+      join public.lec_set_prog xp on xp.set_id = xs.id
+     cross join lateral jsonb_array_elements(xs.items) with ordinality as u(e, o)
+     where xs.kind in ('voc', 'gram') and v_cls = any (xs.class_ids)
+       and not xs.hidden and xs.posted_on <= v_day
+       and coalesce(xp.cards -> (u.e ->> 'k') ->> 'z', '') <> ''
+  ), g as (
+    select q.sid, count(*) as n, jsonb_agg(q.j order by q.zz, q.on_ desc, q.cr desc, q.o) as items
+      from q
+     group by q.sid
+  )
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'sid', g.sid,
+           'sname', coalesce((select xk.sname from public.lec_key xk where xk.sid = g.sid order by xk.last_at desc limit 1),
+                             substr(g.sid, strpos(g.sid, '|') + 1)),
+           'n', g.n, 'items', g.items) order by g.sid), '[]'::jsonb)
+    into v_rows
+    from g;
+  return jsonb_build_object('ok', true, 'today', to_char(v_day, 'YYYY-MM-DD'), 'cls', v_cls, 'rows', v_rows);
+end
+$$;
+
 -- 선생님(관리자): 녹음 들은 표시(ok 좋아요 · again 다시 + 까닭 1~4 · '' 표시 지움)
 create or replace function public.lec_rec_mark(p_id uuid, p_mark text, p_why integer)
 returns jsonb
@@ -7415,12 +7466,12 @@ grant execute on function public.lec_set_home(text), public.lec_set_items(text, 
   to anon, authenticated;
 revoke all on function public.lec_set_is_admin(), public.lec_set_list_staff(), public.lec_set_get(uuid),
   public.lec_set_put(uuid, text, text, text[], date, jsonb, integer[]), public.lec_set_hide(uuid, boolean), public.lec_set_del(uuid),
-  public.lec_set_staff(uuid), public.lec_rec_mark(uuid, text, integer),
+  public.lec_set_staff(uuid), public.lec_set_wrong_staff(text), public.lec_rec_mark(uuid, text, integer),
   public.lec_rec_expired(), public.lec_rec_gone(uuid[])
   from public, anon;
 grant execute on function public.lec_set_is_admin(), public.lec_set_list_staff(), public.lec_set_get(uuid),
   public.lec_set_put(uuid, text, text, text[], date, jsonb, integer[]), public.lec_set_hide(uuid, boolean), public.lec_set_del(uuid),
-  public.lec_set_staff(uuid), public.lec_rec_mark(uuid, text, integer),
+  public.lec_set_staff(uuid), public.lec_set_wrong_staff(text), public.lec_rec_mark(uuid, text, integer),
   public.lec_rec_expired(), public.lec_rec_gone(uuid[])
   to authenticated;
 
@@ -7828,6 +7879,7 @@ begin
          or (public.lec_set_hide(gen_random_uuid(), true) ->> 'err') is distinct from 'forbidden'
          or (public.lec_set_del(gen_random_uuid()) ->> 'err') is distinct from 'forbidden'
          or (public.lec_set_staff(gen_random_uuid()) ->> 'err') is distinct from 'forbidden'
+         or (public.lec_set_wrong_staff(v_c1) ->> 'err') is distinct from 'forbidden'
          or (public.lec_rec_mark(gen_random_uuid(), 'ok', 0) ->> 'err') is distinct from 'forbidden'
          or (public.lec_rec_expired() ->> 'err') is distinct from 'forbidden'
          or (public.lec_rec_gone('{}'::uuid[]) ->> 'err') is distinct from 'forbidden' then
@@ -8142,6 +8194,29 @@ begin
     r := public.lec_set_home(v_ka);
     if (r -> 'due' ->> 'n')::integer <> 4 or (r -> 'due' ->> 'now')::integer <> 1 then
       raise exception '점검 실패(S1 쌓인 오답 수): %', r -> 'due';
+    end if;
+    -- 선생님 종이 «쌓인 오답 시험»(관리자 · 이 반에 낸 단어 · 문법 세트만 · 읽기만): 가 = 4 · 어제 틀린 단어가 맨 앞(뜻 → 영어) ·
+    -- 구문 · 숨김 · 앞날 · 다른 반 세트 없음 · 빈 반 · 모든 반(*) = cls · 아무도 없는 반 = 빈 줄
+    r := public.lec_set_wrong_staff(' ' || v_c1 || ' ');
+    v_q := (select y.e from jsonb_array_elements(r -> 'rows') as y(e) where y.e ->> 'sid' = v_sa);
+    if not coalesce((r ->> 'ok')::boolean, false) or (r ->> 'cls') is distinct from v_c1
+       or (r ->> 'today') is distinct from to_char(v_d, 'YYYY-MM-DD')
+       or (v_q ->> 'n')::integer is distinct from 4 or jsonb_array_length(v_q -> 'items') is distinct from 4
+       or (v_q ->> 'sname') is distinct from '점검가'
+       or (v_q -> 'items' -> 0 ->> 'k') is distinct from v_t or (v_q -> 'items' -> 0 ->> 'kd') is distinct from 'voc'
+       or (v_q -> 'items' -> 0 ->> 's') is distinct from v_voc::text
+       or (v_q -> 'items' -> 0 ->> 'z') is distinct from to_char(v_d - 1, 'YYYY-MM-DD')
+       or (v_q -> 'items' -> 0 ->> 'q') is distinct from (select y.e ->> 'm' from public.lec_set xs cross join jsonb_array_elements(xs.items) as y(e)
+                                                            where xs.id = v_voc and y.e ->> 'k' = v_t)
+       or (v_q -> 'items' -> 0 ->> 'a') is distinct from (select y.e ->> 'w' from public.lec_set xs cross join jsonb_array_elements(xs.items) as y(e)
+                                                            where xs.id = v_voc and y.e ->> 'k' = v_t)
+       or exists (select 1 from jsonb_array_elements(r -> 'rows') as y(e) cross join jsonb_array_elements(y.e -> 'items') as x(i)
+                   where x.i ->> 'kd' not in ('voc', 'gram') or x.i ->> 's' in (v_gu::text, v_hid::text, v_fut::text, v_oth::text))
+       or (public.lec_set_wrong_staff(' ') ->> 'err') is distinct from 'cls'
+       or (public.lec_set_wrong_staff('*') ->> 'err') is distinct from 'cls'
+       or (public.lec_set_wrong_staff(null) ->> 'err') is distinct from 'cls'
+       or jsonb_array_length(public.lec_set_wrong_staff(v_c1 || '-none') -> 'rows') is distinct from 0 then
+      raise exception '점검 실패(S1 선생님 쌓인 오답 시험): %', r;
     end if;
     r := public.lec_set_due(v_ka);
     if not coalesce((r ->> 'ok')::boolean, false) or (r ->> 'kind') is distinct from 'due' or (r ->> 'n')::integer <> 1
@@ -8487,7 +8562,8 @@ begin
     select string_agg(f, ', ') into v_t
       from unnest(array['public.lec_set_is_admin()', 'public.lec_set_list_staff()', 'public.lec_set_get(uuid)',
                         'public.lec_set_put(uuid, text, text, text[], date, jsonb, integer[])', 'public.lec_set_hide(uuid, boolean)',
-                        'public.lec_set_del(uuid)', 'public.lec_set_staff(uuid)', 'public.lec_rec_mark(uuid, text, integer)',
+                        'public.lec_set_del(uuid)', 'public.lec_set_staff(uuid)', 'public.lec_set_wrong_staff(text)',
+                        'public.lec_rec_mark(uuid, text, integer)',
                         'public.lec_rec_expired()', 'public.lec_rec_gone(uuid[])']) as u(f)
      where has_function_privilege('anon', u.f, 'execute') or not has_function_privilege('authenticated', u.f, 'execute');
     if v_t is not null then

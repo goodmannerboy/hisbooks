@@ -2167,7 +2167,7 @@
      함수가 없으면 이 화면에서 다시 안 부름) · setItems · setCard · setTest · setDue · setAns ·
      recBegin · recDone · recPut · recSend(실패 = {ok:false, err})
    - 선생님(관리자 · 첫 인자 call = 화면의 서버 부르기): setListStaff · setGet · setPut · setHide · setDel · setStaff ·
-     recMark · recClean
+     setWrongStaff(종이 «쌓인 오답 시험» · 11-18) · recMark · recClean
    - S1-b(11-17 원장님 «동의서 필요없어»): 세트 동의 · 녹음 동의 · 학교급 갈래 없음(setAgree · recAgree · recOff · recGuard · recLvl ·
      SET_NOTE · REC_NOTE · stuLevel · levelsFrom 뺌) · 히즈클래스 기록 동의(lec_consent)는 그대로
    - 판정(class-setup.sql S1 절과 같은 셈 · 같은 값 표 _check/class_set_vectors.json): setNorm · setMatch · setNeed · setMark …
@@ -3238,6 +3238,12 @@
   function setHide(call, id, on) { return staffCall(call, 'lec_set_hide', { p_set: id || null, p_hidden: !!on }); }
   function setDel(call, id) { return staffCall(call, 'lec_set_del', { p_set: id || null }); }
   function setStaff(call, id) { return staffCall(call, 'lec_set_staff', { p_set: id || null }); }
+  /* 종이 «쌓인 오답 시험»: 반 하나(id)의 학생마다 쌓인 단어 · 문법 오답 · rows = [{sid, sname, n, items:[{k, s, kd, t, f, q, a, pt, z}]}] */
+  function setWrongStaff(call, cls) {
+    return staffCall(call, 'lec_set_wrong_staff', { p_cls: str(cls) }).then(function (r) {
+      return r.ok && !isArr(r.rows) ? { ok: false, err: 'error' } : r;
+    });
+  }
   function recMark(call, id, mark, why) {
     return staffCall(call, 'lec_rec_mark', { p_id: id || null, p_mark: str(mark), p_why: Math.floor(+why || 0) });
   }
@@ -3301,7 +3307,7 @@
     setHome: setHome, setItems: setItems, setCard: setCard, setTest: setTest, setDue: setDue, setAns: setAns,
     recBegin: recBegin, recDone: recDone, recPut: recPut, recSend: recSend,
     setListStaff: setListStaff, setGet: setGet, setPut: setPut, setHide: setHide, setDel: setDel, setStaff: setStaff,
-    recMark: recMark, recClean: recClean
+    setWrongStaff: setWrongStaff, recMark: recMark, recClean: recClean
   };
   for (var name in api) { if (has(api, name)) Lec[name] = api[name]; }
 })(window);

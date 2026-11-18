@@ -1090,6 +1090,70 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   .k2 .sx>.sx-r.card{padding:16px 0 0;border-left:0;border-top:1px solid var(--sep)}
 }
 @media (max-width:760px){.k2 .sxt .sx-spk{white-space:normal}}
+/* 종이 시험(11-18 결론안 v3): 목록 머리 단추 둘 · 줄마다 작은 체크(줄 단추와 따로) · 인쇄 시트 ① 한 시험지 · ② 쌓인 오답 시험지 · 흑백 쪽 미리 보기 CSS 는 class-print.js 가 #lp-css 로 넣음 */
+.lp-hd{display:flex;gap:6px;margin:0 0 10px}
+.lp-hd .btn{flex:1 1 0;min-width:0}
+.lp-it{position:relative}
+.k2 .lp-it>.sx-it{padding-right:46px}
+.lp-ck{position:absolute;top:4px;right:4px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;cursor:pointer}
+.lp-ck:hover{background:var(--fill2)}
+.lp-ck input,#sd .lp-stu input,#sd .lp-sr input{width:18px;height:18px;margin:0;flex:none;accent-color:#0C4631;cursor:pointer}
+.k2 .lp-seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:2px;border-radius:9px;background:var(--fill2)}
+.k2 .lp-seg .chip{min-height:28px;padding:0 10px;border:0;border-radius:7px;background:transparent;box-shadow:none;color:var(--t1);font-size:13px;font-weight:600}
+.k2 .lp-seg .chip.on{background:#FFFFFF;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+#sd .lp-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:12px}
+#sd .db>.lp-line:first-child{margin-top:0}
+#sd .lp-lb{min-width:32px;font-size:13px;font-weight:600;color:var(--t2)}
+#sd .lp-kn{font-size:13px;color:var(--t2)}
+#sd .lp-tf{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 16px;align-items:end}
+#sd .lp-tf .fld{margin-top:0}
+#sd .lp-day{margin:0;padding:8px 0;font-size:14px;line-height:20px;color:var(--t1);white-space:nowrap}
+#sd .lp-part{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--group)}
+#sd .lp-r1,#sd .lp-r2{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+#sd .lp-r2{margin-top:8px}
+#sd .lp-pn{flex:none;font-size:14px;font-weight:600;color:var(--t1)}
+#sd .lp-st{flex:1 1 120px;min-width:0;font-size:13px;color:var(--t2)}
+#sd .lp-rn{white-space:nowrap;font-size:13px;color:var(--t2)}
+#sd .lp-rn input{width:56px;min-height:28px;padding:2px 6px;text-align:center;font-size:13px}
+#sd .lp-pi{font-size:12px;line-height:16px;color:var(--t2)}
+#sd .lp-er{margin:6px 0 0;font-size:12px;line-height:16px;color:#9A3F33}
+#sd .lp-er:empty{display:none}
+#sd .lp-tip{margin:8px 0 0;font-size:12px;line-height:18px;color:var(--t2)}
+#sd .lp-k{margin:8px 0 0;font-size:13px;line-height:18px;color:var(--t1)}
+#sd .sec>.lp-k:first-child,#sd .sec>.lp-line:first-child{margin-top:0}
+#sd .lp-stu{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0 8px;margin-top:6px}
+#sd .lp-stu label{display:flex;align-items:center;gap:8px;min-height:32px;padding:0 6px;border-radius:8px;font-size:13px;cursor:pointer}
+#sd .lp-stu label:hover{background:var(--fill)}
+#sd .lp-pv{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 18px;margin-top:8px}
+#sd .lp-cap{margin-top:4px;font-size:12px;line-height:16px;color:var(--t2);text-align:center}
+#sd .lp-z{margin-top:14px}
+#sd .lp-big-h{margin-bottom:4px;font-size:12px;line-height:16px;color:var(--t2)}
+#sd .lp-rg{display:block;margin-top:6px;accent-color:#0C4631}
+#sd .lp-sl{margin-top:12px;border-top:1px solid var(--sep)}
+#sd .lp-sr{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:40px;padding:2px 8px;border-bottom:1px solid var(--sep);font-size:13px}
+#sd .lp-sr.on{background:var(--acc-tint)}
+#sd .lp-sr.no{color:var(--t2)}
+#sd .lp-sr .lp-nm{flex:1 1 64px;min-width:0;padding:8px 0;border:0;background:transparent;font:inherit;font-weight:600;color:var(--t1);text-align:left;cursor:pointer}
+#sd .lp-sr.no .lp-nm{font-weight:400;color:var(--t2);cursor:default}
+#sd .lp-sr .lp-nm:focus-visible{outline:3px solid var(--focus);outline-offset:1px;border-radius:4px}
+#sd .lp-fb{font-size:12px;font-weight:400;color:var(--t2)}
+#sd .lp-sr .lp-c{font-size:12px;color:var(--t2)}
+#sd .lp-sr .lp-n{min-width:52px;text-align:right}
+#sd .lp-sp,#sd .lp-sk{display:flex;align-items:center;justify-content:center;width:18px;flex:none}
+#sd .lp-sk{align-self:stretch;cursor:pointer}
+#sd .lp-none{margin:10px 0 2px;font-size:13px;line-height:18px;color:var(--t1)}
+#sd .lp-u{font-size:13px;line-height:18px;color:var(--t1)}
+#sd .lp-m{margin:0 0 8px;font-size:12px;line-height:18px;color:var(--t2)}
+@media (max-width:860px){
+  .lp-hd .btn{min-height:44px}
+  .lp-ck{top:0;right:0;width:44px;height:44px}
+  .k2 .lp-seg .chip,#sd .lp-rn input{min-height:44px;min-width:44px}
+  #sd .lp-stu label,#sd .lp-sr,#sd .lp-sr button.lp-nm{min-height:44px}
+  #sd .lp-sr{padding-left:0}
+  #sd .lp-sp,#sd .lp-sk{width:44px;min-height:44px}
+  #sd .lp-tf{grid-template-columns:minmax(0,1fr)}
+  #sd .edfoot .lp-u{flex:1 1 100%}
+}
 /* 확인 완료 = 바로 저장 → 메모 칸 머리 한 줄 */
 .k2 .cfbox .cfok{margin:0;font-size:13px;line-height:18px;font-weight:600;color:var(--acc)}
 /* 8-2 질문 두 칸(노트 0-8 · 목업 s-qna): 왼쪽 목록 340(세로 선은 쪽 끝까지) + 오른쪽 고른 질문 · 1024 아래(폰 · 좁은 창)는 목록 없이 한 칸 그대로 */
@@ -4545,9 +4609,9 @@ window.__lecAdminStart = function () {
     if (S.setOld) return '<section class="card"><p class="empty">세트를 쓰려면 서버 준비(SQL)를 먼저 넣어 주세요.</p></section>';
     if (!S.set) return '<section class="card"><p class="empty">' + (S.setErr ? '세트를 불러오지 못했어요. «다시 불러오기»를 눌러 주세요.' : '세트를 불러오는 중이에요') + '</p></section>';
     list = S.set.items; cur = sxCur();
-    h = '<div class="sx"><section class="sx-l" aria-label="세트 목록"><button type="button" class="btn fill wide" data-act="sxNew">＋ 새 세트</button>';
+    h = '<div class="sx"><section class="sx-l" aria-label="세트 목록"><button type="button" class="btn fill wide" data-act="sxNew">＋ 새 세트</button>' + lpHeadHtml();
     if (!list.length) h += '<p class="empty">아직 세트가 없어요. 엑셀에서 복사해 붙여 넣으면 어휘 · 주요구문 · 문법을 알아서 읽어요.</p>';
-    for (i = 0; i < list.length; i += 1) { if (list[i]) h += sxItHtml(list[i], !!cur && cur.id === list[i].id); }
+    for (i = 0; i < list.length; i += 1) { if (list[i]) h += lpRowHtml(list[i], sxItHtml(list[i], !!cur && cur.id === list[i].id)); }
     return h + '</section><section class="card sx-r" aria-label="결과 표">' + (cur ? sxResHtml(cur) : '<p class="empty">왼쪽에서 세트를 고르면 결과 표가 나와요.</p>') + '</section></div>';
   }
   function sxItHtml(it, on) {
@@ -4895,6 +4959,485 @@ window.__lecAdminStart = function () {
     return '<div class="qb">' + no + '<div class="bd">' + b + '</div></div>';
   }
 
+  /* ---- 종이 시험(11-18 결론안 v3 · 위젯 ① ② 와 같은 판 · 같은 글): ① 한 시험지(목록 줄 체크 · 부분마다 세트 하나 · 학생마다 이름 · 맨 끝 1:1 정답지 한 벌) ·
+     ② 쌓인 오답 시험지(반 하나 · 학생마다 새 장 · 맨 뒤 1:1 정답지 같은 차례) · 판 · 쪽 · 1:1 은 class-print.js(window.LecPrint · 처음 쓸 때만 읽음) ·
+     종이 시험은 카드(z · w · y)를 바꾸지 않음(읽기만 · 쓰는 부름 없음) · 학생 맞춤 = 결과 표와 같음(서버 sid ↔ 명단 skey · sxStu) */
+  var LP_KD = ['voc', 'gram', 'gu'], lpReq = null, lpT = 0;
+  function lpIs() { return !!S.sd && (S.sd.t === 'lp1' || S.sd.t === 'lp2'); }
+  function lpLoad() {
+    if (window.LecPrint) { window.LecPrint.ensureCss(); return Promise.resolve(window.LecPrint); }
+    if (lpReq) return lpReq;
+    lpReq = new Promise(function (ok, no) {
+      var s = document.createElement('script');
+      s.src = 'class-print.js';
+      s.onload = function () {
+        if (window.LecPrint) { window.LecPrint.ensureCss(); ok(window.LecPrint); return; }
+        lpReq = null; no(new Error('print'));
+      };
+      s.onerror = function () { lpReq = null; if (s.parentNode) s.parentNode.removeChild(s); no(new Error('print')); };
+      document.head.appendChild(s);
+    });
+    return lpReq;
+  }
+  function lpPk() { if (!S.lpPick) S.lpPick = {}; return S.lpPick; }
+  /* 체크한 세트(지금 목록에 있는 것만 · 어휘 → 문법 → 구문) */
+  function lpPicked() {
+    var pk = lpPk(), out = [], i, it;
+    for (i = 0; i < LP_KD.length; i += 1) {
+      it = pk[LP_KD[i]] ? sxItem(pk[LP_KD[i]]) : null;
+      if (it && it.kind === LP_KD[i]) out.push(it);
+    }
+    return out;
+  }
+  function lpOneTxt(n) { return '한 시험지로 인쇄 (' + n + ')'; }
+  /* 목록 머리: «쌓인 오답 시험지» · «한 시험지로 인쇄 (n)» */
+  function lpHeadHtml() {
+    var n = lpPicked().length;
+    return '<div class="lp-hd"><button type="button" class="btn" data-act="lpWrong">쌓인 오답 시험지</button>' +
+      '<button type="button" class="btn' + (n ? ' strong' : '') + '" data-act="lpOne">' + lpOneTxt(n) + '</button></div>';
+  }
+  /* 목록 줄 + 오른쪽 위 작은 체크(줄을 눌러 결과를 여는 단추와 따로 · 같은 종류는 하나만) */
+  function lpRowHtml(it, html) {
+    var kd = it.kind, on;
+    if (LP_KD.indexOf(kd) < 0) return html;
+    on = lpPk()[kd] === it.id;
+    return '<div class="lp-it">' + html + '<label class="lp-ck"><input type="checkbox" data-chg="lpPick" data-s="' + esc(it.id) + '" data-kd="' + kd + '"' + (on ? ' checked' : '') +
+      ' aria-label="' + esc('한 시험지에 넣기 · ' + (SX_KIND[kd] || '') + ' · ' + it.title) + '"></label></div>';
+  }
+  function lpPickTog(t) {
+    var kd = t.getAttribute('data-kd'), s = t.getAttribute('data-s'), pk = lpPk(), a = app.querySelectorAll('input[data-chg="lpPick"]'), b = app.querySelector('[data-act="lpOne"]'), i, n;
+    if (t.checked) pk[kd] = s; else if (pk[kd] === s) delete pk[kd];
+    for (i = 0; i < a.length; i += 1) a[i].checked = pk[a[i].getAttribute('data-kd')] === a[i].getAttribute('data-s');
+    if (b) { n = lpPicked().length; b.textContent = lpOneTxt(n); b.className = 'btn' + (n ? ' strong' : ''); }
+  }
+  /* 시트 조각 */
+  function lpDh(title, sub) {
+    return '<div class="dh"><div class="dt"><h2 id="sd-t">' + esc(title) + '</h2><p class="mut">' + esc(sub) + '</p></div>' +
+      '<button type="button" class="x" data-act="sdClose" aria-label="닫기">×</button></div><div class="db">';
+  }
+  function lpSeg(lab, act, kd, list, cur) {
+    var h = '<span class="lp-seg" role="group" aria-label="' + esc(lab) + '">', i, on;
+    for (i = 0; i < list.length; i += 1) {
+      on = String(list[i][0]) === String(cur);
+      h += '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="' + act + '"' + (kd ? ' data-kd="' + kd + '"' : '') +
+        ' data-v="' + esc(String(list[i][0])) + '">' + esc(list[i][1]) + '</button>';
+    }
+    return h + '</span>';
+  }
+  function lpCols(kd) {
+    var a = window.LecPrint.COLS[kd] || [1], o = [], i;
+    for (i = 0; i < a.length; i += 1) o.push([a[i], a[i] + '열']);
+    return o;
+  }
+  function lpClsSeg(act, cs, cur) {
+    var o = [], i;
+    for (i = 0; i < cs.length; i += 1) o.push([cs[i], D.cname[cs[i]] || '지워진 반']);
+    return '<div class="lp-line"><span class="lp-lb">반</span>' + lpSeg('반', act, '', o, cur) + '</div>';
+  }
+  function lpDay() { return today().replace(/-/g, '.'); }
+  function lpTitle0() { var m = /^\d{4}-(\d{2})-(\d{2})$/.exec(today()); return m ? (+m[1]) + '월 ' + (+m[2]) + '일 확인 시험' : '확인 시험'; }
+  function lpFocus(c, k, v) {
+    var a = $('sd') ? $('sd').querySelectorAll('[' + c + ']') : [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i].getAttribute(k) === v) { try { a[i].focus(); } catch (e) {} return; } }
+  }
+  /* '*' = 내 반 모두 · 반 차례는 D.my 차례 먼저 */
+  function lpClsOf(ids) {
+    var out = [], i;
+    ids = isArr(ids) ? ids : [];
+    if (ids.indexOf('*') >= 0) { for (i = 0; i < D.my.length; i += 1) out.push(D.my[i].id); return out; }
+    for (i = 0; i < ids.length; i += 1) { if (ids[i] && out.indexOf(ids[i]) < 0) out.push(ids[i]); }
+    return out;
+  }
+  function lpClsOrd(a) {
+    var out = [], i;
+    for (i = 0; i < D.my.length; i += 1) { if (a.indexOf(D.my[i].id) >= 0) out.push(D.my[i].id); }
+    for (i = 0; i < a.length; i += 1) { if (out.indexOf(a[i]) < 0) out.push(a[i]); }
+    return out;
+  }
+  /* 미리 보기 크게(막대): 그린 뒤 칸 너비를 재서 넣음 */
+  function lpBig() {
+    var sd = S.sd, z = $('lp-z'), pv = sd && sd.pv, W;
+    if (!z || !pv || !pv.T.length || !window.LecPrint) return;
+    if (sd.sel >= pv.T.length) sd.sel = 0;
+    W = Math.max(160, Math.min(600, z.clientWidth || 600));
+    z.innerHTML = window.LecPrint.big(pv.T[sd.sel], pv.KP[sd.sel], pv.CAP[sd.sel][2] + ' · 막대를 밀어 보세요', W, sd.x);
+  }
+  function lpThMark() {
+    var a = $('sd') ? $('sd').querySelectorAll('.lpth') : [], i;
+    for (i = 0; i < a.length; i += 1) a[i].className = 'lpth' + (+a[i].getAttribute('data-lpi') === S.sd.sel ? ' on' : '');
+  }
+  function lpPv(sd, T, KP, CAP) {
+    sd.pv = { T: T, KP: KP, CAP: CAP };
+    return '<div class="lp-pv" data-act="lpTh">' + window.LecPrint.pairs(T, KP, CAP, T.length <= 2 ? 150 : 104, sd.sel) + '</div><div class="lp-z" id="lp-z"></div>';
+  }
+  function lpHtml() { return S.sd.t === 'lp1' ? lp1Html(S.sd) : lp2Html(S.sd); }
+  function lpOpenMsg(e) {
+    if (e && e.r) return sxErr(e.r);
+    if (e && e.message === 'old') return sxErr({ err: 'old' });
+    if (e && e.message === 'print') return '인쇄 도구를 불러오지 못했어요. 잠시 뒤 다시 해 주세요';
+    return '시험지를 만들 준비를 하지 못했어요. 잠시 뒤 다시 해 주세요';
+  }
+
+  /* ① 한 시험지: 체크한 세트 문항(세트 불러오기 그대로) → 부분마다 형식 · 열 · 번호(세트 표 «번호» 칸 · 못 쓰면 세트 안 차례 1부터) · 반 · 학생 · 양면 · 판 */
+  function lpOpenOne() {
+    var its = lpPicked(), sd;
+    if (S.sd && S.sd.batch) { toast('세트를 올리는 중이에요. 다 올라갈 때까지 기다려 주세요'); return; }
+    if (!its.length) { toast('목록 줄 오른쪽 체크로 세트를 골라 주세요 · 어휘 · 문법 · 구문에서 하나씩'); return; }
+    closeDrawer(); closeEditor();
+    S.pp = null; S.setAsk = '';
+    sd = { t: 'lp1', its: its, sets: {}, loading: true, err: '', fmt: {}, col: {}, rng: {}, rer: {}, num: {}, cls: '', off: {}, duplex: true, brk: false, sel: 0, x: 50 };
+    S.sd = sd;
+    S.inputs['lp1:title'] = lpTitle0();
+    sxPaintSd();
+    Promise.all([lpLoad()].concat(its.map(function (x) { return sxFull(x.id); }))).then(function (res) {
+      var LP = res[0], j, set, kd, n;
+      if (S.sd !== sd) return;
+      for (j = 0; j < its.length; j += 1) {
+        set = res[j + 1]; kd = its[j].kind;
+        n = isArr(set.items) ? set.items.length : 0;
+        sd.sets[kd] = { id: str(set.id || its[j].id), kind: kd, title: str(set.title || its[j].title), items: isArr(set.items) ? set.items : [] };
+        sd.fmt[kd] = LP.FM[kd][0][0]; sd.col[kd] = LP.DEF_COL[kd]; sd.rng[kd] = { a: 1, b: n }; sd.rer[kd] = false;
+        sd.num[kd] = lpNums(sd.sets[kd]);
+        S.inputs['lp1:a:' + kd] = String(sd.num[kd] ? sd.num[kd][0] : 1); S.inputs['lp1:b:' + kd] = String(sd.num[kd] ? sd.num[kd][n - 1] : n);
+      }
+      sd.cls = lp1Cls0(its);
+      sd.loading = false;
+      sxPaintSd();
+    }, function (e) {
+      if (S.sd !== sd) return;
+      sd.loading = false; sd.err = lpOpenMsg(e);
+      sxPaintSd();
+    });
+  }
+  function lp1ClsAll(its) {
+    var a = [], i, j, c;
+    for (i = 0; i < its.length; i += 1) { c = lpClsOf(its[i].class_ids); for (j = 0; j < c.length; j += 1) { if (a.indexOf(c[j]) < 0) a.push(c[j]); } }
+    return lpClsOrd(a);
+  }
+  /* 기본 반 = 고른 세트 모두가 보는 첫 반(없으면 첫 반) */
+  function lp1Cls0(its) {
+    var all = lp1ClsAll(its), i, j, ok;
+    for (i = 0; i < all.length; i += 1) {
+      ok = true;
+      for (j = 0; j < its.length; j += 1) { if (lpClsOf(its[j].class_ids).indexOf(all[i]) < 0) ok = false; }
+      if (ok) return all[i];
+    }
+    return all[0] || '';
+  }
+  function lp1Sel(sd) {
+    var out = [], i, kd;
+    for (i = 0; i < LP_KD.length; i += 1) {
+      kd = LP_KD[i];
+      if (sd.sets[kd]) out.push({ kd: kd, set: sd.sets[kd], fmt: sd.fmt[kd], col: sd.col[kd], a: sd.rng[kd].a, b: sd.rng[kd].b });
+    }
+    return out;
+  }
+  function lp1Calc(sd) {
+    var sel = lp1Sel(sd), k = [sd.brk ? 'b' : 'a', sd.duplex ? 2 : 1], i;
+    for (i = 0; i < sel.length; i += 1) k.push([sel[i].kd, sel[i].fmt, sel[i].col, sel[i].a, sel[i].b].join(','));
+    k = k.join('|');
+    if (!sd.cache || sd.cache.k !== k) sd.cache = { k: k, R: window.LecPrint.combined(sel, { brk: sd.brk, duplex: sd.duplex }) };
+    return sd.cache.R;
+  }
+  function lp1Stu(sd) { return sd.cls ? sxStu([sd.cls]) : []; }
+  /* 이름 줄 = «학생 · 반»(체크한 학생 · 이름 차례) */
+  function lp1Names(sd) {
+    var st = lp1Stu(sd), cn = D.cname[sd.cls] || '', out = [], i;
+    for (i = 0; i < st.length; i += 1) { if (!sd.off[st[i].skey]) out.push(st[i].sname + (cn ? ' · ' + cn : '')); }
+    return out;
+  }
+  /* 번호 = 세트 표 «번호» 칸(세트 하나 인쇄와 같음): 모든 문항이 숫자이고 차례대로 커지거나 같을 때만(모의고사 «18~24번»처럼 한 번호에 여러 단어도) ·
+     아니면 null = 세트 안 차례 1부터 */
+  function lpNums(set) {
+    var a = [], it = set.items, i, v;
+    for (i = 0; i < it.length; i += 1) {
+      v = lpInt(str(it[i] && it[i].n));
+      if (isNaN(v) || (i && v < a[i - 1])) return null;
+      a.push(v);
+    }
+    return a.length ? a : null;
+  }
+  function lpRngMsg(sd, kd) {
+    var nu = sd.num[kd], n = sd.sets[kd].items.length;
+    return (nu ? nu[0] : 1) + '부터 ' + (nu ? nu[n - 1] : n) + ' 안에서, 앞 번호가 뒤 번호보다 작게 적어 주세요.';
+  }
+  function lp1Html(sd) {
+    var LP = window.LecPrint, h, R, i, kd, set, n, pi, ri = 0, st, names, cs, cfg, T, KP, CAP, pn, sdn, rc, u;
+    if (sd.loading || sd.err || !LP) {
+      return lpDh('한 시험지', '학생마다 이름이 찍힌 시험지와 맨 끝 1:1 정답지 한 벌이 한 문서로 나와요') +
+        (sd.err ? '<p class="msg bad" role="alert">' + esc(sd.err) + '</p>' : '<p class="mut">불러오는 중이에요</p>') + '</div>';
+    }
+    R = lp1Calc(sd);
+    h = lpDh('한 시험지' + (R.tot ? ' · ' + R.tot + '문항' : ''), '학생마다 이름이 찍힌 시험지와 맨 끝 1:1 정답지 한 벌이 한 문서로 나와요');
+    h += '<div class="lp-tf"><div class="fld"><label for="lp-title">제목</label><input id="lp-title" type="text" data-k="lp1:title" maxlength="60" autocomplete="off"></div>' +
+      '<div class="fld"><span class="fl">날짜</span><p class="lp-day">' + esc(lpDay()) + '</p></div></div>';
+    for (i = 0; i < LP_KD.length; i += 1) {
+      kd = LP_KD[i]; set = sd.sets[kd];
+      if (!set) continue;
+      n = set.items.length;
+      for (pi = 0; pi < R.parts.length && R.parts[pi].kd !== kd; pi += 1) {}
+      h += '<div class="lp-part"><div class="lp-r1"><span class="lp-pn">' + LP.RN[ri] + ' ' + LP.KN[kd] + '</span><span class="lp-st">' + esc(set.title) + '</span>' +
+        '<span class="lp-rn">번호 <input type="text" inputmode="numeric" maxlength="4" autocomplete="off" data-k="lp1:a:' + kd + '" aria-label="' + LP.KN[kd] + ' 시작 번호"> ~ ' +
+        '<input type="text" inputmode="numeric" maxlength="4" autocomplete="off" data-k="lp1:b:' + kd + '" aria-label="' + LP.KN[kd] + ' 끝 번호"></span></div>' +
+        '<div class="lp-r2">' + lpSeg(LP.KN[kd] + ' 형식', 'lp1F', kd, LP.FM[kd], sd.fmt[kd]) + lpSeg(LP.KN[kd] + ' 열', 'lp1C', kd, lpCols(kd), sd.col[kd]) +
+        '<span class="lp-pi">' + (pi < R.parts.length ? esc('약 ' + R.used[pi].toFixed(1) + '쪽' + (R.wraps[pi] ? ' · 칸이 좁아 ' + R.wraps[pi] + '문항은 줄이 늘어나요' : '')) : '') + '</span></div>' +
+        '<p class="lp-er" id="lp-er-' + kd + '" role="alert">' + (sd.rer[kd] ? esc(lpRngMsg(sd, kd)) : '') + '</p></div>';
+      ri += 1;
+    }
+    h += '<p class="lp-tip">열을 늘리면 쪽이 줄고 쓰는 칸은 좁아져요. 칸이 좁아 답이 안 들어가는 문항은 저절로 줄이 늘어나요.</p>';
+    cs = lp1ClsAll(sd.its);
+    st = lp1Stu(sd); names = lp1Names(sd);
+    h += '<div class="sec">' + (cs.length > 1 ? lpClsSeg('lp1Cls', cs, sd.cls) : '') + '<p class="lp-k">' +
+      esc(!st.length ? '이 반에 학생이 없어요 · 이름 칸이 빈 시험지 한 벌과 정답지가 나와요'
+        : (names.length ? '학생 ' + names.length + '명 · 이름이 미리 찍혀요 · 빠진 학생은 체크를 풀면 돼요' : '체크한 학생이 없어 이름 칸이 빈 시험지 한 벌과 정답지가 나와요')) + '</p>';
+    if (st.length) {
+      h += '<div class="lp-stu">';
+      for (i = 0; i < st.length; i += 1) {
+        h += '<label><input type="checkbox" data-chg="lp1Stu" data-s="' + esc(st[i].skey) + '"' + (sd.off[st[i].skey] ? '' : ' checked') + '><span>' + esc(st[i].sname) + '</span></label>';
+      }
+      h += '</div>';
+    }
+    h += '</div>';
+    h += '<div class="sec"><div class="lp-line">' + lpSeg('인쇄 면', 'lpDup', '', [['2', '양면'], ['1', '단면']], sd.duplex ? '2' : '1') +
+      lpSeg('판', 'lp1Brk', '', [['a', '이어 붙이기'], ['b', '부분마다 새 쪽']], sd.brk ? 'b' : 'a') + '</div>';
+    if (!R.tot) return h + '<p class="mut">넣을 문항이 없어요</p></div></div>';
+    pn = R.pn;
+    cfg = { title: trim(S.inputs['lp1:title']) || lpTitle0(), date: lpDay() };
+    T = LP.combinedPages(R, cfg, names[0] || '', false); KP = LP.combinedPages(R, cfg, '', true); CAP = [];
+    for (i = 0; i < pn; i += 1) {
+      sdn = sd.duplex ? (i % 2 === 0 ? ' 앞' : ' 뒤') : ''; rc = LP.rangeCap(R, i);
+      CAP.push(['시험 ' + (i + 1) + '쪽' + sdn + (rc ? ' · ' + rc : ''), '정답 ' + (i + 1) + '쪽' + sdn, (i + 1) + '쪽' + sdn]);
+    }
+    if (sd.duplex && pn % 2 === 1) {
+      T.push(LP.blankFoot((names[0] ? names[0] + ' · ' : '') + '빈 면', R, false)); KP.push(LP.blankFoot('정답지 · 빈 면', R, true));
+      CAP.push(['시험 ' + (pn + 1) + '쪽 뒤 · 빈 면', '정답 ' + (pn + 1) + '쪽 뒤 · 빈 면', (pn + 1) + '쪽 뒤 · 빈 면']);
+    }
+    h += '<p class="lp-k lp-pvh">시험지와 정답지 · 쪽마다 1:1 · 누르면 아래에 크게</p>' + lpPv(sd, T, KP, CAP) + '</div></div>';
+    u = '학생 한 명 ' + (sd.duplex ? '양면 ' + LP.sheets(pn, true) + '장 (' + pn + '쪽)' : pn + '장') + ' · 정답지도 같은 ' + pn + '쪽';
+    h += '<div class="edfoot"><p class="lp-m">' + esc((R.fit ? R.fit + '쪽이 될 것을 줄 사이만 좁혀 ' + pn + '쪽에 맞췄어요. ' : '') + '정답지는 시험지와 쪽도 자리도 같아요. 맨 끝에 한 벌 나와요.') + '</p>' +
+      '<div class="sx-row"><span class="lp-u">' + esc(u) + '</span><span class="sp"></span><button type="button" class="btn txt" data-act="sdClose">닫기</button>' +
+      '<button type="button" class="btn fill" data-act="lpGo1">인쇄</button></div></div>';
+    return h;
+  }
+  /* 인쇄: 창은 누른 그 자리에서 엶 · 한 문서 = 학생마다 시험지(0명 = 이름 빈칸 한 벌) + 맨 끝 정답지 한 벌 · 매수는 1 그대로 */
+  function lpGo1() {
+    var sd = S.sd, LP = window.LecPrint, R, names, n, tt, t, html, w;
+    if (!sd || sd.t !== 'lp1' || sd.loading || sd.err || !LP) return;
+    R = lp1Calc(sd);
+    if (!R.tot) { toast('넣을 문항이 없어요', true); return; }
+    names = lp1Names(sd); n = names.length;
+    tt = trim(S.inputs['lp1:title']) || lpTitle0();
+    t = LP.combinedSheets(R, n || 1, sd.duplex);
+    html = LP.combinedDoc(R, { title: tt, date: lpDay(), names: n ? names : [''], duplex: sd.duplex,
+      bar: (n ? '학생 ' + n + '명' : '이름 빈칸 한 벌') + ' · ' + (sd.duplex ? '양면 ' : '') + t + '장 · 정답지 한 벌은 맨 끝 · 매수는 1 그대로' });
+    try { w = window.open('', '_blank'); } catch (e) { w = null; }
+    sxWrite(w, html, tt);
+    toast('인쇄 창을 열었어요 · 매수는 1 그대로 두고 «인쇄»만 누르면 돼요');
+  }
+
+  /* ② 쌓인 오답 시험지: 반 고르기 → lec_set_wrong_staff(읽기만) → 지금 명단으로 거름 · 범위 «쌓인 오답 전부»(기본) · «최근 7일에 틀린 것»(없으면 전부 · «· 전부») */
+  var LP_OLD2 = '쌓인 오답 시험지를 쓰려면 서버 준비(SQL)를 먼저 넣어 주세요';
+  function lp2ClsAll() {
+    var a = [], its = S.set ? S.set.items : [], i, j, ids;
+    for (i = 0; i < its.length; i += 1) {
+      if (!its[i] || (its[i].kind !== 'voc' && its[i].kind !== 'gram')) continue;
+      ids = isArr(its[i].class_ids) ? its[i].class_ids : [];
+      for (j = 0; j < ids.length; j += 1) { if (ids[j] && ids[j] !== '*' && a.indexOf(ids[j]) < 0) a.push(ids[j]); }
+    }
+    if (!a.length) { for (i = 0; i < D.my.length; i += 1) a.push(D.my[i].id); }
+    return lpClsOrd(a);
+  }
+  function lpOpenWrong() {
+    var cs = lp2ClsAll(), cur = sxCur(), c0 = '', a, i, sd;
+    if (S.sd && S.sd.batch) { toast('세트를 올리는 중이에요. 다 올라갈 때까지 기다려 주세요'); return; }
+    closeDrawer(); closeEditor();
+    S.pp = null; S.setAsk = '';
+    a = cur ? lpClsOf(cur.class_ids) : [];
+    for (i = 0; i < a.length && !c0; i += 1) { if (cs.indexOf(a[i]) >= 0) c0 = a[i]; }
+    sd = { t: 'lp2', cls: c0 || cs[0] || '', rows: null, today: today(), loading: true, err: '', rg: 'all', col: { voc: 2, gram: 1 }, duplex: true, off: {}, pick: '', sel: 0, x: 50, gen: 0 };
+    S.sd = sd;
+    sxPaintSd();
+    lp2Fetch(sd);
+  }
+  function lp2Fetch(sd) {
+    var my = ++sd.gen, cls = sd.cls;
+    sd.loading = true; sd.err = ''; sd.rows = null; sd.cache = null; sd.off = {}; sd.pick = ''; sd.sel = 0;
+    if (!L.setWrongStaff) { sd.loading = false; sd.err = LP_OLD2; sxPaintSd(); return; }
+    Promise.all([lpLoad(), cls ? Promise.resolve().then(function () { return L.setWrongStaff(DA.rpc, cls); }) : { ok: true, rows: [] }]).then(function (res) {
+      var r = res[1];
+      if (S.sd !== sd || my !== sd.gen) return;
+      sd.loading = false;
+      if (r && r.ok) { sd.rows = isArr(r.rows) ? r.rows : []; sd.today = isDay(r.today) ? r.today : today(); }
+      else sd.err = r && r.err === 'old' ? LP_OLD2 : sxErr(r);
+      sxPaintSd();
+    }, function (e) {
+      if (S.sd !== sd || my !== sd.gen) return;
+      sd.loading = false; sd.err = lpOpenMsg(e);
+      sxPaintSd();
+    });
+  }
+  /* 학생 줄(명단 차례): 명단에 있고 서버 줄도 있는 학생만 오답 · 명단 밖 줄은 뺌 */
+  function lp2Calc(sd) {
+    var LP = window.LecPrint, k = [sd.gen, sd.rg, sd.col.voc, sd.col.gram, sd.duplex ? 2 : 1].join('|'), map = {}, rs, st, cn, out = [], i, x, pk;
+    if (sd.cache && sd.cache.k === k) return sd.cache.list;
+    rs = isArr(sd.rows) ? sd.rows : [];
+    for (i = 0; i < rs.length; i += 1) { if (rs[i] && rs[i].sid) map[rs[i].sid] = rs[i]; }
+    st = sd.cls ? sxStu([sd.cls]) : [];
+    cn = D.cname[sd.cls] || '';
+    for (i = 0; i < st.length; i += 1) {
+      x = map[st[i].skey];
+      pk = LP.wrongPick(x && isArr(x.items) ? x.items : [], sd.rg, sd.today);
+      out.push({ sid: st[i].skey, name: st[i].sname, nm: st[i].sname + (cn ? ' · ' + cn : ''), fb: pk.fb, cnt: LP.wrongCount(pk.items),
+        R: pk.items.length ? LP.wrong(pk.items, sd.col, sd.duplex) : null });
+    }
+    for (i = out.length - 1; i >= 0; i -= 1) { if (out[i].R && !out[i].R.tot) out[i].R = null; }
+    sd.cache = { k: k, list: out };
+    return out;
+  }
+  function lp2Html(sd) {
+    var LP = window.LecPrint, cn = D.cname[sd.cls] || '', cs = lp2ClsAll(), h, list, all = [], ls = [], i, x, on, n, pn, tq = 0, two = 0, nfb = 0, ws, p = null, R, T, KP, CAP, sdn, rc, wr, u;
+    h = lpDh('쌓인 오답 시험지' + (cn ? ' · ' + cn : ''), '히즈클래스에 쌓인 어휘 · 문법 오답을 학생마다 따로 · 1:1 정답지는 맨 뒤에 같은 차례로');
+    if (cs.length > 1) h += lpClsSeg('lp2Cls', cs, sd.cls);
+    if (sd.err) return h + '<p class="msg bad" role="alert">' + esc(sd.err) + '</p>' + (sd.err !== LP_OLD2 ? '<div class="sx-row"><button type="button" class="btn sm" data-act="lp2Re">다시 해 보기</button></div>' : '') + '</div>';
+    if (sd.loading || !LP) return h + '<p class="mut">불러오는 중이에요</p></div>';
+    h += '<div class="lp-line"><span class="lp-lb">범위</span>' + lpSeg('범위', 'lp2Rg', '', [['all', '쌓인 오답 전부'], ['d7', '최근 7일에 틀린 것']], sd.rg) +
+      lpSeg('인쇄 면', 'lpDup', '', [['2', '양면'], ['1', '단면']], sd.duplex ? '2' : '1') + '</div>';
+    h += '<div class="lp-line"><span class="lp-lb">열</span><span class="lp-kn">어휘</span>' + lpSeg('어휘 열', 'lp2Col', 'voc', lpCols('voc'), sd.col.voc) +
+      '<span class="lp-kn">문법</span>' + lpSeg('문법 열', 'lp2Col', 'gram', lpCols('gram'), sd.col.gram) + '</div>';
+    h += '<p class="lp-tip">열은 반 전체에 같이 적용돼요. 열을 늘리면 쪽이 줄고 쓰는 칸은 좁아져요. 칸이 좁아 답이 안 들어가는 문항은 저절로 줄이 늘어나요. 학생 이름을 누르면 아래에 그 학생 시험지와 정답지가 보여요.</p>';
+    list = lp2Calc(sd);
+    for (i = 0; i < list.length; i += 1) {
+      x = list[i];
+      if (!x.R) continue;
+      all.push(x);
+      if (sd.off[x.sid]) continue;
+      ls.push(x); tq += x.R.tot;
+      if (x.R.pn === 2) two += 1;
+      if (x.fb) nfb += 1;
+    }
+    for (i = 0; i < all.length; i += 1) { if (all[i].sid === sd.pick) p = all[i]; }
+    if (!p && all.length) { p = all[0]; sd.pick = p.sid; sd.sel = 0; }
+    h += '<div class="lp-sl">';
+    if (!list.length) h += '<p class="lp-none">이 반에 학생이 없어요.</p>';
+    else if (!all.length) h += '<p class="lp-none" role="status">쌓인 오답이 있는 학생이 없어요(모두 다른 날 두 번 맞혀 빠졌어요)</p>';
+    for (i = 0; i < list.length; i += 1) {
+      x = list[i];
+      if (!x.R) { h += '<div class="lp-sr no"><span class="lp-sp"></span><span class="lp-nm">' + esc(x.name) + '</span><span>오답 없음 · 인쇄 안 함</span></div>'; continue; }
+      on = p && p.sid === x.sid; n = x.cnt.voc + x.cnt.gram; pn = x.R.pn;
+      h += '<div class="lp-sr' + (on ? ' on' : '') + '"><label class="lp-sk"><input type="checkbox" data-chg="lp2Stu" data-s="' + esc(x.sid) + '"' + (sd.off[x.sid] ? '' : ' checked') + ' aria-label="' + esc('인쇄에 넣기 · ' + x.name) + '"></label>' +
+        '<button type="button" class="lp-nm" data-act="lp2Pick" data-s="' + esc(x.sid) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + esc(x.name) + (x.fb ? '<span class="lp-fb"> · 전부</span>' : '') + '</button>' +
+        '<span class="lp-c">어휘 ' + x.cnt.voc + ' · 문법 ' + x.cnt.gram + '</span><span class="lp-n">' + n + '문항</span><span class="lp-n">' + (sd.duplex ? '앞뒤 ' + LP.sheets(pn, true) : pn) + '장</span></div>';
+    }
+    h += '</div>';
+    if (sd.rg === 'd7' && all.length) {
+      h += '<p class="lp-tip">범위를 줄이면 학생마다 문항이 줄어요.' + (nfb ? ' 최근 7일에 틀린 것이 없는 학생 ' + nfb + '명(«전부» 표시)은 인쇄를 막지 않게 쌓인 오답 전부를 담아요.' : '') + ' 기본은 늘 «쌓인 오답 전부»예요.</p>';
+    }
+    if (p) {
+      R = p.R; pn = R.pn; wr = 0;
+      for (i = 0; i < R.wraps.length; i += 1) wr += R.wraps[i];
+      T = LP.wrongPages(R, p.nm, lpDay(), false); KP = LP.wrongPages(R, p.nm, lpDay(), true); CAP = [];
+      for (i = 0; i < pn; i += 1) {
+        sdn = sd.duplex ? (i % 2 === 0 ? ' 앞' : ' 뒤') : ''; rc = LP.rangeCap(R, i, true);
+        CAP.push(['시험 ' + (i + 1) + '쪽' + sdn + (rc ? ' · ' + rc : ''), '정답 ' + (i + 1) + '쪽' + (pn > 1 ? sdn : ''), p.name + ' · ' + (i + 1) + '쪽' + sdn]);
+      }
+      h += '<div class="sec"><p class="lp-k lp-pvh">' + esc(p.name + ' · ' + R.tot + '문항 · 시험지 ' + pn + '쪽과 정답지 ' + pn + '쪽 · 쪽마다 1:1' + (R.fit ? ' · 줄 사이만 좁혀 ' + R.fit + '쪽을 ' + pn + '쪽에 맞춤' : '') +
+        (wr ? ' · 칸이 좁아 ' + wr + '문항은 줄이 늘어나요' : '') + (sd.off[p.sid] ? ' · 체크를 풀어 인쇄 안 함' : '') + ' · 누르면 아래에 크게') + '</p>' + lpPv(sd, T, KP, CAP) + '</div>';
+    } else sd.pv = null;
+    h += '</div>';
+    if (ls.length) {
+      ws = LP.wrongSheets(ls.map(function (y) { return y.R; }), sd.duplex);
+      u = ls.length + '명 · ' + tq + '문항 · ' + (sd.duplex ? '양면 ' : '') + '종이 ' + ws.total + '장 (1:1 정답지 ' + ws.key + '장 포함)' + (two && sd.duplex ? ' · 2쪽 학생 ' + two + '명도 앞뒤 한 장' : '');
+    } else u = all.length ? '체크한 학생이 없어요 · 인쇄하면 오답이 있는 학생 ' + all.length + '명을 모두 담아요' : '';
+    h += '<div class="edfoot"><div class="sx-row"><span class="lp-u">' + esc(u) + '</span><span class="sp"></span><button type="button" class="btn txt" data-act="sdClose">닫기</button>' +
+      '<button type="button" class="btn fill" data-act="lpGo2">인쇄</button></div></div>';
+    return h;
+  }
+  /* 인쇄: 체크한 학생(0명이면 오답이 있는 학생 모두 · 화면에만 알림) · 반 전체 0이면 알림만 */
+  function lpGo2() {
+    var sd = S.sd, LP = window.LecPrint, list, all = [], ls = [], i, rows = [], ws, cn, html, w, note = '';
+    if (!sd || sd.t !== 'lp2' || sd.loading || sd.err || !LP || !sd.rows) return;
+    list = lp2Calc(sd);
+    for (i = 0; i < list.length; i += 1) { if (list[i].R) { all.push(list[i]); if (!sd.off[list[i].sid]) ls.push(list[i]); } }
+    if (!all.length) { toast('쌓인 오답이 있는 학생이 없어요(모두 다른 날 두 번 맞혀 빠졌어요)'); return; }
+    if (!ls.length) { ls = all; note = '체크한 학생이 없어 오답이 있는 학생 ' + all.length + '명을 모두 담았어요'; }
+    for (i = 0; i < ls.length; i += 1) rows.push({ nm: ls[i].nm, R: ls[i].R });
+    ws = LP.wrongSheets(ls.map(function (y) { return y.R; }), sd.duplex);
+    cn = D.cname[sd.cls] || '';
+    html = LP.wrongDoc(rows, { date: lpDay(), duplex: sd.duplex,
+      bar: rows.length + '명 · ' + (sd.duplex ? '양면 ' : '') + '종이 ' + ws.total + '장 (1:1 정답지 ' + ws.key + '장 포함) · 정답지는 맨 뒤 같은 차례 · 매수는 1 그대로' });
+    try { w = window.open('', '_blank'); } catch (e) { w = null; }
+    sxWrite(w, html, '쌓인 오답 시험' + (cn ? ' · ' + cn : ''));
+    toast(note || '인쇄 창을 열었어요 · 매수는 1 그대로 두고 «인쇄»만 누르면 돼요');
+  }
+
+  /* 이벤트(onClick · onChange · onInput 에서 한 줄씩 부름) · 참 = 맡음 */
+  function lpAct(a, el, ev) {
+    var sd = S.sd, v = attr(el, 'data-v'), kd = attr(el, 'data-kd'), s = attr(el, 'data-s'), b;
+    if (a === 'lpOne') { lpOpenOne(); return true; }
+    if (a === 'lpWrong') { lpOpenWrong(); return true; }
+    if (a.indexOf('lp') !== 0) return false;
+    if (!lpIs()) return true;
+    switch (a) {
+      case 'lpGo1': lpGo1(); break;
+      case 'lpGo2': lpGo2(); break;
+      case 'lpTh':
+        b = ev && ev.target && ev.target.closest ? ev.target.closest('.lpth') : null;
+        if (!b) break;
+        sd.sel = +b.getAttribute('data-lpi') || 0;
+        lpThMark(); lpBig();
+        try { b.focus(); } catch (e) {}
+        break;
+      case 'lpDup': sd.duplex = v === '2'; sd.sel = 0; sxPaintSd('[data-act=lpDup][data-v="' + v + '"]'); break;
+      case 'lp1F': if (sd.t === 'lp1' && sd.sets[kd]) { sd.fmt[kd] = v; sd.sel = 0; sxPaintSd('[data-act=lp1F][data-kd=' + kd + '][data-v="' + v + '"]'); } break;
+      case 'lp1C': if (sd.t === 'lp1' && sd.sets[kd]) { sd.col[kd] = +v; sd.sel = 0; sxPaintSd('[data-act=lp1C][data-kd=' + kd + '][data-v="' + v + '"]'); } break;
+      case 'lp1Brk': if (sd.t === 'lp1') { sd.brk = v === 'b'; sd.sel = 0; sxPaintSd('[data-act=lp1Brk][data-v="' + v + '"]'); } break;
+      case 'lp1Cls': if (sd.t === 'lp1' && sd.cls !== v) { sd.cls = v; sd.off = {}; sd.sel = 0; sxPaintSd(); lpFocus('data-act', 'data-v', v); } break;
+      case 'lp2Rg': if (sd.t === 'lp2') { sd.rg = v === 'd7' ? 'd7' : 'all'; sd.sel = 0; sxPaintSd('[data-act=lp2Rg][data-v="' + v + '"]'); } break;
+      case 'lp2Col': if (sd.t === 'lp2' && (kd === 'voc' || kd === 'gram')) { sd.col[kd] = +v; sd.sel = 0; sxPaintSd('[data-act=lp2Col][data-kd=' + kd + '][data-v="' + v + '"]'); } break;
+      case 'lp2Cls': if (sd.t === 'lp2' && sd.cls !== v) { sd.cls = v; lp2Fetch(sd); sxPaintSd(); lpFocus('data-act', 'data-v', v); } break;
+      case 'lp2Re': if (sd.t === 'lp2') { lp2Fetch(sd); sxPaintSd(); } break;
+      case 'lp2Pick': if (sd.t === 'lp2' && sd.pick !== s) { sd.pick = s; sd.sel = 0; sxPaintSd(); lpFocus('data-act', 'data-s', s); } break;
+      default: break;
+    }
+    return true;
+  }
+  function lpChg(t) {
+    var c = t.getAttribute ? t.getAttribute('data-chg') : '', s;
+    if (c === 'lpPick') { lpPickTog(t); return true; }
+    if (c !== 'lp1Stu' && c !== 'lp2Stu') return false;
+    if (!lpIs()) return true;
+    s = t.getAttribute('data-s');
+    if (t.checked) delete S.sd.off[s]; else S.sd.off[s] = true;
+    sxPaintSd();
+    lpFocus('data-chg', 'data-s', s);
+    return true;
+  }
+  function lpInt(v) { v = trim(v); return /^\d{1,4}$/.test(v) ? parseInt(v, 10) : NaN; }
+  function lpSoon() { clearTimeout(lpT); lpT = setTimeout(function () { if (lpIs()) sxPaintSd(); }, 250); }
+  function lpIn(t, k) {
+    var sd = S.sd, m, kd, n, nu, a, b, er, i, j;
+    if (t && t.className === 'lp-rg') { if (lpIs() && window.LecPrint) { sd.x = +t.value || 0; window.LecPrint.bigX($('lp-z'), sd.x); } return true; }
+    if (!k || k.indexOf('lp1:') !== 0) return false;
+    if (!sd || sd.t !== 'lp1' || sd.loading) return true;
+    if (k === 'lp1:title') { lpSoon(); return true; }
+    m = /^lp1:[ab]:(voc|gram|gu)$/.exec(k);
+    if (!m || !sd.sets[m[1]]) return true;
+    kd = m[1]; n = sd.sets[kd].items.length; nu = sd.num[kd];
+    a = lpInt(S.inputs['lp1:a:' + kd]); b = lpInt(S.inputs['lp1:b:' + kd]);
+    er = $('lp-er-' + kd);
+    /* «번호» 칸 → 세트 안 차례(그 번호 안의 첫 문항 ~ 끝 문항) · 번호 사이 빈 곳만 고르면 알림 */
+    if (nu && a >= nu[0] && b <= nu[n - 1] && a <= b) {
+      for (i = 0; nu[i] < a; i += 1) {}
+      for (j = n - 1; nu[j] > b; j -= 1) {}
+      a = i + 1; b = j + 1;
+    } else if (nu) a = NaN;
+    if (!(a >= 1 && b <= n && a <= b)) { sd.rer[kd] = true; if (er) er.textContent = lpRngMsg(sd, kd); return true; }
+    sd.rer[kd] = false;
+    if (er) er.textContent = '';
+    if (sd.rng[kd].a !== a || sd.rng[kd].b !== b) { sd.rng[kd] = { a: a, b: b }; sd.sel = 0; lpSoon(); }
+    return true;
+  }
+
   /* ---- 세트 서랍(960): 붙여 넣기(새로 · 고치기) 또는 녹음 듣기 */
   function sxPaintSd(focusSel) {
     var dw = $('sd'), bk = $('sdb'), was, f;
@@ -4902,7 +5445,8 @@ window.__lecAdminStart = function () {
     if (!S.sd) { dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; return; }
     was = dw.hidden;
     dw.hidden = false; bk.hidden = false;
-    paint(dw, S.sd.t === 'rec' ? rvHtml() : sxPutHtml());
+    paint(dw, S.sd.t === 'rec' ? rvHtml() : (lpIs() ? lpHtml() : sxPutHtml()));
+    if (lpIs()) lpBig();
     if (was) dw.scrollTop = 0;
     f = focusSel ? dw.querySelector(focusSel) : null;
     if (f || !dw.contains(document.activeElement)) { try { (f || dw).focus(); } catch (e) {} }
@@ -6096,7 +6640,7 @@ window.__lecAdminStart = function () {
         break;
       case 'sxSave': sxSave(el); break;
       case 'rvKey': rvKey(v); break;
-      default: return;
+      default: if (!lpAct(a, el, ev)) return;
     }
     if (el.tagName === 'A') return;
     ev.preventDefault();
@@ -6113,6 +6657,7 @@ window.__lecAdminStart = function () {
   function onInput(ev) {
     var t = ev.target, k = t && t.getAttribute ? t.getAttribute('data-k') : null;
     if (k) S.inputs[k] = t.value;
+    if (lpIn(t, k)) return;
     if (k === 'stuq') { stuFilter(); return; }
     /* S1 세트: 붙여 넣은 글이 바뀌면 종류 · 경고 · 미리 보기를 곧바로(새 세트는 고른 종류 · ★ 도 처음부터) */
     if (t && t.id === 'sd-txt' && S.sd && S.sd.t === 'put') {
@@ -6152,6 +6697,7 @@ window.__lecAdminStart = function () {
   function onChange(ev) {
     var t = ev.target, s;
     if (!t) return;
+    if (lpChg(t)) return;
     if (t.id === 'ed-file' || t.id === 'ed-pdfile') { if (t.files && t.files.length) edFiles(t.files); t.value = ''; return; }
     if (t.id === 'ed-post' || t.id === 'ed-until') { edNotes(); return; }
     if (S.ed && t.getAttribute && t.getAttribute('data-di') !== null) { dayWeek(t); pdfWarnPaint(); return; }
