@@ -1090,6 +1090,8 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   .k2 .sx>.sx-r.card{padding:16px 0 0;border-left:0;border-top:1px solid var(--sep)}
 }
 @media (max-width:760px){.k2 .sxt .sx-spk{white-space:normal}}
+/* 확인 완료 = 바로 저장 → 메모 칸 머리 한 줄 */
+.k2 .cfbox .cfok{margin:0;font-size:13px;line-height:18px;font-weight:600;color:var(--acc)}
 </style>
 </head>
 <body>
@@ -2584,18 +2586,22 @@ window.__lecAdminStart = function () {
     a.push(str(p.done_by));
     return a.join(' · ');
   }
-  function cfFormHtml() {
-    var h = '<div class="cfbox" role="group" aria-label="확인 완료 메모"><div class="chips">', i, on;
+  /* 2차(11-18): «확인 완료»는 누르면 바로 저장(S.cf.saved) → 그 아래 메모 칩 · 직접 메모는 뒤에 붙임 · 되돌리기 */
+  function cfFormHtml(a) {
+    var sv = !!(S.cf && S.cf.saved), h = '<div class="cfbox" role="group" aria-label="확인 완료 메모">' +
+      (sv ? '<p class="cfok">확인 완료로 저장했어요 · 메모는 골라 붙여요(선택)</p>' : '') + '<div class="chips">', i, on;
     for (i = 0; i < L.MEMO_CHIPS.length; i += 1) {
       on = !!S.cf.chips[i];
       h += '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="cfChip" data-v="' + i + '">' + esc(L.MEMO_CHIPS[i]) + '</button>';
     }
     return h + '</div><input type="text" data-k="cfnote" maxlength="60" placeholder="메모 직접 쓰기(선택)" aria-label="메모 직접 쓰기">' +
-      '<div class="row"><button type="button" class="btn sm strong" data-act="cfSave">저장</button>' +
-      '<button type="button" class="btn sm txt" data-act="cfCancel">그만두기</button></div></div>';
+      '<div class="row"><button type="button" class="btn sm strong" data-act="cfSave">' + (sv ? '메모 붙이기' : '저장') + '</button>' +
+      '<button type="button" class="btn sm txt" data-act="cfCancel">' + (sv ? '닫기' : '그만두기') + '</button>' +
+      (sv && a ? '<button type="button" class="btn sm txt" data-act="unconf"' + a + '>되돌리기</button>' : '') + '</div></div>';
   }
   function confCtl(l, r, s) {
     var a = ' data-s="' + esc(r.skey) + '" data-l="' + esc(l.id) + '"';
+    if (s.k === 'conf' && S.cf && S.cf.saved && S.cf.s === r.skey && S.cf.l === l.id) return cfFormHtml(a);
     if (s.k === 'conf') return '<span class="cfd">' + esc(confLine(s.p)) + '</span><button type="button" class="btn sm txt" data-act="unconf"' + a + '>되돌리기</button>';
     if (s.k === 'done') return '';
     if (S.cf && S.cf.s === r.skey && S.cf.l === l.id) return cfFormHtml();
@@ -5583,9 +5589,13 @@ window.__lecAdminStart = function () {
       case 'statCls': S.statCls = c; render(); break;
       case 'dClose': closeDrawer(); break;
       case 'dBack': S.drawer = S.stack.pop() || null; S.cf = null; renderDrawer(); break;
-      case 'cfOpen': S.cf = { s: s, l: l, chips: {} }; delete S.inputs.cfnote; renderAll(); break;
+      case 'cfOpen':   /* 2차(11-18): 누르면 바로 저장 → 메모 칸은 그 아래(메모는 뒤에 붙임) */
+        S.cf = null; delete S.inputs.cfnote;
+        act('cf', el, DA.rpc('lec_confirm', { p_lecture: l, p_skey: s, p_note: '' }), '확인 완료로 저장했어요',
+          function () { S.cf = { s: s, l: l, chips: {}, saved: true }; });
+        break;
       case 'cfChip': if (S.cf) { S.cf.chips[v] = !S.cf.chips[v]; renderAll(); } break;
-      case 'cfCancel': S.cf = null; renderAll(); break;
+      case 'cfCancel': S.cf = null; delete S.inputs.cfnote; renderAll(); break;
       case 'cfSave':
         if (!S.cf) break;
         chips = [];
@@ -5594,10 +5604,14 @@ window.__lecAdminStart = function () {
         if (t) chips.push(t);
         note = chips.join(' · ');
         k = S.cf;
-        act('cf', el, DA.rpc('lec_confirm', { p_lecture: k.l, p_skey: k.s, p_note: note }), '확인 완료로 남겼어요',
+        if (k.saved && !note) { S.cf = null; renderAll(); break; }   /* 이미 저장됨 · 붙일 메모 없음 = 닫기 */
+        act('cf', el, DA.rpc('lec_confirm', { p_lecture: k.l, p_skey: k.s, p_note: note }), k.saved ? '메모를 붙여 확인 완료로 남겼어요' : '확인 완료로 남겼어요',
           function () { S.cf = null; delete S.inputs.cfnote; });
         break;
-      case 'unconf': act('uncf', el, DA.rpc('lec_unconfirm', { p_lecture: l, p_skey: s }), '되돌렸어요'); break;
+      case 'unconf':
+        act('uncf', el, DA.rpc('lec_unconfirm', { p_lecture: l, p_skey: s }), '되돌렸어요',
+          function () { if (S.cf && S.cf.s === s && S.cf.l === l) { S.cf = null; delete S.inputs.cfnote; } });
+        break;
       case 'ntCopy': t = el.getAttribute('data-t') || 'nt-txt'; copyText($(t) ? $(t).value : '', function () { return $(t); }); break;   /* K: 올린 뒤 카드는 data-t="ed-nt" */
       case 'insTog': insTog(el); break;   /* 설치 안내 결론안(11-16) */
       case 'insTv': insTv(el); break;
