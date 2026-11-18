@@ -44,7 +44,7 @@
 /* 결론안 K(11-16) · 밝은 토큰 = 목록·들어오기 · 무대 토큰 = 보기 화면(html.stg) · 다크 모드 폰도 목록·들어오기는 크림(11-16 원장님)
    2차(11-18): 바탕 크림 #FAF6EC(결론안 §9 «크림 연하게») · 카드 흰색 + 테 .10 · 글 #1A1A18 · 딥그린은 --acc(강조 · 단추 · 진도) */
 :root{color-scheme:light;color-scheme:only light;--bg:#FAF6EC;--card:#FFFFFF;--edge:rgba(70,52,12,.10);--line:rgba(70,52,12,.13);--dash:#CBBF9A;--ink:#1A1A18;--ink2:#57534A;--acc:#0C4631;--accB:#E3EBDD;--track:rgba(12,70,49,.15);--tile:#E9F0EC;--tileT:#0C4631;--done:#1B6A43;--focus:#0C4631;--rv:#8A8D80;--fillB:#0C4631;--fillT:#FFFFFF;--fill:#EAE1C8;--press:#F3EEE2;--inL:#E6DCBF;--sl:#CBBF9A;--gold:#7A5410;--cur:#F4EEDB;--seen:#0C4631;--gB:#DDF0E5;--gT:#1B6A43;--aB:#FBF0C9;--aT:#98480A;--sB:#DFEAF8;--sT:#1B5499;--nB:#EFEDE5;--nT:#57534A;--cB:#FBE9E3;--cT:#B3302A;--art:#F7F2E4;--artT:#0B3D2E;--artL:rgba(70,52,12,.14)}
-html.stg{color-scheme:dark;--bg:#0A1F17;--card:#12301F;--edge:#21402F;--acc:#F4ECD7;--accB:#1A3B2C;--line:#21402F;--dash:#5A7A6A;--ink:#F4ECD7;--ink2:#A7B5AA;--track:#5A7A6A;--tile:#1A3B2C;--tileT:#F4ECD7;--done:#8CC4A6;--focus:#D9B54A;--rv:#A7B5AA;--fillB:#F4ECD7;--fillT:#0C4631;--press:#1A3B2C;--inL:#5A7A6A;--sl:#5A7A6A;--gold:#D9B54A;--cur:#1A3B2C;--seen:#F4ECD7;--gB:#264835;--gT:#8CC4A6;--aB:#324526;--aT:#E8C66A;--sB:#28473F;--sT:#A9CDE8;--nB:#1A3B2C;--nT:#A7B5AA;--cB:#3E2A24;--cT:#F2B8AC}
+html.stg{color-scheme:dark;--bg:#0D241A;--card:rgba(255,255,255,.07);--edge:rgba(255,255,255,.10);--acc:#8FD0AE;--accB:rgba(255,255,255,.11);--line:rgba(255,255,255,.10);--dash:#5A7A6A;--ink:#F3F1EA;--ink2:#B9C2BB;--ink3:#9DA9A0;--track:rgba(255,255,255,.2);--tile:rgba(255,255,255,.11);--tileT:#F3F1EA;--done:#8FD0AE;--focus:#8FD0AE;--rv:#9DA9A0;--fillB:#F3F1EA;--fillT:#0C4631;--press:rgba(255,255,255,.11);--inL:rgba(255,255,255,.14);--sl:rgba(255,255,255,.14);--gold:#8FD0AE;--cur:rgba(255,255,255,.07);--seen:#F3F1EA;--gB:rgba(143,208,174,.16);--gT:#8FD0AE;--aB:rgba(240,178,107,.16);--aT:#F0B26B;--sB:rgba(169,205,232,.16);--sT:#A9CDE8;--nB:rgba(255,255,255,.11);--nT:#B9C2BB;--cB:rgba(242,184,172,.16);--cT:#F2B8AC;--glass:rgba(255,255,255,.11);--sel:rgba(255,255,255,.15)}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:1.5;word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent}
@@ -420,6 +420,91 @@ a.row:focus-visible{outline-offset:-2px}
   .pgrid .tabs{margin-top:0}
   .stopw.m{display:none}
   .stopw.w{display:block;margin:0 0 14px}
+}
+/* 2차(11-18) 재생 무대: 폰 · PC 모두 화면 전체 딥그린(위 #123224 → 38% #0D241A → #09160F · 영상 칸만 검정 · PC 오른쪽 밝은 칸 없음)
+   글 #F3F1EA / #B9C2BB / #9DA9A0 · 강조 #8FD0AE · 주황 #F0B26B · 카드 .07 · 유리 단추 .11 · 고른 칸 .15 · 선 .10 · 큰 단추 = 크림(#F3F1EA · 딥그린 글) */
+html.stg body{background-color:#09160F;background-image:linear-gradient(180deg,#123224 0%,#0D241A 38%,#09160F 100%);background-repeat:no-repeat;background-size:100% 100vh}
+html.stg .ptop .pt b{font-size:17px;font-weight:600;line-height:22px}
+html.stg .ptop .pt span{font-size:13px;color:var(--ink2)}
+html.stg .backb{font-size:17px;color:var(--ink)}
+html.stg .ptop .pdfb{min-height:44px;height:44px;padding:0 16px;border:0;border-radius:22px;background:var(--glass);color:var(--ink);font-size:15px;font-weight:600}
+html.stg .ptop .pdfb svg{color:var(--ink)}
+html.stg .band .bt{top:10px;height:4px;border-radius:2px}
+html.stg .band button{color:var(--ink3);font-weight:400}
+html.stg .band button.on .bl{color:var(--ink);font-weight:600}
+html.stg .nowl .ch{font-size:17px;font-weight:600}
+html.stg .resume{font-size:15px;line-height:20px}
+html.stg .resume button{min-height:44px;padding:0 4px;font-weight:600;color:var(--acc);text-decoration:none}
+html.stg .ctl{gap:10px;margin:12px 0 0}
+html.stg .b10{width:auto;gap:6px;padding:0 16px;border:0;border-radius:22px;background:var(--glass);font-size:15px;font-weight:600}
+html.stg .spd{border-radius:12px;background:var(--card);box-shadow:none}
+html.stg .spd button{padding:3px;border-radius:12px;font-size:15px;color:var(--ink2)}
+html.stg .spd button.on{background-color:var(--sel);color:var(--ink);font-weight:600}
+html.stg .tabs{margin:16px 0 0;background:var(--card);box-shadow:none}
+html.stg .tabs button{padding:3px;font-size:15px;font-weight:600;color:var(--ink2)}
+html.stg .tabs button.on{background-color:var(--sel);color:var(--ink);font-weight:600}
+html.stg .paper{padding:12px 0 4px;color:var(--ink2)}
+html.stg .paper svg{color:var(--ink2)}
+html.stg .toc li{position:relative}
+html.stg .toc li + li:before{content:"";position:absolute;left:44px;right:0;top:0;border-top:1px solid var(--line)}
+html.stg .toc li.fd + li:not(.fd):before,html.stg .toc li[hidden] + li:before{left:44px}
+html.stg .toc button{grid-template-columns:20px minmax(0,1fr) auto;min-height:52px;padding:10px 12px}
+html.stg .toc.nodot button{grid-template-columns:minmax(0,1fr) auto}
+html.stg .toc button.cur{background:var(--card)}
+html.stg .toc li:has(> button.cur):before,html.stg .toc li:has(> button.cur) + li:before{display:none}
+html.stg .toc .tt{font-size:15px;line-height:20px}
+html.stg .toc button.cur .tt{font-weight:600}
+html.stg .toc .now{display:block;margin:2px 0 0;font-size:13px;line-height:18px;font-weight:600;color:var(--acc)}
+html.stg .toc .tm{color:var(--ink3)}
+html.stg .dot{width:20px;height:20px;border:2px solid var(--ink3)}
+html.stg .dot.half{border-color:var(--acc);background:linear-gradient(90deg,var(--acc) 50%,transparent 50%)}
+html.stg .dot.full{border-color:var(--acc);background:var(--acc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.6 10.3l2.9 2.9 5.9-6.1' fill='none' stroke='%230D241A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px 16px no-repeat}
+html.stg .toc button.cur .dot{border-color:var(--acc)}
+/* 다 본 지문 접기(맨 앞부터 이어서 다 본 지문 둘 이상 · 지금 보는 지문 앞까지): «✓ 다 본 지문 3 ›» 한 줄 · 누르면 펼침(목차 줄은 그대로 · hidden 만 풂) */
+.fold{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;margin:0;padding:10px 12px;border:0;border-radius:12px;background:none;color:var(--ink2);font-size:15px;line-height:20px;text-align:left}
+.fold .dot{flex:0 0 auto}
+.fold .fl{flex:1 1 auto;min-width:0}
+.fold .fchev{flex:0 0 auto;font-size:20px;line-height:1;color:var(--ink3);transition:transform .2s}
+.fold[aria-expanded="true"] .fchev{transform:rotate(90deg)}
+.fold + .toc > li:first-child:before{content:"";position:absolute;left:44px;right:0;top:0;border-top:1px solid var(--line)}
+html.stg .stopw{padding:16px;border:0;border-radius:16px;background:rgba(255,255,255,.1)}
+html.stg .stopw .sq{gap:10px;font-size:17px;font-weight:600;line-height:22px}
+html.stg .stopw .sq svg{color:var(--acc)}
+html.stg .stopw .sb{gap:10px;margin:14px 0 0}
+html.stg .stopw .sb button{border-radius:22px;font-size:17px;font-weight:600}
+html.stg .stopw .lt{border:0;background:var(--glass);color:var(--ink)}
+html.stg .endc{border:0;background:var(--card)}
+html.stg .endc .et{font-size:17px;font-weight:600;line-height:22px}
+html.stg .btn-fill{border-radius:22px}
+html.stg .qf{padding:14px;border:0;border-radius:16px;background:var(--card)}
+html.stg .kc,html.stg .scn{border:0;border-radius:22px;background:var(--glass);color:var(--ink);font-size:15px;font-weight:600}
+html.stg .kc.on{background:rgba(255,255,255,.22);color:var(--ink);font-weight:600}
+html.stg .scn.off{border:1px dashed var(--sl);background:none;color:var(--ink2)}
+html.stg .qf textarea,html.stg .rf textarea{border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(0,0,0,.18);font-size:17px;line-height:24px}
+html.stg .qf textarea:focus,html.stg .rf textarea:focus{outline:2px solid var(--acc);outline-offset:0;border-color:transparent;box-shadow:none}
+html.stg .qf textarea::placeholder,html.stg .rf textarea::placeholder{color:var(--ink3)}
+html.stg .cnt{color:var(--ink3)}
+/* «선생님만 보기» 줄: 이름 먼저 · 스위치 51×31 오른쪽 끝(켜면 #3E9B6C) · 그 아래 «올리기» 오른쪽 */
+html.stg .qrow{flex-wrap:wrap;justify-content:flex-end;gap:10px}
+html.stg .chk{flex:1 0 100%;justify-content:space-between;min-height:52px;margin:0;padding:0 2px 0 4px;border-top:1px solid var(--line);font-size:15px;line-height:20px;color:var(--ink)}
+html.stg .chk input{left:auto;right:2px;width:51px;height:31px;margin:-15.5px 0 0}
+html.stg .chk i{order:2;width:51px;height:31px;border-radius:16px;background:rgba(255,255,255,.2)}
+html.stg .chk i:after{width:27px;height:27px;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+html.stg .chk input:checked + i{background:#3E9B6C}
+html.stg .chk input:checked + i:after{background:#FFFFFF;transform:translateX(20px)}
+html.stg .chk input:focus-visible + i{outline:2px solid var(--acc)}
+html.stg .qrow .go{min-height:44px;padding:0 22px;border-radius:22px;font-size:17px;font-weight:600}
+html.stg .qnote{border:0;border-radius:16px;background:var(--card);font-size:15px}
+html.stg .qnote a{font-weight:600;color:var(--acc)}
+html.stg .q{padding:14px 16px;border:0;border-radius:16px;background:var(--card)}
+html.stg .qh .who{font-size:15px;font-weight:600}
+html.stg .pill{font-weight:600}
+html.stg .q .scb{border:0;background:var(--glass);color:var(--acc);font-weight:600}
+html.stg .acts .ask{font-weight:600}
+html.stg .ky{background:var(--glass);color:var(--ink)}
+@media (min-width:1100px){
+  html.stg .pch{border-bottom-color:var(--line)}
+  html.stg .pgrid .vid{border-radius:12px}
 }
 /* S1 단어 · 구문 · 문법(11-17 · 여덟 기능 결론안 · lead2_design S1~S8 · G V3~V7): 목록 묶음(맨 위 카드 아래) · 공부 화면(가운데 480 · 폰 먼저)
    굵기 400/600/700(2차 · 13px 이하는 600까지) · 가장 작은 글 12 · 누르는 곳 44 이상 · 양쪽 정렬 문단에 text-wrap:balance 없음 */
@@ -1270,7 +1355,7 @@ window.__lecStart = function () {
   function stage(on) {
     var r = document.documentElement, m = document.querySelector('meta[name="theme-color"]:not([media])');
     r.className = (' ' + r.className + ' ').replace(/ stg /g, ' ').replace(/^\s+|\s+$/g, '') + (on ? ' stg' : '');
-    if (m) m.setAttribute('content', on ? '#0A1F17' : '#FAF6EC');
+    if (m) m.setAttribute('content', on ? '#123224' : '#FAF6EC'); /* 2차: 무대 맨 위 색 */
   }
 
   /* ------------------------------------------------------------ 로그인 */
@@ -4257,13 +4342,19 @@ window.__lecStart = function () {
       marks.push(v >= 0.9 ? 'full' : (v >= 0.1 ? 'half' : ''));
     }
     var tags = paperTags();
-    var sig = cur + '|' + marks.join(',') + '|' + T.rec + '|' + tags.join(',') + '|' + T.paperTx;
+    var sig = cur + '|' + marks.join(',') + '|' + T.rec + '|' + tags.join(',') + '|' + T.paperTx + '|' + (T.foldOpen === true);
     if (!force && sig === T.tocSig) return;
     T.tocSig = sig;
     /* 결론안 K 목차 줄: 점(본 곳 채움 · 지금은 금 테두리) · 제목(보통 굵기) · 시작 시각 · 지금 줄만 바탕 + 굵게 + «보는 중» */
-    var h = pp + '<ul class="toc' + (T.rec ? '' : ' nodot') + '">';
+    /* 2차(11-18) 다 본 지문 접기: 맨 앞부터 이어서 다 본 지문이 둘 이상이고 지금 보는 지문 앞에서 끝나면 «✓ 다 본 지문 N ›» 한 줄(누르면 펼침 · 줄은 DOM 에 그대로) */
+    var fk = 0;
+    if (T.rec) { while (fk < ch.length && fk < cur && marks[fk] === 'full') fk += 1; }
+    if (fk < 2) fk = 0;
+    var fo = fk > 0 && T.foldOpen === true;
+    var h = pp + (fk ? '<button type="button" class="fold" data-act="fold" aria-expanded="' + (fo ? 'true' : 'false') + '"><span class="dot full" aria-hidden="true"></span>' +
+      '<span class="fl">다 본 지문 ' + fk + '</span><span class="fchev" aria-hidden="true">\u203A</span></button>' : '') + '<ul class="toc' + (T.rec ? '' : ' nodot') + '">';
     for (i = 0; i < ch.length; i += 1) {
-      h += '<li><button type="button" data-act="seek" data-t="' + (+ch[i].t || 0) + '"' + (i === cur ? ' class="cur" aria-current="true"' : '') + '>' +
+      h += '<li' + (i < fk ? ' class="fd"' + (fo ? '' : ' hidden') : '') + '><button type="button" data-act="seek" data-t="' + (+ch[i].t || 0) + '"' + (i === cur ? ' class="cur" aria-current="true"' : '') + '>' +
         (T.rec ? '<span class="dot ' + marks[i] + '"></span>' : '') +
         '<span class="tt">' + esc(ch[i].title) + (i === cur ? '<small class="now">보는 중</small>' : '') +
         (tags[i] ? '<span class="tag wb">' + esc(tags[i]) + '</span>' : '') + '</span>' +
@@ -4358,7 +4449,7 @@ window.__lecStart = function () {
         '<button type="button" class="kc' + (S.q.kind === 'tech' ? ' on' : '') + '" data-act="kind" data-k="tech">영상·진도 문제</button></div>' +
         '<div class="qta"><textarea id="qBody" maxlength="2000" placeholder="어디가 / 무엇이 / 내 생각은" aria-label="질문"></textarea>' +
         '<span class="cnt" id="qCnt">0/1000</span></div>' +
-        '<div class="qrow"><label class="chk"><input type="checkbox" role="switch" id="qPriv"' + (S.q.priv ? ' checked' : '') + '><i aria-hidden="true"></i>선생님만 보기</label>' +
+        '<div class="qrow"><label class="chk"><span class="cl">선생님만 보기</span><input type="checkbox" role="switch" id="qPriv"' + (S.q.priv ? ' checked' : '') + '><i aria-hidden="true"></i></label>' +
         '<button type="button" class="go" id="qPost" data-act="post">올리기</button></div>' +
         '<p class="err" id="qErr" role="alert"></p></div>';
     } else {
@@ -4657,6 +4748,10 @@ window.__lecStart = function () {
       if (tb === 'toc') drawToc(true); else openQna();
     } else if (act === 'seek') {
       seekL(+attr(el, 'data-t'));
+    } else if (act === 'fold') {
+      if (!T) return;
+      T.foldOpen = T.foldOpen !== true;
+      drawToc(true);
     } else if (act === 'kind') {
       if (!S.q) return;
       S.q.kind = attr(el, 'data-k') === 'tech' ? 'tech' : 'content';
