@@ -1054,6 +1054,20 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   .k2 .stc .stbar>.chips .chip.on{background:#FFFFFF;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.12)}
   .k2 .stc .stbar>.chips .chip .cnt,.k2 .stc .stbar>.chips .chip.on .cnt{color:var(--t2);font-weight:400}
 }
+/* ⑥ 질문: 상자 없이 머리카락 선 · 큰 제목은 쪽 머리(옛 «질문» 제목은 화면 읽기만) · 거름 = 나뉜 단추 · 답 칸 크림 면 */
+.k2 .qn article.th{margin:0;padding:18px 2px;background:transparent;border:0;border-bottom:1px solid var(--sep);border-radius:0;box-shadow:none}
+.k2 .qn article.th.focus{background:var(--acc-tint);border-radius:10px;padding:18px 12px}
+.k2 .qn .thh{gap:4px 8px}
+.k2 .qn .qw{color:var(--t2);font-size:13px}
+.k2 .qn .pb{margin-top:8px;font-size:15px;line-height:22px;color:var(--t1)}
+.k2 .qn .ans textarea{border:1px solid var(--line);border-radius:10px;background:var(--group)}
+.k2 .qn .post{background:var(--group)}
+@media (min-width:761px){
+  .k2 .qn>.chips{display:inline-flex;flex-wrap:wrap;gap:2px;margin:0 0 6px;padding:2px;border-radius:9px;background:var(--fill2)}
+  .k2 .qn>.chips .chip{min-height:28px;border:0;border-radius:7px;background:transparent;box-shadow:none;color:var(--t1);font-weight:600}
+  .k2 .qn>.chips .chip.on{background:#FFFFFF;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .k2 .qn>.chips .chip .cnt,.k2 .qn>.chips .chip.on .cnt{color:var(--t2);font-weight:400}
+}
 </style>
 </head>
 <body>
@@ -2304,7 +2318,7 @@ window.__lecAdminStart = function () {
       return '<button type="button" class="chip' + (f === k ? ' on' : '') + '" aria-pressed="' + (f === k ? 'true' : 'false') + '" data-act="qf" data-v="' + k + '">' +
         label + ' <span class="cnt">' + n + '</span></button>';
     }
-    h = '<section class="card"><div class="bar"><h2>질문</h2></div><div class="chips" role="group" aria-label="질문 거르기">' +
+    h = '<section class="card qn"><div class="bar sr"><h2>질문</h2></div><div class="chips" role="group" aria-label="질문 거르기">' +
       chip('all', '전체', c.all) + chip('wait', '답변 대기', c.wait) + chip('content', '내용', c.content) + chip('tech', '영상·진도 문제', c.tech);
     if (S.qLec) {
       lt = D.lmap[S.qLec];
@@ -5268,6 +5282,17 @@ window.__lecAdminStart = function () {
     return '하지 못했어요. 잠시 뒤 다시 해 주세요';
   }
   /* 선생님 함수 부르기: 끝나면 모두 다시 불러옴 */
+  /* 2차(⑥): 화면에서 이 질문 아래에 있는 첫 «답변 대기» 질문(없으면 '') */
+  function ansNext(q) {
+    var a = document.querySelectorAll('#main article.th[data-th]'), w = {}, i, past = false, id;
+    for (i = 0; i < D.th.length; i += 1) { if (D.th[i].k === 'wait') w[D.th[i].root.id] = 1; }
+    for (i = 0; i < a.length; i += 1) {
+      id = a[i].getAttribute('data-th');
+      if (past && w[id] && id !== q) return id;
+      if (id === q) past = true;
+    }
+    return '';
+  }
   function act(key, btn, p, okMsg, after) {
     if (S.busy[key]) return;
     S.busy[key] = 1;
@@ -5580,7 +5605,12 @@ window.__lecAdminStart = function () {
         r = null;
         for (i = 0; i < D.th.length; i += 1) { if (D.th[i].root.id === q) r = D.th[i].root; }
         if (!r) break;
-        act('ans' + q, el, DA.answer(r, t), '답을 달았어요', function () { delete S.inputs['ans:' + q]; });
+        k = ansNext(q);   /* 2차(⑥): 답을 달면 아래 «답변 대기» 질문 답 칸으로(손을 떼지 않고 이어서) */
+        act('ans' + q, el, DA.answer(r, t), k ? '답을 달았어요 · 다음 질문으로' : '답을 달았어요', function () {
+          delete S.inputs['ans:' + q];
+          var e = k ? $('ans-' + k) : null;
+          if (e) { try { e.focus(); e.scrollIntoView({ block: 'center' }); } catch (e2) {} }
+        });
         break;
       case 'qdelAsk': S.ask.qdel = q; render(); break;
       case 'qdelNo': S.ask.qdel = null; render(); break;
