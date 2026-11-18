@@ -2732,16 +2732,30 @@
 
   /* ------------------------------------------------------------- 소리 · 녹음 꼴 */
 
-  /* 소리: en-US 먼저 → en-* → null(소리 단추 숨김) · 말 빠르기 0.9 는 화면 */
+  /* 소리(11-18 점수로 고름): 영어 목소리만 · en-US +40 · 다른 en +20 · 좋은 이름 +15 · 폰 안 목소리 +5 · 기본 +3 ·
+     장난 · 기계 목소리(아이폰 · 맥 목록에 en-US 로 들어 있음) -100(다른 영어 목소리가 하나도 없을 때만 걸림) · 같으면 목록 차례 · 없으면 null(소리 단추 숨김)
+     말 빠르기는 화면(느리게 0.7 · 보통 0.9 · 빠르게 1.0) */
+  var SAY_JOKE = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|pipe organ|superstar|trinoids|whisper|wobble|zarvox|deranged|hysterical|princess|ralph|fred|junior|kathy|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley)\b/i;
+  var SAY_GOOD = /\b(google|samantha|enhanced|premium|natural|neural|siri|ava|allison|aaron|nicky|susan|zoe|evan|nathan|tom|joelle|noelle)\b/i;
+  function sayScore(v) {
+    var lang = str(v && v.lang), nm = str(v && v.name), s;
+    if (!v || !/^en/i.test(lang)) return null;
+    s = /^en[-_]us/i.test(lang) ? 40 : 20;
+    if (SAY_GOOD.test(nm)) s += 15;
+    if (v.localService) s += 5;
+    if (v['default']) s += 3;
+    if (SAY_JOKE.test(nm)) s -= 100;
+    return s;
+  }
   function sayVoice(voices) {
-    var en = [], i, v, n;
+    var best = null, bs = 0, i, s, n;
     n = voices && typeof voices.length === 'number' ? voices.length : 0;
     for (i = 0; i < n; i += 1) {
-      v = voices[i];
-      if (v && /^en/i.test(str(v.lang))) en.push(v);
+      s = sayScore(voices[i]);
+      if (s === null) continue;
+      if (best === null || s > bs) { best = voices[i]; bs = s; }
     }
-    for (i = 0; i < en.length; i += 1) { if (/^en[-_]us/i.test(str(en[i].lang))) return en[i]; }
-    return en.length ? en[0] : null;
+    return best;
   }
   /* 녹음 꼴: webm(opus) → mp4 → ''(기본) */
   function recMime(MR) {
@@ -2756,6 +2770,328 @@
   function recBase(mime) {
     var m = str(mime).split(';')[0].replace(/\s+/g, '').toLowerCase();
     return REC_TYPES.indexOf(m) >= 0 ? m : '';
+  }
+
+  /* ------------------------------------------------------------- 말하기 확인(11-18 · 폰 안 음성 인식 · 돈 0 · 우리 셈)
+     spkCan(env) = 'ok' 또는 안 되는 까닭 · spkWords(글) = 맞춘 낱말 · spkScore(목표, 들린 후보들, 몇 번째) = 낱말마다 맞음/빠짐 */
+
+  /* env = {api(SpeechRecognition 있음) · pv(미리 보기) · ua · platform · touch(maxTouchPoints) · standalone(홈 화면 앱) · off(이 탭에서 실패함)}
+     아이폰 · 아이패드 홈 화면 앱은 애플이 음성 인식을 아직 안 엶(WebKit bug 225298) · 앱 안 브라우저(카톡 · 네이버 · 라인 · 인스타 · 페북 · 다음 · 에브리타임 · 안드로이드 wv) 안 씀 */
+  function spkCan(e) {
+    var ua, ios;
+    e = isObj(e) ? e : {};
+    if (!e.api) return 'api';
+    if (e.pv) return 'preview';
+    ua = str(e.ua);
+    if (/KAKAOTALK|NAVER\(inapp|Line\/|Instagram|FBAN|FBAV|DaumApps|everytimeApp/i.test(ua) || (/Android/i.test(ua) && /; wv\)/.test(ua))) return 'inapp';
+    ios = /iPhone|iPad|iPod/.test(ua) || (str(e.platform) === 'MacIntel' && (+e.touch || 0) > 1);
+    if (ios && e.standalone) return 'pwa';
+    if (e.off) return 'off';
+    return 'ok';
+  }
+  var SPK_ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen',
+                  'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  var SPK_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  var SPK_ORD = { one: 'first', two: 'second', three: 'third', five: 'fifth', eight: 'eighth', nine: 'ninth', twelve: 'twelfth', twenty: 'twentieth', thirty: 'thirtieth' };
+  var SPK_IS = { it: 1, he: 1, she: 1, that: 1, what: 1, there: 1, here: 1, who: 1, where: 1, how: 1 };
+  /* 같은 소리 묶음(묶음 첫 낱말로 맞춤) */
+  var SPK_SAME = 'to too two|for four|there their|hear here|know no|by buy bye|right write|new knew|one won|see sea|be bee|i eye|our hour|wear where|' +
+    'weather whether|whole hole|peace piece|week weak|meet meat|would wood|which witch|ate eight|made maid|mail male|flower flour|sun son|blue blew|' +
+    'threw through|pair pear|sale sail|tail tale|road rode|allowed aloud|' +
+    'steal steel|role roll|dear deer|plain plane|wait weight|waste waist|night knight|cell sell|fair fare|hair hare|heal heel|higher hire|' +
+    'peak peek|principal principle|stair stare';
+  var SPK_HM = {};
+  (function () {
+    var g = SPK_SAME.split('|'), i, j, a;
+    for (i = 0; i < g.length; i += 1) { a = g[i].split(' '); for (j = 0; j < a.length; j += 1) SPK_HM[a[j]] = a[0]; }
+  })();
+  /* 0~999 → 낱말 */
+  function spkNum(n) {
+    var o = [], h = Math.floor(n / 100), r = n % 100;
+    if (n === 0) return ['zero'];
+    if (h) o.push(SPK_ONES[h], 'hundred');
+    if (r >= 20) { o.push(SPK_TENS[Math.floor(r / 10)]); if (r % 10) o.push(SPK_ONES[r % 10]); } else if (r > 0) o.push(SPK_ONES[r]);
+    return o;
+  }
+  /* 1st~31st → 낱말 */
+  function spkOrd(n) {
+    var o = spkNum(n), l = o[o.length - 1];
+    o[o.length - 1] = has(SPK_ORD, l) ? SPK_ORD[l] : l + 'th';
+    return o;
+  }
+  /* 영국 철자 → 미국 철자(양쪽에 똑같이 · 검수 A3): -our → -or(5자 이상 · colour · neighbourhood · favourite) ·
+     -tre → -ter(centre · theatre · metre · litre) · grey → gray · -ise → -ize(7자 이상 · realise · organisation · apologising) */
+  var SPK_OUR_NO = { flour: 1, scour: 1, devour: 1, detour: 1, contour: 1, velour: 1, amour: 1, paramour: 1, troubadour: 1 };
+  var SPK_ISE_NO = { otherwise: 1, likewise: 1, clockwise: 1, exercise: 1, surprise: 1, promise: 1, premise: 1, compromise: 1, enterprise: 1,
+                     expertise: 1, franchise: 1, merchandise: 1, paradise: 1, precise: 1, concise: 1, despise: 1, comprise: 1, disguise: 1,
+                     chastise: 1, treatise: 1, tortoise: 1, porpoise: 1, turquoise: 1, advertise: 1, supervise: 1, televise: 1, improvise: 1 };
+  function spkUs(w) {
+    var m = /^([a-z]{2,})our(s|ed|ing|er|ers|ite|ites|able|ably|ful|less|hood|hoods|ist|ists)?$/.exec(w);
+    if (m && (m[1] + 'our').length >= 5 && !has(SPK_OUR_NO, m[1] + 'our')) return m[1] + 'or' + (m[2] || '');
+    m = /^([a-z]{2,})tre(s|d)?$/.exec(w);
+    if (m && (m[1] + 'tre').length >= 5) return m[1] + 'ter' + (m[2] === 'd' ? 'ed' : (m[2] || ''));
+    m = /^grey(s|er|est|ish|ness)?$/.exec(w);
+    if (m) return 'gray' + (m[1] || '');
+    m = /^([a-z]{3,})is(e|ed|es|ing|er|ers|ation|ations)$/.exec(w);
+    if (m && (m[1] + 'ise').length >= 7 && !has(SPK_ISE_NO, m[1] + 'ise')) return m[1] + 'iz' + m[2];
+    return w;
+  }
+  /* 소유 's(it's · he's 같은 줄임말 말고): X's = X · Xs(friend's ↔ friends ↔ friend · 검수 A3) · 아포스트로피 없는 복수는 그대로 다름 */
+  function spkPos(t) {
+    var a = t.split('|'), o = t, i;
+    for (i = 0; i < a.length; i += 1) { if (a[i] && o.split('|').indexOf(a[i] + 's') < 0) o += '|' + a[i] + 's'; }
+    return o;
+  }
+  /* 조각 하나(소문자 · a-z 0-9 ') → 낱말들 · 대안은 «|»(’d = would|had · it’s = is|has · Tom’s = tom|toms) */
+  function spkOne(w) {
+    var m, b;
+    w = str(w).replace(/^'+/g, '');
+    if (/[a-z0-9]s'+$/.test(w)) w = w.replace(/s'+$/, "'s"); /* 복수 소유 students' = student's */
+    w = w.replace(/'+$/g, '');
+    if (!w) return [];
+    if (w === "can't" || w === 'cannot') return ['can', 'not'];
+    if (w === "won't") return ['will', 'not'];
+    if (w === "shan't") return ['shall', 'not'];
+    if (w === "let's") return ['let', 'us'];
+    if (w === 'ok') return ['okay']; /* OK · O.K. = okay */
+    if (/n't$/.test(w) && w.length > 3) return spkOne(w.slice(0, -3)).concat(['not']);
+    m = /^(.+)'(re|ve|ll|m|d|s)$/.exec(w);
+    if (m) {
+      b = spkOne(m[1]);
+      if (m[2] === 're') return b.concat(['are']);
+      if (m[2] === 've') return b.concat(['have']);
+      if (m[2] === 'll') return b.concat(['will']);
+      if (m[2] === 'm') return b.concat(['am']);
+      if (m[2] === 'd') return b.concat(['would|had']);
+      if (has(SPK_IS, m[1])) return b.concat(['is|has']);
+      if (b.length) b[b.length - 1] = spkPos(b[b.length - 1]); /* 그 밖 's = 소유 · X|Xs */
+      return b;
+    }
+    w = w.replace(/'/g, '');
+    if (!w) return [];
+    m = /^(\d{1,2})(st|nd|rd|th)$/.exec(w);
+    if (m && +m[1] >= 1 && +m[1] <= 31) return spkOrd(+m[1]);
+    if (/^\d{1,3}$/.test(w)) return spkNum(+w);
+    return [spkUs(w)];
+  }
+  function spkCanon(t) {
+    var a = t.split('|'), i;
+    for (i = 0; i < a.length; i += 1) { if (has(SPK_HM, a[i])) a[i] = SPK_HM[a[i]]; }
+    return a.join('|');
+  }
+  /* 겉 낱말 하나 → 맞춘 낱말들: NFC · 둥근 따옴표 → ' · 소문자 · 1,000 → 1000 · 점 약어(U.S. · a.m.) → 붙임 · 한 글자 붙임표(e-mail · T-shirt) → 붙임 ·
+     % → percent · «/» 와 붙임표 · 줄표 → 빈칸 · a-z 0-9 ' 빈칸 밖 지움 */
+  function spkToks(s) {
+    var o = [], a, i, j, b;
+    s = nfc(s).replace(/[‘’ʼ′`´]/g, "'").toLowerCase()
+      .replace(/(\d),(?=\d{3}(?!\d))/g, '$1')
+      .replace(/(^|[^a-z0-9'])((?:[a-z]\.){2,})/g, function (x, p, q) { return p + q.replace(/\./g, ''); })
+      .replace(/(^|[^a-z0-9'])([a-z])[\-‐‑](?=[a-z]{2})/g, '$1$2')
+      .replace(/%/g, ' percent ').replace(/[\/\-‐-―−]/g, ' ').replace(/[^a-z0-9' ]+/g, ' ');
+    a = s.split(' ');
+    for (i = 0; i < a.length; i += 1) {
+      if (!a[i]) continue;
+      b = spkOne(a[i]);
+      for (j = 0; j < b.length; j += 1) { if (b[j]) o.push(spkCanon(b[j])); }
+    }
+    return o;
+  }
+  /* 글 → 겉 낱말(화면에 보일 것 · «/» 뺀 빈칸 나눔) + 맞춘 낱말마다 어느 겉 낱말인지 */
+  function spkSplit(text) {
+    var words = sayText(text) ? sayText(text).split(' ') : [], toks = [], i, j, t;
+    for (i = 0; i < words.length; i += 1) {
+      t = spkToks(words[i]);
+      for (j = 0; j < t.length; j += 1) toks.push({ w: t[j], s: i });
+    }
+    return { words: words, toks: toks };
+  }
+  function spkWords(text) {
+    var a = str(text).replace(/\s+/g, ' ').split(' '), o = [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i]) o = o.concat(spkToks(a[i])); }
+    return o;
+  }
+  /* 편집 거리(cap 넘으면 cap+1) */
+  function spkLev(a, b, cap) {
+    var n = a.length, m = b.length, p = [], q, i, j, lo, c;
+    if (Math.abs(n - m) > cap) return cap + 1;
+    for (j = 0; j <= m; j += 1) p.push(j);
+    for (i = 1; i <= n; i += 1) {
+      q = [i]; lo = i;
+      for (j = 1; j <= m; j += 1) {
+        c = Math.min(p[j] + 1, q[j - 1] + 1, p[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+        q.push(c);
+        if (c < lo) lo = c;
+      }
+      if (lo > cap) return cap + 1;
+      p = q;
+    }
+    return p[m];
+  }
+  /* 끝 -s · -es · -ed · -d 만 다른 꼴(walk · walks · student · students · remember · remembered)은 문법 차이 = 오타로 봐주지 않음 */
+  function spkStems(w) {
+    var o = [w];
+    if (/s$/.test(w)) o.push(w.slice(0, -1));
+    if (/es$/.test(w)) o.push(w.slice(0, -2));
+    if (/ed$/.test(w)) o.push(w.slice(0, -2));
+    if (/d$/.test(w)) o.push(w.slice(0, -1));
+    return o;
+  }
+  function spkForm(p, q) {
+    var a = spkStems(p), b = spkStems(q), i, j;
+    for (i = 0; i < a.length; i += 1) { for (j = 0; j < b.length; j += 1) { if (a[i] && a[i] === b[j]) return true; } }
+    return false;
+  }
+  /* 낱말 같음: 같음 · 같은 소리(이미 맞춤) · 대안 하나 · 둘 다 6자 이상이고 편집 거리 1 이하 · 둘 다 9자 이상이고 2 이하
+     (숫자 든 낱말 · 끝 -s -es -ed -d 만 다른 꼴은 오타 봐주기 없음 · 5자 이하는 같아야 함: come · came · than · then) */
+  /* 이름(검수 A3 · A4): 첫 글자가 같고 로마자 oo → u · ee → i 로 맞춘 뒤 편집 거리로 셈
+     nm 1(문장 가운데 대문자 낱말) = 2 이하(짧은 쪽이 3자 이하면 1 이하 · Yeonwoo ↔ Yonu) · nm 2(문장 첫 이름 후보) = 1 이하만(Minsoo ↔ Minsu · Jiwoo ↔ Jiu · Music ↔ Magic 은 다름)
+     끝 -s -es -ed -d 만 다른 꼴 · 숫자 든 낱말은 이름이어도 봐주지 않음 */
+  function spkNmFold(w) { return w.replace(/oo/g, 'u').replace(/ee/g, 'i'); }
+  function spkNameEq(p, q, nm) {
+    var a, b, d;
+    if (!p || !q || p.charAt(0) !== q.charAt(0) || /\d/.test(p + q) || spkForm(p, q)) return false;
+    a = spkNmFold(p); b = spkNmFold(q);
+    d = spkLev(a, b, 2);
+    if (nm === 2) return d <= 1;
+    return d <= 1 || (d <= 2 && Math.min(a.length, b.length) >= 4);
+  }
+  /* nm = 0 이름 아님 · 1 문장 가운데 이름 · 2 문장 첫 이름 후보(spkNames) */
+  function spkEq(a, b, nm) {
+    var x = a.split('|'), y = b.split('|'), i, j, p, q, d;
+    for (i = 0; i < x.length; i += 1) {
+      for (j = 0; j < y.length; j += 1) {
+        p = x[i]; q = y[j];
+        if (p === q) return true;
+        if (p.length >= 6 && q.length >= 6 && !/\d/.test(p + q) && !spkForm(p, q)) {
+          d = spkLev(p, q, 2);
+          if (d <= 1 || (d <= 2 && p.length >= 9 && q.length >= 9)) return true;
+        }
+        if (nm && spkNameEq(p, q, nm)) return true;
+      }
+    }
+    return false;
+  }
+  /* 문장 첫 낱말로 흔한 말(이 말로 시작하면 이름으로 안 봄 · 문장 가운데 대문자 낱말은 목록 상관없이 이름(1)) */
+  var SPK_LEAD = {};
+  (function () {
+    var a = ('the a an i you he she it we they this that these those there here my your his her its our their me him us them ' +
+      'what when where why how who whom whose which if because after before as while although though since so but and or nor yet ' +
+      'in on at for with to from by of about into onto over under up down out off through during without within between among around ' +
+      'across along against toward towards behind beyond near like unlike than until unless whether ' +
+      'many most some all every each any both either neither no not none one two three four five ten ' +
+      'today yesterday tomorrow tonight last next first second third then now also however therefore instead still even just only once ' +
+      'soon later finally again always never often sometimes usually maybe perhaps actually yes yeah oh well wow hey hi hello thanks thank sorry ' +
+      'please let do does did can could will would should shall may might must have has had is are was were be been being am ' +
+      'go come give take look listen read write make put keep tell ask try think open close turn stop wait walk run sit stand get see say ' +
+      'find help bring show call check use choose answer follow imagine remember know want need love such other another more less few much ' +
+      'very too everyone everybody everything someone somebody something anyone anybody anything nobody nothing people dear').split(' '), i;
+    for (i = 0; i < a.length; i += 1) SPK_LEAD[a[i]] = 1;
+  })();
+  /* 겉 낱말 → 이름인지: 0 아님 · 1 문장 가운데 대문자 낱말 · 2 문장 첫 이름 후보(검수 A4)
+     원래 글에서 대문자로 시작 · I 와 다 대문자인 말(TV · USA) 빼고 · 문장 첫 낱말은 흔한 첫 낱말이 아니고 끝이 s 가 아닐 때만 2(Cats · Dogs · James = 0) */
+  function spkNames(words) {
+    var o = [], i, w, c, st, k, k0;
+    for (i = 0; i < words.length; i += 1) {
+      w = nfc(words[i]);
+      c = w.replace(/^[^A-Za-z]+/, '');
+      st = i === 0 || /[.?!:]['"’”)\]]*$/.test(nfc(words[i - 1])) || /^["“‘']/.test(w);
+      if (!/^[A-Z]/.test(c) || /^I(?![A-Za-z])/.test(c) || !/[a-z]/.test(c)) { o.push(0); continue; }
+      if (!st) { o.push(1); continue; }
+      k0 = c.replace(/[‘’ʼ′`´]/g, "'").toLowerCase().replace(/[^a-z'].*$/, '');
+      k = k0 ? (spkOne(k0)[0] || '').split('|')[0] : '';
+      o.push(!k || has(SPK_LEAD, k) || /s$/.test(k) || /s'+$/.test(k0) ? 0 : 2); /* Cats' 같은 복수 소유도 0 */
+    }
+    return o;
+  }
+  /* 맞춤(LCS · 맞은 수가 가장 많게) → 목표 낱말마다 1/0 · nm = 목표 낱말마다 이름 표시(0 · 1 · 2 · spkNames) */
+  function spkAlign(tw, hw, nm) {
+    var n = tw.length, m = hw.length, T = [], i, j, mk = [], hit = 0, e;
+    nm = nm || [];
+    for (i = 0; i <= n; i += 1) { T.push([]); for (j = 0; j <= m; j += 1) T[i].push(0); }
+    for (i = n - 1; i >= 0; i -= 1) {
+      for (j = m - 1; j >= 0; j -= 1) {
+        T[i][j] = Math.max(T[i + 1][j], T[i][j + 1], spkEq(tw[i], hw[j], nm[i]) ? T[i + 1][j + 1] + 1 : 0);
+      }
+    }
+    for (i = 0; i < n; i += 1) mk.push(0);
+    i = 0; j = 0;
+    while (i < n && j < m) {
+      e = spkEq(tw[i], hw[j], nm[i]);
+      if (e && T[i][j] === T[i + 1][j + 1] + 1) { mk[i] = 1; hit += 1; i += 1; j += 1; }
+      else if (T[i + 1][j] >= T[i][j + 1]) i += 1;
+      else j += 1;
+    }
+    return { mk: mk, hit: hit };
+  }
+  /* 통과 기준: 낱말 3개 이하면 전부 · 그 위는 80% 올림 · 3번째 시도부터 70% 올림(정수 셈) */
+  function spkNeed(n, tryNo) {
+    n = Math.max(0, Math.floor(+n || 0));
+    if (n <= 3) return n;
+    return (Math.floor(+tryNo || 1) >= 3) ? Math.floor((n * 7 + 9) / 10) : Math.floor((n * 8 + 9) / 10);
+  }
+  /* 목표 글 · 들린 후보(최대 5 · 가장 많이 맞는 것) · 몇 번째 시도(1부터) →
+     {n, hit, need, pass, marks(맞춘 낱말마다), words(겉 낱말), wm(겉 낱말마다 · 그 안 낱말이 다 맞아야 1), miss(빠진 겉 낱말 수), heard} */
+  function spkScore(target, heard, tryNo) {
+    var sp = spkSplit(target), tw = [], nm = [], sn = spkNames(sp.words), alts, best = null, i, r, n, wm = [], miss = 0, need;
+    for (i = 0; i < sp.toks.length; i += 1) { tw.push(sp.toks[i].w); nm.push(sn[sp.toks[i].s] || 0); }
+    n = tw.length;
+    alts = isArr(heard) ? heard : (heard == null ? [] : [heard]);
+    for (i = 0; i < alts.length && i < 5; i += 1) {
+      r = spkAlign(tw, spkWords(alts[i]), nm);
+      if (!best || r.hit > best.hit) { best = r; best.heard = str(alts[i]).replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, ''); }
+    }
+    if (!best) { best = spkAlign(tw, [], nm); best.heard = ''; }
+    for (i = 0; i < sp.words.length; i += 1) wm.push(1);
+    for (i = 0; i < n; i += 1) { if (!best.mk[i]) wm[sp.toks[i].s] = 0; }
+    for (i = 0; i < wm.length; i += 1) { if (!wm[i]) miss += 1; }
+    tryNo = Math.max(1, Math.floor(+tryNo || 1));
+    need = spkNeed(n, tryNo);
+    /* 맞출 영어 낱말이 없는 문장은 통과 없음(화면은 그 문장을 스스로 확인으로) */
+    return { n: n, hit: best.hit, need: need, pass: n > 0 && best.hit >= need, marks: best.mk, words: sp.words, wm: wm, miss: miss, heard: best.heard };
+  }
+
+  /* ------------------------------------------------------------- 쓰기 오답 · 문항 차례(11-18) */
+
+  /* 내 답 · 바른 답의 다른 글자(둘 중 하나가 40자 넘으면 낱말) · 대소문자는 같게 봄 · 우리 식 LCS
+     → {u: 'c'|'w', same(같은 수), a: [{t, d}](내 답 조각 · d 1 = 다름), b: [{t, d}](바른 답)} */
+  function setDiff(mine, right) {
+    var A = str(mine), B = str(right), wm = A.length > 40 || B.length > 40, ua, ub, n, m, T = [], i, j, fa = [], fb = [], same = 0;
+    function units(s) {
+      var a = wm ? s.replace(/\s+/g, ' ').replace(/^ | $/g, '').split(' ') : s.split(''), o = [], k;
+      for (k = 0; k < a.length; k += 1) { if (a[k] !== '') o.push(a[k]); }
+      return o;
+    }
+    function low(s) { return s.replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }); }
+    function segs(u, f) {
+      var o = [], k;
+      function put(t, d) { if (o.length && o[o.length - 1].d === d) o[o.length - 1].t += t; else o.push({ t: t, d: d }); }
+      for (k = 0; k < u.length; k += 1) {
+        if (wm && k) put(' ', 0);
+        put(u[k], f[k]);
+      }
+      return o;
+    }
+    ua = units(A); ub = units(B); n = ua.length; m = ub.length;
+    for (i = 0; i <= n; i += 1) { T.push([]); for (j = 0; j <= m; j += 1) T[i].push(0); }
+    for (i = n - 1; i >= 0; i -= 1) {
+      for (j = m - 1; j >= 0; j -= 1) T[i][j] = low(ua[i]) === low(ub[j]) ? T[i + 1][j + 1] + 1 : Math.max(T[i + 1][j], T[i][j + 1]);
+    }
+    for (i = 0; i < n; i += 1) fa.push(1);
+    for (j = 0; j < m; j += 1) fb.push(1);
+    i = 0; j = 0;
+    while (i < n && j < m) {
+      if (low(ua[i]) === low(ub[j])) { fa[i] = 0; fb[j] = 0; same += 1; i += 1; j += 1; }
+      else if (T[i + 1][j] >= T[i][j + 1]) i += 1;
+      else j += 1;
+    }
+    return { u: wm ? 'w' : 'c', same: same, a: segs(ua, fa), b: segs(ub, fb) };
+  }
+  /* 화면 차례: 고르기(f 'c') 먼저 → 쓰기('w' · 'r') 나중 · 각 묶음 안은 서버 차례 · 돌려줌 = 서버 번호(p_i) 목록 */
+  function setOrder(qs, n) {
+    var a = [], b = [], i, len = isArr(qs) ? qs.length : 0;
+    n = n == null ? len : Math.min(len, Math.max(0, Math.floor(+n || 0)));
+    for (i = 0; i < n; i += 1) { if (isObj(qs[i]) && qs[i].f === 'c') a.push(i); else b.push(i); }
+    return a.concat(b);
   }
 
   /* ------------------------------------------------------------- 학생: 서버 부르기 */
@@ -2794,7 +3130,20 @@
     }).then(null, function () { return null; });
   }
   function setItems(key, id) { return stuCall('lec_set_items', { p_key: k0(key), p_set: id || null }); }
-  function setCard(key, id, marks) { return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: isObj(marks) ? marks : {} }); }
+  /* 표시: 0 다시 · 1 알아요 · 2 알아요 + 말해서 확인(구문 · 11-18) → 옛 서버가 2 를 'input' 으로 거절하면 2 → 1 로 바꿔 한 번 다시 보냄 */
+  function setCard(key, id, marks) {
+    var m = isObj(marks) ? marks : {};
+    return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: m }).then(function (r) {
+      var m1 = {}, two = false, k;
+      if (!r || r.ok || r.err !== 'input') return r;
+      for (k in m) {
+        if (!has(m, k)) continue;
+        if (m[k] === 2) { two = true; m1[k] = 1; } else m1[k] = m[k];
+      }
+      if (!two) return r;
+      return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: m1 });
+    });
+  }
   function setTest(key, id) { return stuCall('lec_set_test', { p_key: k0(key), p_set: id || null }); }
   function setDue(key) { return stuCall('lec_set_due', { p_key: k0(key) }); }
   function setAns(key, tryId, i, v) {
@@ -2948,6 +3297,7 @@
     setMark: setMark, setMemo: setMemo, setInDue: setInDue, setDueOn: setDueOn, setDeck: setDeck, setNextQ: setNextQ,
     setPrint: setPrint, sayParts: sayParts, sayText: sayText, sayVoice: sayVoice,
     recMime: recMime, recBase: recBase,
+    spkCan: spkCan, spkWords: spkWords, spkScore: spkScore, spkNeed: spkNeed, setDiff: setDiff, setOrder: setOrder,
     setHome: setHome, setItems: setItems, setCard: setCard, setTest: setTest, setDue: setDue, setAns: setAns,
     recBegin: recBegin, recDone: recDone, recPut: recPut, recSend: recSend,
     setListStaff: setListStaff, setGet: setGet, setPut: setPut, setHide: setHide, setDel: setDel, setStaff: setStaff,

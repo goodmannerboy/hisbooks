@@ -3296,13 +3296,14 @@
   }
   /* lec__set_me */
   function sMe(d, s, sid, day) {
-    var X = L(), p = sProg(d, sid, s.id), keys = sKeys(s), seen = 0, known = 0, said = 0, due = 0, open = -1, vday = 0, i, c, t, tr, test, recs, r;
+    var X = L(), p = sProg(d, sid, s.id), keys = sKeys(s), seen = 0, known = 0, said = 0, spk = 0, due = 0, open = -1, vday = 0, i, c, t, tr, test, recs, r;
     for (i = 0; i < keys.length; i += 1) {
       c = sCard(p, keys[i]);
       if (!isObj(c)) continue;
       if (str(c.s) === '1') seen += 1;
       if (X.setMemo(c)) known += 1;
       if (str(c.g) === '1') said += 1;
+      if (str(c.v) === '1') spk += 1;
       if (str(c.z) !== '') due += 1;
     }
     tr = sTries(d, sid, s.id);
@@ -3326,7 +3327,8 @@
       recs.push({ k: s.pick[i], st: !r ? '' : (r.mark === 'again' ? 'again' : (r.mark === 'ok' ? 'ok' : 'sent')),
                   why: r ? r.why : 0, at: r ? r.done_at : null });
     }
-    return { seen: seen, said: said, recs: recs };
+    /* spk = 말해서 확인한 문장 수(카드 v 1 · 구문 ② 음성 인식 통과) */
+    return { seen: seen, said: said, spk: spk, recs: recs };
   }
   /* lec__set_view: 정답 · 해설 · 열쇠 뺀 한 판 */
   function sView(t, head) {
@@ -3511,7 +3513,8 @@
     for (kk in m) {
       if (!has(m, kk)) continue;
       n += 1;
-      if (m[kk] !== 0 && m[kk] !== 1) bad = true;
+      /* 구문만 2 = 알아요 + 말해서 확인(카드 v 1 · 남음) · 단어에 2 는 'input' */
+      if (m[kk] !== 0 && m[kk] !== 1 && !(s.kind === 'gu' && m[kk] === 2)) bad = true;
     }
     if (n > 40 || bad) return { ok: false, err: 'input' };
     p = sProgMake(d, k.sid, s.id);
@@ -3520,7 +3523,8 @@
     c = clone(p.cards || {});
     for (kk in m) {
       if (!has(m, kk) || keys.indexOf(kk) < 0) continue;
-      c[kk] = L().setMark(c[kk], m[kk] === 1, s.kind === 'voc' ? 'card' : 'say', day);
+      c[kk] = L().setMark(c[kk], m[kk] === 1 || m[kk] === 2, s.kind === 'voc' ? 'card' : 'say', day);
+      if (m[kk] === 2) c[kk].v = 1;
     }
     p.cards = c;
     p.sv_n = p.sv_day === day ? p.sv_n + 1 : 1;

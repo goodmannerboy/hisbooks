@@ -6394,7 +6394,7 @@ language sql stable set search_path = public as $$
                         where jsonb_typeof(v.a) = 'object'))
 $$;
 
--- 학생 × 세트 요약(학생 목록 · 선생님 결과 표가 같이 씀 · 지금 문항 열쇠만 셈)
+-- 학생 × 세트 요약(학생 목록 · 선생님 결과 표가 같이 씀 · 지금 문항 열쇠만 셈 · 구문 spk = 말해서 확인한 문장 수(카드 v 1))
 create or replace function public.lec__set_me(s public.lec_set, p_sid text, p_day date) returns jsonb
 language plpgsql stable set search_path = public as $$
 declare
@@ -6404,6 +6404,7 @@ declare
   v_seen  integer;
   v_known integer;
   v_said  integer;
+  v_spk   integer;
   v_due   integer;
   v_kn    integer;
   v_open  integer;
@@ -6417,8 +6418,9 @@ begin
   select count(*) filter (where (v_cards -> y.kk ->> 's') = '1'),
          count(*) filter (where public.lec__set_memo(v_cards -> y.kk)),
          count(*) filter (where (v_cards -> y.kk ->> 'g') = '1'),
+         count(*) filter (where (v_cards -> y.kk ->> 'v') = '1'),
          count(*) filter (where coalesce(v_cards -> y.kk ->> 'z', '') <> '')
-    into v_seen, v_known, v_said, v_due
+    into v_seen, v_known, v_said, v_spk, v_due
     from unnest(v_keys) as y(kk);
   select count(*) into v_kn from unnest(coalesce(p.kn, '{}'::text[])) as y(kk) where y.kk = any (v_keys);
   select coalesce(max(xt.got), -1) into v_open
@@ -6446,7 +6448,7 @@ begin
     left join lateral (select xr.id, xr.mark, xr.why, xr.done_at from public.lec_set_rec xr
                         where xr.sid = p_sid and xr.set_id = s.id and xr.k = pk.kk and xr.st in ('done', 'gone')
                         order by xr.done_at desc nulls last limit 1) lr on true;
-  return jsonb_build_object('seen', v_seen, 'said', v_said, 'recs', v_recs);
+  return jsonb_build_object('seen', v_seen, 'said', v_said, 'spk', v_spk, 'recs', v_recs);
 end
 $$;
 
@@ -6650,6 +6652,8 @@ end
 $$;
 
 -- 학생: 외우기 한 판 · 따라 말하기 결과 저장(한 판에 한 번 · {열쇠: 1 알아요 | 0 다시} · 하루 200번)
+--   구문만 2 = 알아요 + 말해서 확인(폰 음성 인식으로 통과) → 1 과 같게 적고 카드에 v 1(한 번 생기면 남음 · 0 · 1 은 v 를 안 건드림)
+--   단어에 2 · 그 밖 값 = 'input'
 create or replace function public.lec_set_card(p_key text, p_set uuid, p_marks jsonb)
 returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
@@ -6681,7 +6685,8 @@ begin
     return jsonb_build_object('ok', false, 'err', 'input');
   end if;
   if (select count(*) from jsonb_object_keys(p_marks)) > 40
-     or exists (select 1 from jsonb_each(p_marks) as u(kk, v) where u.v not in ('0'::jsonb, '1'::jsonb)) then
+     or exists (select 1 from jsonb_each(p_marks) as u(kk, v)
+                 where u.v not in ('0'::jsonb, '1'::jsonb) and not (s.kind = 'gu' and u.v = '2'::jsonb)) then
     return jsonb_build_object('ok', false, 'err', 'input');
   end if;
   insert into public.lec_set_prog (sid, set_id) values (k.sid, s.id) on conflict (sid, set_id) do nothing;
@@ -6693,7 +6698,10 @@ begin
   for v_kk, v_v in select u.kk, u.v from jsonb_each(p_marks) as u(kk, v) loop
     if exists (select 1 from jsonb_array_elements(s.items) as y(e) where y.e ->> 'k' = v_kk) then
       v_c := jsonb_set(v_c, array[v_kk],
-                       public.lec__set_mark(v_c -> v_kk, v_v = '1'::jsonb, case when s.kind = 'voc' then 'card' else 'say' end, v_day));
+                       public.lec__set_mark(v_c -> v_kk, v_v in ('1'::jsonb, '2'::jsonb), case when s.kind = 'voc' then 'card' else 'say' end, v_day));
+      if v_v = '2'::jsonb then
+        v_c := jsonb_set(v_c, array[v_kk], (v_c -> v_kk) || jsonb_build_object('v', 1));
+      end if;
     end if;
   end loop;
   update public.lec_set_prog xp
@@ -8180,8 +8188,25 @@ begin
     if not coalesce((r ->> 'ok')::boolean, false) or (r ->> 'seen')::integer <> 1 then
       raise exception '점검 실패(S1 외우기 저장): %', r;
     end if;
+    -- 구문 2 = 알아요 + 말해서 확인(카드 v 1 · 학생 요약 spk) · 뒤에 0 · 1 을 보내도 v 는 남음
+    r := public.lec_set_card(v_ka, v_gu, '{"k3":2}'::jsonb);
+    if not coalesce((r ->> 'ok')::boolean, false) or (r ->> 'seen')::integer <> 3 or (r ->> 'said')::integer <> 2
+       or (select xp.cards -> 'k3' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_gu)
+          is distinct from '{"s":1,"g":1,"v":1}'::jsonb then
+      raise exception '점검 실패(S1 말해서 확인 저장): %', r;
+    end if;
+    r := public.lec_set_card(v_ka, v_gu, '{"k3":0,"k1":1}'::jsonb);
+    if not coalesce((r ->> 'ok')::boolean, false)
+       or (select xp.cards -> 'k3' ->> 'v' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_gu) is distinct from '1'
+       or coalesce((select (xp.cards -> 'k1') ? 'v' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_gu), true)
+       or ((select u.e from jsonb_array_elements(public.lec_set_home(v_ka) -> 'sets') as u(e) where u.e ->> 'id' = v_gu::text)
+           -> 'me' ->> 'spk') is distinct from '1' then
+      raise exception '점검 실패(S1 말해서 확인 남음 · spk): %', r;
+    end if;
     if (public.lec_set_card(v_ka, v_gu, '[1]'::jsonb) ->> 'err') is distinct from 'input'
-       or (public.lec_set_card(v_ka, v_gu, '{"k1":2}'::jsonb) ->> 'err') is distinct from 'input'
+       or (public.lec_set_card(v_ka, v_gu, '{"k1":3}'::jsonb) ->> 'err') is distinct from 'input'
+       or (public.lec_set_card(v_ka, v_gu, '{"k1":"2"}'::jsonb) ->> 'err') is distinct from 'input'
+       or (public.lec_set_card(v_ka, v_voc, '{"k1":2}'::jsonb) ->> 'err') is distinct from 'input'
        or (public.lec_set_card(v_ka, v_gu, (select jsonb_object_agg('k' || g, 1) from generate_series(1, 41) g)) ->> 'err') is distinct from 'input' then
       raise exception '점검 실패(S1 카드 꼴 막기)';
     end if;
@@ -8287,6 +8312,7 @@ begin
     r := public.lec_set_staff(v_gu);
     if ((select u.e from jsonb_array_elements(r -> 'rows') as u(e) where u.e ->> 'sid' = v_sa) -> 'gu' -> 'recs' -> 0 ->> 'path') is distinct from v_path
        or ((select u.e from jsonb_array_elements(r -> 'rows') as u(e) where u.e ->> 'sid' = v_sa) ->> 'sname') is distinct from '점검가'
+       or ((select u.e from jsonb_array_elements(r -> 'rows') as u(e) where u.e ->> 'sid' = v_sa) -> 'gu' ->> 'spk') is distinct from '1'
        or jsonb_typeof(r -> 'set' -> 'items') is distinct from 'array'
        or r ? 'recok' then   -- S1-b: 녹음 동의 칸 없음
       raise exception '점검 실패(S1 선생님 결과 표): %', r;

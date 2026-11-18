@@ -646,6 +646,7 @@ html.tvon,html.tvon body{overflow:hidden}
 .sxt td.dt{white-space:nowrap;color:#5F6256}
 .sxt .nm b{font-weight:700}
 .sxt .nm .tag{margin-left:6px}
+.sxt .sx-spk{display:block;margin-top:2px;font-size:12px;line-height:1.4;color:#5F6256}
 .sx-ft{margin:10px 0 0;font-size:13px;color:#5F6256}
 .sx-pp{position:absolute;right:0;top:calc(100% + 6px);z-index:6;width:460px;max-width:calc(100vw - 32px);background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;box-shadow:0 12px 32px rgba(12,70,49,.14);padding:14px 16px;text-align:left;white-space:normal}
 .sx-pr{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
@@ -699,6 +700,7 @@ html.tvon,html.tvon body{overflow:hidden}
   .sxt tr{border:1px solid #EAE0C4;border-radius:12px;padding:8px 12px;margin-bottom:10px;background:#FFFFFF}
   .sxt td{padding:3px 0;border:0}
   .sxt td[data-l]:before{content:attr(data-l);display:inline-block;min-width:76px;color:#5F6256;font-size:12.5px}
+  .sxt .sx-spk{display:inline;margin:0 0 0 4px;white-space:nowrap}
   .sx-f2{grid-template-columns:minmax(0,1fr)}
   .sx-pp{position:fixed;left:16px;right:16px;top:auto;bottom:16px;width:auto}
   .sx-pr .chip,.sx-pr input{min-height:44px}
@@ -3781,7 +3783,10 @@ window.__lecAdminStart = function () {
     } else if (k === 'gram') {
       h += '<td data-l="시험">' + sxTest(k, d) + '</td><td data-l="쌓인 오답" class="num">' + (d ? esc(String(+d.due || 0)) : '–') + '</td>';
     } else {
-      h += '<td data-l="따라 말하기" class="num">' + (d ? esc((+d.said || 0) + ' / ' + n) : '–') + '</td><td data-l="녹음">' + sxRecs(d, pk) + '</td>';
+      /* 둘째 줄 «말해서 확인 m» = 구문 ② 음성 인식으로 통과한 문장 수(서버 spk) · 옛 서버(spk 없음)면 안 보임 */
+      h += '<td data-l="따라 말하기" class="num">' + (d ? esc((+d.said || 0) + ' / ' + n) +
+        (d.spk != null && isFinite(+d.spk) ? ' <span class="sx-spk">말해서 확인 ' + esc(String(+d.spk)) + '</span>' : '') : '–') +
+        '</td><td data-l="녹음">' + sxRecs(d, pk) + '</td>';
     }
     return h + '<td data-l="마지막" class="dt">' + esc(w.x ? sxLast(w.x.last) : '–') + '</td></tr>';
   }

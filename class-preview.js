@@ -390,6 +390,9 @@
         };
       }
     } catch (e5) { /* 없음 */ }
+    /* 말하기 확인(음성 인식 · 11-18)도 끔 = 미리 보기는 «말해 본 뒤 영어 보기»(class.html 의 spkCan 'preview' 와 두 겹) · 말 빠르기 칩은 그대로 */
+    try { w.SpeechRecognition = undefined; } catch (e7) { /* 없음 */ }
+    try { w.webkitSpeechRecognition = undefined; } catch (e8) { /* 없음 */ }
 
     /* 안쪽 주소(#v= · #rng)로 가는 링크는 기록 없이 바꿔치기(바깥 탭의 뒤로 가기 기록이 늘지 않게) */
     d.addEventListener('click', function (e) {
