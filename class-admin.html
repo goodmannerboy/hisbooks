@@ -707,6 +707,99 @@ html.tvon,html.tvon body{overflow:hidden}
   .sx-star{min-width:44px;min-height:44px}
 }
 </style>
+<style id="k-2">
+/* 2차 디자인(11-18 · 원장님 «두 앱 넣어» · 바탕 «크림바탕으로가고»): 애플 앱 틀(사이드바 + 큰 제목 + 머리카락 선 줄 + 인스펙터 + 시트)
+   위 규칙은 그대로 두고 여기서 덮음 · 글꼴 Pretendard 를 앱에 실음(바깥 요청 0 · 400 · 600 · 700) · 굵기 셋 400 · 600 · 700 · 가장 작은 글자 12 */
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:400;font-display:swap;src:url(assets/pretendard-400.woff) format("woff")}
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:600;font-display:swap;src:url(assets/pretendard-600.woff) format("woff")}
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:700;font-display:swap;src:url(assets/pretendard-700.woff) format("woff")}
+:root{--bg:#FDFAF2;--side:#F4ECD7;--side-sel:rgba(12,70,49,.11);--group:#F6EFDD;--group-hover:#F0E7D0;
+  --t1:#1F1D18;--t2:#524F46;--t3:#635F55;--sep:rgba(60,45,10,.11);--line:rgba(60,45,10,.19);--fill:rgba(60,45,10,.04);--fill2:rgba(60,45,10,.07);
+  --acc:#0C4631;--acc-hover:#093624;--acc-tint:rgba(12,70,49,.09);--acc-line:rgba(12,70,49,.32);--focus:rgba(12,70,49,.40);
+  --org:#9A5300;--org-dot:#C26A00;--org-track:rgba(194,106,0,.24);--org-tint:rgba(194,106,0,.12);
+  --grn-dot:#2E8B57;--grn-tint:rgba(46,139,87,.10);--gray-dot:#8E8E93;--ring-track:rgba(60,45,10,.12);--red:#B3261E;--blu:#1D5FB8;
+  --th-bg:#F7F2E4;--th-ink:#0B3D2E;--th-line:rgba(70,52,12,.14);--pop-bg:#FFFDF7;--shadow:0 18px 48px rgba(0,0,0,.16);--side-w:220px;--ins-w:330px}
+@media (min-width:1600px){:root{--ins-w:360px}}
+body{font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+a{color:var(--acc)}
+.num,.pgh-n,.bdg{font-variant-numeric:tabular-nums}
+/* 틀: 사이드바 220 + 내용 */
+.k2.wrap{max-width:none;margin:0;padding:0}
+.frame{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);min-height:100vh}
+.mainw{min-width:0}
+#main{padding:18px 28px 40px}
+.k2 .side.hd{display:block;padding:0;margin:0;background:var(--side);border-right:1px solid var(--sep)}
+.side-in{position:sticky;top:0;display:flex;flex-direction:column;min-height:100vh;max-height:100vh;overflow-y:auto;padding:14px 10px 0}
+.k2 .brand{display:flex;align-items:center;gap:8px;margin:0;padding:4px 8px 14px;text-align:left}
+.k2 .brand .logo{width:40px;height:20px}
+.k2 .brand .wm{display:block;width:100px;height:auto;flex:none;color:var(--acc)}
+.brand-sub{font-size:13px;line-height:18px;font-weight:600;color:var(--t2)}
+.k2 .side .tabs{display:flex;flex-direction:column;flex-wrap:nowrap;gap:2px;margin:0;padding:0;border:0}
+.k2 .ni{display:flex;align-items:center;gap:10px;width:100%;min-height:36px;height:36px;margin:0;padding:0 10px;border:0;border-radius:8px;background:transparent;box-shadow:none;
+  color:var(--t1);font-size:15px;line-height:20px;font-weight:400;text-align:left;text-decoration:none;cursor:pointer}
+.k2 .ni .i{width:18px;height:18px;flex:none;display:block;color:var(--t2)}
+.k2 .ni:hover{background:var(--fill2);color:var(--t1)}
+.k2 .ni.on{background:var(--side-sel);color:var(--acc);font-weight:600;box-shadow:none}
+.k2 .ni.on .i{color:var(--acc)}
+.ni-t{flex:1 1 auto;min-width:0;white-space:nowrap;text-align:left}
+/* «질문 2»: 글은 한 줄 그대로 · 수만 오른쪽 끝(낱말 사이 공백을 늘림) */
+.ni-t.j{text-align:justify;text-align-last:justify;text-justify:inter-word}
+.bdg{display:inline-block;font-weight:400;font-size:13px;line-height:18px;color:var(--t2)}
+.bdg.warn{color:var(--org);font-weight:600}
+.k2 .ni.on .bdg{color:var(--acc)}
+.k2 .ni.on .bdg.warn{color:#844600}
+.side-sec{margin:0;padding:20px 10px 6px;font-weight:600;font-size:12px;line-height:16px;color:var(--t3);text-align:left}
+.k2 .side-url{display:block;margin:6px 10px;max-width:none}
+.k2 .side-url label{display:block;font-size:12px;line-height:16px;color:var(--t2)}
+.k2 .side-url input{display:block;width:100%;margin-top:4px;height:28px;min-height:0;padding:0 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font-size:12px}
+.k2 .who{display:flex;align-items:center;gap:10px;margin:auto 0 0;padding:12px 8px 14px;border-top:1px solid var(--sep);color:var(--t1);font-size:13px}
+.who-b{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.who-n{font-weight:600;font-size:13px;line-height:18px;color:var(--t1)}
+.who-out{border:0;background:none;padding:0;text-align:left;font-size:12px;line-height:16px;color:var(--t2);cursor:pointer}
+.who-out:hover{color:var(--t1);text-decoration:underline}
+.av{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;background:var(--acc-tint);color:var(--acc);font-weight:600;font-size:13px;line-height:1}
+/* 쪽 머리: 큰 제목 28/700 + 옅은 수 + 오른쪽 도구 줄 */
+.pgh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;min-height:44px;margin:0 0 6px}
+.pgh h1{margin:0;font-weight:700;font-size:28px;line-height:34px;letter-spacing:-.015em}
+.pgh-n{font-size:17px;line-height:22px;color:var(--t3);margin-top:4px}
+.pgh .tools{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.k2 .i{width:18px;height:18px;flex:none;display:block}
+.ibtn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--t2);cursor:pointer;flex:none;text-decoration:none}
+.ibtn:hover{background:var(--fill2);color:var(--t1)}
+/* 단추: 높이 32 · 모서리 8 · 13/600 · 주요 단추 = 딥그린 캡슐 */
+.k2 .btn{min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--t1);font-weight:600;font-size:13px;line-height:18px}
+.k2 .btn:hover{background:var(--fill);border-color:var(--line)}
+.k2 .btn .i{width:16px;height:16px;color:var(--t2)}
+.k2 .btn.sm{min-height:28px;padding:0 10px}
+.k2 .btn.fill{background:var(--acc);border-color:transparent;color:#FFFFFF;border-radius:999px;padding:0 16px}
+.k2 .btn.fill .i{color:#FFFFFF}
+.k2 .btn.fill:hover{background:var(--acc-hover);border-color:transparent}
+.k2 .btn.txt{border-color:transparent;background:transparent}
+.k2 .btn.txt:hover{background:var(--fill2)}
+/* 내용 칸: 상자 테두리 없이(묶음은 옅은 크림 면 · 줄은 머리카락 선) */
+#main>.card{background:transparent;border:0;border-radius:0;padding:0;margin:0 0 22px}
+:focus-visible{outline-color:var(--focus)}
+.k2 .btn:focus-visible,.k2 .ni:focus-visible,.ibtn:focus-visible,.who-out:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+/* 860 아래(태블릿 · 폰): 사이드바가 위로 쌓임(이름 자리 · 쪽 줄 · 학생 앱 · 이름) */
+@media (max-width:860px){
+  .frame{display:block;min-height:0}
+  .k2 .side.hd{border-right:0;border-bottom:1px solid var(--sep)}
+  .side-in{position:static;min-height:0;max-height:none;overflow:visible;padding:10px 12px 6px}
+  .k2 .brand{padding:4px 4px 8px}
+  .k2 .side .tabs{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .k2 .side .ni{width:auto}
+  .k2 .side .ni-t{flex:none}
+  .ni-t.j{text-align:left;text-align-last:auto}
+  .side-sec{display:none}
+  .k2 .who{margin:6px 0 0;padding:8px 4px}
+  #main{padding:14px 16px 32px}
+}
+@media (max-width:760px){
+  .k2 .ni{min-height:44px;height:auto}
+  .who-out,.ibtn{min-height:44px;min-width:44px}
+  .k2 .btn,.k2 .btn.sm{min-height:44px}
+}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -787,7 +880,7 @@ window.__lecAdminStart = function () {
   /* ------------------------------------------------------------------------------------------- */
 
   var S = {
-    me: null, as: '', tab: 'lec', todo: null, todoErr: false, open: {}, statCls: '',
+    me: null, as: '', tab: 'today', todo: null, todoErr: false, open: {}, statCls: '',
     qf: 'all', qLec: '', qFocus: '', drawer: null, stack: [], dSig: '', inputs: {}, busy: {},
     ask: {}, cf: null, pm: {}, link: {}, sess: null, ed: null, addrShow: false, loadedAt: 0, retry: null,
     att: null,
@@ -1462,10 +1555,14 @@ window.__lecAdminStart = function () {
   }
 
   /* ------------------------------------------------------------------- 그리기 */
+  /* 2차 디자인(11-18 · 원장님 «두 앱 넣어»): 탭 + 덮는 서랍 → 왼쪽 사이드바 + 쪽마다 큰 제목 + 오른쪽 인스펙터 + 가운데 시트
+     첫 쪽 = «오늘» 고정(결론안 §6-2) · 사이드바 차례 = 이름 자리 → 쪽(오늘 · 강의 · 시청 현황 · 질문 · 세트) → 학생 앱 → 맨 아래 이름 · 로그아웃(첫 Tab 이 로그아웃이 아님) */
+  function curTab() { return S.tab === 'set' && !sxOn() ? 'lec' : (S.tab || 'today'); }
   function render() {
     if (!S.me || !D) return;
-    paint(app, '<div class="wrap">' + headHtml() + demoHtml() + todoHtml() + tabsHtml() + '<main id="main">' +
-      (S.tab === 'stat' ? statHtml() : (S.tab === 'qna' ? qnaHtml() : (S.tab === 'set' && sxOn() ? setHtml() : lecHtml()))) + '</main></div>');
+    var tb = curTab();
+    paint(app, '<div class="wrap k2"><div class="frame">' + sideHtml() + '<div class="mainw">' + demoHtml() + '<main id="main">' + pageHead(tb) +
+      (tb === 'stat' ? statHtml() : (tb === 'qna' ? qnaHtml() : (tb === 'set' ? setHtml() : (tb === 'today' ? todayHtml() : lecHtml())))) + '</main></div></div></div>');
     if (S.qFocus && S.tab === 'qna') {
       var a = app.querySelectorAll('[data-th]'), i;
       for (i = 0; i < a.length; i += 1) {
@@ -1475,13 +1572,67 @@ window.__lecAdminStart = function () {
   }
   function renderAll() { render(); renderDrawer(); }
 
-  function headHtml() {
-    var who = S.me.admin ? S.me.name + ' 원장님' : S.me.name + ' 선생님';
-    return '<header class="hd"><div class="brand"><img class="logo" src="his_fish_green.png" alt="히즈어학원"><h1>히즈클래스 관리</h1></div>' +
-      '<span class="sp"></span><div class="hda"><span class="who">' + esc(who) + '</span>' +
-      '<button type="button" class="btn sm" data-act="copyAddr">학생용 주소 복사</button>' +
-      '<button type="button" class="btn sm txt" data-act="logout">로그아웃(히즈북스도 함께)</button></div></header>' +
-      (S.addrShow ? '<div class="addr"><label for="addr-in">학생용 주소</label><input id="addr-in" type="text" readonly value="' + esc(STU_URL) + '"></div>' : '');
+  /* «HIS CLASS» 글자 경로 = class.html WM_SVG 와 같은 것(11-18 2차 · 웹 글꼴 0 · Noto Serif KR 600 · 자간 0.12em) */
+  var WM_SVG = '<svg class="wm" viewBox="48 -753 6216 771" aria-hidden="true" focusable="false"><path fill="currentColor" d="M48.3 0V-31.6L192.1 -45.1H216.7L364 -31.6V0ZM144.7 0Q146.7 -84.5 146.9 -170.1Q147.2 -255.6 147.2 -342.2V-392.6Q147.2 -479.1 146.9 -564.6Q146.7 -650.2 144.7 -735.2H269.7Q267.7 -651.2 267.2 -565.2Q266.7 -479.1 266.7 -392.6V-366.5Q266.7 -263.1 267.2 -174.3Q267.7 -85.6 269.7 0ZM207.2 -361V-396.1H653.5V-361ZM495.7 0V-31.6L642 -45.1H666.6L811.4 -31.6V0ZM590 0Q592.5 -84.5 593 -173.1Q593.5 -261.6 593.5 -366.5V-392.6Q593.5 -479.1 593 -564.6Q592.5 -650.2 590 -735.2H715.1Q713.5 -651.2 713 -565.2Q712.5 -479.1 712.5 -392.6V-342.2Q712.5 -256.7 713 -171.1Q713.5 -85.6 715.1 0ZM48.3 -703.7V-735.2H364V-703.7L216.7 -691.1H192.1ZM495.7 -703.7V-735.2H811.4V-703.7L666.6 -691.1H642ZM1028.3 0V-31.6L1175.1 -45.1H1200.3L1348.1 -31.6V0ZM1125.7 0Q1128.2 -84.5 1128.4 -170.1Q1128.7 -255.6 1128.7 -342.2V-392.6Q1128.7 -479.1 1128.4 -564.6Q1128.2 -650.2 1125.7 -735.2H1250.7Q1249.2 -651.2 1248.7 -565.2Q1248.2 -479.1 1248.2 -392.6V-342.7Q1248.2 -256.7 1248.7 -171.1Q1249.2 -85.6 1250.7 0ZM1028.3 -703.7V-735.2H1348.1V-703.7L1200.3 -691.1H1175.1ZM1788.8 17.6Q1727.3 17.6 1668.2 1.1Q1609.1 -15.4 1569.5 -41L1575.5 -199.3H1623.2L1665.6 -20.3L1610.8 -44.9L1602.2 -80Q1651.2 -45 1689.2 -33Q1727.2 -21 1778.6 -21Q1857 -21 1902.9 -56.5Q1948.8 -92 1948.8 -158.8Q1948.8 -194.2 1936.5 -220Q1924.3 -245.7 1895.9 -266.6Q1867.5 -287.6 1818.2 -308L1773.7 -327.1Q1680.5 -367.7 1631.9 -420.3Q1583.3 -472.8 1583.3 -554.5Q1583.3 -619.6 1615.9 -663.6Q1648.4 -707.7 1704.5 -730.5Q1760.7 -753.3 1831.4 -753.3Q1889.4 -753.3 1935.7 -738.8Q1982.1 -724.3 2020.6 -697.8L2014.6 -547.5H1965.9L1925.1 -718.4L1982.9 -692.8L1988.5 -656.1Q1948 -688.7 1916.5 -701.7Q1885 -714.7 1842.6 -714.7Q1774.6 -714.7 1731.2 -682Q1687.8 -649.3 1687.8 -587.4Q1687.8 -532.4 1719.2 -499.5Q1750.6 -466.5 1807.1 -442L1855.1 -421.5Q1930.6 -389.4 1974.6 -356.9Q2018.7 -324.4 2037.4 -285.6Q2056.2 -246.8 2056.2 -193.2Q2056.2 -129.7 2023.9 -82.1Q1991.7 -34.6 1931.8 -8.5Q1872 17.6 1788.8 17.6ZM3023.2 17.6Q2941.2 17.6 2872.4 -7.2Q2803.6 -31.9 2752.5 -80.6Q2701.4 -129.3 2673.4 -200.4Q2645.3 -271.4 2645.3 -363.6Q2645.3 -456.2 2674.1 -528.8Q2702.9 -601.3 2754.5 -651.6Q2806.1 -701.8 2875.1 -727.6Q2944.2 -753.3 3023.8 -753.3Q3088.9 -753.3 3137.9 -739.3Q3186.9 -725.2 3235.4 -697.3L3235.3 -528.5H3185.1L3140.8 -717L3203.7 -695.9V-661.9Q3163.8 -691.3 3126.1 -704Q3088.4 -716.8 3042.4 -716.8Q2964.6 -716.8 2903.4 -677.5Q2842.3 -638.3 2807.1 -560.5Q2771.9 -482.8 2771.9 -367.1Q2771.9 -251.5 2807.1 -173.7Q2842.3 -95.9 2903.2 -57.2Q2964.2 -18.5 3041.5 -18.5Q3087 -18.5 3127.3 -31.5Q3167.7 -44.5 3209.2 -75V-40.4L3148.3 -21.2L3192.6 -206.8H3242.8L3243.4 -39.5Q3194.4 -10.5 3141.4 3.5Q3088.4 17.6 3023.2 17.6ZM3459.3 0 3459.9 -31.6 3606.1 -45.1H3619.7L3619.2 0ZM3556.7 0Q3558.7 -84.5 3558.9 -168.1Q3559.2 -251.6 3559.2 -326.9V-392.6Q3559.2 -479.1 3558.9 -564.9Q3558.7 -650.7 3556.7 -735.2H3681.2Q3679.7 -651.2 3679.2 -564.9Q3678.7 -478.7 3678.7 -390.4V-329.8Q3678.7 -253.7 3679.2 -169.6Q3679.7 -85.6 3681.2 0ZM3619.2 0 3619.7 -36.1H3976.5L3918.4 -6.9L3962.7 -205.9H4010.4L4007 0ZM3459.3 -703.7V-735.2H3783.6V-703.7L3634.8 -691.1H3606.1ZM4178.5 0V-31.6L4277.6 -44.1H4295.6L4404.1 -31.6V0ZM4249.5 0 4496.1 -740.2H4570.2L4821.3 0H4699.7L4484.9 -664.1H4505.4L4501.9 -650.1L4295.6 0ZM4359 -244.3 4364.6 -277.4H4676.3L4681.9 -244.3ZM4580.4 0V-32.1L4714.9 -44.6H4756.3L4891.5 -32.1V0ZM5292.8 17.6Q5231.3 17.6 5172.2 1.1Q5113.1 -15.4 5073.5 -41L5079.5 -199.3H5127.2L5169.6 -20.3L5114.8 -44.9L5106.2 -80Q5155.2 -45 5193.2 -33Q5231.2 -21 5282.6 -21Q5361 -21 5406.9 -56.5Q5452.8 -92 5452.8 -158.8Q5452.8 -194.2 5440.5 -220Q5428.3 -245.7 5399.9 -266.6Q5371.5 -287.6 5322.2 -308L5277.7 -327.1Q5184.5 -367.7 5135.9 -420.3Q5087.3 -472.8 5087.3 -554.5Q5087.3 -619.6 5119.9 -663.6Q5152.4 -707.7 5208.5 -730.5Q5264.7 -753.3 5335.4 -753.3Q5393.4 -753.3 5439.7 -738.8Q5486.1 -724.3 5524.6 -697.8L5518.6 -547.5H5469.9L5429.1 -718.4L5486.9 -692.8L5492.5 -656.1Q5452 -688.7 5420.5 -701.7Q5389 -714.7 5346.6 -714.7Q5278.6 -714.7 5235.2 -682Q5191.8 -649.3 5191.8 -587.4Q5191.8 -532.4 5223.2 -499.5Q5254.6 -466.5 5311.1 -442L5359.1 -421.5Q5434.6 -389.4 5478.6 -356.9Q5522.7 -324.4 5541.4 -285.6Q5560.2 -246.8 5560.2 -193.2Q5560.2 -129.7 5527.9 -82.1Q5495.7 -34.6 5435.8 -8.5Q5376 17.6 5292.8 17.6ZM5996.8 17.6Q5935.3 17.6 5876.2 1.1Q5817.1 -15.4 5777.5 -41L5783.5 -199.3H5831.2L5873.6 -20.3L5818.8 -44.9L5810.2 -80Q5859.2 -45 5897.2 -33Q5935.2 -21 5986.6 -21Q6065 -21 6110.9 -56.5Q6156.8 -92 6156.8 -158.8Q6156.8 -194.2 6144.5 -220Q6132.3 -245.7 6103.9 -266.6Q6075.5 -287.6 6026.2 -308L5981.7 -327.1Q5888.5 -367.7 5839.9 -420.3Q5791.3 -472.8 5791.3 -554.5Q5791.3 -619.6 5823.9 -663.6Q5856.4 -707.7 5912.5 -730.5Q5968.7 -753.3 6039.4 -753.3Q6097.4 -753.3 6143.7 -738.8Q6190.1 -724.3 6228.6 -697.8L6222.6 -547.5H6173.9L6133.1 -718.4L6190.9 -692.8L6196.5 -656.1Q6156 -688.7 6124.5 -701.7Q6093 -714.7 6050.6 -714.7Q5982.6 -714.7 5939.2 -682Q5895.8 -649.3 5895.8 -587.4Q5895.8 -532.4 5927.2 -499.5Q5958.6 -466.5 6015.1 -442L6063.1 -421.5Q6138.6 -389.4 6182.6 -356.9Q6226.7 -324.4 6245.4 -285.6Q6264.2 -246.8 6264.2 -193.2Q6264.2 -129.7 6231.9 -82.1Q6199.7 -34.6 6139.8 -8.5Q6080 17.6 5996.8 17.6Z"/></svg>';
+  /* 사이드바(2차): 이름 자리 = 물고기 + «HIS CLASS» 글자(로그인 머리 · 학생 앱과 같은 WM_SVG) + «관리» · 화면 읽기는 «히즈클래스 관리» */
+  function sideHtml() {
+    var who = S.me.admin ? S.me.name + ' 원장님' : S.me.name + ' 선생님', wn = waitCount(), sn = S.set && S.set.unheard > 0 ? S.set.unheard : 0;
+    /* 쪽 이름 + 수: 글은 «질문 2» · «세트 2» 그대로(수는 오른쪽 끝 · 답 기다림은 주황) */
+    function t(k, ic, label, n, warn) {
+      var on = curTab() === k;
+      return '<button type="button" class="tab ni' + (on ? ' on' : '') + '"' + (on ? ' aria-current="page"' : '') + ' data-act="tab" data-v="' + k + '">' + nIcon(ic) +
+        '<span class="ni-t' + (n != null ? ' j' : '') + '">' + label + (n != null ? ' <span class="bdg' + (warn ? ' warn' : '') + '">' + n + '</span>' : '') + '</span></button>';
+    }
+    return '<header class="hd side" aria-label="히즈클래스 관리 메뉴"><div class="side-in">' +
+      '<p class="brand"><img class="logo" src="his_fish_green.png" alt="히즈어학원" width="40" height="20"><span class="sr">히즈클래스 관리</span>' + WM_SVG +
+      '<span class="brand-sub" aria-hidden="true">관리</span></p>' +
+      '<nav class="tabs" aria-label="화면">' + t('today', 'today', '오늘') + t('lec', 'lecture', '강의') + t('stat', 'watch', '시청 현황') + t('qna', 'qna', '질문', wn, wn > 0) +
+      (sxOn() ? t('set', 'sets', '세트', sn > 0 ? sn : null) : '') + '</nav>' +
+      '<p class="side-sec">학생 앱</p><button type="button" class="ni" data-act="copyAddr">' + nIcon('link') + '<span class="ni-t">학생용 주소 복사</span></button>' +
+      (S.addrShow ? '<div class="addr side-url"><label for="addr-in">학생용 주소</label><input id="addr-in" type="text" readonly value="' + esc(STU_URL) + '"></div>' : '') +
+      '<div class="who"><span class="av" aria-hidden="true">' + esc(who.charAt(0)) + '</span><span class="who-b"><span class="who-n">' + esc(who) + '</span>' +
+      '<button type="button" class="who-out" data-act="logout">로그아웃 · 히즈북스도 함께</button></span></div></div></header>';
+  }
+  /* 쪽 머리(2차): 큰 제목 28/700 + 옅은 수 · 오른쪽 도구 줄(다시 불러오기 · 쪽마다 주요 단추) */
+  function pageHead(tb) {
+    var h, n = '', tools = '';
+    var rl = '<button type="button" class="ibtn" data-act="reload" aria-label="다시 불러오기" title="다시 불러오기">' + nIcon('refresh') + '</button>';
+    var nl = '<button type="button" class="btn fill" data-act="newLec">' + nIcon('plus') + '새 강의</button>';
+    var rg = D.rg && D.rg.mine.length ? '<button type="button" class="btn" data-act="rngOpen">' + nIcon('cal') + '시험 범위</button>' : '';
+    if (tb === 'today') { h = '오늘'; n = longDay(today()); tools = rl + rg + nl; }
+    else if (tb === 'lec') { h = '강의'; n = D.vis.length + '개'; tools = rl + rg + nl; }
+    else if (tb === 'stat') { h = '시청 현황'; tools = rl; }
+    else if (tb === 'qna') { h = '질문'; tools = rl; }
+    else { h = '세트'; tools = rl; }
+    return '<header class="pgh"><h1>' + h + '</h1>' + (n ? '<span class="pgh-n">' + esc(n) + '</span>' : '') + '<div class="tools">' + tools + '</div></header>';
+  }
+  /* «2026-11-18» → «11월 18일 수요일» */
+  function longDay(iso) {
+    var p = str(iso).split('-'), d;
+    if (p.length !== 3) return '';
+    d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    return (+p[1]) + '월 ' + (+p[2]) + '일 ' + '일월화수목금토'.charAt(d.getUTCDay()) + '요일';
+  }
+  /* «오늘» 쪽: 할 일(질문 · 결석한 날 덜 본 학생 · 시험 범위 · 확인할 것) */
+  function todayHtml() { return todoHtml(); }
+  /* 사이드바 · 도구 줄 그림(선 1.6 · 둥근 끝 · 장식이라 화면 읽기에서 뺌) */
+  function nIcon(n) {
+    var p = {
+      today: '<circle cx="12" cy="12" r="4"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>',
+      lecture: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.2 9.4v5.2l4.4-2.6z"/>',
+      watch: '<circle cx="12" cy="12" r="8.2"/><path d="M12 3.8a8.2 8.2 0 0 1 8.2 8.2"/><path d="M12 8v4l2.6 1.6"/>',
+      qna: '<path d="M4.5 18.8V7.5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H8.6z"/>',
+      sets: '<rect x="4" y="8" width="12" height="12" rx="2.2"/><path d="M8 8V6.2A2.2 2.2 0 0 1 10.2 4h7.6A2.2 2.2 0 0 1 20 6.2v7.6a2.2 2.2 0 0 1-2.2 2.2H16"/>',
+      link: '<path d="M10 13.5a4.5 4.5 0 0 0 6.6.4l2.6-2.6a4.6 4.6 0 0 0-6.5-6.5l-1.4 1.4"/><path d="M14 10.5a4.5 4.5 0 0 0-6.6-.4l-2.6 2.6a4.6 4.6 0 0 0 6.5 6.5l1.4-1.4"/>',
+      plus: '<path d="M12 5v14M5 12h14"/>',
+      refresh: '<path d="M20 12a8 8 0 1 1-2.4-5.7L20 8.6"/><path d="M20 4v4.6h-4.6"/>',
+      cal: '<rect x="4" y="5.5" width="16" height="14.5" rx="2.6"/><path d="M4 10h16M8.5 3.5v3.6M15.5 3.5v3.6"/>',
+      more: '<circle cx="6.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="17.5" cy="12" r="1.3" fill="currentColor" stroke="none"/>',
+      chev: '<path d="M9.5 6.5 15 12l-5.5 5.5"/>',
+      arrow: '<path d="M8 16 16 8M9.5 8H16v6.5"/>',
+      x: '<path d="M7 7l10 10M17 7 7 17"/>'
+    };
+    return '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (p[n] || '') + '</svg>';
   }
   function demoHtml() {
     if (!demo) return '';
@@ -1492,16 +1643,6 @@ window.__lecAdminStart = function () {
     return '<div class="demo" role="note"><strong>미리 보기 · 연습 자료로 움직여요</strong>' +
       '<div class="demo-v"><span class="lbl">보는 사람</span>' + v('benjamin', '관리자 · Benjamin') + v('joey', '선생님 · Joey') + v('dana', '선생님 · Dana') + '</div>' +
       '<span class="sp"></span><button type="button" class="btn sm" data-act="demoReset">연습 자료 처음으로</button></div>';
-  }
-  function tabsHtml() {
-    function t(k, label) {
-      return '<button type="button" class="tab' + (S.tab === k ? ' on' : '') + '"' + (S.tab === k ? ' aria-current="page"' : '') +
-        ' data-act="tab" data-v="' + k + '">' + label + '</button>';
-    }
-    /* S1: «세트 n»(n = 안 들은 녹음 · 0 이면 숫자 없음)은 원장님 계정만 */
-    return '<nav class="tabs" aria-label="화면">' + t('lec', '강의') + t('stat', '시청 현황') + t('qna', '질문 ' + waitCount()) +
-      (sxOn() ? t('set', S.set && S.set.unheard > 0 ? '세트 ' + S.set.unheard : '세트') : '') +
-      '<span class="sp"></span><button type="button" class="btn sm txt" data-act="reload">다시 불러오기</button></nav>';
   }
 
   /* -------------------------------------------------------------- 할 일 띠(E1) */
@@ -1644,9 +1785,7 @@ window.__lecAdminStart = function () {
   }
   function lecHtml() {
     var list = D.vis.slice().sort(lecSort), h, i;
-    h = '<section class="card"><div class="bar"><h2>강의 <span class="mut">' + list.length + '개</span></h2><span class="sp"></span>' +
-      (D.rg && D.rg.mine.length ? '<button type="button" class="btn" data-act="rngOpen">시험 범위</button>' : '') +
-      '<button type="button" class="btn fill" data-act="newLec">새 강의</button></div>';
+    h = '<section class="card lec" aria-label="강의 ' + list.length + '개">';   /* 2차: 제목 · «시험 범위» · «새 강의»는 쪽 머리(pageHead) */
     if (!list.length) return h + '<p class="empty">아직 올린 강의가 없어요. «새 강의»를 눌러 첫 강의를 올려 보세요.</p></section>' + othHtml();
     h += '<table class="lt"><thead><tr><th scope="col">수업일</th><th scope="col">제목</th><th scope="col">교재</th><th scope="col">반</th>' +
       '<th scope="col">길이</th><th scope="col">공개 상태</th><th scope="col">완료</th><th scope="col">질문</th><th scope="col"><span class="sr">학생 화면</span></th></tr></thead><tbody>';
