@@ -1025,6 +1025,35 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .todo .sub h3{margin:8px 0 2px;font-weight:600;font-size:13px;line-height:18px;color:var(--t1)}
 .k2 .todo .srow{border-bottom-color:var(--sep)}
 @media (max-width:760px){.tchk{grid-template-columns:minmax(0,1fr)}}
+/* ⑤ 시청 현황: 반 고르기 = 나뉜 단추 · 표 = 상자 없이 머리카락 선 · 오른쪽으로 넘치면 끝을 흐리게 + «N개 더 ›» */
+.stbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.k2 .mxm{display:inline-flex;align-items:center;gap:2px;margin-left:auto;color:var(--acc)}
+.k2 .mxm[hidden]{display:none}
+.k2 .mxm .i{width:16px;height:16px;color:var(--acc)}
+.mxw{position:relative;margin-top:12px}
+.k2 .mxw .mx{margin:0;border:0;border-radius:0;background:transparent}
+.mxw.more::after{content:"";position:absolute;top:0;right:0;bottom:0;width:64px;pointer-events:none;background:linear-gradient(to right,rgba(253,250,242,0),var(--bg) 85%)}
+.k2 .mt{font-size:13px}
+.k2 .mt th,.k2 .mt td{border-bottom:1px solid var(--sep)}
+.k2 .mt thead th,.k2 .mt thead .nm,.k2 .mt .nm,.k2 .mt tfoot td,.k2 .mt tfoot th{background:var(--bg)}
+.k2 .mt thead th{border-bottom-color:var(--sep)}
+.k2 .mt .nm{border-right:0;padding-left:4px}
+.k2 .mt thead .nm,.k2 .mt tfoot th.nm{font-weight:600;font-size:12px;line-height:16px;color:var(--t3)}
+.k2 .mt .nm .lnk{font-weight:600;font-size:15px;color:var(--t1);text-decoration:none}
+.k2 .mt tfoot td,.k2 .mt tfoot th{border-bottom:0}
+.k2 .colh{border:0;border-radius:8px}
+.k2 .colh:hover{background:var(--fill)}
+.k2 .colh .d{font-weight:400;color:var(--t3)}
+.k2 .colh .t{font-weight:600;color:var(--t1)}
+.k2 .cell{border-radius:8px}
+.k2 .cell:hover{border-color:var(--line)}
+.k2 .legend{color:var(--t2)}
+@media (min-width:761px){
+  .k2 .stc .stbar>.chips{display:inline-flex;gap:2px;margin:0;padding:2px;border-radius:9px;background:var(--fill2)}
+  .k2 .stc .stbar>.chips .chip{min-height:28px;border:0;border-radius:7px;background:transparent;box-shadow:none;color:var(--t1);font-weight:600}
+  .k2 .stc .stbar>.chips .chip.on{background:#FFFFFF;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .k2 .stc .stbar>.chips .chip .cnt,.k2 .stc .stbar>.chips .chip.on .cnt{color:var(--t2);font-weight:400}
+}
 </style>
 </head>
 <body>
@@ -1789,6 +1818,7 @@ window.__lecAdminStart = function () {
     var tb = curTab();
     paint(app, '<div class="wrap k2"><div class="frame">' + sideHtml() + '<div class="mainw">' + demoHtml() + '<main id="main">' + pageHead(tb) +
       (tb === 'stat' ? statHtml() : (tb === 'qna' ? qnaHtml() : (tb === 'set' ? setHtml() : (tb === 'today' ? todayHtml() : lecHtml())))) + '</main></div></div></div>');
+    if (tb === 'stat') mxFit();
     if (S.qFocus && S.tab === 'qna') {
       var a = app.querySelectorAll('[data-th]'), i;
       for (i = 0; i < a.length; i += 1) {
@@ -2172,18 +2202,19 @@ window.__lecAdminStart = function () {
   /* ------------------------------------------------------------ 시청 현황 탭 */
   function statHtml() {
     if (!D.my.length) return '<section class="card"><p class="empty">맡은 반이 없어요. 히즈북스에서 반의 담당 선생님 이름을 확인해 주세요.</p></section>';
-    var cid = curCls(), h = '<section class="card"><div class="chips" role="group" aria-label="반 고르기">', i, j, c, rows, cols, r, l, s, n;
+    var cid = curCls(), h = '<section class="card stc"><div class="stbar"><div class="chips" role="group" aria-label="반 고르기">', i, j, c, rows, cols, r, l, s, n;
     for (i = 0; i < D.my.length; i += 1) {
       c = D.my[i];
       h += '<button type="button" class="chip' + (c.id === cid ? ' on' : '') + '" aria-pressed="' + (c.id === cid ? 'true' : 'false') + '" data-act="statCls" data-c="' + esc(c.id) + '">' +
         esc(c.name) + ' <span class="cnt">' + stuIn(c.id).length + '명</span></button>';
     }
-    h += '</div>';
+    /* 2차(⑤): 표가 오른쪽으로 넘치면 «N개 더 ›»(누르면 오른쪽으로 · 개수는 그린 뒤 mxFit 이 잼) */
+    h += '</div><button type="button" class="btn sm mxm" data-act="mxMore" hidden>더 보기</button></div>';
     rows = stuIn(cid);
     cols = colsFor(cid);
     if (!rows.length) return h + '<p class="empty">이 반에 학생이 없어요.</p></section>';
     if (!cols.length) return h + '<p class="empty">이 반에 공개된 강의가 아직 없어요.</p></section>';
-    h += '<div class="mx" tabindex="0" role="region" aria-label="' + esc((D.cname[cid] || '') + ' 시청 현황 표') + '"><table class="mt"><thead><tr><th class="nm" scope="col">학생 ' + rows.length + '명</th>';
+    h += '<div class="mxw"><div class="mx" tabindex="0" role="region" aria-label="' + esc((D.cname[cid] || '') + ' 시청 현황 표') + '"><table class="mt"><thead><tr><th class="nm" scope="col">학생 ' + rows.length + '명</th>';
     for (j = 0; j < cols.length; j += 1) {
       l = cols[j];
       h += '<th scope="col"><button type="button" class="colh" data-act="colOpen" data-l="' + esc(l.id) + '" data-c="' + esc(cid) + '">' +
@@ -2203,7 +2234,7 @@ window.__lecAdminStart = function () {
     }
     h += '</tbody><tfoot><tr><th class="nm" scope="row">완료</th>';
     for (j = 0; j < cols.length; j += 1) h += '<td>' + complCell(complRows(cols[j], rows)) + '</td>';
-    h += '</tr></tfoot></table></div>';
+    h += '</tr></tfoot></table></div></div>';
     h += '<p class="legend"><span><i class="c-done"></i>90% 넘게 봄(완료)</span><span><i class="c-conf"></i>선생님 확인 완료</span>' +
       '<span><i class="c-part"></i>보는 중</span><span><i class="c-zero"></i>0%</span><span><i class="c-none"></i>기록 안 함 · 동의 전</span>' +
       (D.att ? '<span><i class="c-in"></i>교실(그날 출석)</span><span><i class="c-abs"></i>결석한 날 · 덜 봄</span>' : '') +
@@ -5487,6 +5518,7 @@ window.__lecAdminStart = function () {
       case 'newLec': openEditor(''); break;
       case 'editLec': openEditor(l); break;
       case 'colOpen': openDrawer({ t: 'col', l: l, c: c, f: 'all' }, inDw); break;
+      case 'mxMore': mxMore(); break;
       case 'iaCol': openDrawer({ t: 'col', l: l, c: c, f: 'all' }); break;   /* 2차 1600 인스펙터 «학생별 진도» */
       case 'iaQ': closeDrawer(); S.tab = 'qna'; S.qLec = l; S.qf = 'all'; S.qFocus = ''; render(); scrollMain(); break;
       case 'colCls': if (S.drawer) { S.drawer.c = c; S.cf = null; renderDrawer(); } break;
@@ -5877,6 +5909,25 @@ window.__lecAdminStart = function () {
     if (!tr || (t.closest && t.closest('button, a, input, select, textarea, .menu'))) return;
     S.menu = ''; openEditor(tr.getAttribute('data-row'));
   });
+  /* 2차(⑤): 시청 현황 표가 오른쪽으로 넘치면 오른쪽 끝을 흐리게 + «N개 더 ›»(가려진 강의 열 수) · 끝까지 밀면 사라짐 */
+  function mxFit() {
+    var x = document.querySelector('#main .mx'), w, m, ths, R, i, n = 0;
+    if (!x) return;
+    w = x.parentNode; m = document.querySelector('#main .mxm');
+    R = x.getBoundingClientRect();
+    ths = x.querySelectorAll('thead th:not(.nm)');
+    for (i = 0; i < ths.length; i += 1) { if (ths[i].getBoundingClientRect().right > R.right + 2) n += 1; }
+    w.className = 'mxw' + (n ? ' more' : '');
+    if (m) { m.hidden = !n; if (n) m.innerHTML = n + '개 더' + nIcon('chev'); }
+  }
+  function mxMore() {
+    var x = document.querySelector('#main .mx'), rm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!x) return;
+    try { x.scrollBy({ left: Math.max(160, x.clientWidth - 220), behavior: rm ? 'auto' : 'smooth' }); } catch (e) { x.scrollLeft += Math.max(160, x.clientWidth - 220); }
+  }
+  var mxT = 0;
+  document.addEventListener('scroll', function (ev) { var t = ev.target; if (t && t.className === 'mx') { clearTimeout(mxT); mxT = setTimeout(mxFit, 60); } }, true);
+  window.addEventListener('resize', function () { if (S.me && D && curTab() === 'stat') { clearTimeout(mxT); mxT = setTimeout(mxFit, 60); } });
   /* 2차: 창 너비가 860 · 1600 을 넘나들면 서랍 꼴(인스펙터 · 옛 서랍)과 1600 요약을 다시 그림 */
   var wqNow = wq();
   window.addEventListener('resize', function () { var q = wq(); if (q !== wqNow) { wqNow = q; if (S.me && D) renderAll(); } });
