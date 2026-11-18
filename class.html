@@ -36,6 +36,374 @@
   window.addEventListener('appinstalled', function () { P.e = null; P.done = true; tell('installed'); });
 })();
 </script>
+<script>
+/* 히즈클래스 «앱으로 가는 문»(설치 → 이름 → 알림 한 줄 흐름 · 결론안 11-18 원장님 «결론안대로» · 곁 세션 노트 폴더 히즈클래스_설치알림흐름_결론안.md)
+   글 · 값 = 디자이너 노트 · 목업 그대로 · ES5 · class.html 안 이름과 안 겹치게 이름마다 dr- · 그림(SVG)은 목업 함수에서 그대로 떠 옴(<dr-gen> 칸 · 손으로 고치지 말 것)
+   class.html 머리 PWA 스크립트 바로 뒤에 통째로 넣음(따로 파일 없음 · 넣는 스크립트 apply_b.py) · 켜는 법 = 아래 DOOR_FROM 한 줄
+
+   판정 need(): '' = 문 없음(지금 흐름 그대로)
+     꺼짐 · 미리 보기(window.__lecPvIn · 주소 preview=) · 개인 링크로 남긴 «문 건너뜀» · 홈 화면 앱 · 아이패드 · 안드로이드 태블릿(UA 에 Mobile 없음) · PC · 모르는 브라우저 → ''
+     폰만: 카톡 안 → 'k-ios' · 'k-and' / 다른 앱 안(네이버 · 인스타 · 밴드 · 페북 · 라인 · 다음 · 구글 앱 · 안드로이드 wv · 아이폰 Safari 표시 없는 앱 안) → 'copy-ios' · 'copy-and'
+     아이폰 사파리 Version/26 이상 → '1-ios26' · 그 밑 → '1-ios18' / 크롬: 설치 이벤트 전 '1-wait' · 받으면 '1-and' / 삼성 인터넷: 전 '1-sam' · 받으면 '1-and'
+     크롬 · 삼성 인터넷에서 설치 끝(받아들임 · appinstalled · getInstalledRelatedApps) → 'done'
+   스위치: DOOR_FROM null = 꺼짐 · 'YYYY-MM-DD HH:MM'(한국 시각) = 그때부터 켬
+     ?door=1 · ?door=0 = 이 브라우저에서 켬 · 끔(localStorage lec-door · 읽자마자 주소에서 지움) · 켬이면 사파리 · 크롬으로 넘기는 주소와 복사 주소에 door=1 을 이어 붙임
+     door=0 · 저장된 '0' 은 DOOR_FROM 이 null 이거나 아직 그 시각 전일 때만 먹음(켠 뒤에는 무시 · 결론안 «학생 스스로 빠져나가는 길 없음»)
+   건너뜀: 주소 #k=열쇠(개인 링크)로 들어온 그 순간 문이 켜져 있으면(DOOR_FROM 지남 또는 door=1) localStorage lec-door-skip = 1
+     꺼져 있을 때는 남기지 않음(켜기 전에 개인 링크로 들어온 학생도 켠 뒤에는 문이 뜸) · 열쇠는 class.html boot 이 그대로 읽고 지움
+
+   class.html 의 고리(apply_b.py 가 넣음)
+     ① 이 스크립트 = 머리 PWA 스크립트(window.__hisPwa) 바로 뒤 · 읽는 스크립트(class-api.js 부르는 곳) 앞 → boot 이 #k= 를 지우기 전에 읽음
+     ② 문 CSS = <style> 끝 «앱으로 가는 문» 칸
+     ③ boot: pendFlush(); 바로 뒤 · if (!S.key) 앞 = need() 이면 show(app, { out: kakaoOut, wm: WM_SVG }) 하고 끝
+     ④ route 맨 앞: 같은 조건이면 teardown(); pwaClose(false); 뒤 show(…) 하고 끝
+     ⑤ 앱 안 2(이름) · 3(알림) 머리 = steps(2) · steps(3) · 첫 영상 끝 «다음부터 한 번에 열기» 띠 = on() 이고 폰이면 안 띄움
+*/
+(function () {
+  'use strict';
+  /* 켜는 때(한국 시각) · null = 꺼짐 */
+  var DOOR_FROM = null;
+  var K_TEST = 'lec-door', K_SKIP = 'lec-door-skip';
+  var ICON = 'app-icon-180.png';
+
+  /* <dr-gen> build_door.py 가 목업 함수(build_flow.py)에서 떠 채움 · 손으로 고치지 말 것 */
+  var G = {
+    WM: "<svg class=\"dr-wm\" viewBox=\"48 -753 6216 771\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentColor\" d=\"M48.3 0V-31.6L192.1 -45.1H216.7L364 -31.6V0ZM144.7 0Q146.7 -84.5 146.9 -170.1Q147.2 -255.6 147.2 -342.2V-392.6Q147.2 -479.1 146.9 -564.6Q146.7 -650.2 144.7 -735.2H269.7Q267.7 -651.2 267.2 -565.2Q266.7 -479.1 266.7 -392.6V-366.5Q266.7 -263.1 267.2 -174.3Q267.7 -85.6 269.7 0ZM207.2 -361V-396.1H653.5V-361ZM495.7 0V-31.6L642 -45.1H666.6L811.4 -31.6V0ZM590 0Q592.5 -84.5 593 -173.1Q593.5 -261.6 593.5 -366.5V-392.6Q593.5 -479.1 593 -564.6Q592.5 -650.2 590 -735.2H715.1Q713.5 -651.2 713 -565.2Q712.5 -479.1 712.5 -392.6V-342.2Q712.5 -256.7 713 -171.1Q713.5 -85.6 715.1 0ZM48.3 -703.7V-735.2H364V-703.7L216.7 -691.1H192.1ZM495.7 -703.7V-735.2H811.4V-703.7L666.6 -691.1H642ZM1028.3 0V-31.6L1175.1 -45.1H1200.3L1348.1 -31.6V0ZM1125.7 0Q1128.2 -84.5 1128.4 -170.1Q1128.7 -255.6 1128.7 -342.2V-392.6Q1128.7 -479.1 1128.4 -564.6Q1128.2 -650.2 1125.7 -735.2H1250.7Q1249.2 -651.2 1248.7 -565.2Q1248.2 -479.1 1248.2 -392.6V-342.7Q1248.2 -256.7 1248.7 -171.1Q1249.2 -85.6 1250.7 0ZM1028.3 -703.7V-735.2H1348.1V-703.7L1200.3 -691.1H1175.1ZM1788.8 17.6Q1727.3 17.6 1668.2 1.1Q1609.1 -15.4 1569.5 -41L1575.5 -199.3H1623.2L1665.6 -20.3L1610.8 -44.9L1602.2 -80Q1651.2 -45 1689.2 -33Q1727.2 -21 1778.6 -21Q1857 -21 1902.9 -56.5Q1948.8 -92 1948.8 -158.8Q1948.8 -194.2 1936.5 -220Q1924.3 -245.7 1895.9 -266.6Q1867.5 -287.6 1818.2 -308L1773.7 -327.1Q1680.5 -367.7 1631.9 -420.3Q1583.3 -472.8 1583.3 -554.5Q1583.3 -619.6 1615.9 -663.6Q1648.4 -707.7 1704.5 -730.5Q1760.7 -753.3 1831.4 -753.3Q1889.4 -753.3 1935.7 -738.8Q1982.1 -724.3 2020.6 -697.8L2014.6 -547.5H1965.9L1925.1 -718.4L1982.9 -692.8L1988.5 -656.1Q1948 -688.7 1916.5 -701.7Q1885 -714.7 1842.6 -714.7Q1774.6 -714.7 1731.2 -682Q1687.8 -649.3 1687.8 -587.4Q1687.8 -532.4 1719.2 -499.5Q1750.6 -466.5 1807.1 -442L1855.1 -421.5Q1930.6 -389.4 1974.6 -356.9Q2018.7 -324.4 2037.4 -285.6Q2056.2 -246.8 2056.2 -193.2Q2056.2 -129.7 2023.9 -82.1Q1991.7 -34.6 1931.8 -8.5Q1872 17.6 1788.8 17.6ZM3023.2 17.6Q2941.2 17.6 2872.4 -7.2Q2803.6 -31.9 2752.5 -80.6Q2701.4 -129.3 2673.4 -200.4Q2645.3 -271.4 2645.3 -363.6Q2645.3 -456.2 2674.1 -528.8Q2702.9 -601.3 2754.5 -651.6Q2806.1 -701.8 2875.1 -727.6Q2944.2 -753.3 3023.8 -753.3Q3088.9 -753.3 3137.9 -739.3Q3186.9 -725.2 3235.4 -697.3L3235.3 -528.5H3185.1L3140.8 -717L3203.7 -695.9V-661.9Q3163.8 -691.3 3126.1 -704Q3088.4 -716.8 3042.4 -716.8Q2964.6 -716.8 2903.4 -677.5Q2842.3 -638.3 2807.1 -560.5Q2771.9 -482.8 2771.9 -367.1Q2771.9 -251.5 2807.1 -173.7Q2842.3 -95.9 2903.2 -57.2Q2964.2 -18.5 3041.5 -18.5Q3087 -18.5 3127.3 -31.5Q3167.7 -44.5 3209.2 -75V-40.4L3148.3 -21.2L3192.6 -206.8H3242.8L3243.4 -39.5Q3194.4 -10.5 3141.4 3.5Q3088.4 17.6 3023.2 17.6ZM3459.3 0 3459.9 -31.6 3606.1 -45.1H3619.7L3619.2 0ZM3556.7 0Q3558.7 -84.5 3558.9 -168.1Q3559.2 -251.6 3559.2 -326.9V-392.6Q3559.2 -479.1 3558.9 -564.9Q3558.7 -650.7 3556.7 -735.2H3681.2Q3679.7 -651.2 3679.2 -564.9Q3678.7 -478.7 3678.7 -390.4V-329.8Q3678.7 -253.7 3679.2 -169.6Q3679.7 -85.6 3681.2 0ZM3619.2 0 3619.7 -36.1H3976.5L3918.4 -6.9L3962.7 -205.9H4010.4L4007 0ZM3459.3 -703.7V-735.2H3783.6V-703.7L3634.8 -691.1H3606.1ZM4178.5 0V-31.6L4277.6 -44.1H4295.6L4404.1 -31.6V0ZM4249.5 0 4496.1 -740.2H4570.2L4821.3 0H4699.7L4484.9 -664.1H4505.4L4501.9 -650.1L4295.6 0ZM4359 -244.3 4364.6 -277.4H4676.3L4681.9 -244.3ZM4580.4 0V-32.1L4714.9 -44.6H4756.3L4891.5 -32.1V0ZM5292.8 17.6Q5231.3 17.6 5172.2 1.1Q5113.1 -15.4 5073.5 -41L5079.5 -199.3H5127.2L5169.6 -20.3L5114.8 -44.9L5106.2 -80Q5155.2 -45 5193.2 -33Q5231.2 -21 5282.6 -21Q5361 -21 5406.9 -56.5Q5452.8 -92 5452.8 -158.8Q5452.8 -194.2 5440.5 -220Q5428.3 -245.7 5399.9 -266.6Q5371.5 -287.6 5322.2 -308L5277.7 -327.1Q5184.5 -367.7 5135.9 -420.3Q5087.3 -472.8 5087.3 -554.5Q5087.3 -619.6 5119.9 -663.6Q5152.4 -707.7 5208.5 -730.5Q5264.7 -753.3 5335.4 -753.3Q5393.4 -753.3 5439.7 -738.8Q5486.1 -724.3 5524.6 -697.8L5518.6 -547.5H5469.9L5429.1 -718.4L5486.9 -692.8L5492.5 -656.1Q5452 -688.7 5420.5 -701.7Q5389 -714.7 5346.6 -714.7Q5278.6 -714.7 5235.2 -682Q5191.8 -649.3 5191.8 -587.4Q5191.8 -532.4 5223.2 -499.5Q5254.6 -466.5 5311.1 -442L5359.1 -421.5Q5434.6 -389.4 5478.6 -356.9Q5522.7 -324.4 5541.4 -285.6Q5560.2 -246.8 5560.2 -193.2Q5560.2 -129.7 5527.9 -82.1Q5495.7 -34.6 5435.8 -8.5Q5376 17.6 5292.8 17.6ZM5996.8 17.6Q5935.3 17.6 5876.2 1.1Q5817.1 -15.4 5777.5 -41L5783.5 -199.3H5831.2L5873.6 -20.3L5818.8 -44.9L5810.2 -80Q5859.2 -45 5897.2 -33Q5935.2 -21 5986.6 -21Q6065 -21 6110.9 -56.5Q6156.8 -92 6156.8 -158.8Q6156.8 -194.2 6144.5 -220Q6132.3 -245.7 6103.9 -266.6Q6075.5 -287.6 6026.2 -308L5981.7 -327.1Q5888.5 -367.7 5839.9 -420.3Q5791.3 -472.8 5791.3 -554.5Q5791.3 -619.6 5823.9 -663.6Q5856.4 -707.7 5912.5 -730.5Q5968.7 -753.3 6039.4 -753.3Q6097.4 -753.3 6143.7 -738.8Q6190.1 -724.3 6228.6 -697.8L6222.6 -547.5H6173.9L6133.1 -718.4L6190.9 -692.8L6196.5 -656.1Q6156 -688.7 6124.5 -701.7Q6093 -714.7 6050.6 -714.7Q5982.6 -714.7 5939.2 -682Q5895.8 -649.3 5895.8 -587.4Q5895.8 -532.4 5927.2 -499.5Q5958.6 -466.5 6015.1 -442L6063.1 -421.5Q6138.6 -389.4 6182.6 -356.9Q6226.7 -324.4 6245.4 -285.6Q6264.2 -246.8 6264.2 -193.2Q6264.2 -129.7 6231.9 -82.1Q6199.7 -34.6 6139.8 -8.5Q6080 17.6 5996.8 17.6Z\"/></svg>",
+    COMPASS: "<svg class=\"dr-ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M15.3 8.7l-2.1 4.5-4.5 2.1 2.1-4.5z\"/></svg>",
+    GLOBE: "<svg class=\"dr-ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M3.5 12h17\"/><path d=\"M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5z\"/></svg>",
+    DL: "<svg class=\"dr-ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v11\"/><path d=\"M7.5 10.5L12 15l4.5-4.5\"/><path d=\"M5 19.5h14\"/></svg>",
+    COPY: "<svg class=\"dr-ic\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"8.5\" y=\"8.5\" width=\"11\" height=\"11\" rx=\"2.5\"/><path d=\"M15.5 5.5v-.5a1.5 1.5 0 0 0-1.5-1.5H6a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 6 14.5h.5\"/></svg>",
+    KK_DOTS: "<span class=\"dr-kk\" role=\"img\" aria-label=\"⋯ 단추\"><svg class=\"dr-ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"5.5\" cy=\"12\" r=\"1.9\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"1.9\" fill=\"currentColor\"/><circle cx=\"18.5\" cy=\"12\" r=\"1.9\" fill=\"currentColor\"/></svg></span>",
+    KK_KEBAB: "<span class=\"dr-kk\" role=\"img\" aria-label=\"⋮ 단추\"><svg class=\"dr-ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"12\" cy=\"5.5\" r=\"1.9\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"1.9\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"18.5\" r=\"1.9\" fill=\"currentColor\"/></svg></span>",
+    KK_SHARE: "<span class=\"dr-kk\" role=\"img\" aria-label=\"공유 단추\"><svg class=\"dr-ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3.5v11\"/><path d=\"M8 7.5l4-4 4 4\"/><path d=\"M8.5 10.5H6.5v10h11v-10h-2\"/></svg></span>",
+    KK_MENU: "<span class=\"dr-kk\" role=\"img\" aria-label=\"≡ 단추\"><svg class=\"dr-ic\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 7h14\"/><path d=\"M5 12h14\"/><path d=\"M5 17h14\"/></svg></span>",
+    IOS_MORE: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><g fill=\"#DDD6C5\"><rect x=\"14\" y=\"14\" width=\"92\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"27\" width=\"128\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"40\" width=\"110\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/></g><circle cx=\"24\" cy=\"80\" r=\"13\" fill=\"#FFFFFF\"/><path d=\"M26.5 74.5L21 80l5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"43\" y=\"67\" width=\"83\" height=\"26\" rx=\"13\" fill=\"#FFFFFF\"/><rect x=\"62\" y=\"77\" width=\"45\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><circle cx=\"145\" cy=\"80\" r=\"13\" fill=\"#FFFFFF\"/><g fill=\"#3A3833\"><circle cx=\"139.5\" cy=\"80\" r=\"1.8\"/><circle cx=\"145\" cy=\"80\" r=\"1.8\"/><circle cx=\"150.5\" cy=\"80\" r=\"1.8\"/></g><circle cx=\"145\" cy=\"80\" r=\"17.5\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/></svg>",
+    IOS_MENU: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><g fill=\"#DDD6C5\"><rect x=\"14\" y=\"14\" width=\"92\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"27\" width=\"128\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"40\" width=\"110\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/></g><rect x=\"44\" y=\"8\" width=\"116\" height=\"74\" rx=\"12\" fill=\"#FFFFFF\"/><rect x=\"48\" y=\"12\" width=\"108\" height=\"24\" rx=\"7\" fill=\"#E3EBDD\" stroke=\"#0C4631\" stroke-width=\"2\"/><g fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M60 26V17M56.8 20.2l3.2-3.2 3.2 3.2\"/><path d=\"M57.5 23H54.5V31H65.5V23H62.5\"/></g><text x=\"74\" y=\"28.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">공유</text><rect x=\"55\" y=\"44\" width=\"10\" height=\"10\" rx=\"2.5\" fill=\"#D8D1C0\"/><rect x=\"74\" y=\"46\" width=\"56\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"55\" y=\"62\" width=\"10\" height=\"10\" rx=\"2.5\" fill=\"#D8D1C0\"/><rect x=\"74\" y=\"64\" width=\"44\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><circle cx=\"148\" cy=\"93\" r=\"9\" fill=\"#FFFFFF\"/><g fill=\"#3A3833\"><circle cx=\"144\" cy=\"93\" r=\"1.4\"/><circle cx=\"148\" cy=\"93\" r=\"1.4\"/><circle cx=\"152\" cy=\"93\" r=\"1.4\"/></g></svg>",
+    IOS_SHARE: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><rect x=\"8\" y=\"10\" width=\"153\" height=\"110\" rx=\"14\" fill=\"#F6F5F2\"/><rect x=\"18\" y=\"20\" width=\"18\" height=\"18\" rx=\"4.5\" fill=\"#D8D1C0\"/><rect x=\"42\" y=\"22\" width=\"60\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"42\" y=\"32\" width=\"40\" height=\"5\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"16\" y=\"46\" width=\"137\" height=\"52\" rx=\"9\" fill=\"#FFFFFF\"/><rect x=\"26\" y=\"55\" width=\"70\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"134\" y=\"53\" width=\"10\" height=\"10\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"18\" y=\"72\" width=\"133\" height=\"24\" rx=\"7\" fill=\"#E3EBDD\" stroke=\"#0C4631\" stroke-width=\"2\"/><text x=\"26\" y=\"88.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">홈 화면에 추가</text><g fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.5\" stroke-linecap=\"round\"><rect x=\"133\" y=\"78\" width=\"12\" height=\"12\" rx=\"3\"/><path d=\"M139 81v6M136 84h6\"/></g></svg>",
+    IOS_ADD26: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><rect x=\"8\" y=\"8\" width=\"153\" height=\"110\" rx=\"14\" fill=\"#F6F5F2\"/><rect x=\"18\" y=\"19\" width=\"22\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"66\" y=\"19\" width=\"38\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><text x=\"150\" y=\"26.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"700\" fill=\"#1B5499\" text-anchor=\"end\">추가</text><rect x=\"121\" y=\"12\" width=\"35\" height=\"20\" rx=\"10\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/><rect x=\"16\" y=\"38\" width=\"137\" height=\"32\" rx=\"8\" fill=\"#FFFFFF\"/><clipPath id=\"dr-ia\"><rect x=\"22\" y=\"43\" width=\"22\" height=\"22\" rx=\"4.95\"/></clipPath><image href=\"app-icon-180.png\" x=\"22\" y=\"43\" width=\"22\" height=\"22\" clip-path=\"url(#dr-ia)\"/><text x=\"52\" y=\"58.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">히즈클래스</text><rect x=\"16\" y=\"75\" width=\"137\" height=\"24\" rx=\"8\" fill=\"#FFFFFF\"/><text x=\"24\" y=\"91\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">웹 앱으로 열기</text><rect x=\"123\" y=\"80\" width=\"24\" height=\"14\" rx=\"7\" fill=\"#34C759\"/><circle cx=\"140\" cy=\"87\" r=\"5.6\" fill=\"#FFFFFF\"/></svg>",
+    IOS18_SHARE: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><g fill=\"#DDD6C5\"><rect x=\"14\" y=\"10\" width=\"92\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"23\" width=\"128\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"36\" width=\"110\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/></g><rect x=\"10\" y=\"48\" width=\"149\" height=\"20\" rx=\"10\" fill=\"#FFFFFF\"/><rect x=\"50\" y=\"55\" width=\"69\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"0\" y=\"74\" width=\"169\" height=\"30\" fill=\"#F6F5F2\"/><path d=\"M19.5 83.5L14 89l5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M48.5 83.5L54 89l-5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\".35\"/><g fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M84.5 91V82M81.3 85.2l3.2-3.2 3.2 3.2\"/><path d=\"M82.0 88H79.0V96H90.0V88H87.0\"/></g><circle cx=\"84.5\" cy=\"88.5\" r=\"12\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/><path d=\"M113 83.5h4.5a1.5 1.5 0 0 1 1.5 1.5v9l-3-2-3 2z\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><rect x=\"145\" y=\"83\" width=\"11\" height=\"11\" rx=\"2.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.5\"/></svg>",
+    IOS_ADD18: "<svg viewBox=\"0 0 350 84\" width=\"350\" height=\"84\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"350\" height=\"84\" style=\"fill:var(--dr-pic)\"/><rect x=\"106.5\" y=\"8\" width=\"153\" height=\"110\" rx=\"14\" fill=\"#F6F5F2\"/><rect x=\"116.5\" y=\"19\" width=\"22\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"164.5\" y=\"19\" width=\"38\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><text x=\"248.5\" y=\"26.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"700\" fill=\"#1B5499\" text-anchor=\"end\">추가</text><rect x=\"219.5\" y=\"12\" width=\"35\" height=\"20\" rx=\"10\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/><rect x=\"114.5\" y=\"38\" width=\"137\" height=\"32\" rx=\"8\" fill=\"#FFFFFF\"/><clipPath id=\"dr-ib\"><rect x=\"120.5\" y=\"43\" width=\"22\" height=\"22\" rx=\"4.95\"/></clipPath><image href=\"app-icon-180.png\" x=\"120.5\" y=\"43\" width=\"22\" height=\"22\" clip-path=\"url(#dr-ib)\"/><text x=\"150.5\" y=\"58.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">히즈클래스</text><rect x=\"114.5\" y=\"75\" width=\"137\" height=\"24\" rx=\"8\" fill=\"#FFFFFF\"/><rect x=\"122.5\" y=\"84\" width=\"80\" height=\"6\" rx=\"3.0\" fill=\"#E4DED0\"/></svg>",
+    HOME_MINI: "<svg viewBox=\"0 0 150 80\" width=\"150\" height=\"80\" aria-hidden=\"true\" focusable=\"false\"><defs><linearGradient id=\"dr-hmg\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#E2E8DC\"/><stop offset=\".6\" stop-color=\"#EEE6D0\"/><stop offset=\"1\" stop-color=\"#E9DCC0\"/></linearGradient></defs><rect width=\"150\" height=\"80\" fill=\"url(#dr-hmg)\"/><rect x=\"10\" y=\"14\" width=\"34\" height=\"34\" rx=\"8\" fill=\"#FFFFFF\" fill-opacity=\".6\"/><rect x=\"16\" y=\"56\" width=\"22\" height=\"5\" rx=\"2.5\" fill=\"#D9D2C2\"/><rect x=\"58\" y=\"14\" width=\"34\" height=\"34\" rx=\"8\" fill=\"#FFFFFF\" fill-opacity=\".6\"/><rect x=\"64\" y=\"56\" width=\"22\" height=\"5\" rx=\"2.5\" fill=\"#D9D2C2\"/><clipPath id=\"dr-hm\"><rect x=\"106\" y=\"14\" width=\"34\" height=\"34\" rx=\"7.65\"/></clipPath><image href=\"app-icon-180.png\" x=\"106\" y=\"14\" width=\"34\" height=\"34\" clip-path=\"url(#dr-hm)\"/><rect x=\"102\" y=\"10\" width=\"42\" height=\"42\" rx=\"11\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/><text x=\"123\" y=\"68\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"10.5\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"middle\">히즈클래스</text></svg>",
+    CH_MORE: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><rect width=\"169\" height=\"40\" fill=\"#FFFFFF\"/><rect x=\"8\" y=\"8\" width=\"104\" height=\"24\" rx=\"12\" fill=\"#F0EFEC\"/><rect x=\"22\" y=\"17\" width=\"64\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"121\" y=\"13\" width=\"14\" height=\"14\" rx=\"3.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\"/><g fill=\"#3A3833\"><circle cx=\"152\" cy=\"14\" r=\"1.8\"/><circle cx=\"152\" cy=\"20\" r=\"1.8\"/><circle cx=\"152\" cy=\"26\" r=\"1.8\"/></g><circle cx=\"152\" cy=\"20\" r=\"13.5\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/><g fill=\"#DDD6C5\"><rect x=\"14\" y=\"56\" width=\"92\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"69\" width=\"128\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"82\" width=\"110\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/></g></svg>",
+    CH_MENU: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><rect x=\"8\" y=\"4\" width=\"155\" height=\"96\" rx=\"10\" fill=\"#FFFFFF\"/><rect x=\"20\" y=\"11\" width=\"11\" height=\"11\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"48\" y=\"11\" width=\"11\" height=\"11\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"76\" y=\"11\" width=\"11\" height=\"11\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"104\" y=\"11\" width=\"11\" height=\"11\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"132\" y=\"11\" width=\"11\" height=\"11\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"20\" y=\"33\" width=\"84\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"20\" y=\"49\" width=\"64\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"12\" y=\"64\" width=\"147\" height=\"24\" rx=\"7\" fill=\"#E3EBDD\" stroke=\"#0C4631\" stroke-width=\"2\"/><text x=\"20\" y=\"80.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">설치 및 바로가기 만들기</text></svg>",
+    CH_INSTALL: "<svg viewBox=\"0 0 350 104\" width=\"350\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"350\" height=\"104\" style=\"fill:var(--dr-pic)\"/><rect x=\"95.0\" y=\"8\" width=\"160\" height=\"90\" rx=\"16\" fill=\"#FFFFFF\"/><clipPath id=\"dr-ci\"><rect x=\"109.0\" y=\"20\" width=\"26\" height=\"26\" rx=\"5.8500000000000005\"/></clipPath><image href=\"app-icon-180.png\" x=\"109.0\" y=\"20\" width=\"26\" height=\"26\" clip-path=\"url(#dr-ci)\"/><text x=\"143.0\" y=\"37.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">히즈클래스</text><rect x=\"109.0\" y=\"55\" width=\"110\" height=\"6\" rx=\"3.0\" fill=\"#E4DED0\"/><rect x=\"161.0\" y=\"76\" width=\"30\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><text x=\"223.0\" y=\"81.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"700\" fill=\"#1B5499\" text-anchor=\"middle\">설치</text><rect x=\"205.0\" y=\"68\" width=\"36\" height=\"20\" rx=\"10\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/></svg>",
+    SAM_MORE: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><g fill=\"#DDD6C5\"><rect x=\"14\" y=\"12\" width=\"92\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"25\" width=\"128\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"14\" y=\"38\" width=\"110\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/></g><rect x=\"0\" y=\"66\" width=\"169\" height=\"38\" fill=\"#FFFFFF\"/><path d=\"M19.5 79.5L14 85l5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M46.5 79.5L52 85l-5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\".35\"/><rect x=\"76\" y=\"79\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#D8D1C0\"/><rect x=\"106\" y=\"79\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#D8D1C0\"/><g stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\"><path d=\"M141 80h12M141 85h12M141 90h12\"/></g><circle cx=\"147\" cy=\"85\" r=\"13.5\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/></svg>",
+    SAM_MENU: "<svg viewBox=\"0 0 169 104\" width=\"169\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"169\" height=\"104\" style=\"fill:var(--dr-pic)\"/><rect x=\"6\" y=\"6\" width=\"157\" height=\"92\" rx=\"12\" fill=\"#FFFFFF\"/><rect x=\"21\" y=\"14\" width=\"14\" height=\"12\" rx=\"3\" fill=\"#E4DED0\"/><rect x=\"58\" y=\"14\" width=\"14\" height=\"12\" rx=\"3\" fill=\"#E4DED0\"/><rect x=\"95\" y=\"14\" width=\"14\" height=\"12\" rx=\"3\" fill=\"#E4DED0\"/><rect x=\"132\" y=\"14\" width=\"14\" height=\"12\" rx=\"3\" fill=\"#E4DED0\"/><rect x=\"21\" y=\"40\" width=\"14\" height=\"12\" rx=\"3\" fill=\"#E4DED0\"/><rect x=\"58\" y=\"40\" width=\"14\" height=\"12\" rx=\"3\" fill=\"#E4DED0\"/><rect x=\"95\" y=\"40\" width=\"14\" height=\"12\" rx=\"3\" fill=\"#E4DED0\"/><rect x=\"132\" y=\"40\" width=\"14\" height=\"12\" rx=\"3\" fill=\"#E4DED0\"/><rect x=\"12\" y=\"66\" width=\"145\" height=\"24\" rx=\"7\" fill=\"#E3EBDD\" stroke=\"#0C4631\" stroke-width=\"2\"/><g fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.5\" stroke-linecap=\"round\"><rect x=\"20\" y=\"72\" width=\"12\" height=\"12\" rx=\"3\"/><path d=\"M26 75v6M23 78h6\"/></g><text x=\"38\" y=\"82.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">현재 페이지 추가</text></svg>",
+    SAM_HOME: "<svg viewBox=\"0 0 350 104\" width=\"350\" height=\"104\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"350\" height=\"104\" style=\"fill:var(--dr-pic)\"/><rect x=\"90.0\" y=\"8\" width=\"170\" height=\"90\" rx=\"14\" fill=\"#FFFFFF\"/><rect x=\"104.0\" y=\"20\" width=\"70\" height=\"6\" rx=\"3.0\" fill=\"#E4DED0\"/><rect x=\"98.0\" y=\"36\" width=\"154\" height=\"26\" rx=\"7\" fill=\"#E3EBDD\" stroke=\"#0C4631\" stroke-width=\"2\"/><text x=\"108.0\" y=\"53.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">홈 화면</text><rect x=\"108.0\" y=\"74\" width=\"60\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"108.0\" y=\"86\" width=\"44\" height=\"5\" rx=\"2.5\" fill=\"#E4DED0\"/></svg>",
+    K_SHARE: "<svg viewBox=\"0 0 154 80\" width=\"154\" height=\"80\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"154\" height=\"80\" style=\"fill:var(--dr-pic)\"/><g fill=\"#DDD6C5\"><rect x=\"12\" y=\"10\" width=\"92\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"12\" y=\"23\" width=\"128\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"12\" y=\"36\" width=\"110\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/></g><rect x=\"0\" y=\"52\" width=\"154\" height=\"28\" fill=\"#FFFFFF\"/><path d=\"M17.5 60.5L12 66l5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M40.5 60.5L46 66l-5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\".35\"/><rect x=\"70\" y=\"61\" width=\"11\" height=\"10\" rx=\"2.5\" fill=\"#D8D1C0\"/><g fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M134 68.5V59.5M130.8 62.7l3.2-3.2 3.2 3.2\"/><path d=\"M131.5 65.5H128.5V73.5H139.5V65.5H136.5\"/></g><circle cx=\"134\" cy=\"66\" r=\"12\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/></svg>",
+    K_SHEET: "<svg viewBox=\"0 0 154 80\" width=\"154\" height=\"80\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"154\" height=\"80\" style=\"fill:var(--dr-pic)\"/><rect x=\"6\" y=\"6\" width=\"142\" height=\"74\" rx=\"12\" fill=\"#F6F5F2\"/><rect x=\"16\" y=\"15\" width=\"70\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"16\" y=\"26\" width=\"46\" height=\"5\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"16\" y=\"38\" width=\"22\" height=\"22\" rx=\"5.5\" fill=\"#FFFFFF\" stroke=\"#D8D1C0\" stroke-width=\"1\"/><g fill=\"none\" stroke=\"#1B5499\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"27\" cy=\"49\" r=\"7\"/><path d=\"M29.8 46.2l-1.8 3.9-3.9 1.8 1.8-3.9z\"/></g><rect x=\"10\" y=\"34\" width=\"34\" height=\"44\" rx=\"9\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/><text x=\"27\" y=\"73\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"10\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"middle\">Safari</text><rect x=\"50\" y=\"38\" width=\"22\" height=\"22\" rx=\"5.5\" fill=\"#D8D1C0\"/><rect x=\"53\" y=\"67\" width=\"16\" height=\"5\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"84\" y=\"38\" width=\"22\" height=\"22\" rx=\"5.5\" fill=\"#D8D1C0\"/><rect x=\"87\" y=\"67\" width=\"16\" height=\"5\" rx=\"2.5\" fill=\"#E4DED0\"/><rect x=\"118\" y=\"38\" width=\"22\" height=\"22\" rx=\"5.5\" fill=\"#D8D1C0\"/><rect x=\"121\" y=\"67\" width=\"16\" height=\"5\" rx=\"2.5\" fill=\"#E4DED0\"/></svg>",
+    K_MORE_AND: "<svg viewBox=\"0 0 154 80\" width=\"154\" height=\"80\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"154\" height=\"80\" style=\"fill:var(--dr-pic)\"/><g fill=\"#DDD6C5\"><rect x=\"12\" y=\"10\" width=\"92\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"12\" y=\"23\" width=\"128\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/><rect x=\"12\" y=\"36\" width=\"110\" height=\"6\" rx=\"3.0\" fill=\"#DDD6C5\"/></g><rect x=\"0\" y=\"52\" width=\"154\" height=\"28\" fill=\"#FFFFFF\"/><path d=\"M17.5 60.5L12 66l5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M40.5 60.5L46 66l-5.5 5.5\" fill=\"none\" stroke=\"#3A3833\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\".35\"/><rect x=\"70\" y=\"61\" width=\"11\" height=\"10\" rx=\"2.5\" fill=\"#D8D1C0\"/><g fill=\"#3A3833\"><circle cx=\"134\" cy=\"61\" r=\"1.7\"/><circle cx=\"134\" cy=\"66\" r=\"1.7\"/><circle cx=\"134\" cy=\"71\" r=\"1.7\"/></g><circle cx=\"134\" cy=\"66\" r=\"12\" fill=\"none\" stroke=\"#0C4631\" stroke-width=\"2\"/></svg>",
+    K_MENU: "<svg viewBox=\"0 0 154 80\" width=\"154\" height=\"80\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"154\" height=\"80\" style=\"fill:var(--dr-pic)\"/><rect x=\"8\" y=\"6\" width=\"138\" height=\"68\" rx=\"10\" fill=\"#FFFFFF\"/><rect x=\"18\" y=\"16\" width=\"80\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"18\" y=\"31\" width=\"60\" height=\"6\" rx=\"3.0\" fill=\"#D8D1C0\"/><rect x=\"12\" y=\"44\" width=\"130\" height=\"24\" rx=\"7\" fill=\"#E3EBDD\" stroke=\"#0C4631\" stroke-width=\"2\"/><text x=\"19\" y=\"60.5\" font-family=\"Pretendard, -apple-system, sans-serif\" font-size=\"12\" font-weight=\"600\" fill=\"#1A1A18\" text-anchor=\"start\">다른 브라우저로 열기</text></svg>",
+    AR_DN: "<svg class=\"dr-fa dr-dn\" viewBox=\"0 0 36 44\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M18 5v32M7 27l11 11 11-11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    AR_DNC: "<svg class=\"dr-fa dr-dnc\" viewBox=\"0 0 36 44\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M18 5v32M7 27l11 11 11-11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    AR_DNS: "<svg class=\"dr-fa dr-dns\" viewBox=\"0 0 36 44\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M18 5v32M7 27l11 11 11-11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    AR_UP: "<svg class=\"dr-fa dr-up\" viewBox=\"0 0 36 44\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M18 39V7M7 17L18 6l11 11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>"
+  };
+  /* </dr-gen> */
+
+  function pw() { return window.__hisPwa || {}; }
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+
+  /* ?door=1 · ?door=0 읽고 바로 지움(다른 값과 # 은 그대로) */
+  (function () {
+    var q = String(location.search || '').replace(/^\?/, ''), a = q ? q.split('&') : [], b = [], v = '', i;
+    for (i = 0; i < a.length; i += 1) {
+      if (/^door(=|$)/.test(a[i])) { if (a[i] === 'door=1') v = '1'; else if (a[i] === 'door=0') v = '0'; } else b.push(a[i]);
+    }
+    if (v) lsSet(K_TEST, v);
+    if (b.length !== a.length) {
+      try { history.replaceState(history.state, '', location.pathname + (b.length ? '?' + b.join('&') : '') + location.hash); } catch (e) { /* 없음 */ }
+    }
+  })();
+  /* 개인 링크 #k= → 이 브라우저는 문 건너뜀 · 그 순간 문이 켜져 있을 때만 남김(켜기 전에 들어온 학생이 켠 뒤 문을 피하지 않게 · 열쇠는 class.html 이 따로 저장) */
+  (function () {
+    var m = String(location.hash || '').match(/^#k=([^&]+)/), k = '';
+    if (!m) return;
+    try { k = decodeURIComponent(m[1]); } catch (e) { k = ''; }
+    if (k && on()) lsSet(K_SKIP, '1');
+  })();
+
+  function kstMs(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/.exec(String(s || ''));
+    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] - 9, +m[5]) : NaN;
+  }
+  /* 켬 = DOOR_FROM 지남(이때는 door=0 · 저장된 '0' 무시 · 학생 스스로 빠져나가는 길 없음) 또는 이 브라우저 시험 켬('1') */
+  function live() {
+    var f = DOOR_FROM === null ? NaN : kstMs(DOOR_FROM);
+    return isFinite(f) && Date.now() >= f;
+  }
+  function on() { return live() || lsGet(K_TEST) === '1'; }
+
+  /* ------------------------------------------------ 갈래 */
+  var INAPP = /NAVER|Instagram|\bBAND\/|FBAN|FBAV|FB_IAB|FBIOS|\bLine\/|DaumApps|KAKAOSTORY|everytimeApp|GSA\/|musical_ly|BytedanceWebview|Twitter/;
+  var OTHER_IOS = /CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|Whale|YaBrowser|DuckDuckGo/;
+  var OTHER_AND = /EdgA|OPR\/|Firefox|Whale|YaBrowser|DuckDuckGo|UCBrowser|HuaweiBrowser|MiuiBrowser|HeyTapBrowser|OppoBrowser|VivoBrowser|Vivaldi|Puffin|Silk/i;
+  var ST = { el: null, hooks: null, k: '', inst: false, busy: false, rel: false };
+
+  function ua() { return String(navigator.userAgent || ''); }
+  function standalone() {
+    try { if (window.navigator.standalone === true) return true; } catch (e) { /* 없음 */ }
+    try { if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true; } catch (e2) { /* 없음 */ }
+    return false;
+  }
+  function ipad() { return /iPad/.test(ua()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function inst() { return ST.inst || !!pw().done; }
+  function kind() {
+    var u = ua(), os, m;
+    if (!on()) return '';
+    if (window.__lecPvIn || /[?&]preview=/.test(String(location.search || ''))) return '';
+    if (lsGet(K_SKIP) === '1') return '';
+    if (standalone() || ipad()) return '';
+    if (/iPhone|iPod/.test(u)) os = 'ios';
+    else if (/Android/i.test(u) && /Mobile/.test(u)) os = 'and';
+    else return ''; /* PC · 안드로이드 태블릿 · 그 밖 */
+    if (/KAKAOTALK/i.test(u)) return 'k-' + os;
+    if (INAPP.test(u)) return 'copy-' + os;
+    if (os === 'ios') {
+      if (OTHER_IOS.test(u)) return '';
+      if (!/Safari\//.test(u)) return 'copy-ios'; /* Safari 표시가 없는 아이폰 = 앱 안 */
+      m = /Version\/(\d+)/.exec(u);
+      if (!m) return '';
+      return +m[1] >= 26 ? '1-ios26' : '1-ios18';
+    }
+    if (/; wv\)|Version\/4\.0 Chrome/.test(u)) return 'copy-and';
+    if (/SamsungBrowser\//.test(u)) return inst() ? 'done' : (pw().e ? '1-and' : '1-sam');
+    if (/Chrome\/\d/.test(u) && !OTHER_AND.test(u)) return inst() ? 'done' : (pw().e ? '1-and' : '1-wait');
+    return '';
+  }
+
+  /* ------------------------------------------------ 화면 */
+  var NB = ' ';
+  var BOTTOM = '안 되면 수업 때 선생님께 폰을 보여 주세요.';
+  var HAVE = '이미 추가했으면 홈 화면의 히즈클래스를 누르세요.';
+  var LEAD = '<h1 class="dr-ft">홈 화면에 추가해 주세요</h1><p class="dr-fp">히즈클래스는 홈 화면 앱으로 열어요.<br>새 영상 알림도 앱으로 와요.</p>';
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+  }
+  function pct(x) { return (Math.round(x * 1000) / 10).toFixed(1) + '%'; }
+  /* 세 칸 단계 막대: 지난 칸 = 딥그린 가득 · 지금 칸 = f0 에서 f 까지 차오름 · 남은 칸 = 옅은 회색 */
+  function steps(cur, fk) {
+    var F = { k: [0, 1 / 3], '1': [1 / 3, 2 / 3], end: [2 / 3, 1], mid: [0, 0.5] }, f = F[fk || 'mid'] || F.mid,
+      n = ['추가', '이름', '알림'], h = '', i, c;
+    for (i = 1; i <= 3; i += 1) {
+      c = i === cur ? 'dr-now' : (i < cur ? 'dr-past' : '');
+      h += '<li' + (c ? ' class="' + c + '"' : '') +
+        (i === cur ? ' style="--f:' + pct(f[1]) + ';--f0:' + pct(f[0]) + '" aria-current="step"' : '') +
+        '><i></i><span>' + n[i - 1] + '</span></li>';
+    }
+    return '<ol class="dr-fs dr-t" aria-label="세 단계 가운데 ' + cur + '단계">' + h + '</ol>';
+  }
+  function head(cur, fk) {
+    return '<div class="dr-fh"><span class="dr-sr">히즈클래스</span>' + ((ST.hooks && ST.hooks.wm) || G.WM) + '</div>' + steps(cur, fk);
+  }
+  function btn(act, ic, t) {
+    return '<button class="dr-btn" type="button" data-dr="' + act + '">' + ic + '<span>' + t + '</span></button>';
+  }
+  function kTop(title, lead, act) {
+    return '<div class="dr-x dr-xk">' + head(1, 'k') + '<h1 class="dr-ft">' + title + '</h1><p class="dr-fp">' + lead + '</p>' +
+      '<p class="dr-fp dr-fp2">' + HAVE + '</p>' +
+      '<div class="dr-app"><button class="dr-app-b" type="button" data-dr="' + act + '" aria-label="히즈클래스 열기">' +
+      '<img src="' + ICON + '" width="72" height="72" alt=""></button><span>히즈클래스</span></div>';
+  }
+  function pi(n, label, pic, cap) {
+    return '<li class="dr-pi"><span class="dr-pic" role="img" aria-label="' + label + '">' + pic + '</span>' +
+      '<span class="dr-pi-c"><span class="dr-n dr-num" aria-hidden="true">' + n + '</span><span>' + cap + '</span></span></li>';
+  }
+  function card(n, pic, title, sub, cls, label) {
+    return '<li class="dr-c' + (cls ? ' dr-' + cls : '') + '"><span class="dr-c-pic" role="img" aria-label="' + label + '">' + pic + '</span>' +
+      '<span class="dr-c-cap"><span class="dr-n dr-num" aria-hidden="true">' + n + '</span><span class="dr-c-tx"><span class="dr-c-t">' + title + '</span>' +
+      (sub ? '<span class="dr-c-s">' + sub + '</span>' : '') + '</span></span></li>';
+  }
+  function arrow(k) { return G['AR_' + k.toUpperCase()] + '<span class="dr-fan dr-fan-' + k + ' dr-num" aria-hidden="true">1</span>'; }
+
+  function scrK(os) {
+    var b;
+    if (os === 'ios') {
+      b = kTop('사파리에서 열어 주세요', '홈 화면 앱은 사파리에서 만들어요.', 'out') + btn('out', G.COMPASS, '사파리로 열기') +
+        '<div class="dr-pan"><p class="dr-pan-t">단추가 안 되면</p><ol class="dr-pan-pics">' +
+        pi(1, '카톡 아래 줄 그림 · 오른쪽 공유에 동그라미', G.K_SHARE, '오른쪽 아래 ' + G.KK_SHARE) +
+        pi(2, '공유 창 그림 · Safari 에 동그라미', G.K_SHEET, 'Safari') + '</ol></div>';
+    } else {
+      b = kTop('브라우저에서 열어 주세요', '홈 화면 앱은 크롬이나 삼성 인터넷에서 만들어요.', 'out') + btn('out', G.GLOBE, '다른 브라우저로 열기') +
+        '<div class="dr-pan"><p class="dr-pan-t">단추가 안 되면</p><ol class="dr-pan-pics">' +
+        pi(1, '카톡 아래 줄 그림 · 오른쪽 ⋮ 에 동그라미', G.K_MORE_AND, '오른쪽 아래 ' + G.KK_KEBAB) +
+        pi(2, '카톡 차림 그림 · 다른 브라우저로 열기에 동그라미', G.K_MENU, '다른 브라우저로 열기') + '</ol></div>';
+    }
+    return b + '<p class="dr-note dr-sm">그래도 ' + BOTTOM + '</p></div>';
+  }
+  function scrCopy(os) {
+    var ios = os === 'ios';
+    return kTop(ios ? '사파리에서 열어 주세요' : '브라우저에서 열어 주세요',
+      ios ? '홈 화면 앱은 사파리에서 만들어요.' : '홈 화면 앱은 크롬이나 삼성 인터넷에서 만들어요.', 'copy') +
+      btn('copy', G.COPY, '주소 복사') +
+      '<p class="dr-do">' + (ios ? '사파리를 열고 주소 칸에 붙여 넣어 주세요.' : '크롬을 열고 주소 칸에 붙여 넣어 주세요.') + '</p>' +
+      '<p class="dr-url" id="drUrl">' + esc(showUrl()) + '</p><p class="dr-note dr-sm">' + BOTTOM + '</p></div>';
+  }
+  function scrIos26() {
+    return '<div class="dr-x dr-x1 dr-pb-dn">' + head(1, '1') + LEAD + '<ol class="dr-cs">' +
+      card(1, G.IOS_MORE, '오른쪽 아래 ' + G.KK_DOTS, '공유가 보이면 2부터', '', '1. 오른쪽 아래 ⋯ 단추') +
+      card(2, G.IOS_MENU, '공유', '', '', '2. 공유') +
+      card(3, G.IOS_SHARE, '홈 화면에 추가', '안 보이면 아래로' + NB + '내려요', '', '3. 홈 화면에 추가') +
+      card(4, G.IOS_ADD26, '오른쪽 위 추가', '웹 앱으로 열기는 켜' + NB + '둔' + NB + '채로', '', '4. 오른쪽 위 추가') +
+      card(5, G.HOME_MINI, '홈 화면의 히즈클래스를 누르세요', '', 'hz', '5. 홈 화면의 히즈클래스 아이콘 그림') +
+      '</ol><p class="dr-note dr-sm">' + BOTTOM + '</p></div>' + arrow('dn');
+  }
+  function scrIos18() {
+    return '<div class="dr-x dr-x1 dr-pb-dnc">' + head(1, '1') + LEAD + '<ol class="dr-cs">' +
+      card(1, G.IOS18_SHARE, '아래 가운데 공유', '', '', '1. 아래 가운데 공유') +
+      card(2, G.IOS_SHARE, '홈 화면에 추가', '안 보이면 아래로' + NB + '내려요', '', '2. 홈 화면에 추가') +
+      card(3, G.IOS_ADD18, '오른쪽 위 추가', '', 'wide', '3. 오른쪽 위 추가') +
+      card(4, G.HOME_MINI, '홈 화면의 히즈클래스를 누르세요', '', 'hz', '4. 홈 화면의 히즈클래스 아이콘 그림') +
+      '</ol><p class="dr-note dr-sm">' + BOTTOM + '</p></div>' + arrow('dnc');
+  }
+  function scrAnd() {
+    return '<div class="dr-x">' + head(1, '1') + LEAD +
+      '<div class="dr-app"><img src="' + ICON + '" width="72" height="72" alt=""><span>히즈클래스</span></div>' +
+      btn('install', G.DL, '설치하기') +
+      '<p class="dr-cap">누르고, 뜨는 창에서 ‘설치’를 누르세요.</p><p class="dr-cap">' + BOTTOM + '</p></div>';
+  }
+  function scrWait() {
+    return '<div class="dr-x dr-x1">' + head(1, '1') + LEAD + '<ol class="dr-cs">' +
+      card(1, G.CH_MORE, '오른쪽 위 ' + G.KK_KEBAB, '', '', '1. 오른쪽 위 ⋮ 단추') +
+      card(2, G.CH_MENU, '설치 및 바로가기 만들기', '', '', '2. 설치 및 바로가기 만들기') +
+      card(3, G.CH_INSTALL, '설치', '', 'wide', '3. 설치') +
+      '</ol><p class="dr-note">이름이 다르면 ‘앱 설치’나 ‘홈 화면에 추가’를 누르세요.</p><p class="dr-note dr-sm">' + BOTTOM + '</p></div>' + arrow('up');
+  }
+  function scrSam() {
+    return '<div class="dr-x dr-x1 dr-pb-dns">' + head(1, '1') + LEAD + '<ol class="dr-cs">' +
+      card(1, G.SAM_MORE, '오른쪽 아래 ' + G.KK_MENU, '', '', '1. 오른쪽 아래 ≡ 단추') +
+      card(2, G.SAM_MENU, '현재 페이지 추가', '', '', '2. 현재 페이지 추가') +
+      card(3, G.SAM_HOME, '홈 화면', '', 'wide', '3. 홈 화면') +
+      '</ol><p class="dr-note dr-sm">' + BOTTOM + '</p></div>' + arrow('dns');
+  }
+  function scrDone() {
+    var h = '', i;
+    for (i = 0; i < 4; i += 1) {
+      h += i === 2 ? '<span class="dr-hs-s dr-me"><img src="' + ICON + '" width="60" height="60" alt=""><span>히즈클래스</span></span>' :
+        '<span class="dr-hs-s"><i class="dr-hs-i"></i><i class="dr-hs-l"></i></span>';
+    }
+    return '<div class="dr-x">' + head(1, 'end') + '<h1 class="dr-ft">홈 화면의 히즈클래스를 누르세요</h1>' +
+      '<div class="dr-hs" role="img" aria-label="홈 화면 그림 · 히즈클래스 아이콘에 동그라미">' + h + '</div>' +
+      '<p class="dr-note">앱으로 열면 이어서 안내해요.</p></div>';
+  }
+  function html(k) {
+    if (k === 'k-ios' || k === 'k-and') return scrK(k.slice(2));
+    if (k === 'copy-ios' || k === 'copy-and') return scrCopy(k.slice(5));
+    if (k === '1-ios26') return scrIos26();
+    if (k === '1-ios18') return scrIos18();
+    if (k === '1-and') return scrAnd();
+    if (k === '1-wait') return scrWait();
+    if (k === '1-sam') return scrSam();
+    if (k === 'done') return scrDone();
+    return '';
+  }
+
+  /* ------------------------------------------------ 그리기 · 단추 */
+  function testOn() { return lsGet(K_TEST) === '1'; }
+  /* 카톡에서 밖으로: 지금 class.html 과 같은 ?i=1 + 시험 켬이면 door=1 */
+  function outUrl() { return location.origin + location.pathname + '?i=1' + (testOn() ? '&door=1' : ''); }
+  function copyUrl() { return location.origin + location.pathname + (testOn() ? '?door=1' : ''); }
+  function showUrl() { return location.host + location.pathname + (testOn() ? '?door=1' : ''); }
+
+  function paint(k) {
+    var el = ST.el, r = document.documentElement;
+    if (!el) return;
+    ST.k = k;
+    el.innerHTML = '<div class="dr dr-t" id="drRoot" data-k="' + k + '">' + html(k) + '</div>';
+    if (!/(^| )dr-open( |$)/.test(r.className)) r.className = (r.className ? r.className + ' ' : '') + 'dr-open';
+    try { window.scrollTo(0, 0); } catch (e) { /* 없음 */ }
+  }
+  function repaint() {
+    var k;
+    if (!ST.el || ST.busy || !document.getElementById('drRoot')) return;
+    k = kind();
+    if (k && k !== ST.k) paint(k);
+  }
+  /* 갤럭시: 이미 설치한 폰(매니페스트 related_applications 가 있어야 답함 · 크롬만) */
+  function relCheck(k) {
+    if (ST.rel || (k !== '1-wait' && k !== '1-and' && k !== '1-sam')) return;
+    ST.rel = true;
+    try {
+      if (typeof navigator.getInstalledRelatedApps !== 'function') return;
+      navigator.getInstalledRelatedApps().then(function (a) { if (a && a.length) { ST.inst = true; repaint(); } }, function () { /* 없음 */ });
+    } catch (e) { /* 없음 */ }
+  }
+  function show(el, hooks) {
+    var k = kind();
+    if (!k) return false;
+    ST.el = el || document.getElementById('app');
+    ST.hooks = hooks || null;
+    paint(k);
+    relCheck(k);
+    return true;
+  }
+  function out() {
+    var u = outUrl();
+    if (ST.hooks && typeof ST.hooks.out === 'function') { ST.hooks.out(u); return; }
+    location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(u);
+  }
+  function copy() {
+    var t = copyUrl();
+    function mark() {
+      var u = document.getElementById('drUrl'), r, s;
+      if (!u) return;
+      try { r = document.createRange(); s = window.getSelection(); r.selectNodeContents(u); s.removeAllRanges(); s.addRange(r); } catch (e) { /* 없음 */ }
+    }
+    function legacy() {
+      var x = document.createElement('textarea');
+      x.value = t;
+      x.setAttribute('readonly', '');
+      x.style.position = 'fixed'; x.style.top = '0'; x.style.left = '0'; x.style.opacity = '0';
+      document.body.appendChild(x);
+      x.select();
+      try { x.setSelectionRange(0, t.length); } catch (e0) { /* 없음 */ }
+      try { document.execCommand('copy'); } catch (e1) { /* 없음 · 주소 글이 남음 */ }
+      document.body.removeChild(x);
+      mark();
+    }
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(t).then(mark, legacy);
+        return;
+      }
+    } catch (e) { /* 없음 */ }
+    legacy();
+  }
+  function install(b) {
+    var P = pw(), ev = P.e, uc;
+    if (!ev || ST.busy) return;
+    ST.busy = true;
+    if (b) b.disabled = true;
+    function fin(ok) {
+      ST.busy = false;
+      if (P.e === ev) P.e = null; /* 한 번 띄운 설치 창은 다시 못 씀 */
+      if (ok) ST.inst = true;
+      repaint();
+    }
+    try { ev.prompt(); } catch (e) { fin(false); return; }
+    uc = ev.userChoice;
+    if (uc && typeof uc.then === 'function') uc.then(function (r) { fin(!!r && r.outcome === 'accepted'); }, function () { fin(false); });
+    else fin(false);
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target, root = document.getElementById('drRoot'), a;
+    if (!root) return;
+    while (t && t !== document && !(t.getAttribute && t.getAttribute('data-dr'))) t = t.parentNode;
+    if (!t || t === document || !root.contains(t)) return;
+    a = t.getAttribute('data-dr');
+    if (a === 'out') out();
+    else if (a === 'copy') copy();
+    else if (a === 'install') install(t);
+  });
+  /* 머리 PWA 스크립트가 먼저 받아 둔 뒤(같은 이벤트 · 먼저 단 듣개) 다시 그림 */
+  window.addEventListener('beforeinstallprompt', function () { setTimeout(repaint, 0); });
+  window.addEventListener('appinstalled', function () { ST.inst = true; setTimeout(repaint, 0); });
+
+  window.__hisDoor = { need: kind, show: show, steps: steps, on: on };
+})();
+</script>
 <style>
 /* 2차 디자인(11-18 원장님 «두 앱 넣어»): 글꼴 Pretendard 를 앱에 실음(앱 폴더 assets · 400 · 600 · 700 · 바깥 요청 0) */
 @font-face{font-family:"Pretendard";font-style:normal;font-weight:400;font-display:swap;src:url(assets/pretendard-400.woff) format("woff")}
@@ -723,6 +1091,175 @@ button.s1t:active{background:var(--press)}
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{transition:none !important;animation:none !important;scroll-behavior:auto !important}
 }
+/* 히즈클래스 «앱으로 가는 문»(A단계 · 11-18) · 값 = 목업 그대로(P\v2\flow\flow.css · P\v2\student\style.css 크림 토큰) · 이름에 dr- 를 붙여 class.html 과 안 겹치게
+   목업과 다른 곳(진짜 화면이라서): 폰의 브라우저 줄 그림(.osb)은 안 그림 → 화살표 · 번호는 화면 가장자리에 붙임(아래 줄 = position:fixed · 크롬 위 줄 = 쪽 맨 위 absolute · 브라우저 줄 바로 옆 4px)
+   «끝» 홈 화면 줄: 목업은 학생 화면 style.css 의 .me{padding:20px 0 4px} 가 우연히 걸려 아이콘이 이웃보다 20px 낮고 판이 24px 큼 → 문은 이웃과 나란히(값은 목업 flow.css .fhs 그대로)
+   크롬 · 삼성 인터넷 화면 위 여백(목업 84 · 76 = 줄 그림 자리)은 20 · --pic 는 목업이 섞은 값을 그대로 적음(color-mix(#EAE1C8 55%, #FAF6EC) = #F1EAD8 · 옛 폰도 같게)
+   글 폭 440 까지(넓은 폰 · 가로) · 아래 여백 = 화살표 자리 + 안전 영역
+   2차 맞춤(B · 11-18): 색 = class.html :root 토큰을 그대로 받음(괄호 뒤 값 = 같은 값 · 문만 따로 띄울 때) · 글꼴 = class.html 의 Pretendard 를 물려받음 · 굵기 400 · 600 · 700 셋만 · 13px 이하 글자는 600(DESIGN.md 2차 줄) */
+.dr-t{--dr-bg:var(--bg,#FAF6EC);--dr-group:var(--card,#FFFFFF);--dr-ink:var(--ink,#1A1A18);--dr-ink2:var(--ink2,#57534A);--dr-acc:var(--acc,#0C4631);--dr-acc-tint:var(--accB,#E3EBDD);--dr-on-acc:var(--fillT,#FFFFFF);--dr-fill:var(--fill,#EAE1C8);--dr-pic:#F1EAD8;--dr-line:var(--edge,rgba(70,52,12,.10))}
+html.dr-open,html.dr-open body{background:#FAF6EC}
+.dr{position:relative;min-height:100vh;min-height:100dvh;background:var(--dr-bg);color:var(--dr-ink);font-size:15px;line-height:20px;text-align:left;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+.dr *,.dr-fs,.dr-fs *{box-sizing:border-box;margin:0;padding:0}
+.dr button{font-family:inherit;-webkit-appearance:none;appearance:none}
+.dr :focus-visible{outline:2px solid var(--dr-acc);outline-offset:2px}
+.dr-num{font-variant-numeric:tabular-nums}
+.dr-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.dr-ic{display:block;flex:none}
+.dr-ic *{vector-effect:non-scaling-stroke}
+
+/* 틀 */
+.dr-x{max-width:440px;margin:0 auto;padding:calc(20px - 8px * var(--dr-sq,0)) 20px calc(32px - 16px * var(--dr-sq,0) + env(safe-area-inset-bottom,0px))}
+.dr-x.dr-pb-dn,.dr-x.dr-pb-dns{padding-bottom:calc(84px - 28px * var(--dr-sq,0) + env(safe-area-inset-bottom,0px))}   /* 작은 화면: 마지막 한 줄(왼쪽 짧은 글)만 화살표 옆 · 카드는 화살표 · 번호 위 */
+.dr-x.dr-pb-dnc{padding-bottom:calc(56px + env(safe-area-inset-bottom,0px))}
+
+/* 머리 · 세 칸 단계 막대(지난 칸 = 딥그린 가득 · 지금 칸 = 차오름 · 남은 칸 = 옅은 중립 회색) */
+.dr-fh{display:flex;align-items:center;justify-content:center;height:24px;line-height:0;color:var(--dr-acc)}
+.dr-fh svg{display:block;width:112px;height:auto}
+.dr-fs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:calc(16px - 6px * var(--dr-sq,0));list-style:none}
+.dr-fs li{display:flex;flex-direction:column;align-items:center;gap:6px}
+.dr-fs i{position:relative;display:block;width:100%;height:4px;border-radius:2px;background:#DCD9D2;overflow:hidden}
+.dr-fs span{font-size:13px;line-height:18px;font-weight:600;font-style:normal;color:var(--dr-ink2)}
+.dr-fs .dr-past i{background:var(--dr-acc)}
+.dr-fs .dr-now i::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--f,100%);border-radius:2px;background:var(--dr-acc);animation:dr-fill .8s ease-out}
+@keyframes dr-fill{from{width:var(--f0,0%)}}
+.dr-fs .dr-now span{font-weight:600;color:var(--dr-acc)}
+
+/* 글 */
+.dr-ft{margin-top:calc(32px - 14px * var(--dr-sq,0));font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.015em;color:var(--dr-ink);text-wrap:balance}
+.dr-fp{margin-top:calc(10px - 4px * var(--dr-sq,0));font-size:17px;line-height:25px;font-weight:400;color:var(--dr-ink2);text-align:justify}
+.dr-fp.dr-fp2{margin-top:4px}
+.dr-do{margin-top:calc(14px - 4px * var(--dr-sq,0));font-size:15px;line-height:21px;font-weight:600;color:var(--dr-ink);text-align:center}
+.dr-url{margin-top:calc(10px - 2px * var(--dr-sq,0));padding:10px 12px;border-radius:12px;background:var(--dr-group);box-shadow:inset 0 0 0 1px var(--dr-line);font-size:13px;line-height:18px;font-weight:600;color:var(--dr-ink2);text-align:center;word-break:break-all;-webkit-user-select:all;user-select:all}
+.dr-x1 .dr-ft{margin-top:calc(24px - 10px * var(--dr-sq,0))}
+.dr-x1 .dr-cs{margin-top:calc(16px - 6px * var(--dr-sq,0))}
+.dr-note{margin-top:calc(16px - 6px * var(--dr-sq,0));font-size:15px;line-height:21px;color:var(--dr-ink2);text-align:justify}
+.dr-note.dr-sm{margin-top:calc(8px - 2px * var(--dr-sq,0));font-size:13px;line-height:18px;font-weight:600}
+.dr-cap{margin-top:calc(10px - 2px * var(--dr-sq,0));font-size:13px;line-height:18px;font-weight:600;color:var(--dr-ink2);text-align:center}
+
+/* 앱 아이콘 한 개(실제 그림) · 큰 단추 */
+.dr-app{display:flex;flex-direction:column;align-items:center;margin-top:calc(32px - 12px * var(--dr-sq,0))}
+.dr-app-b{display:block;padding:0;border:0;border-radius:16px;background:transparent;cursor:pointer}
+.dr-app img{display:block;width:var(--dr-icon,72px);height:var(--dr-icon,72px);border-radius:16px;box-shadow:0 1px 2px rgba(70,52,12,.14),0 8px 20px rgba(70,52,12,.12)}
+.dr-app span{margin-top:8px;font-size:13px;line-height:18px;font-weight:600;color:var(--dr-ink)}
+.dr-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;margin-top:calc(32px - 12px * var(--dr-sq,0));padding:0 22px;border:0;border-radius:25px;background:var(--dr-acc);color:var(--dr-on-acc);font-size:17px;line-height:22px;font-weight:600;text-decoration:none;cursor:pointer}
+.dr-btn[disabled]{opacity:.55;cursor:default}
+.dr-xk .dr-app,.dr-xk .dr-btn{margin-top:calc(24px - 10px * var(--dr-sq,0))}
+
+/* 단추가 안 되면(작은 판) */
+.dr-pan{margin-top:calc(24px - 10px * var(--dr-sq,0));padding:calc(14px - 4px * var(--dr-sq,0)) calc(16px - 4px * var(--dr-sq,0)) calc(16px - 4px * var(--dr-sq,0));border-radius:16px;background:var(--dr-group);box-shadow:inset 0 0 0 1px var(--dr-line)}
+.dr-pan-t{font-size:15px;line-height:20px;font-weight:600;color:var(--dr-ink)}
+.dr-pan-pics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:calc(10px - 2px * var(--dr-sq,0));list-style:none}
+.dr-pi{display:flex;flex-direction:column;gap:calc(8px - 2px * var(--dr-sq,0));min-width:0}
+.dr-pic{display:block;border-radius:10px;overflow:hidden;background:var(--dr-pic);line-height:0}
+.dr-pic svg{display:block;width:100%;height:auto;max-height:var(--dr-pan-h,none)}
+.dr-pi-c{display:flex;align-items:center;gap:6px;font-size:13px;line-height:18px;font-weight:600;color:var(--dr-ink)}
+
+/* 그림 카드(사파리 · 크롬 · 삼성 인터넷 단추 차례) */
+.dr-cs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(12px - 4px * var(--dr-sq,0));margin-top:20px;list-style:none}
+.dr-c{display:flex;flex-direction:column;border-radius:16px;background:var(--dr-group);box-shadow:inset 0 0 0 1px var(--dr-line);overflow:hidden}
+.dr-c.dr-wide{grid-column:1/-1}
+.dr-c.dr-hz{grid-column:1/-1;flex-direction:row;align-items:center}
+.dr-c.dr-hz .dr-c-pic{width:calc(150px - 40px * var(--dr-sq,0));flex:none}
+.dr-c.dr-hz .dr-c-cap{flex:1;padding:calc(12px - 4px * var(--dr-sq,0)) calc(14px - 2px * var(--dr-sq,0))}
+.dr-c-pic{display:block;background:var(--dr-pic);line-height:0}
+.dr-c-pic svg{display:block;width:100%;height:auto;max-height:var(--dr-pic-h,none)}
+.dr-c.dr-hz .dr-c-pic svg{max-height:none}
+.dr-c-cap{display:flex;align-items:flex-start;gap:8px;padding:calc(10px - 4px * var(--dr-sq,0)) calc(12px - 2px * var(--dr-sq,0)) calc(12px - 4px * var(--dr-sq,0))}
+.dr-n{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--dr-acc-tint);color:var(--dr-acc);font-size:13px;line-height:18px;font-weight:600;flex:none}
+.dr-c-tx{flex:1;min-width:0}
+.dr-c-t{display:block;font-size:15px;line-height:22px;font-weight:600;color:var(--dr-ink)}
+.dr-c-s{display:block;margin-top:1px;font-size:13px;line-height:18px;font-weight:600;color:var(--dr-ink2)}
+.dr-kk{display:inline-flex;align-items:center;justify-content:center;height:22px;min-width:30px;padding:0 6px;border-radius:6px;background:var(--dr-fill);color:var(--dr-ink);vertical-align:-5px}
+.dr-pi-c .dr-n{width:20px;height:20px;font-size:12px;line-height:16px}
+.dr-pi-c .dr-kk{height:20px;min-width:26px;padding:0 4px;vertical-align:-4px}
+
+/* 실제 단추 자리를 가리키는 화살표 + 카드와 짝인 번호(살짝 움직임 · 줄이기 설정이면 멈춤) · 브라우저 줄 바로 옆 */
+.dr-fa{position:fixed;z-index:3;display:block;width:36px;height:44px;color:var(--dr-acc);pointer-events:none}
+.dr-fa.dr-dn{right:22px;bottom:calc(4px + env(safe-area-inset-bottom,0px));animation:dr-dn 1.6s ease-in-out infinite}   /* 사파리(iOS 26 이상) 아래 줄 위 */
+.dr-fa.dr-dnc{left:calc(50% - 18px);bottom:calc(4px + env(safe-area-inset-bottom,0px));animation:dr-dn 1.6s ease-in-out infinite}                               /* 사파리(iOS 18 이전) 아래 줄 위 */
+.dr-fa.dr-dns{right:14px;bottom:4px;animation:dr-dn 1.6s ease-in-out infinite}                                         /* 삼성 인터넷 아래 줄 위 */
+.dr-fa.dr-up{position:absolute;right:12px;top:4px;animation:dr-up 1.6s ease-in-out infinite}                           /* 크롬 주소 줄 아래 · 쪽 맨 위에 붙임(내리면 크롬 주소 줄과 같이 사라짐 · 단계 막대 위에 안 얹힘) */
+.dr-fan{position:fixed;z-index:3;display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--dr-acc-tint);color:var(--dr-acc);font-size:13px;line-height:18px;font-weight:600}
+.dr-fan-dn{right:29px;bottom:calc(52px + env(safe-area-inset-bottom,0px))}
+.dr-fan-dnc{left:calc(50% - 47px);bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+.dr-fan-dns{right:21px;bottom:52px}
+.dr-fan-up{position:absolute;right:52px;top:12px}
+@keyframes dr-dn{0%,100%{transform:translateY(-6px)}50%{transform:translateY(0)}}
+@keyframes dr-up{0%,100%{transform:translateY(6px)}50%{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.dr .dr-fa,.dr-fs .dr-now i::after{animation:none}}   /* .dr .dr-fa = .dr-fa.dr-dn 보다 세게(목업 flow.css 는 .fa 만이라 안 멈춤) */
+
+/* 홈 화면 줄 그림(실제 앱 아이콘 · 이름 «히즈클래스») */
+.dr-hs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:28px;padding:22px 14px 18px;border-radius:22px;background:linear-gradient(160deg,#E2E8DC 0%,#EEE6D0 60%,#E9DCC0 100%)}
+.dr-hs-s{display:flex;flex-direction:column;align-items:center}
+.dr-hs-i{display:block;width:60px;height:60px;border-radius:14px;background:rgba(255,255,255,.58)}
+.dr-hs-l{display:block;width:40px;height:6px;margin-top:11px;border-radius:3px;background:rgba(26,26,24,.12)}
+.dr-hs-s.dr-me img{display:block;width:60px;height:60px;border-radius:14px;outline:2.5px solid var(--dr-acc);outline-offset:4px}
+.dr-hs-s.dr-me span{margin-top:6px;font-size:13px;line-height:18px;font-weight:600;color:var(--dr-ink)}
+
+/* 작은 화면(높이 미디어 쿼리 · 11-18 총괄): 내리지 않고 한 화면에 끝 줄까지 · 화살표는 카드 · 글 위에 안 얹힘
+   글 크기는 그대로 · 그림(앱 아이콘 · 단계 그림 칸)과 사이 간격만 줄임(--dr-sq:1 이면 위 calc 의 간격이 줄어듦)
+   화면마다 넘치기 시작하는 높이 밑에서만 켬 → 보통 크기 화면은 그대로(390×844 · 375×667 · 384×650 · 393×700 …)
+   단계 그림 칸 높이 = 남는 높이만큼(--dr-pic-h · 그림은 가운데 맞춰 작아짐 · 홈 화면 줄 그림 카드는 그대로) · 카톡 «단추가 안 되면» 그림 = --dr-pan-h
+   크롬(1-wait)은 위 화살표 자리 때문에 위 여백(20 · 16)은 그대로 */
+@media (max-height:829px){.dr[data-k="1-ios26"]{--dr-sq:1;--dr-pic-h:max(36px,calc((100dvh - 476px) / 2))}}
+@media (max-height:729px){.dr[data-k="1-ios18"]{--dr-sq:1;--dr-pic-h:max(36px,calc((100dvh - 456px) / 2))}}
+@media (max-height:663px),(max-width:370px) and (max-height:709px){.dr[data-k^="k-"]{--dr-sq:1;--dr-icon:52px;--dr-pan-h:max(44px,calc(100dvh - 474px))}}
+@media (max-width:370px) and (max-height:709px){.dr[data-k^="k-"]{--dr-pan-h:max(44px,calc(100dvh - 524px))}}
+@media (max-height:579px),(max-width:370px) and (max-height:597px){.dr[data-k="copy-ios"]{--dr-sq:1;--dr-icon:52px}}
+@media (max-height:579px),(max-width:370px) and (max-height:629px){.dr[data-k="copy-and"]{--dr-sq:1;--dr-icon:52px}}
+@media (max-height:649px),(min-width:420px) and (max-height:679px){
+  .dr[data-k="1-wait"]{--dr-sq:1;--dr-pic-h:max(40px,calc((100dvh - 376px) / 2))}
+  .dr[data-k="1-wait"] .dr-x{padding-top:20px}
+  .dr[data-k="1-wait"] .dr-fs{margin-top:16px}
+}
+@media (max-height:637px),(max-width:370px) and (max-height:649px),(min-width:420px) and (max-height:669px){.dr[data-k="1-sam"]{--dr-sq:1;--dr-pic-h:max(40px,calc((100dvh - 352px) / 2))}}
+/* dvh 없는 옛 브라우저(iOS 15.3 이하 · 크롬 107 이하): vh 로 */
+@supports not (height:1dvh){
+  @media (max-height:829px){.dr[data-k="1-ios26"]{--dr-pic-h:max(36px,calc((100vh - 476px) / 2))}}
+  @media (max-height:729px){.dr[data-k="1-ios18"]{--dr-pic-h:max(36px,calc((100vh - 456px) / 2))}}
+  @media (max-height:663px),(max-width:370px) and (max-height:709px){.dr[data-k^="k-"]{--dr-pan-h:max(44px,calc(100vh - 474px))}}
+  @media (max-width:370px) and (max-height:709px){.dr[data-k^="k-"]{--dr-pan-h:max(44px,calc(100vh - 524px))}}
+  @media (max-height:649px),(min-width:420px) and (max-height:679px){.dr[data-k="1-wait"]{--dr-pic-h:max(40px,calc((100vh - 376px) / 2))}}
+  @media (max-height:637px),(max-width:370px) and (max-height:649px),(min-width:420px) and (max-height:669px){.dr[data-k="1-sam"]{--dr-pic-h:max(40px,calc((100vh - 352px) / 2))}}
+}
+/* 설치 흐름(11-18 결론안 · 목업 P\v2\flow\flow.css 값 · 2차 토큰 · 굵기 400 · 600 · 700 · 13px 이하 600)
+   앱 안 2(이름) · 3(알림) 머리 = 문과 같은 단계 막대 · 알림 단계 = 잠금 화면 그림 + 아래 단추 · 알림 막은 학생 = 목록 맨 위 카드 · PC = «폰으로 받기» QR 카드 */
+.flh .dr-fs{margin-top:16px}
+.login.inapp{padding:20px 0 0}
+.login.inapp .lgT{margin:32px 0 0;font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.015em;color:var(--ink);text-wrap:balance}
+.login.inapp .lgP{margin:10px 0 0;font-size:17px;line-height:25px;font-weight:400;color:var(--ink2);text-align:justify}
+.login.inapp form{margin-top:28px}
+.login.inapp .fld:first-child{margin-top:0}
+.login.inapp .btn-fill{margin-top:28px;min-height:50px;border-radius:25px;font-size:17px;font-weight:600}
+.wrap.alw{padding-bottom:0}
+.alx{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;padding:20px 0 calc(30px + env(safe-area-inset-bottom))}
+.alx .alT{margin:32px 0 0;font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.015em;color:var(--ink);text-wrap:balance}
+.flock{position:relative;flex:none;height:300px;margin-top:36px;border-radius:28px;overflow:hidden;background:linear-gradient(165deg,#DDE5D8 0%,#ECE4CD 58%,#E5D6B6 100%)}
+.flock-lk{position:absolute;left:50%;top:18px;margin-left:-11px;line-height:0;color:rgba(26,26,24,.45)}
+.flock-tm{position:absolute;left:0;right:0;top:46px;font-size:56px;line-height:64px;font-weight:400;letter-spacing:-.01em;color:rgba(26,26,24,.66);text-align:center;font-variant-numeric:tabular-nums}
+.fnt{position:absolute;left:12px;right:12px;bottom:14px;display:flex;gap:12px;padding:14px;border-radius:22px;background:rgba(255,255,255,.9);box-shadow:0 1px 3px rgba(70,52,12,.08);text-align:left}
+.fnt img{display:block;width:40px;height:40px;border-radius:10px;flex:none}
+.nt-tx{flex:1;min-width:0}
+.nt-h{display:flex;justify-content:space-between}
+.nt-n,.nt-w{font-size:13px;line-height:18px;font-weight:600;color:var(--ink2)}
+.nt-t{display:block;margin-top:2px;font-size:15px;line-height:20px;font-weight:600;color:var(--ink)}
+.nt-b{display:block;font-size:15px;line-height:20px;font-weight:400;color:var(--ink)}
+.alft{margin-top:auto;padding-top:24px}
+.alft .fdo{margin:0 0 12px;font-size:15px;line-height:21px;font-weight:600;color:var(--ink);text-align:center}
+.alft .fdo b{font-weight:700;color:var(--acc)}
+.alft .btn-fill{min-height:50px;border-radius:25px;font-size:17px;font-weight:600}
+@media (max-height:700px){.alx .alT{margin-top:24px}.flock{height:240px;margin-top:24px}}
+.alhc{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;margin:14px 0 0;padding:8px 12px;border:0;border-radius:16px;background:var(--card);box-shadow:inset 0 0 0 1px var(--edge);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.alhc-ic{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--accB);color:var(--acc);flex:none}
+.alhc-t{flex:1;min-width:0;font-size:17px;line-height:22px;font-weight:600}
+.alhc svg.chev{flex:none;color:var(--ink2)}
+.pcq{display:flex;align-items:center;gap:16px;max-width:360px;margin:28px 0 0;padding:16px;border-radius:16px;background:var(--card);box-shadow:inset 0 0 0 1px var(--edge)}
+.pcq-tx{flex:1;min-width:0}
+.pcq-t{margin:0;font-size:17px;line-height:22px;font-weight:600;color:var(--ink)}
+.pcq-p{margin:4px 0 0;font-size:15px;line-height:21px;font-weight:400;color:var(--ink2);text-align:justify}
+.pcq-qr{display:block;width:96px;height:96px;padding:6px;border-radius:10px;background:#FFFFFF;flex:none}
+.pcq-qr svg{display:block;width:100%;height:100%}
 </style>
 </head>
 <body>
@@ -1092,8 +1629,11 @@ window.__lecStart = function () {
     if (pwa.el && !pwa.busy) pwaPaint();
   };
   /* 첫 영상 끝 한 번: 홈 화면 앱이 아니고 · 설치 전이고 · 아직 한 번도 안 띄웠으면 true(띄운 순간 표시를 남김 · 저장이 막힌 폰은 띄우지 않음) */
+  /* 설치 흐름(11-18): 문과 같은 «폰» 판정(아이폰 · 안드로이드 폰 · 아이패드 · 안드로이드 태블릿 · PC 는 아님) */
+  function drPhone() { var u = String(navigator.userAgent || ''); return /iPhone|iPod/.test(u) || (/Android/i.test(u) && /Mobile/.test(u)); }
   function pwaEndOnce() {
     if (pwaStandalone() || PW.done) return false;
+    if (window.__hisDoor && window.__hisDoor.on() && drPhone()) return false; /* 설치 흐름(11-18): 문이 켜졌으면 폰은 띠 없음(설치는 문이 맡음) */
     if (L.lsGet(PW_SEEN, 0)) return false;
     return L.lsSet(PW_SEEN, 1);
   }
@@ -1148,13 +1688,44 @@ window.__lecStart = function () {
     if (!alOk() || alPerm() !== 'denied') return '';
     return '<button id="alHow" class="pwab l" type="button" data-act="alhow" aria-haspopup="dialog">' + icon('bell', 18) + '<span>새 영상 알림 켜는 법</span></button>';
   }
-  /* 첫 로그인 뒤 한 단계(동의 화면과 같은 틀 · 카드와 같은 제목 · 글 · 단추 하나) */
+  /* 설치 흐름(11-18 결론안 f-home-off): 알림을 막은 학생 = 목록 맨 위 카드(켤 때까지 남음 · 누르면 «새 영상 알림 켜는 법» 판 · 결석 수업은 안 막음)
+     위 alHowRowHTML 은 «있나» 판정 · 이름 시트 줄이 그대로 씀(목록 맨 아래 줄은 뺌) */
+  function alHowTopHTML() {
+    if (!alHowRowHTML()) return '';
+    return '<button id="alHow" class="alhc" type="button" data-act="alhow" aria-haspopup="dialog"><span class="alhc-ic">' + icon('bell', 20) + '</span>' +
+      '<span class="alhc-t">새 영상 알림 켜는 법</span>' + icon('chev', 16).replace('<svg ', '<svg class="chev" ') + '</button>';
+  }
+  /* 설치 흐름(11-18 결론안 f-pc): PC 목록 맨 아래 «폰으로 받기» 작은 카드 · QR = 히즈클래스 주소(파이썬 qrcode · 오류 정정 M · 칸 33) · 폰 · 태블릿 · 미리 보기는 없음 */
+  var PCQ_D = 'M0 0h7v1h-7zM12 0h1v1h-1zM16 0h1v1h-1zM18 0h2v1h-2zM21 0h1v1h-1zM23 0h1v1h-1zM26 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM12 1h1v1h-1zM15 1h1v1h-1zM18 1h1v1h-1zM20 1h1v1h-1zM26 1h1v1h-1zM32 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h4v1h-4zM14 2h1v1h-1zM16 2h1v1h-1zM21 2h2v1h-2zM26 2h1v1h-1zM28 2h3v1h-3zM32 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM11 3h2v1h-2zM18 3h2v1h-2zM22 3h2v1h-2zM26 3h1v1h-1zM28 3h3v1h-3zM32 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h2v1h-2zM11 4h7v1h-7zM20 4h4v1h-4zM26 4h1v1h-1zM28 4h3v1h-3zM32 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM10 5h1v1h-1zM17 5h1v1h-1zM19 5h1v1h-1zM21 5h1v1h-1zM26 5h1v1h-1zM32 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h7v1h-7zM8 7h2v1h-2zM11 7h2v1h-2zM14 7h1v1h-1zM16 7h1v1h-1zM18 7h5v1h-5zM24 7h1v1h-1zM0 8h1v1h-1zM2 8h5v1h-5zM10 8h1v1h-1zM13 8h2v1h-2zM17 8h1v1h-1zM19 8h2v1h-2zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h5v1h-5zM2 9h1v1h-1zM4 9h2v1h-2zM8 9h1v1h-1zM11 9h1v1h-1zM13 9h1v1h-1zM17 9h5v1h-5zM23 9h1v1h-1zM26 9h2v1h-2zM29 9h2v1h-2zM32 9h1v1h-1zM1 10h1v1h-1zM3 10h1v1h-1zM5 10h3v1h-3zM11 10h1v1h-1zM13 10h3v1h-3zM17 10h1v1h-1zM20 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h2v1h-2zM1 11h3v1h-3zM7 11h1v1h-1zM9 11h5v1h-5zM17 11h6v1h-6zM25 11h2v1h-2zM28 11h3v1h-3zM3 12h1v1h-1zM6 12h1v1h-1zM9 12h1v1h-1zM11 12h2v1h-2zM14 12h3v1h-3zM19 12h1v1h-1zM24 12h2v1h-2zM27 12h3v1h-3zM32 12h1v1h-1zM1 13h1v1h-1zM4 13h2v1h-2zM8 13h2v1h-2zM15 13h1v1h-1zM18 13h1v1h-1zM23 13h1v1h-1zM25 13h2v1h-2zM31 13h2v1h-2zM0 14h1v1h-1zM6 14h2v1h-2zM13 14h1v1h-1zM15 14h3v1h-3zM22 14h1v1h-1zM24 14h3v1h-3zM28 14h4v1h-4zM3 15h2v1h-2zM8 15h3v1h-3zM13 15h3v1h-3zM20 15h2v1h-2zM25 15h2v1h-2zM28 15h3v1h-3zM0 16h4v1h-4zM5 16h2v1h-2zM9 16h1v1h-1zM12 16h1v1h-1zM14 16h2v1h-2zM17 16h1v1h-1zM19 16h1v1h-1zM22 16h4v1h-4zM27 16h3v1h-3zM32 16h1v1h-1zM0 17h2v1h-2zM4 17h1v1h-1zM8 17h3v1h-3zM12 17h1v1h-1zM14 17h1v1h-1zM16 17h1v1h-1zM18 17h3v1h-3zM23 17h1v1h-1zM26 17h2v1h-2zM29 17h2v1h-2zM32 17h1v1h-1zM0 18h1v1h-1zM5 18h2v1h-2zM9 18h1v1h-1zM13 18h4v1h-4zM18 18h1v1h-1zM22 18h1v1h-1zM27 18h2v1h-2zM30 18h2v1h-2zM3 19h1v1h-1zM7 19h1v1h-1zM10 19h1v1h-1zM13 19h4v1h-4zM19 19h1v1h-1zM21 19h1v1h-1zM23 19h1v1h-1zM25 19h8v1h-8zM0 20h2v1h-2zM3 20h4v1h-4zM8 20h1v1h-1zM15 20h1v1h-1zM18 20h1v1h-1zM22 20h3v1h-3zM27 20h3v1h-3zM31 20h2v1h-2zM0 21h2v1h-2zM3 21h3v1h-3zM8 21h2v1h-2zM11 21h1v1h-1zM14 21h4v1h-4zM19 21h2v1h-2zM23 21h1v1h-1zM26 21h1v1h-1zM30 21h1v1h-1zM32 21h1v1h-1zM0 22h1v1h-1zM2 22h1v1h-1zM5 22h3v1h-3zM9 22h2v1h-2zM12 22h1v1h-1zM14 22h1v1h-1zM18 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM25 22h1v1h-1zM28 22h2v1h-2zM31 22h1v1h-1zM0 23h1v1h-1zM2 23h1v1h-1zM4 23h1v1h-1zM9 23h1v1h-1zM12 23h3v1h-3zM16 23h1v1h-1zM20 23h2v1h-2zM23 23h4v1h-4zM28 23h5v1h-5zM0 24h1v1h-1zM2 24h2v1h-2zM5 24h5v1h-5zM16 24h2v1h-2zM19 24h1v1h-1zM22 24h1v1h-1zM24 24h5v1h-5zM8 25h1v1h-1zM11 25h1v1h-1zM16 25h2v1h-2zM19 25h2v1h-2zM24 25h1v1h-1zM28 25h1v1h-1zM30 25h1v1h-1zM32 25h1v1h-1zM0 26h7v1h-7zM9 26h3v1h-3zM13 26h3v1h-3zM17 26h1v1h-1zM21 26h1v1h-1zM23 26h2v1h-2zM26 26h1v1h-1zM28 26h1v1h-1zM30 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM8 27h3v1h-3zM15 27h1v1h-1zM17 27h3v1h-3zM21 27h1v1h-1zM23 27h2v1h-2zM28 27h5v1h-5zM0 28h1v1h-1zM2 28h3v1h-3zM6 28h1v1h-1zM8 28h4v1h-4zM16 28h1v1h-1zM22 28h1v1h-1zM24 28h6v1h-6zM31 28h2v1h-2zM0 29h1v1h-1zM2 29h3v1h-3zM6 29h1v1h-1zM8 29h1v1h-1zM13 29h1v1h-1zM15 29h1v1h-1zM18 29h6v1h-6zM25 29h1v1h-1zM28 29h1v1h-1zM30 29h3v1h-3zM0 30h1v1h-1zM2 30h3v1h-3zM6 30h1v1h-1zM8 30h4v1h-4zM13 30h4v1h-4zM21 30h3v1h-3zM26 30h2v1h-2zM0 31h1v1h-1zM6 31h1v1h-1zM9 31h2v1h-2zM15 31h1v1h-1zM18 31h1v1h-1zM20 31h3v1h-3zM25 31h2v1h-2zM28 31h3v1h-3zM0 32h7v1h-7zM8 32h2v1h-2zM14 32h2v1h-2zM17 32h1v1h-1zM20 32h1v1h-1zM22 32h6v1h-6zM31 32h1v1h-1z';
+  function pcqHTML() {
+    if (PV || pwaOs() !== '') return '';
+    return '<aside class="pcq" aria-labelledby="pcqT"><div class="pcq-tx"><h2 class="pcq-t" id="pcqT">폰으로 받기</h2><p class="pcq-p">새 영상 알림은<br>폰 앱으로 와요.</p></div>' +
+      '<span class="pcq-qr" role="img" aria-label="히즈클래스 주소 QR"><svg viewBox="0 0 33 33" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#1A1A18" d="' + PCQ_D + '"/></svg></span></aside>';
+  }
+  /* 첫 로그인 뒤 한 단계(설치 흐름 3 · 11-18 결론안 f-3): 머리 = 문과 같은 단계 막대(3 알림) · 잠금 화면 그림(알림 글 = 운영 A안 · 첫 줄 = 이 학생 목록의 맨 나중 강의)
+     아래 «다음 창에서 ‘허용’을 눌러 주세요.» + [알림 받기] 하나 · 건너뛰기 없음 · 누른 뒤는 alOn(AL_WAIT) 그대로 */
+  var AL_LOCK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5.5" y="10.5" width="13" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>';
+  /* 알림 첫 줄과 같은 규칙(class-setup.sql 알림 «{교재} {제목}» · 교재 칸이 비었거나 제목에 이미 들었으면 제목만 · 강의가 없으면 «수업 영상») */
+  function alPicT() {
+    var a = listBase(), l = a.length ? a[a.length - 1] : null, b, t;
+    if (!l) return '수업 영상';
+    b = String(l.book || '').replace(/^\s+|\s+$/g, '');
+    t = String(l.title || '').replace(/^\s+|\s+$/g, '') || '수업 영상';
+    return b && t.toLowerCase().indexOf(b.toLowerCase()) < 0 ? b.slice(0, 40) + ' ' + t.slice(0, 80) : t.slice(0, 80);
+  }
+  /* 앱 안 2(이름) · 3(알림) 머리 = «HIS CLASS» 글자 + 문과 같은 세 칸 단계 막대(window.__hisDoor.steps) */
+  function drHead(n) {
+    var D = window.__hisDoor;
+    return '<div class="dr-t flh"><div class="dr-fh"><span class="sr">히즈클래스</span>' + WM_SVG + '</div>' + (D ? D.steps(n) : '') + '</div>';
+  }
   function showAlStep() {
     S.view = 'alstep';
-    app.innerHTML = '<div class="wrap">' + wmTopHTML() +
-      '<div class="cons"><section class="card alst" aria-labelledby="alT"><div class="alh">' + icon('bell', 22) + '<h1 id="alT">' + esc(L.PUSH_TITLE) + '</h1></div>' +
-      '<p class="als">' + esc(L.pushCardText(S.al.at)) + '</p>' +
-      '<div class="btns"><button class="btn-fill" type="button" data-act="alstep">알림 받기</button></div></section></div></div>';
+    app.innerHTML = '<div class="wrap alw"><section class="alx" aria-labelledby="alT">' + drHead(3) +
+      '<h1 class="alT" id="alT">새 영상이 올라오면 바로 알려 드려요</h1>' +
+      '<div class="flock" role="img" aria-label="잠금 화면 알림 그림"><span class="flock-lk">' + AL_LOCK + '</span><span class="flock-tm">8:30</span>' +
+      '<span class="fnt"><img src="app-icon-180.png" width="40" height="40" alt=""><span class="nt-tx"><span class="nt-h"><span class="nt-n">히즈클래스</span><span class="nt-w">지금</span></span>' +
+      '<span class="nt-t">' + esc(alPicT()) + '</span><span class="nt-b">새 수업 영상이 올라왔어요</span></span></span></div>' +
+      '<div class="alft"><p class="fdo">다음 창에서 <b>‘허용’</b>을 눌러 주세요.</p><button class="btn-fill" type="button" data-act="alstep">알림 받기</button></div></section></div>';
   }
   /* 막은 뒤 판: 아이폰 = 설정 → 알림 → 히즈클래스 → 알림 허용 · 안드로이드 = 아이콘 길게 → 앱 정보 → 알림 */
   function alHowHTML() {
@@ -1430,9 +2001,11 @@ window.__lecStart = function () {
     teardown();
     S.view = 'login';
     /* 결론안 K: 물고기 56 · 제목 28 · 등원 번호 네 칸(입력은 한 칸 그대로 · 칸 위에 투명하게 겹침 · 넷째 자리를 치면 바로 들어감) */
-    var h = '<div class="wrap"><div class="login">' +
+    var inApp = pwaStandalone() && pwaOs() !== ''; /* 설치 흐름 2(11-18 결론안 f-2): 폰 · 태블릿 홈 화면 앱 = 단계 막대 머리 + 할 일 제목 · PC 설치 앱 · 탭은 그대로 */
+    var h = '<div class="wrap"><div class="login' + (inApp ? ' inapp' : '') + '">' + (inApp ?
+      drHead(2) + '<h1 class="lgT">이름과 등원 번호를 넣어 주세요</h1><p class="lgP">이 앱에서 처음 한 번만 넣어요.</p>' :
       '<div class="head">' + fishSVG() + '<h1 class="wmh"><span class="sr">히즈클래스</span>' + WM_SVG + '</h1><p class="lgs">' +
-      (pwaStandalone() ? '처음 한 번만 이름과 등원 번호를 넣어 주세요' : '이름과 등원 번호로 들어와요') + '</p></div>' + /* 설치 안내 결론안: 홈 화면 앱으로 처음 열면 */
+      (pwaStandalone() ? '처음 한 번만 이름과 등원 번호를 넣어 주세요' : '이름과 등원 번호로 들어와요') + '</p></div>') + /* 설치 안내 결론안: 홈 화면 앱으로 처음 열면 */
       '<form id="loginForm" novalidate autocomplete="off">' +
       '<label class="fld"><span>이름</span><input id="lgName" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40"></label>' +
       '<div class="fld"><label for="lgPin">등원 번호 4자리</label><div class="pin4" id="pin4"><input id="lgPin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">' +
@@ -1567,14 +2140,17 @@ window.__lecStart = function () {
     S.al = null;
     if (alCan()) {
       sd.n += 1;
+      sd.alp = true; /* 설치 흐름(11-18): 알림 답을 기다리는 중 · 알림 단계 자리면 sideWait 가 0.6초 뒤에도 이 답을 기다림 */
       L.pushOn(k).then(function (r) {
         var late = S.view === 'list';
         if (k === S.key) S.al = r;
+        sd.alp = false;
         one();
+        alHeld(sd);
         if (k !== S.key) return;
         alQuiet();
         if (late && S.view === 'list' && alState() !== alShown) quietList();
-      }, one);
+      }, function () { sd.alp = false; one(); alHeld(sd); });
     }
     return sd;
   }
@@ -1583,10 +2159,20 @@ window.__lecStart = function () {
     var t = setTimeout(function () {
       if (!sd.cb) return;
       sd.cb = null;
+      if (sd.alp && alStepDue()) { alHold(sd, k, f); return; } /* 설치 흐름(11-18): 알림 단계를 띄울 자리 = 알림 답을 AL_WAIT 까지 더 기다림(0.6초 규칙 없음) */
       if (k === S.key) f();
     }, SIDE_MS);
     sd.cb = function () { clearTimeout(t); if (k === S.key) f(); };
   }
+  /* 설치 흐름(11-18): 알림 답이 오면 바로(alHeld) · 끝내 안 오면 AL_WAIT 에서 목록(카드로) */
+  function alHold(sd, k, f) {
+    var t = setTimeout(function () { alHeld(sd); }, AL_WAIT - SIDE_MS);
+    sd.alw = function () { clearTimeout(t); if (k === S.key) f(); };
+  }
+  function alHeld(sd) { var w = sd && sd.alw; if (w) { sd.alw = null; w(); } }
+  /* 설치 흐름(11-18): 알림 단계 표시 = 학생마다 한 번(이 기기 · 이 앱 저장소 · 서버가 학생 번호를 안 줘 이름으로 가름 · 나가기에도 안 지움) */
+  function alStepK() { var s = String(S.name || ''), h = 5381, i; for (i = 0; i < s.length; i += 1) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return LS.alstep + ':' + h.toString(36); }
+  function alStepDue() { return !!S.alFresh && recMode() !== 'pending' && alPerm() === 'default' && !L.lsGet(alStepK(), 0); }
   /* 지문 줄(C3 종이 자리 · C7 멈추고 풀기) · 집 정보와 같이 한 번 · 못 받으면(옛 서버 · 끊김) 둘 다 조용히 없음 */
   function loadPaper(k) {
     L.paper(k).then(function (r) {
@@ -1646,12 +2232,13 @@ window.__lecStart = function () {
   /* ------------------------------------------------------------ 길 찾기 */
   function route() {
     var hs = String(location.hash || '').replace(/^#/, '');
+    if (window.__hisDoor && window.__hisDoor.need()) { teardown(); pwaClose(false); S.view = 'door'; window.__hisDoor.show(app, { out: kakaoOut, wm: WM_SVG }); return; } /* 설치 흐름(11-18): 앱으로 가는 문 */
     if (!S.key) { showLogin(S.loginErr); return; }
     if (!S.home) { loadHome(); return; }
     if (recMode() === 'pending') { teardown(); showConsent(false); return; }
     if (S.alFresh) { /* N1: 홈 화면 앱 첫 로그인 · 옛 «기록 없이» 학생의 다시 동의(둘 다 동의 바로 뒤) · 알림을 띄울 수 있고 아직 안 물었을 때만 · 기기당 한 번 */
       S.alFresh = false;
-      if (alOk() && alPerm() === 'default' && !L.lsGet(LS.alstep, 0)) { L.lsSet(LS.alstep, 1); teardown(); showAlStep(); return; }
+      if (alOk() && alPerm() === 'default' && !L.lsGet(alStepK(), 0)) { L.lsSet(alStepK(), 1); teardown(); showAlStep(); return; } /* 설치 흐름(11-18): 학생마다 한 번 */
     }
     if (hs === 'rec') { teardown(); showConsent(true); return; }
     var m = hs.match(/^v=([^&]+)/);
@@ -1905,7 +2492,7 @@ window.__lecStart = function () {
     var arr = listBase().reverse(); /* 서버는 오래된 차례 → 새것부터 · 미리 보기: 학생에게 아직 안 보이는 강의는 목록에 없음 */
     PYN = pyeonMap(listBase()); /* 단원 타일 «N / 편» 차례(서버 차례 = 오래된 것부터) */
     var today = L.isoDay();
-    var h = cbarHTML() + '<div class="wrap">' + topHTML();
+    var h = cbarHTML() + '<div class="wrap">' + topHTML() + alHowTopHTML(); /* 설치 흐름(11-18): 알림 막은 학생 = 맨 위 카드 */
     var am = attMap(), ab = absList(arr, am, today), i;
     /* 2차(11-18): 큰 카드 하나 = 결석한 날 수업 › (없으면) 이어서 보기 › (없으면) 없음 · 그 아래 «새 답변» 줄 · 그 아래 학교 시험 링 카드
        결석 카드가 있으면 «이어서 보기»와 «결석한 날 수업 N편 더»는 그 카드 안의 줄(카드 장수에 안 셈 · 검수 A M6) */
@@ -1933,7 +2520,7 @@ window.__lecStart = function () {
     } else {
       h += grpHTML(arr, rec, today, am);
     }
-    h += pwaBtnHTML('l') + alHowRowHTML() + '</div>';
+    h += pcqHTML() + pwaBtnHTML('l') + '</div>'; /* 설치 흐름(11-18): PC «폰으로 받기» 카드 · «켜는 법»은 맨 위 카드로 옮김 */
     alShown = alState();
     app.innerHTML = h;
     cbarSync();
@@ -5041,7 +5628,9 @@ window.__lecStart = function () {
       var k = L.lsGet(LS.key, '');
       S.key = typeof k === 'string' ? k : '';
     }
+    S.alFresh = !!S.key && pwaStandalone(); /* 설치 흐름(11-18): 이미 들어온 채 열린 홈 화면 앱(갤럭시 = 크롬과 저장소가 같음)도 알림 단계 자리 · 학생마다 한 번은 route 가 셈 */
     pendFlush();
+    if (window.__hisDoor && window.__hisDoor.need()) { S.view = 'door'; window.__hisDoor.show(app, { out: kakaoOut, wm: WM_SVG }); return; } /* 설치 흐름(11-18): 앱으로 가는 문 · #k= 개인 링크는 문 스크립트가 먼저 읽음 */
     if (!S.key) { showLogin(''); return; }
     app.innerHTML = '<div class="wrap">' + wmTopHTML() + '</div>';
     loadHome();
