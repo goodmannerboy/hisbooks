@@ -3375,7 +3375,7 @@
   }
   /* lec__set_end */
   function sEnd(d, t, sid, cls) {
-    var s, p, tot, need, kn = 0, pass, cnt, next, out = 0, i, q, pp, c;
+    var s, p, tot, need, kn = 0, pass, cnt, next, out = 0, i, q, pp, c, res;
     if (t.done_at == null) return null;
     if (t.kind === 'due') {
       for (i = 0; i < t.qs.length; i += 1) {
@@ -3390,7 +3390,8 @@
     }
     s = sFind(d, t.set_id);
     p = sProg(d, sid, t.set_id);
-    tot = s ? s.n : t.n;
+    /* 뽑아서 낸 판(drawn · test_n)은 이 판 문항 수가 전체 · 통과 수도 그 수로 */
+    tot = t.drawn ? t.n : (s ? s.n : t.n);
     if (t.kind === 'test') {
       need = L().setNeed(tot);
       kn = s ? sKnN(p, sKeys(s)) : 0;
@@ -3402,18 +3403,22 @@
       pass = t.sc >= need;
       next = pass ? 'pass' : 'tomorrow';
     }
-    return { sc: t.sc, n: t.n, total: tot, need: need, kn: kn, pass: pass, ever: t.n - t.sc, f1: p ? p.f1 : null, next: next };
+    res = { sc: t.sc, n: t.n, total: tot, need: need, kn: kn, pass: pass, ever: t.n - t.sc, f1: p ? p.f1 : null, next: next };
+    if (t.drawn) { res.draw = true; res.all = s ? s.n : t.n; }
+    return res;
   }
   function shuf(a) {
     var i, j, x;
     for (i = a.length - 1; i > 0; i -= 1) { j = Math.floor(Math.random() * (i + 1)); x = a[i]; a[i] = a[j]; a[j] = x; }
     return a;
   }
-  /* lec__set_qs: 서버만 아는 한 판(정답 a · 해설 x · 포인트 pt · 열쇠 k) */
+  /* lec__set_qs: 서버만 아는 한 판(정답 a · 해설 x · 포인트 pt · 열쇠 k)
+     시험 문항 수(test_n · setTq 가 null 아님): 전체에서 그 수만큼 새로 뽑음(다시 볼 때도 · 단어는 뽑은 차례로 고르기 · 쓰기 번갈아) */
   function sQs(s, kn, retake) {
-    var X = L(), out = [], plan, i, j, it, f, o, idx;
+    var X = L(), out = [], plan, i, j, it, f, o, idx, tq = X.setTq(s.n, s.test_n);
     if (s.kind === 'gram') {
       plan = shuf(s.items.slice());
+      if (tq !== null) plan = plan.slice(0, tq);
       for (i = 0; i < plan.length; i += 1) {
         it = plan[i];
         o = X.setOpts(it.s);
@@ -3421,7 +3426,7 @@
       }
       return out;
     }
-    plan = retake ? X.setRetake(s.items, kn) : X.setFirst(s.items);
+    plan = tq !== null ? X.setDraw(s.items, tq) : (retake ? X.setRetake(s.items, kn) : X.setFirst(s.items));
     for (i = 0; i < plan.length; i += 1) {
       idx = -1;
       for (j = 0; j < s.items.length; j += 1) { if (str(s.items[j].k) === plan[i].k) { idx = j; break; } }
@@ -3436,9 +3441,9 @@
     }
     return out;
   }
-  function sNewTry(d, sid, setId, kind, qs) {
+  function sNewTry(d, sid, setId, kind, qs, drawn) {
     var t = { id: L().uuid(), sid: sid, set_id: setId, kind: kind, day: today(), n: qs.length, qs: qs, ans: [], got: 0, sc: 0,
-              created_at: sNow(), done_at: null }, i;
+              created_at: sNow(), done_at: null, drawn: !!drawn }, i;
     for (i = 0; i < qs.length; i += 1) t.ans.push(null);
     d.stry.push(t);
     return t;
@@ -3465,14 +3470,18 @@
   /* agree · rec.ok 는 늘 true(옛 화면이 동의 단계 없이 바로 열게 · 새 화면은 안 읽음) */
   function lec_set_home(d, a) {
     sGone(); sTabs(d);
-    var st = sStart(d, a.p_key), k, day = today(), list, sets = [], i, s;
+    var st = sStart(d, a.p_key), k, day = today(), list, sets = [], i, s, tq, o;
     if (st.e) return st.e;
     k = st.k;
     list = d.set.filter(function (x) { return sOpen(x, k.cls); }).sort(sOrd).slice(0, 40);
     for (i = 0; i < list.length; i += 1) {
       s = list[i];
-      sets.push({ id: s.id, kind: s.kind, title: s.title, n: s.n, need: L().setNeed(s.n), on: s.posted_on, pick: s.pick.length,
-                  me: sMe(d, s, k.sid, day) });
+      /* 시험 문항 수(test_n · 11-18)를 정한 단어 · 문법 세트만 test_n(한 번에 낼 수) · 통과 수도 그 수로 */
+      tq = (s.kind === 'voc' || s.kind === 'gram') ? L().setTq(s.n, s.test_n) : null;
+      o = { id: s.id, kind: s.kind, title: s.title, n: s.n, need: L().setNeed(tq !== null ? tq : s.n), on: s.posted_on, pick: s.pick.length,
+            me: sMe(d, s, k.sid, day) };
+      if (tq !== null) o.test_n = tq;
+      sets.push(o);
     }
     return { ok: true, today: day, agree: true, sets: sets, due: sDueN(d, k.sid, k.cls, day), rec: { ok: true } };
   }
@@ -3537,18 +3546,19 @@
 
   function lec_set_test(d, a) {
     sGone(); sTabs(d);
-    var X = L(), st = sStart(d, a.p_key), k, s, p, t, day = today(), kn, cnt, qs;
+    var X = L(), st = sStart(d, a.p_key), k, s, p, t, day = today(), kn, cnt, qs, tq, head, tot;
     if (st.e) return st.e;
     k = st.k;
     s = sFind(d, a.p_set);
     if (!s || !sOpen(s, k.cls)) return { ok: false, err: 'none' };
     if (s.kind === 'gu') return { ok: false, err: 'kind' };
+    tq = X.setTq(s.n, s.test_n);   /* 시험 문항 수(11-18 · null = 전부 · 예전 그대로) */
     p = sProgMake(d, k.sid, s.id);
     kn = sKnN(p, sKeys(s));
     t = sOpenTry(d, k.sid, function (x) { return x.set_id === s.id; });
     if (!t) {
       if (p.pass_at != null) return { ok: false, err: 'pass' };
-      if (s.kind === 'voc' && p.tn > 0 && kn >= X.setNeed(s.n)) {
+      if (s.kind === 'voc' && tq === null && p.tn > 0 && kn >= X.setNeed(s.n)) {
         p.pass_at = sNow();
         p.best = Math.max(p.best, Math.floor((kn * 100) / s.n));
         return { ok: false, err: 'pass' };
@@ -3558,11 +3568,15 @@
       if (s.kind === 'gram' && cnt >= 1) return { ok: false, err: 'tomorrow' };
       qs = sQs(s, p.kn, s.kind === 'voc' && p.tn > 0);
       if (!qs.length) return { ok: false, err: 'none' };
-      t = sNewTry(d, k.sid, s.id, s.kind === 'voc' ? 'test' : 'drill', qs);
+      t = sNewTry(d, k.sid, s.id, s.kind === 'voc' ? 'test' : 'drill', qs, tq !== null);
       p.tn += 1;
       p.last_at = sNow();
     }
-    return sView(t, { set: s.id, title: s.title, total: s.n, need: X.setNeed(s.n), kn: s.kind === 'voc' ? kn : 0, round: p.tn });
+    /* 뽑아서 낸 판(drawn)은 이 판 문항 수가 전체 · draw · all(세트 문항 수)을 더 줌(연 판은 만든 그대로) */
+    tot = t.drawn ? t.n : s.n;
+    head = { set: s.id, title: s.title, total: tot, need: X.setNeed(tot), kn: s.kind === 'voc' ? kn : 0, round: p.tn };
+    if (t.drawn) { head.draw = true; head.all = s.n; }
+    return sView(t, head);
   }
 
   function lec_set_due(d, a) {
@@ -3647,8 +3661,9 @@
         kn = sKnN(p, sKeys(s));
         if (p.f1 == null) p.f1 = Math.floor((t.sc * 100) / t.n);
         p.last_sc = t.sc;
-        p.best = Math.max(p.best, t.kind === 'test' ? Math.floor((kn * 100) / Math.max(s.n, 1)) : Math.floor((t.sc * 100) / t.n));
-        if (p.pass_at == null && (t.kind === 'test' ? kn >= X.setNeed(s.n) : t.sc >= X.setNeed(t.n))) p.pass_at = now;
+        /* 뽑아서 낸 판(drawn · test_n)은 단어도 이 판 첫 답 맞힌 수로 셈(kn 은 위에서 쌓기만) */
+        p.best = Math.max(p.best, t.kind === 'test' && !t.drawn ? Math.floor((kn * 100) / Math.max(s.n, 1)) : Math.floor((t.sc * 100) / t.n));
+        if (p.pass_at == null && (t.kind === 'test' && !t.drawn ? kn >= X.setNeed(s.n) : t.sc >= X.setNeed(t.n))) p.pass_at = now;
       }
     }
     return { ok: true, i: a.p_i, r: r, a: q.a, x: str(q.x), pt: str(q.pt), again: false, left: t.n - t.got,
@@ -3712,7 +3727,7 @@
 
   function sSetOut(s, withItems) {
     var o = { id: s.id, kind: s.kind, title: s.title, class_ids: s.class_ids, posted_on: s.posted_on, hidden: s.hidden, n: s.n,
-              need: L().setNeed(s.n), pick: s.pick };
+              need: L().setNeed(s.n), pick: s.pick, test_n: s.test_n == null ? null : s.test_n };
     if (withItems === 'all') o.items = s.items;
     else if (withItems === 'gu') o.items = s.kind === 'gu' ? s.items : null;
     return o;
@@ -3869,7 +3884,7 @@
     if (!s) {
       id = X.uuid();
       d.set.push({ id: id, kind: a.p_kind, title: title, class_ids: cls, posted_on: on == null ? today() : on, hidden: false,
-                   items: keyed, n: n, pick: pick, made_by: 'Benjamin', created_at: now, updated_at: now });
+                   items: keyed, n: n, pick: pick, test_n: null, made_by: 'Benjamin', created_at: now, updated_at: now });
     } else {
       id = s.id;
       s.title = title; s.class_ids = cls; s.posted_on = on == null ? s.posted_on : on; s.items = keyed; s.n = n; s.pick = pick;
@@ -3886,6 +3901,20 @@
     s.hidden = a.p_hidden == null ? true : a.p_hidden;
     s.updated_at = sNow();
     return { ok: true, hidden: s.hidden };
+  }
+
+  /* 시험 문항 수(test_n · 11-18 · 단어 · 문법만 · null = 전부 · 문항 수 이상도 받아 둠 = 전부와 같음 · 새로 여는 판부터) */
+  function lec_set_testn(d, a) {
+    sGone(); sTabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var s, n = a.p_n;
+    if (n != null && (n < 1 || n > 300)) return { ok: false, err: 'input' };
+    s = sFind(d, a.p_set);
+    if (!s) return { ok: false, err: 'none' };
+    if (s.kind === 'gu') return { ok: false, err: 'kind' };
+    s.test_n = n == null ? null : n;
+    s.updated_at = sNow();
+    return { ok: true, test_n: s.test_n };
   }
 
   function lec_set_del(d, a) {
@@ -4248,6 +4277,7 @@
   SIG.lec_set_get = { p_set: 'uuid' };
   SIG.lec_set_put = { p_id: 'uuid', p_kind: 'text', p_title: 'text', p_cls: 'textarr', p_on: 'date', p_items: 'json', p_pick: 'intarr' };
   SIG.lec_set_hide = { p_set: 'uuid', p_hidden: 'bool' };
+  SIG.lec_set_testn = { p_set: 'uuid', p_n: 'int' };
   SIG.lec_set_del = { p_set: 'uuid' };
   SIG.lec_set_staff = { p_set: 'uuid' };
   SIG.lec_set_wrong_staff = { p_cls: 'text' };
@@ -4259,6 +4289,7 @@
   STAFF.lec_set_get = lec_set_get;
   STAFF.lec_set_put = lec_set_put;
   STAFF.lec_set_hide = lec_set_hide;
+  STAFF.lec_set_testn = lec_set_testn;
   STAFF.lec_set_del = lec_set_del;
   STAFF.lec_set_staff = lec_set_staff;
   STAFF.lec_set_wrong_staff = lec_set_wrong_staff;

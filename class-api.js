@@ -2325,6 +2325,23 @@
     shuffle(kk, rnd);
     return shuffle(wr.concat(kk.slice(0, Math.min(wr.length, kk.length))), rnd);
   }
+  /* 시험 문항 수(test_n · 11-18): 1 ~ 문항 수-1 일 때만 그 수 · 비었거나 문항 수 이상이면 null(= 전부 · 예전 그대로) · 서버 lec__set_tq 와 같은 셈 */
+  function setTq(n, tn) {
+    var t = (tn == null || tn === '') ? NaN : +tn;
+    n = Math.floor(+n || 0);
+    if (!(t >= 1 && t <= n - 1) || Math.floor(t) !== t) return null;
+    return t;
+  }
+  /* 시험 문항 수만큼 새로 뽑기: 전체에서 무작위 tn 개 · 뽑은 차례 i 의 꼴 fm(i)(고르기 · 쓰기 번갈아) · 다시 볼 때도 새로(다시 보기 규칙 안 씀) */
+  function setDraw(items, tn, rnd) {
+    var ks = [], o = [], i;
+    items = isArr(items) ? items : [];
+    for (i = 0; i < items.length; i += 1) ks.push(str(items[i] && items[i].k));
+    shuffle(ks, rnd);
+    ks = ks.slice(0, Math.max(0, Math.min(ks.length, Math.floor(+tn || 0))));
+    for (i = 0; i < ks.length; i += 1) o.push({ k: ks[i], f: setFm(i) });
+    return o;
+  }
   /* 'c' 보기 넷: 맞는 뜻 + 맞춤 글이 서로 다르고 맞는 뜻과도 다른 뜻 셋(무작위) · 섞음 · 셋이 안 되면 null */
   function setChoices(items, idx, rnd) {
     var it, me, groups = {}, keys = [], i, g, out;
@@ -3236,6 +3253,12 @@
     });
   }
   function setHide(call, id, on) { return staffCall(call, 'lec_set_hide', { p_set: id || null, p_hidden: !!on }); }
+  /* 시험 문항 수(단어 · 문법 · 11-18): n = 1 ~ 300 · null · '' = 전부 · 옛 서버(함수 없음) = 'old' */
+  function setTestN(call, id, n) {
+    var v = (n == null || n === '') ? null : Math.floor(+n);
+    if (v !== null && !(v >= 1 && v <= 300)) return Promise.resolve({ ok: false, err: 'input' });
+    return staffCall(call, 'lec_set_testn', { p_set: id || null, p_n: v });
+  }
   function setDel(call, id) { return staffCall(call, 'lec_set_del', { p_set: id || null }); }
   function setStaff(call, id) { return staffCall(call, 'lec_set_staff', { p_set: id || null }); }
   /* 종이 «쌓인 오답 시험»: 반 하나(id)의 학생마다 쌓인 단어 · 문법 오답 · rows = [{sid, sname, n, items:[{k, s, kd, t, f, q, a, pt, z}]}] */
@@ -3299,14 +3322,14 @@
     SET_RS: SET_RS, SET_ERR: SET_ERR,
     setParse: setParse, setDetect: setDetect, setOpts: setOpts, gramParts: gramParts, setWarn: setWarn, setItemsFrom: setItemsFrom,
     setKeys: setKeys, setNeed: setNeed, setNorm: setNorm, setVars: setVars, setAlts: setAlts, setMatch: setMatch,
-    setFm: setFm, setFirst: setFirst, setRetake: setRetake, setChoices: setChoices,
+    setFm: setFm, setFirst: setFirst, setRetake: setRetake, setChoices: setChoices, setTq: setTq, setDraw: setDraw,
     setMark: setMark, setMemo: setMemo, setInDue: setInDue, setDueOn: setDueOn, setDeck: setDeck, setNextQ: setNextQ,
     setPrint: setPrint, sayParts: sayParts, sayText: sayText, sayVoice: sayVoice,
     recMime: recMime, recBase: recBase,
     spkCan: spkCan, spkWords: spkWords, spkScore: spkScore, spkNeed: spkNeed, setDiff: setDiff, setOrder: setOrder,
     setHome: setHome, setItems: setItems, setCard: setCard, setTest: setTest, setDue: setDue, setAns: setAns,
     recBegin: recBegin, recDone: recDone, recPut: recPut, recSend: recSend,
-    setListStaff: setListStaff, setGet: setGet, setPut: setPut, setHide: setHide, setDel: setDel, setStaff: setStaff,
+    setListStaff: setListStaff, setGet: setGet, setPut: setPut, setHide: setHide, setTestN: setTestN, setDel: setDel, setStaff: setStaff,
     setWrongStaff: setWrongStaff, recMark: recMark, recClean: recClean
   };
   for (var name in api) { if (has(api, name)) Lec[name] = api[name]; }

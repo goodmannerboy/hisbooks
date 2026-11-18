@@ -1002,6 +1002,11 @@ button.s1t:active{background:var(--press)}
 .vm.s18{font-size:18px}
 .vno{position:absolute;left:14px;top:14px;z-index:1;padding:5px 8px;border-radius:999px;background:var(--tile);color:var(--ink);font-size:12px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 .vsay{position:absolute;right:4px;top:4px;z-index:2;display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;border-radius:12px;background:none;color:var(--ink)}
+/* 11-18 자동 발음 켜고 끄기: 🔊 왼쪽 · 누르는 곳 44 · 보이는 알약 28 */
+.vauto{position:absolute;right:48px;top:4px;z-index:2;display:flex;align-items:center;justify-content:center;min-width:44px;height:44px;padding:0 2px;border:0;background:none;color:var(--ink)}
+.vauto span{display:inline-flex;align-items:center;height:28px;padding:0 10px;border:1px solid var(--sl);border-radius:999px;font-size:13px;font-weight:600;line-height:1;white-space:nowrap}
+.vauto.off span{border-color:var(--line);color:var(--ink2)}
+.vnos{margin:-4px 0 10px;font-size:13px;line-height:1.55;color:var(--ink2);text-align:center;word-break:keep-all;overflow-wrap:break-word}
 .vbtns{display:flex;gap:12px;margin-top:16px}
 .vbtns>button{flex:1 1 0;min-width:0;min-height:56px;font-size:17px}
 .sq{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
@@ -2916,21 +2921,24 @@ window.__lecStart = function () {
     return h + '</section>';
   }
   function setRowHTML(s) {
-    var m = s.me || null, n = +s.n || 0, k = s.kind, ok = setDone(s), mt = [], rs = '', rs2 = '', rc2 = '', un = '', pct = 0, rc, na = 0, ns = 0, nk = 0, why = 0, j, st, lab, vis;
+    var m = s.me || null, n = +s.n || 0, k = s.kind, ok = setDone(s), mt = [], rs = '', rs2 = '', rc2 = '', un = '', pct = 0, rc, na = 0, ns = 0, nk = 0, why = 0, j, st, lab, vis,
+        tn = +s.test_n || 0; /* 시험 문항 수(11-18 · 서버가 전부보다 적을 때만 보냄 · 0 = 전부) */
     if (s.on) mt.push(L.fmtDay(L.isoDay(s.on)));
     if (k === 'voc') {
       mt.push(n + '개');
+      if (tn) mt.push('시험 ' + tn + '문제');
       if (m) {
         /* «외움 0»은 보이지 않음(검수 11-17 · 외움 = 다른 두 날 · 하루는 시험) · 고리는 외움이 0 이면 시험에서 맞힌 수(kn)로 */
         if (+m.known > 0) mt.push('외움 ' + (+m.known));
         pct = n ? Math.floor((+m.known > 0 ? +m.known : (+m.kn || 0)) * 100 / n) : 0;
         if (ok) { rs = '통과'; rc2 = 'ok'; }
         else if (m.test === 'open') rs = '이어서 시험 보기';
-        else if (m.test === 'fail') rs = '시험 · ' + Math.max(1, (+s.need || 0) - (+m.kn || 0)) + '개 더 맞히면 통과';
+        else if (m.test === 'fail') rs = tn ? '시험 · ' + tn + '문제 가운데 ' + (+s.need || 0) + '개 맞히면 통과' : '시험 · ' + Math.max(1, (+s.need || 0) - (+m.kn || 0)) + '개 더 맞히면 통과';
         else rs = '시험 아직';
       }
     } else if (k === 'gram') {
       mt.push(n + '문제');
+      if (tn) mt.push('한 번에 ' + tn + '문제');
       if (m) {
         pct = +m.best || 0;
         if (ok) { rs = '통과'; rc2 = 'ok'; }
@@ -3084,6 +3092,7 @@ window.__lecStart = function () {
     else if (a === 'test' || a === 'retake') tStart();
     else if (a === 'flip') memFlip();
     else if (a === 'say') memSay();
+    else if (a === 'sayauto') memAutoTog();
     else if (a === 'yes') memMark(true);
     else if (a === 'no') memMark(false);
     else if (a === 'opt') tPick(+attr(el, 'data-i'));
@@ -3132,7 +3141,7 @@ window.__lecStart = function () {
     else if (t === 'none' && n > 0 && seen >= n) { btn = '시험 보기'; act = 'test'; }
     else { btn = seen > 0 ? '이어서 외우기' : '외우기 시작'; act = 'mem'; }
     setPage(setHead('목록') + '<h1 class="sh1">' + esc(s.title) + '</h1>' +
-      '<p class="smt">' + n + '개' + (s.on ? ' · ' + esc(L.fmtDay(L.isoDay(s.on))) : '') + '</p>' +
+      '<p class="smt">' + n + '개' + (+s.test_n > 0 ? ' · 시험 ' + (+s.test_n) + '문제' : '') + (s.on ? ' · ' + esc(L.fmtDay(L.isoDay(s.on))) : '') + '</p>' +
       '<div class="rows sst">' +
       '<button class="row s2r" type="button" data-act="s1mem"><span class="mn"><span class="tt">① 외우기</span></span><span class="st">' + (seen > 0 ? seen + ' / ' + n : '아직') + '</span>' +
       ring(n ? Math.floor(seen * 100 / n) : 0, n > 0 && seen >= n) + '</button>' +
@@ -3148,7 +3157,8 @@ window.__lecStart = function () {
   /* 외우기(G V3 · V4): setItems → setDeck 20장 · 앞 = 단어 · 누르면 뜻(돌리지 않고 0.18초 겹침) · «다시 / 알아요» · 판 끝이나 «그만»에 setCard 한 번 */
   function memLoad() {
     var my = WRUN, k = S.key;
-    if (W.items) { memRound(); return; }
+    if (W.items) { memRound(true); return; }
+    sayPrime(); /* 11-18: 이 누름 안에서 말소리를 미리 엶(아이폰 · 서버를 기다린 첫 카드 자동 발음) */
     W.busy = true;
     setBusyBtns(true);
     L.setItems(k, W.id).then(function (r) {
@@ -3159,33 +3169,66 @@ window.__lecStart = function () {
       a = r.items || [];
       W.items = a; W.cards = r.cards || {}; W.byK = {};
       for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].k) W.byK[a[i].k] = a[i]; }
-      memRound();
+      memRound(false); /* 서버를 기다린 뒤 = 누름 밖 */
     }, function () {
       if (my !== WRUN || !W) return;
       W.busy = false;
       s2Draw(M.net);
     });
   }
-  function memRound() {
+  function memRound(tap) {
     W.mode = 'mem';
     W.q = (L.setDeck(W.items, W.cards, 20) || []).slice();
     W.tot = W.q.length; W.times = {}; W.marks = {}; W.rm = {}; W.flip = false;
     if (W.nth == null) W.nth = 0;
     if (!W.tot) { setInfo(W.s.title, setTx('none')); return; }
-    memDraw();
+    memDraw(tap);
   }
-  function memDraw() {
-    var k = W.q[0], it = W.byK[k] || {}, w = String(it.w || ''), m = String(it.m || ''), seen = {}, nl = 0, i, at, fs;
+  /* tap = 누름 안에서 그림(다음 카드 · 한 번 더) · 아니면 서버를 기다린 첫 카드 */
+  function memDraw(tap) {
+    var k = W.q[0], it = W.byK[k] || {}, w = String(it.w || ''), m = String(it.m || ''), seen = {}, nl = 0, no = sayNone(), i, at, fs;
     for (i = 0; i < W.q.length; i += 1) { if (!seen['k' + W.q[i]]) { seen['k' + W.q[i]] = 1; nl += 1; } }
     at = Math.max(1, W.tot - nl + 1);
     fs = w.length > 19 ? ' s22' : (w.length > 13 ? ' s26' : '');
     setPage(setHead('그만', at + ' / ' + W.tot, Math.round((at - 1) * 100 / W.tot)) +
+      '<p class="vnos" id="vNos"' + (no ? '' : ' hidden') + '>' + SAY_NO_TX + '</p>' + /* 11-18: 발음을 못 듣는 곳(말소리 기능 없음 · 영어 목소리 확실히 없음) */
       '<div class="vcard' + (W.flip ? ' on' : '') + '" id="vCard" data-act="s1flip" role="button" tabindex="0" aria-pressed="' + (W.flip ? 'true' : 'false') + '" aria-label="' + esc(W.flip ? w + ' ' + m : w) + '">' +
       (it.n ? '<span class="vno" aria-hidden="true">' + esc(two(it.n)) + '번</span>' : '') +
-      '<button class="vsay" id="vSay" type="button" data-act="s1say" aria-label="발음 듣기"' + (sayV() ? '' : ' hidden') + '>' + icon('vol', 22) + '</button>' +
+      /* 11-18: 소리 단추는 영어 목소리가 «확실히 없음»일 때만 숨김(목록이 늦게 오거나 빈 폰은 보임 · 누르면 en-US 로 말함) */
+      '<button class="vsay" id="vSay" type="button" data-act="s1say" aria-label="발음 듣기"' + (no ? ' hidden' : '') + '>' + icon('vol', 22) + '</button>' +
+      memAutoHTML(no) +
       '<span class="vf' + fs + '" aria-hidden="true"><span class="vw">' + esc(w) + '</span>' + (W.nth < 3 ? '<span class="vhint">눌러서 뜻 보기</span>' : '') + '</span>' +
       '<span class="vb" aria-hidden="true"><span class="ve">' + esc(w) + '</span><span class="vm' + (m.length > 36 ? ' s18' : '') + '">' + esc(m) + '</span></span></div>' +
       '<div class="vbtns"><button class="btn-line" type="button" data-act="s1no">다시</button><button class="btn-fill" type="button" data-act="s1yes">알아요</button></div>');
+    memAutoSay(tap);
+  }
+  /* 자동 발음(11-18 원장님 «어휘 외우기 할 때 발음 소리가 안 나고»): 카드가 나올 때(앞면 = 영어 단어) 단어를 한 번 읽음 · 🔊 = 다시 읽기
+     누름 안(다음 · 다시 · 한 번 더)은 그 자리에서 바로 speak(아이폰이 막지 않음) · 누름 밖(서버를 기다린 첫 카드)은 해 보고
+     1.5초 안에 소리가 시작 안 되면(아이폰이 누름 밖 speak 를 막음) 조용히 거둠(글 없음 · 🔊 는 그대로) */
+  function memAutoSay(tap) {
+    var it = W && W.mode === 'mem' && W.q && W.byK ? W.byK[W.q[0]] : null;
+    if (!it || !it.w || !sayAuto() || sayNone()) return;
+    sayStop();
+    sayOne(String(it.w), null, tap ? null : function () { /* 막힘 = 조용히 */ });
+  }
+  var SAY_NO_TX = '이 화면에서는 발음을 들을 수 없어요. 크롬이나 사파리로 열어 주세요.';
+  function memAutoHTML(hide) {
+    var on = sayAuto();
+    return '<button class="vauto' + (on ? '' : ' off') + '" id="vAuto" type="button" data-act="s1sayauto" aria-pressed="' + (on ? 'true' : 'false') + '"' + (hide ? ' hidden' : '') + '>' +
+      '<span>' + (on ? '자동 발음 켜짐' : '자동 발음 꺼짐') + '</span></button>';
+  }
+  /* 켜고 끄기(이 폰에 기억): 켜면 지금 단어를 바로 한 번(누름 안) · 끄면 말소리 멈춤 */
+  function memAutoTog() {
+    var b = $('vAuto'), on;
+    if (!W || W.mode !== 'mem') return;
+    on = !sayAuto();
+    saySetAuto(on);
+    if (b) {
+      b.className = 'vauto' + (on ? '' : ' off');
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.innerHTML = '<span>' + (on ? '자동 발음 켜짐' : '자동 발음 꺼짐') + '</span>';
+    }
+    if (on) memSay(); else sayStop();
   }
   function memFlip() {
     var c = $('vCard'), it;
@@ -3198,9 +3241,9 @@ window.__lecStart = function () {
   }
   function memSay() {
     var it = W.mode === 'mem' && W.q && W.byK ? W.byK[W.q[0]] : null;
-    if (!it || !sayV()) return;
+    if (!it || sayNone()) return; /* 11-18: 목소리를 아직 못 골랐어도 말함(sayOne 이 en-US 로) */
     sayStop();
-    sayOne(String(it.w || ''), null); /* 누를 때만 · 빠르기 = 구문 ① 에서 고른 것(없으면 보통 0.9) */
+    sayOne(String(it.w || ''), null); /* 누를 때 · 빠르기 = 구문 ① 에서 고른 것(없으면 보통 0.9) */
   }
   function memMark(ok) {
     var k, nx;
@@ -3214,7 +3257,7 @@ window.__lecStart = function () {
     W.flip = false; W.nth += 1;
     sayStop();
     if (!W.q.length) { memEnd(); return; }
-    memDraw();
+    memDraw(true);
   }
   /* 이 판 표시(알아요 1 · 다시만 0)를 한 번 보냄 · 다음 판을 고르려고 들고 있는 카드에도 같은 셈을 함(Lec.setMark) */
   function memSave(then) {
@@ -3358,7 +3401,7 @@ window.__lecStart = function () {
     var q = r.q || [], d = r.done || [], t, i, a, n = Math.min(+r.n || q.length, q.length);
     t = { id: r['try'], kind: r.kind || (W.kind === 'due' ? 'due' : 'test'), title: r.title || (W.s ? W.s.title : ''), n: n, total: +r.total || n, need: +r.need || 0,
           kn: +r.kn || 0, round: +r.round || 1, q: q, ans: [], i: 0, ph: 'q', fb: null, end: null, ag: [], agN: 0, agDone: 0, step: 0, busy: false,
-          first: !d.length, lastOk: false };
+          first: !d.length, lastOk: false, draw: !!r.draw, all: +r.all || 0 };
     for (i = 0; i < d.length; i += 1) {
       a = d[i];
       if (a && a.i >= 0 && a.i < n) t.ans[a.i] = { v: a.v, r: !!a.r, a: a.a == null ? '' : String(a.a), x: a.x || '', pt: a.pt || '' };
@@ -3431,7 +3474,11 @@ window.__lecStart = function () {
     if (W.kind === 'gram') { /* 화면 차례(11-18) = 고르기 먼저 · 쓰기 뒤 */
       for (i = 0; i < t.n; i += 1) { if ((t.q[i] || {}).f === 'c') nc += 1; else nw += 1; }
       return '<p class="snote">' + (nc && nw ? '괄호 고르기가 먼저, 고쳐 쓰기가 뒤에 나와요' : (nc ? '괄호 안에서 알맞은 말을 골라요' : '밑줄 친 말을 바르게 고쳐 써요')) + '<br>' +
-        t.n + '문제 · ' + t.need + '개 맞히면 통과<br>틀리면 바로 정답과 해설이 나와요</p>';
+        (t.draw && t.all > t.n ? t.all + '문제 가운데 ' : '') + t.n + '문제 · ' + t.need + '개 맞히면 통과<br>틀리면 바로 정답과 해설이 나와요</p>';
+    }
+    /* 시험 문항 수(11-18): 뽑아서 낸 판은 볼 때마다 새로 뽑으니 다시 볼 때도 안내 */
+    if (t.draw && t.all > t.n) {
+      return '<p class="snote">' + t.all + '개 가운데 ' + t.n + '문제 · ' + t.need + '개 맞히면 통과<br>틀린 문제는 끝에 한 번 더 나와요 · 점수에는 안 들어가요<br>다시 볼 때는 문제를 새로 뽑아요</p>';
     }
     if (t.round > 1) return '';
     return '<p class="snote">' + t.n + '문제 · ' + t.need + '개 맞히면 통과<br>틀린 문제는 끝에 한 번 더 나와요 · 점수에는 안 들어가요</p>';
@@ -3445,7 +3492,7 @@ window.__lecStart = function () {
         pos = ag ? t.agDone : t.pos, of = ag ? t.agN : t.n, wr = q.f !== 'c', h, hb, gp, o, i, cls, el, inp, a, b, lab;
     h = setHead('그만', (t.kind === 'due' ? '쌓인 오답 · ' : '') + Math.min(pos + 1, of) + ' / ' + of, of ? Math.round(pos * 100 / of) : 0);
     if (ag) h += '<p class="slab">틀린 문제 한 번 더 · 점수에는 안 들어가요</p>';
-    else if (t.kind === 'test' && t.round > 1) h += '<p class="slab">다시 보기 · 틀린 것은 직접 써요</p>';
+    else if (t.kind === 'test' && t.round > 1 && !t.draw) h += '<p class="slab">다시 보기 · 틀린 것은 직접 써요</p>';
     /* 고르기로 돌아감 = 다음 쓰기 묶음에서 다시 «시작» · 끝 «한 번 더»(ag)에서는 «시작» 장을 한 판에 한 번만(t.agGate · 그 뒤 자판이 닫혔으면 쓰기 칸을 누름) */
     if (!wr && !(ag && t.agGate)) t.kb = false;
     t.gate = wr && !fb && !t.kb && tTouch();
@@ -3630,13 +3677,14 @@ window.__lecStart = function () {
   }
   /* 결과(S5 · 위젯 W.res): 고리 64 · «통과» / «아직이에요» · «40 / 42 · 95%» · «3개 더 맞히면 통과예요.» · 틀린 것은 쌓인 오답에 */
   function tResult() {
-    var t = W.t, e = t.end, voc, of, got, pct, pass, need, h, wr;
+    var t = W.t, e = t.end, voc, of, got, pct, pass, need, h, wr, dr;
     if (t.kind === 'due') { dueResult(); return; }
     if (!e) { setBack(true); return; }
     W.mode = 'res'; t.ph = 'res';
     voc = W.kind === 'voc';
-    of = voc ? (+e.total || t.total) : (+e.n || t.n);
-    got = voc ? (+e.kn || 0) : (+e.sc || 0);
+    dr = !!e.draw; /* 시험 문항 수(11-18): 뽑아서 낸 판은 이 판 첫 답 맞힌 수로 */
+    of = voc && !dr ? (+e.total || t.total) : (+e.n || t.n);
+    got = voc && !dr ? (+e.kn || 0) : (+e.sc || 0);
     need = +e.need || t.need;
     pct = of ? Math.floor(got * 100 / of) : 0;
     pass = !!e.pass;
@@ -3647,7 +3695,10 @@ window.__lecStart = function () {
       (!pass && need > got ? '<p class="sr2">' + (need - got) + '개 더 맞히면 통과예요.</p>' : '') +
       (+e.ever > 0 ? '<p class="sr3">틀린 ' + (+e.ever) + '개는 쌓인 오답에 담았어요.</p>' : '');
     if (pass) h += '<button class="btn-fill" type="button" data-act="s1back">목록으로</button>';
-    else if (voc && e.next === 'retake') {
+    else if (voc && e.next === 'retake' && dr) {
+      h += '<button class="btn-fill" type="button" data-act="s1retake">다시 시험 보기 · 새로 ' + of + '문제</button>' +
+        '<button class="stxt" type="button" data-act="s1back">목록으로</button>';
+    } else if (voc && e.next === 'retake') {
       wr = Math.max(0, of - got);
       h += '<button class="btn-fill" type="button" data-act="s1retake">틀린 ' + wr + '개 다시 보기 · ' + (wr + Math.min(wr, got)) + '문제</button>' +
         '<button class="stxt" type="button" data-act="s1back">목록으로</button>';
@@ -3681,18 +3732,20 @@ window.__lecStart = function () {
     }, function () { S.setDirty = true; draw(0, null); });
   }
 
-  /* 폰 목소리(T4): en-US → en-* → 없으면 소리 단추 숨김 · 빠르기 0.9 · 덩어리마다 speak · onend 가 안 오면 글자 수 × 90ms + 1.5초 뒤 넘어감 */
+  /* 폰 목소리(T4): en-US → en-* → 영어 목소리가 확실히 없으면 소리 단추 숨김(sayNone) · 빠르기 0.9 · 덩어리마다 speak · onend 가 안 오면 글자 수 × 90ms + 1.5초 뒤 넘어감 */
   function sayV() {
     var ss = window.speechSynthesis, f;
     if (!ss || !window.SpeechSynthesisUtterance || typeof L.sayVoice !== 'function') return null;
     if (SAYV) return SAYV;
     try { SAYV = L.sayVoice(ss.getVoices() || []) || null; } catch (e) { SAYV = null; }
-    if (!SAYV && !SAYW) { /* 크롬은 목소리 목록이 늦게 옴 → 오면 단추를 보임 */
+    if (!SAYV && !SAYW) { /* 크롬은 목소리 목록이 늦게 옴 → 오면 단어 카드 단추를 다시 정함(영어가 없을 때만 숨김) */
       SAYW = true;
       f = function () {
         try { SAYV = L.sayVoice(ss.getVoices() || []) || null; } catch (e2) { SAYV = null; }
-        var b = $('vSay');
-        if (b && SAYV) b.hidden = false;
+        var b = $('vSay'), a = $('vAuto'), n2 = $('vNos'), no = sayNone();
+        if (b) b.hidden = no;
+        if (a) a.hidden = no;
+        if (n2) n2.hidden = !no;
       };
       try { if (ss.addEventListener) ss.addEventListener('voiceschanged', f); else ss.onvoiceschanged = f; } catch (e3) { /* 없음 */ }
     }
@@ -3706,9 +3759,47 @@ window.__lecStart = function () {
     try { n = (ss.getVoices() || []).length; } catch (e) { n = 0; }
     return SAYWT || n > 0;
   }
+  /* 말하는 중 · 기다리는 말이 있음(알 수 없으면 있다고 봄) */
+  function sayBusy(ss) {
+    try { return ss.speaking !== false || ss.pending !== false; } catch (e) { return true; }
+  }
+  /* 11-18: 말하는 중일 때만 cancel(바로 뒤 speak 를 삼키는 브라우저가 있음 · 소리가 끝난 뒤 다음 카드는 cancel 없이 speak) · 미리 연 빈 말소리는 끊지 않음 */
   function sayStop() {
+    var ss = window.speechSynthesis;
     SAYRUN += 1;
-    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) { /* 없음 */ }
+    try { if (ss && sayBusy(ss) && !sayPrimed()) ss.cancel(); } catch (e) { /* 없음 */ }
+  }
+  /* 11-18 아이폰 첫 카드: 외우기를 여는 누름 안에서 소리 없는 빈 말소리(' ' · 소리 0 · 영어)로 말소리를 미리 엶 → 서버를 기다린 첫 카드도 소리 남
+     자동 발음 켜짐 · 영어 목소리가 확실히 없지 않음 · 말하는 중이 아닐 때만 · 실패해도 조용히 · 1초 동안 다음 말소리는 그 뒤에 줄을 섬(끊지 않음) */
+  var SAYP = null;
+  function sayPrime() {
+    var ss = window.speechSynthesis, v, u;
+    if (!ss || !sayAuto() || sayNone()) return;
+    try {
+      if (sayBusy(ss)) return;
+      audSay();
+      u = new window.SpeechSynthesisUtterance(' ');
+      u.volume = 0; u.lang = 'en-US';
+      v = sayV();
+      if (v) { u.voice = v; u.lang = v.lang; }
+      u.onend = u.onerror = function () { if (SAYP && SAYP.u === u) SAYP = null; };
+      SAYP = { u: u, at: Date.now() };
+      ss.speak(u);
+    } catch (e) { SAYP = null; }
+  }
+  function sayPrimed() { return !!(SAYP && Date.now() - SAYP.at < 1000); }
+  /* 단어 외우기 자동 발음(11-18): 이 폰에 기억(없으면 켜짐) */
+  var AUTO_K = 'lec-say-auto', SAYA = null;
+  function sayAuto() {
+    var v;
+    if (SAYA !== null) return SAYA;
+    try { v = L.lsGet(AUTO_K, 1); } catch (e) { v = 1; }
+    SAYA = v !== 0 && v !== false && v !== '0';
+    return SAYA;
+  }
+  function saySetAuto(on) {
+    SAYA = !!on;
+    try { L.lsSet(AUTO_K, SAYA ? 1 : 0); } catch (e) { /* 없음 */ }
   }
   /* 말 빠르기(11-18): 느리게 0.7 · 보통 0.9 · 빠르게 1.0 · 이 폰에 기억(없으면 보통) · 모든 말소리(단어 발음 · 구문 · 원래 소리)에 */
   var RATE_K = 'lec-say-rate', SAY_RATES = [[0.7, '느리게'], [0.9, '보통'], [1, '빠르게']]; /* RATES = 영상 배속(따로) */
@@ -3745,6 +3836,13 @@ window.__lecStart = function () {
     try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) { /* 없음 */ }
   }
   function audPlayback() { audSess('playback'); }
+  /* 11-18 아이폰 무음 스위치: 마이크를 안 쓸 때 말소리 직전에 'playback'(무음 모드여도 발음이 들림 · 다른 앱 음악은 멈출 수 있음) · 녹음 · 말하기 확인 중에는 그대로 */
+  function audSay() {
+    var a = navigator.audioSession, t = '';
+    if (!a) return;
+    try { t = String(a.type || ''); } catch (e) { t = ''; }
+    if (t !== 'playback' && audIdle(null)) audPlayback();
+  }
   /* 늦게 온 녹음 소식(화면을 떠난 뒤 · 마이크 허락 거절)은 다른 마이크 쓰임(새 녹음 · 말하기 확인)이 없을 때만 'playback' 으로 */
   function audIdle(on) {
     var g = W && W.g;
@@ -3768,13 +3866,15 @@ window.__lecStart = function () {
       if (!nost) { if (!to) to = setTimeout(function () { done(est); }, est); return; } /* 막혔어도 시간으로 넘어감 */
       fin = true;
       clr();
+      if (my !== SAYRUN) return; /* 11-18: 그 사이 새 말소리(🔊 · 다음 카드)가 시작됨 = 그것을 끊지 않음 */
       try { ss.cancel(); } catch (e0) { /* 없음 */ }
-      if (my === SAYRUN) nost();
+      nost();
     }
-    if (!v) { to = setTimeout(function () { done(est); }, est); return; } /* 목소리 없음 = 소리 없이 같은 시간(따라 읽기는 됨) */
+    if (!v && sayNone()) { to = setTimeout(function () { done(est); }, est); return; } /* 영어 목소리가 확실히 없음 = 소리 없이 같은 시간(따라 읽기는 됨) */
     try {
       u = new window.SpeechSynthesisUtterance(t);
-      u.voice = v; u.lang = v.lang; u.rate = sayRate();
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-US'; /* 11-18: 목록이 아직 안 옴(아이폰 첫 소리 전 · 일부 안드로이드) = 영어로만 정하고 말함 */
+      u.rate = sayRate();
       u.onstart = function () {
         if (fin || t0) return;
         t0 = Date.now();
@@ -3783,7 +3883,10 @@ window.__lecStart = function () {
       };
       u.onend = function () { done(t0 ? Date.now() - t0 : est); };
       u.onerror = function () { if (!t0) noStart(); else done(Date.now() - t0); };
-      ss.cancel();
+      if (sayBusy(ss) && !sayPrimed()) ss.cancel(); /* 11-18: 말하는 중일 때만(cancel 바로 뒤 speak 를 삼키는 브라우저가 있음) · 미리 연 빈 말소리 뒤에는 줄을 섬 */
+      SAYP = null;
+      try { if (ss.paused) ss.resume(); } catch (eP) { /* 없음 */ } /* 11-18: 멈춤(paused)으로 남아 있으면 speak 가 줄만 서고 소리가 안 남(cancel 로는 안 풀림) */
+      audSay();
       ss.speak(u);
     } catch (e) { to = setTimeout(function () { done(est); }, est); return; }
     ns = setTimeout(function () { ns = 0; if (!t0) noStart(); }, 1500);
