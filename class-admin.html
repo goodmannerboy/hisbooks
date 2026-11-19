@@ -4715,14 +4715,14 @@ window.__lecAdminStart = function () {
   }
 
   /* ------------------------------------------------------- S1 세트(11-17 · 원장님 계정만)
-     어휘 · 주요구문 · 문법 세트: 왼쪽 목록 · 오른쪽 결과 표 · 붙여 넣기 서랍(새로 · 고치기) · 녹음 듣기 서랍 · 시험지 인쇄(새 창 · A4 흑백).
+     어휘 · 구문 · 문법 세트: 왼쪽 목록 · 오른쪽 결과 표 · 붙여 넣기 서랍(새로 · 고치기) · 녹음 듣기 서랍 · 시험지 인쇄(새 창 · A4 흑백).
      Joey · Dana = 탭 · 줄 · 부름 0. 관리자가 열 때 한 번 setListStaff → 'old' 면 세트 탭 안 한 줄(그 밖 화면 그대로) ·
      아니면 한 번만 조용히 recClean(30일 지난 녹음 지우기 · 띠 · 알림 없음). 반복 확인 · 실시간 0 ·
      S1-b(11-17 원장님 «동의서 필요없어»): 녹음 동의 칸 · 보호자 동의 찍기 · 끄기 · 학교급 없음(모든 학생이 ★ 녹음) */
-  var SX_KIND = { voc: '어휘', gu: '주요구문', gram: '문법' };
+  var SX_KIND = { voc: '어휘', gu: '구문', gram: '문법' };   /* 3-2 (나) 화면 이름만 «구문» · 값 gu 그대로 */
   var SX_LIM = { voc: 300, gu: 30, gram: 50 };
   var SX_RS = {
-    voc: '한 줄이 한두 낱말이라 어휘로 읽었어요', gu: '한 줄이 문장이라 주요구문으로 읽었어요',
+    voc: '한 줄이 한두 낱말이라 어휘로 읽었어요', gu: '한 줄이 문장이라 구문으로 읽었어요',
     gram: '괄호 안에 / 보기나 [ ]가 있어 문법으로 읽었어요', forced: '선생님이 고른 종류로 읽어요'
   };
   var SX_FMT = {
@@ -4912,7 +4912,7 @@ window.__lecAdminStart = function () {
     if (!S.set) return '<section class="card"><p class="empty">' + (S.setErr ? '세트를 불러오지 못했어요. «다시 불러오기»를 눌러 주세요.' : '세트를 불러오는 중이에요') + '</p></section>';
     list = S.set.items; cur = sxCur();
     h = '<div class="sx"><section class="sx-l" aria-label="세트 목록"><button type="button" class="btn fill wide" data-act="sxNew">＋ 새 세트</button>' + lpHeadHtml();
-    if (!list.length) h += '<p class="empty">아직 세트가 없어요. 엑셀에서 복사해 붙여 넣으면 어휘 · 주요구문 · 문법을 알아서 읽어요.</p>';
+    if (!list.length) h += '<p class="empty">아직 세트가 없어요. 엑셀에서 복사해 붙여 넣으면 어휘 · 구문 · 문법을 알아서 읽어요.</p>';
     for (i = 0; i < list.length; i += 1) { if (list[i]) h += lpRowHtml(list[i], sxItHtml(list[i], !!cur && cur.id === list[i].id)); }
     return h + '</section><section class="card sx-r" aria-label="결과 표">' + (cur ? sxResHtml(cur) : '<p class="empty">왼쪽에서 세트를 고르면 결과 표가 나와요.</p>') + '</section></div>';
   }
