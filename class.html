@@ -1025,7 +1025,7 @@ button.s1t:active{background:var(--press)}
 .shd{display:flex;align-items:center;gap:8px;min-height:48px}
 .shd .sc{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .sbar{height:4px;margin:0 0 14px;border-radius:2px;background:var(--track);overflow:hidden}
-.sbar b{display:block;height:100%;background:var(--acc);transition:width .24s}
+.sbar b{display:block;height:100%;background:var(--acc);transition:width 240ms var(--e-out)} /* S5(11-19) 이전 폭에서 새 폭으로(barSlide) */
 .sload{min-height:240px}
 .sh1{margin:4px 0 0;font-size:20px;font-weight:700;line-height:1.3;letter-spacing:-.02em}
 .sh2{margin:4px 0 6px;font-size:16px;font-weight:700;line-height:1.35}
@@ -1039,9 +1039,15 @@ button.s1t:active{background:var(--press)}
 .sst .s2r .ring{width:28px;height:28px}
 .sst + .err + .btn-fill{margin-top:4px}
 .vcard{position:relative;display:block;width:100%;height:clamp(280px,48vh,420px);height:clamp(280px,48svh,420px);border:1px solid var(--line);border-radius:16px;background:var(--card);cursor:pointer;-webkit-user-select:none;user-select:none}
-.vcard .vf,.vcard .vb{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:52px 20px 28px;text-align:center;transition:opacity .18s,visibility .18s}
-.vcard .vb,.vcard.on .vf{opacity:0;visibility:hidden}
-.vcard.on .vb{opacity:1;visibility:visible}
+/* S5(11-19) 단어 카드가 가운데 축으로 420ms 에 뒤집힘(겹쳐 바뀌던 .18초 없앰) · 뒷면은 backface 로 숨김
+   보이기(visibility)는 바꾸는 순간 없이 90°를 지나는 때(var(--e-soft) 로 79ms ≈ 80ms)에 한 번 넘김 = 안 보이는 면은 화면 읽기·누름에서 빠짐 */
+.vcard{perspective:1200px}
+.vcard .vf,.vcard .vb{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:52px 20px 28px;text-align:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transition:transform 420ms var(--e-soft),visibility 0s linear 80ms}
+.vcard .vf{transform:rotateY(0)}
+.vcard.on .vf{transform:rotateY(-180deg);visibility:hidden}
+.vcard .vb{transform:rotateY(180deg);visibility:hidden}
+.vcard.on .vb{transform:rotateY(0);visibility:visible}
+.vghost{position:fixed;margin:0;pointer-events:none;z-index:5}
 .vw{font-size:34px;font-weight:700;line-height:1.2;letter-spacing:-.01em;word-break:keep-all;overflow-wrap:break-word}
 .vf.s26 .vw{font-size:26px}
 .vf.s22 .vw{font-size:22px}
@@ -1069,11 +1075,18 @@ button.s1t:active{background:var(--press)}
 .sund{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
 .sfix{display:inline-block;margin:0 2px;padding:0 6px;border-radius:6px;background:var(--gB);color:var(--gT);font-weight:700}
 .sopts{margin:4px 0 0}
-.sopt{display:block;width:100%;min-height:52px;margin:8px 0 0;padding:10px 14px;border:1px solid var(--sl);border-radius:12px;background:var(--card);color:var(--ink);font-size:16px;line-height:1.4;text-align:left;word-break:keep-all;overflow-wrap:break-word}
+.sopt{position:relative;display:block;width:100%;min-height:52px;margin:8px 0 0;padding:10px 40px 10px 14px;border:1px solid var(--sl);border-radius:12px;background:var(--card);color:var(--ink);font-size:16px;line-height:1.4;text-align:left;word-break:keep-all;overflow-wrap:break-word}
 .sopt:active{background:var(--press)}
 .sopt[disabled]{cursor:default}
 .sopt.ok{border-color:#9FCFB3;background:var(--gB);color:var(--gT);font-weight:700}
 .sopt.no{border-color:#E5B5A9;background:var(--cB);color:var(--cT)}
+/* S5(11-19) 누르는 순간 고른 테 2px(크기 그대로 = 안쪽 여백 −1px) · 답이 오면 오른쪽 끝 18px 체크(맞음)·엑스(고른 틀림) 160ms */
+.sopt.pick{border-width:2px;border-color:var(--acc);padding:9px 39px 9px 13px}
+.sopt .smk{position:absolute;right:14px;top:50%;margin-top:-9px;display:block}
+.sopt.ok .smk{color:var(--gT)}
+.sopt.no .smk{color:var(--cT)}
+.sopts.fbin .smk{animation:mkIn 160ms var(--e-out) both}
+@keyframes mkIn{from{opacity:0}to{opacity:1}}
 .sin{display:block;width:100%;height:50px;margin:12px 0 0;border:1px solid var(--inL);border-radius:12px;background:var(--card);padding:0 14px;font-size:20px;color:var(--ink)}
 .sin:focus{border-color:var(--focus);outline:none}
 .sin.ok{border-color:#9FCFB3;background:var(--gB);color:var(--gT)}
@@ -2613,10 +2626,56 @@ window.__lecStart = function () {
     h += pcqHTML() + pwaBtnHTML('l') + '</div>'; /* 설치 흐름(11-18): PC «폰으로 받기» 카드 · «켜는 법»은 맨 위 카드로 옮김 */
     alShown = alState();
     app.innerHTML = h;
+    listAnim();
     cbarSync();
     pwaAuto();
     if (S.nIds) alFlash();
   }
+  /* S5(11-19) 목록 조용한 완성(이 폰 · 학생마다 기억 · 미리 보기는 안 함 · 같은 화면에 다시 들어오면 움직임 0)
+     ① «✓ 학습 완료» 줄은 그 강의를 처음 완료로 볼 때 한 번: 체크 원(r 11) 테가 0.7초에 그려지며 채워짐 + 줄 바탕 var(--gB) → 투명 0.9초
+        이 폰에서 처음 여는 학생은 지금 완료된 줄을 모두 «본 것»으로 적기만 함
+     ② 큰 카드 막대 · 단어·구문·문법 링 = 지난번 본 값에서 바뀐 것만 0.6초 */
+  function listAnim() {
+    var mo = !noMo(), dk, pk, dn, pc, first, a, i, el, id, v, o, c, gb, hit = false, chg = false;
+    if (PV || window.__lecPvIn) return;
+    dk = 'hc_done_seen:' + alNameH(); pk = 'hc_seen_pct:' + alNameH();
+    dn = L.lsGet(dk, null); first = !dn || typeof dn !== 'object'; if (first) dn = {};
+    pc = L.lsGet(pk, null); if (!pc || typeof pc !== 'object') pc = {};
+    gb = (getComputedStyle(document.documentElement).getPropertyValue('--gB') || '').trim() || '#DDF0E5';
+    a = app.querySelectorAll('section.grp a.row');
+    for (i = 0; i < a.length; i += 1) {
+      id = a[i].getAttribute('data-id');
+      if (!id || !a[i].querySelector('.done') || dn['i' + id]) continue;
+      dn['i' + id] = 1; hit = true;
+      if (first || !mo) continue;
+      c = a[i].querySelector('.done svg circle');
+      if (c) { c.setAttribute('stroke', 'currentColor'); c.setAttribute('stroke-width', '2'); c.setAttribute('stroke-dasharray', '69.12'); c.setAttribute('transform', 'rotate(-90 12 12)');
+        o = anim(c, [{ strokeDashoffset: '69.12', fillOpacity: 0 }, { strokeDashoffset: '0', fillOpacity: 1 }], { duration: 700, easing: E_SOFT });
+        if (o) o.onfinish = doneDrawn(c); else doneDrawn(c)(); }
+      anim(a[i], [{ backgroundColor: gb }, { backgroundColor: 'rgba(0,0,0,0)' }], { duration: 900, easing: E_OUT });
+    }
+    if (hit) L.lsSet(dk, dn);
+    a = app.querySelectorAll('.tc.hero');
+    for (i = 0; i < a.length; i += 1) {
+      el = a[i].querySelector('.art-bar i'); o = a[i].querySelector('a[href^="#v="]') || a[i];
+      id = String(o.getAttribute('href') || '').slice(3);
+      if (!el || !id) continue;
+      v = el.style.width;
+      if (pc['L' + id] != null && pc['L' + id] !== v && mo) anim(el, [{ width: pc['L' + id] }, { width: v }], { duration: 600, easing: E_OUT });
+      if (pc['L' + id] !== v) { pc['L' + id] = v; chg = true; }
+    }
+    a = app.querySelectorAll('.s1t[data-id]');
+    for (i = 0; i < a.length; i += 1) {
+      id = a[i].getAttribute('data-id'); el = a[i].querySelector('.ring .rgP');
+      v = el ? el.getAttribute('stroke-dashoffset') : (a[i].querySelector('.ring.ok') ? '0' : '');
+      if (!v) continue;
+      if (el && pc['S' + id] != null && pc['S' + id] !== v && mo) anim(el, [{ strokeDashoffset: pc['S' + id] }, { strokeDashoffset: v }], { duration: 600, easing: E_OUT });
+      if (pc['S' + id] !== v) { pc['S' + id] = v; chg = true; }
+    }
+    if (chg) L.lsSet(pk, pc);
+  }
+  /* 그린 테를 거둬 지금 모양(채운 원 + 흰 체크) 그대로 */
+  function doneDrawn(c) { return function () { c.removeAttribute('stroke'); c.removeAttribute('stroke-width'); c.removeAttribute('stroke-dasharray'); c.removeAttribute('transform'); }; }
   /* 2차(11-18) 머리: 목록 = 큰 이름 «HIS CLASS»(글자 그림 · 화면 읽기 «히즈클래스») + 이름 동그라미(누르면 이름 시트 · «나가기» · «기록 안내»는 시트 안)
      PC 보기(pch) = 왼쪽 위 작은 이름 · 미리 보기 = 동그라미 누름 없음(나가기 없음) */
   function avTxt() {
@@ -3105,7 +3164,16 @@ window.__lecStart = function () {
     /* 따라 말하기 도중 = 그 문장 처음으로(«듣기»를 다시 누를 수 있게 · 쉼 타이머도 끊음) */
     if (g && W.mode === 'gu' && g.busy) { g.run += 1; g.busy = false; g.wait = false; g.hl = -1; g.cue = ''; guDraw(); }
   }
-  function setPage(h) { app.innerHTML = '<div class="wrap"><div class="sw">' + h + '</div></div>'; }
+  function setPage(h) { app.innerHTML = '<div class="wrap"><div class="sw">' + h + '</div></div>'; barSlide(); }
+  /* S5(11-19) 진행 막대: 지난 폭으로 그린 뒤 두 프레임 뒤 새 폭(240ms var(--e-out)) · 같은 판 안에서만(W.barW) · 줄임 설정이면 바로 */
+  function barSlide() {
+    var b = app.querySelector('.sbar b'), w, o;
+    if (!b || !W) return;
+    w = b.style.width; o = W.barW; W.barW = w;
+    if (o == null || o === w || noMo() || !window.requestAnimationFrame) return;
+    b.style.width = o;
+    window.requestAnimationFrame(function () { window.requestAnimationFrame(function () { if (b.parentNode) b.style.width = w; }); });
+  }
   function setHead(back, cnt, pct) {
     return '<div class="shd"><button class="backb" type="button" data-act="s1back"><span class="ar" aria-hidden="true">‹</span>' + back + '</button><span class="sp"></span>' +
       (cnt ? '<span class="sc">' + cnt + '</span>' : '') + '</div>' +
@@ -3359,7 +3427,27 @@ window.__lecStart = function () {
     W.flip = false; W.nth += 1;
     sayStop();
     if (!W.q.length) { memEnd(); return; }
+    var g = cardGhost();
     memDraw(true);
+    /* S5(11-19) 지금 카드는 왼쪽으로 24px 빠지며 사라지고(160ms) 새 카드는 8px 아래에서 올라옴(200ms) */
+    if (g) { var ga = anim(g, [{ transform: 'none', opacity: 1 }, { transform: 'translateX(-24px)', opacity: 0 }], { duration: 160, easing: E_OUT, fill: 'forwards' }); if (ga) ga.onfinish = function () { rmEl(g); }; else rmEl(g); }
+    anim($('vCard'), [{ transform: 'translateY(8px)' }, { transform: 'none' }], { duration: 200, easing: E_OUT });
+  }
+  /* 지금 카드의 겉모습만 복사해 같은 자리에 겹침(누름·화면 읽기 없음) */
+  function cardGhost() {
+    var c = $('vCard'), r, g, a, i;
+    if (!c || noMo() || typeof c.animate !== 'function') return null;
+    r = c.getBoundingClientRect();
+    if (!onScr(r)) return null;
+    g = c.cloneNode(true);
+    g.removeAttribute('id'); g.removeAttribute('data-act'); g.removeAttribute('tabindex'); g.removeAttribute('role'); g.removeAttribute('aria-pressed'); g.removeAttribute('aria-label');
+    a = g.querySelectorAll('[id],[data-act]');
+    for (i = 0; i < a.length; i += 1) { a[i].removeAttribute('id'); a[i].removeAttribute('data-act'); }
+    g.setAttribute('aria-hidden', 'true');
+    g.classList.add('vghost');
+    g.style.left = r.left + 'px'; g.style.top = r.top + 'px'; g.style.width = r.width + 'px'; g.style.height = r.height + 'px';
+    document.body.appendChild(g);
+    return g;
   }
   /* 이 판 표시(알아요 1 · 다시만 0)를 한 번 보냄 · 다음 판을 고르려고 들고 있는 카드에도 같은 셈을 함(Lec.setMark) */
   function memSave(then) {
@@ -3624,12 +3712,13 @@ window.__lecStart = function () {
     h += '</div>';
     if (q.f === 'c') {
       o = tOpts(t, q);
-      h += '<div class="sopts" role="group" aria-label="보기">';
+      h += '<div class="sopts' + (fb && t.fbNew ? ' fbin' : '') + '" role="group" aria-label="보기">';
       for (i = 0; i < o.length; i += 1) {
         cls = '';
         if (fb) { if (L.setNorm(o[i]) === L.setNorm(fb.a)) cls = ' ok'; else if (i === fb.sel && !fb.ok) cls = ' no'; }
-        h += '<button class="sopt' + cls + '" type="button" data-act="s1opt" data-i="' + i + '"' + (fb ? ' disabled' : '') + '>' + esc(o[i]) + '</button>';
+        h += '<button class="sopt' + cls + '" type="button" data-act="s1opt" data-i="' + i + '"' + (fb ? ' disabled' : '') + '>' + esc(o[i]) + (cls ? MK_SVG[cls] : '') + '</button>';
       }
+      t.fbNew = false;
       h += '</div><p class="sfb' + (fb && fb.ok ? ' ok' : '') + '" id="sFb" role="status">' + (fb && fb.ok ? '맞아요' : '') + '</p>';
       if (fb && !fb.ok && gram) h += xBoxHTML(fb.pt, fb.x);
       if (fb && !fb.ok && gram) h += '<button class="btn-fill" type="button" data-act="s1next">다음</button>';
@@ -3649,7 +3738,7 @@ window.__lecStart = function () {
     lab = gram ? '고쳐 쓴 말' : '영어로 쓰기';
     inp = $('sIn'); a = $('tA'); b = $('tB');
     if (inp && a && b) {
-      a.innerHTML = h; b.innerHTML = hb;
+      a.innerHTML = h; b.innerHTML = hb; barSlide();
       inp.className = cls;
       inp.value = fb ? String(fb.v == null ? '' : fb.v) : '';
       inp.setAttribute('aria-label', lab);
@@ -3674,6 +3763,8 @@ window.__lecStart = function () {
     if (!t || t.busy || (t.ph !== 'q' && t.ph !== 'aq') || tFresh(t)) return;
     o = tOpts(t, t.q[tIdx(t)] || {});
     if (!(i >= 0 && i < o.length)) return;
+    var pb = app.querySelector('.sopt[data-i="' + i + '"]');
+    if (pb) pb.classList.add('pick'); /* S5 누르는 순간(서버 답 전) 고른 테 */
     tSend(String(o[i]), i);
   }
   function tChk() {
@@ -3691,9 +3782,14 @@ window.__lecStart = function () {
     tSend(v, -1);
   }
   /* 보내는 동안: 고르기 · «확인»만 막음 · 쓰기 칸은 tHeld 가 글자를 막음(readOnly 를 바꾸면 폰 자판이 닫힐 수 있음) */
+  /* S5 체크·엑스 18px(stroke 2 · currentColor = .ok var(--gT) · .no var(--cT)) · «맞아요» 글은 그대로 */
+  var MK_SVG = {
+    ' ok': '<svg class="smk" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false"><path d="M4 9.5l3.5 3.5L14.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ' no': '<svg class="smk" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false"><path d="M5 5l8 8M13 5l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+  };
   function tLock(on) {
     var bs = app.querySelectorAll('.sopt,[data-act=s1chk]'), i;
-    for (i = 0; i < bs.length; i += 1) bs[i].disabled = !!on;
+    for (i = 0; i < bs.length; i += 1) { bs[i].disabled = !!on; if (!on) bs[i].classList.remove('pick'); } /* 못 보냄 = 고른 테도 거둠 */
   }
   /* 쓰기 칸 글자 막음: 보내는 동안(t.busy · 보낸 글 t.lockV) · 정답 표시 동안(t.fb · 내 답) · 막을 때 둘 글(아니면 null) */
   function tHeld() {
@@ -3710,7 +3806,7 @@ window.__lecStart = function () {
       idx = tIdx(t); q = t.q[idx] || {}; a = (t.ans[idx] && t.ans[idx].a) || '';
       ok = q.f === 'c' ? L.setNorm(v) === L.setNorm(a) : !!L.setMatch(v, a);
       t.ag[0].n += 1; t.lastOk = ok; t.ph = 'as';
-      t.fb = { ok: ok, a: a, x: t.ans[idx].x, pt: t.ans[idx].pt, v: v, sel: sel };
+      t.fb = { ok: ok, a: a, x: t.ans[idx].x, pt: t.ans[idx].pt, v: v, sel: sel }; t.fbNew = true;
       tDraw(); tAuto();
       return;
     }
@@ -3734,7 +3830,7 @@ window.__lecStart = function () {
       t.ans[idx] = { v: v, r: !!r.r, a: r.a == null ? '' : String(r.a), x: r.x || '', pt: r.pt || '' };
       if (r.end) t.end = r.end;
       t.ph = 'shown';
-      t.fb = { ok: !!r.r, a: t.ans[idx].a, x: t.ans[idx].x, pt: t.ans[idx].pt, v: v, sel: sel };
+      t.fb = { ok: !!r.r, a: t.ans[idx].a, x: t.ans[idx].x, pt: t.ans[idx].pt, v: v, sel: sel }; t.fbNew = true;
       tDraw(); tAuto();
     }, function () {
       if (my !== WRUN || !W || W.t !== t) return;
@@ -3806,6 +3902,22 @@ window.__lecStart = function () {
         '<button class="stxt" type="button" data-act="s1back">목록으로</button>';
     } else h += '<p class="sr3">내일 다시 볼 수 있어요.</p><button class="btn-fill" type="button" data-act="s1back">목록으로</button>';
     setPage(h + '</div>');
+    resAnim(pass);
+  }
+  /* S5(11-19) 조용한 완성: 링이 0.7초에 차오름(var(--e-soft)) · 통과면 체크가 0.5초 뒤 0.32초에 그려짐 · «통과»/«아직이에요»가 0.4초 뒤 6px 올라옴 · 합 0.82초
+     결과는 시험이 막 끝났을 때만 그려짐(다시 들어오면 새 판) · 단추는 처음부터 누를 수 있음 */
+  function resAnim(pass) {
+    var rg = app.querySelector('.sres .rg64 .ring'), C = 2 * Math.PI * 15, c, p, s1 = app.querySelector('.sres .sr1');
+    if (noMo() || !rg) return;
+    if (pass) {
+      c = rg.querySelector('.rgT'); p = rg.querySelector('.rgC');
+      if (c) { c.setAttribute('stroke-dasharray', C.toFixed(2)); c.setAttribute('transform', 'rotate(-90 18 18)'); anim(c, [{ strokeDashoffset: C.toFixed(2) }, { strokeDashoffset: '0' }], { duration: 700, easing: E_SOFT, fill: 'both' }); }
+      if (p) { p.setAttribute('stroke-dasharray', '20'); anim(p, [{ strokeDashoffset: '20' }, { strokeDashoffset: '0' }], { duration: 320, delay: 500, easing: E_OUT, fill: 'both' }); }
+    } else {
+      c = rg.querySelector('.rgP');
+      if (c) anim(c, [{ strokeDashoffset: C.toFixed(2) }, { strokeDashoffset: c.getAttribute('stroke-dashoffset') }], { duration: 700, easing: E_SOFT, fill: 'both' });
+    }
+    if (s1) anim(s1, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 240, delay: 400, easing: E_OUT, fill: 'both' });
   }
   /* S4(11-19) 통과 화면 다음 한 걸음: ① 안 끝난 다른 단어·구문·문법 «다음 {종류} · {이름}» ② 이어 볼 강의 «이어서 보기 · {제목}» ③ 없으면 «목록으로»만 */
   function passNextHTML() {
