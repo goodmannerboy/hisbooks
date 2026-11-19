@@ -6992,7 +6992,7 @@ window.__lecAdminStart = function () {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return '인터넷 연결을 확인해 주세요.';   /* J13 */
     if (/not confirmed|confirm/i.test(m)) return '이메일 확인이 필요한 계정이에요. 원장님이 Supabase에서 «Confirm email»을 끄거나 해당 계정을 확인 처리해야 합니다.';
     if (/invalid login credentials/i.test(m)) return '아이디 또는 비밀번호가 올바르지 않습니다.';
-    if (st >= 500 || /database|unexpected|schema cache|timed? ?out|fetch|network/i.test(m)) return '지금 서버에 닿지 않아 로그인하지 못했어요. 잠시 뒤 다시 해 주세요.';
+    if (st >= 500 || /database|unexpected|schema cache|timed? ?out|fetch|network|load failed/i.test(m)) return '지금 서버에 닿지 않아 로그인하지 못했어요. 잠시 뒤 다시 해 주세요.';
     return '로그인 실패: ' + m;
   }
   function doLogin(ev) {
