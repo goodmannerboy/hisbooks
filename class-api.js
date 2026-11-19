@@ -907,7 +907,7 @@
       if (code === 101 || code === 150) return '유튜브 스튜디오에서 퍼가기 허용을 켜 주세요';
       if (code === 2) return '링크 모양이 맞지 않아요';
     } else {
-      if (code === 100) return '공개 기간이 끝난 영상이에요';
+      if (code === 100) return '지금 볼 수 없는 영상이에요. 선생님께 알려 주세요'; /* J09(11-19): 학생이 선생님께 알리게(101·150과 같은 글) */
       if (code === 101 || code === 150) return '지금 볼 수 없는 영상이에요. 선생님께 알려 주세요';
     }
     return '영상을 불러오지 못했어요. 다시 열어 보세요';
@@ -1980,7 +1980,7 @@
     return best;
   }
 
-  /* 카드 글: title «2학기 기말 D-9 · 11.25(수)» · sub «범위 영상 4편 중 2편 학습완료»(기록 동의 안 했으면 «범위 영상 4편»)
+  /* 카드 글: title «2학기 기말 D-9 · 11.25(수)» · sub «범위 영상 4편 중 2편 학습 완료»(기록 동의 안 했으면 «범위 영상 4편»)
      시험 이름을 모르면(«학교 시험» · 빈 이름) 이름 없이 «D-9 · 11.25(수)» · «시험 중 · 11.28(토)까지»(C2 검수 L5) */
   function rngCard(item, today, agreed) {
     if (!isObj(item) || !isArr(item.lectures)) return null;
@@ -1991,7 +1991,7 @@
     var title = dd.during
       ? pre + '시험 중' + (en && en > td ? ' · ' + Lec.fmtDay(en) + '까지' : '')
       : pre + dd.val + ' · ' + Lec.fmtDay(isoOf(item.exam_on));
-    var sub = agreed ? '범위 영상 ' + total + '편 중 ' + done + '편 학습완료' : '범위 영상 ' + total + '편';
+    var sub = agreed ? '범위 영상 ' + total + '편 중 ' + done + '편 학습 완료' : '범위 영상 ' + total + '편';
     return { title: title, sub: sub, n: dd.n, during: dd.during, val: dd.val, total: total, done: done };
   }
 
