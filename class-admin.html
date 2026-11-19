@@ -621,6 +621,8 @@ html.tvon,html.tvon body{overflow:hidden}
 /* 한글은 낱말 가운데서 끊지 않음(WebKit «지웁니/다» 끊김) · 양쪽 정렬은 그대로 */
 .sx,#sd,.sx-pp{word-break:keep-all;overflow-wrap:break-word}
 .sx-l{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sx-v2{margin:0;padding:2px 2px 8px;border-bottom:1px solid var(--edge);font-size:13px;font-weight:600;line-height:1.5;color:var(--ink2)}
+.sx-v2 span{white-space:nowrap}.sx-v2 .sx-v2t{display:block;color:var(--ink2)}.sx-v2 b{color:var(--ink);font-variant-numeric:tabular-nums}.sx-v2 b.bad{color:var(--err)}
 .sx-it{display:block;width:100%;text-align:left;background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:#2B2A26;transition:border-color var(--t1) var(--e-out)}
 .sx-it:hover{border-color:#CBBF9A}
 .sx-it.on{border-color:#0C4631;box-shadow:inset 0 0 0 1px #0C4631}
@@ -1505,13 +1507,14 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 (function () {
   'use strict';
   var demo = /[?&]demo=1(?:&|$)/.test(location.search);
-  var list = demo ? ['class-mock.js', 'class-api.js'] : ['class-api.js', 'vendor-supabase-2.49.4.js'];
+  var list = demo ? ['class-mock.js', 'class-api.js', 'class-v2.js'] : ['class-api.js', 'class-v2.js', 'vendor-supabase-2.49.4.js'];   /* ①b class-v2.js = 운영 숫자(못 읽어도 그대로 엶) */
   function next() {
     if (!list.length) { if (window.__lecAdminStart) window.__lecAdminStart(); return; }
-    var s = document.createElement('script');
-    s.src = list.shift();
+    var s = document.createElement('script'), f = list.shift();
+    s.src = f;
     s.onload = next;
     s.onerror = function () {
+      if (f === 'class-v2.js') { next(); return; }   /* ①b */
       var a = document.getElementById('app');
       if (a) a.innerHTML = '<div class="wrap"><div class="card end"><p>인터넷 연결을 확인해 주세요.</p></div></div>';
     };
@@ -4988,6 +4991,7 @@ window.__lecAdminStart = function () {
   function sxLoad() {
     if (!sxOn() || S.setOld) return null;
     if (!L.setListStaff) { S.setOld = true; S.set = null; return null; }
+    sxV2();   /* ①b */
     return Promise.resolve().then(function () { return L.setListStaff(DA.rpc); }).then(function (r) {
       var i, it, f;
       if (r && r.err === 'old') { S.setOld = true; S.set = null; S.setErr = false; return; }
@@ -4999,6 +5003,29 @@ window.__lecAdminStart = function () {
       S.set = { today: isDay(r.today) ? r.today : today(), unheard: +r.unheard || 0, items: r.items };
       S.setErr = false;
     }, function () { if (!S.set) S.setErr = true; });
+  }
+  /* ①b 운영 숫자(원장님 · 세트 탭 왼쪽 · 열면 보임 · 누름 0): 재기 _v2(lec_v2_watch · 14일) · 1분에 한 번까지 · 목록을 기다리지 않음 · 받으면 그 줄만 바꿈
+     잃은 답 · 판정 어긋남(폰 ≠ 서버) · 늦게 옴 = 14일 합 · 오늘 호출 = 반마다 합 · 스위치가 다 꺼져 있고 숫자가 다 0 이면 안 보임 · 옛 서버 · 오류 = 안 보임 */
+  var sxV2At = 0;
+  function sxV2() {
+    if (!sxOn() || typeof L.v2Watch !== 'function' || Date.now() - sxV2At < 60000) return;
+    sxV2At = Date.now();
+    L.v2Watch(DA.rpc, 14).then(function (r) {
+      var el = document.getElementById('sxV2');
+      S.v2w = r && r.ok && isArr(r.days) ? r : null;
+      if (el) el.outerHTML = sxV2Html();
+    });
+  }
+  function sxV2Html() {
+    var w = S.v2w, n = { lost: 0, diff: 0, late: 0, call: 0 }, on = false, i, d, k;
+    function b(t, v, bad) { return '<span>' + t + ' <b' + (bad && v > 0 ? ' class="bad"' : '') + '>' + v + '</b></span>'; }
+    if (w) {
+      for (i = 0; i < w.days.length; i += 1) { d = w.days[i] || {}; n.lost += +d.lost || 0; n.diff += +d.diff || 0; n.late += +d.late || 0; }
+      for (i = 0; isArr(w.calls) && i < w.calls.length; i += 1) { if (w.calls[i] && w.calls[i].day === w.to) n.call += +w.calls[i].n || 0; }
+      for (k in w.sw || {}) { if (w.sw.hasOwnProperty(k) && w.sw[k] === true) on = true; }
+    }
+    if (!w || (!on && !n.lost && !n.diff && !n.late && !n.call)) return '<p class="sx-v2" id="sxV2" hidden></p>';
+    return '<p class="sx-v2" id="sxV2"><span class="sx-v2t">운영 숫자 · 14일</span>' + b('잃은 답', n.lost, 1) + ' · ' + b('판정 어긋남', n.diff, 1) + ' · ' + b('늦게 옴', n.late) + ' · ' + b('오늘 호출', n.call) + '</p>';
   }
   /* 처음 한 번: 30일 지난 녹음 정리 · 조용히(실패 · 'old' = 다음 열 때 다시) */
   function sxInit() {
@@ -5100,7 +5127,7 @@ window.__lecAdminStart = function () {
     if (S.setOld) return '<section class="card"><p class="empty">세트를 쓰려면 서버 준비(SQL)를 먼저 넣어 주세요.</p></section>';
     if (!S.set) return '<section class="card"><p class="empty">' + (S.setErr ? '세트를 불러오지 못했어요. «다시 불러오기»를 눌러 주세요.' : '세트를 불러오는 중이에요') + '</p></section>';
     list = S.set.items; cur = sxCur();
-    h = '<div class="sx"><section class="sx-l" aria-label="세트 목록"><button type="button" class="btn fill wide" data-act="sxNew">＋ 새 세트</button>' + lpHeadHtml();
+    h = '<div class="sx"><section class="sx-l" aria-label="세트 목록"><button type="button" class="btn fill wide" data-act="sxNew">＋ 새 세트</button>' + lpHeadHtml() + sxV2Html();   /* ①b */
     if (!list.length) h += '<p class="empty">아직 세트가 없어요. 엑셀에서 복사해 붙여 넣으면 어휘 · 구문 · 문법을 알아서 읽어요.</p>';
     for (i = 0; i < list.length; i += 1) { if (list[i]) h += lpRowHtml(list[i], sxItHtml(list[i], !!cur && cur.id === list[i].id)); }
     return h + '</section><section class="card sx-r" aria-label="결과 표">' + (cur ? sxResHtml(cur) : '<p class="empty">왼쪽에서 세트를 고르면 결과 표가 나와요.</p>') + '</section></div>';

@@ -2189,6 +2189,7 @@ window.__lecStart = function () {
     if (!S.key) { showLogin(''); return; }
     var k = S.key;
     var side = quiet ? null : sideStart(k);
+    if (side) v2Get(function () {});   /* ①b 세트 칸과 나란히 */
     L.home(k).then(function (r) {
       if (k !== S.key) return; /* 그새 나감(다른 학생) = 버림 */
       if (!r || !r.ok) {
@@ -3066,12 +3067,38 @@ window.__lecStart = function () {
   function setWhy(i) { var a = L.REC_WHY || REC_WHY0; return a[+i || 0] || ''; }
   function wT(f, ms) { var my = WRUN; return setTimeout(function () { if (my === WRUN && W) f(); }, ms); }
 
-  /* 집 정보 뒤 한 번 · sd = 함께 기다리는 묶음(sideStart) · null 이면(동의 바로 뒤) 늦게 와도 묶음이 생길 때만 다시 그림 */
+  /* ①b class-v2.js 늦게 읽기 · 한 번만 · 못 읽음 · 미리 보기 · v2 없는 서버(12시간) = cb(false) 옛 길 */
+  var V2 = { s: 0, cb: [] };
+  function v2Get(cb) {
+    var el;
+    if (V2.s === 2 || setPv() || +L.lsGet('lec-v2-old', 0) > Date.now() - 432e5) { cb(V2.s === 2); return; }
+    V2.cb.push(cb);
+    if (V2.s) return;
+    V2.s = 1;
+    el = document.createElement('script');
+    el.src = 'class-v2.js';
+    el.onload = el.onerror = function () {
+      var a = V2.cb, i;
+      V2.s = L.v2u ? 2 : 0; V2.cb = [];
+      if (V2.s) L.v2u.init({ W: function () { return W; }, S: S, my: function () { return WRUN; }, pv: setPv, draw: tDraw, after: tAfter, res: tResult, auto: tAuto,
+        page: setPage, head: setHead, info: setInfo, gone: setGoneBy, tx: setTx, diff: tDiffHTML, xbox: xBoxHTML, gram: tGram, gesc: gEsc });
+      for (i = 0; i < a.length; i += 1) a[i](!!V2.s);
+    };
+    document.head.appendChild(el);
+  }
+  function setHomeX(k) { return V2.s === 2 ? L.v2u.home(k) : L.setHome(k); }
+  (function () {
+    var i, n = 0;
+    try { n = localStorage.length; for (i = 0; i < n; i += 1) { if (String(localStorage.key(i)).indexOf('lec-v2b:') === 0) break; } } catch (e) { return; }
+    if (i < n) setTimeout(function () { v2Get(function () {}); }, 3000);
+  })();
+  /* 집 정보 뒤 한 번 · sd = 함께 기다리는 묶음(sideStart) · null 이면(동의 바로 뒤) 늦게 와도 묶음이 생길 때만 다시 그림 · ①b 2.5초 넘으면 옛 길 */
   function setLoad(sd, k) {
-    var fin = false;
+    var fin = false, go = 0;
     S.set = null; S.setMore = false; S.setDirty = false;
     if (setPv() || typeof L.setHome !== 'function' || recMode() !== 'agree') return;
     if (sd && sd.one) sd.n += 1; else sd = null;
+    function run() { if (!go) { go = 1; setHomeX(k).then(got, function () { got(null); }); } }
     function got(r) {
       if (fin) return;
       fin = true;
@@ -3081,7 +3108,8 @@ window.__lecStart = function () {
       if (sd) sd.one();
       if (k === S.key && late && S.view === 'list' && setGrpHTML()) quietList();
     }
-    L.setHome(k).then(got, function () { got(null); });
+    v2Get(run);
+    setTimeout(run, 2500);
   }
   function setFind(id) {
     var a = (S.set && S.set.sets) || [], i;
@@ -3196,7 +3224,8 @@ window.__lecStart = function () {
     mk = W.mode === 'mem' ? W.marks : (W.mode === 'gu' && W.g ? W.g.marks : null);
     if (mk && Object.keys(mk).length && S.key && !setPv() && typeof L.setCard === 'function') {
       S.setDirty = true;
-      try { setCardQ(W.id, mk, function () { /* 없음 */ }); } catch (e0) { /* 없음 */ }
+      if (W.vb && W.mode === 'mem') L.v2End(S.key, W.vb);   /* ①b */
+      if (!W.ev || W.mode !== 'mem') { try { setCardQ(W.id, mk, function () { /* 없음 */ }); } catch (e0) { /* 없음 */ } }
     }
     if (W.g) spkKill(W.g);
     R = W.g && W.g.R;
@@ -3216,7 +3245,7 @@ window.__lecStart = function () {
     if (lis && W.mode === 'gu' && g.ph === 'b') guDraw();
     /* 숨을 때(안드로이드 뒤로 · 다른 앱 · 폰이 앱을 닫음) 아직 안 보낸 외우기 · 따라 말하기 표시를 setCard 한 번으로 보내고 비움(검수 11-17)
        보낼 것이 없으면 부르지 않음 → 숨김/보임을 되풀이해도 더 안 부름 */
-    if (W && W.mode === 'mem' && W.marks && Object.keys(W.marks).length) memSave(function () { /* 다음 판 고르기용 카드도 memSave 가 고침 */ });
+    if (W && W.mode === 'mem' && !W.ev && W.marks && Object.keys(W.marks).length) memSave(function () { /* 다음 판 고르기용 카드도 memSave 가 고침 */ });
     else if (g && W.mode === 'gu' && g.marks && Object.keys(g.marks).length) guSave(function () { /* 없음 */ });
     /* 따라 말하기 도중 = 그 문장 처음으로(«듣기»를 다시 누를 수 있게 · 쉼 타이머도 끊음) */
     if (g && W.mode === 'gu' && g.busy) { g.run += 1; g.busy = false; g.wait = false; g.hl = -1; g.cue = ''; guDraw(); }
@@ -3254,6 +3283,7 @@ window.__lecStart = function () {
   function setOpen(id) {
     var s = id ? setFind(id) : null;
     if (setPv() || !S.set || (id && !s)) return;
+    v2Get(function () {});   /* ①b */
     S.setY = window.pageYOffset || (document.documentElement && document.documentElement.scrollTop) || 0;
     teardown();
     W = { id: s ? s.id : '', kind: s ? s.kind : 'due', s: s, mode: '', busy: false };
@@ -3282,7 +3312,7 @@ window.__lecStart = function () {
     bs = app.querySelectorAll('button');
     for (i = 0; i < bs.length; i += 1) bs[i].disabled = true;
     tm = setTimeout(draw, SIDE_MS);
-    L.setHome(k).then(function (r) {
+    setHomeX(k).then(function (r) {   /* ①b */
       if (k !== S.key) return;
       if (r && r.ok) S.set = r;
       if (drawn) { if (S.view === 'list') quietList(); return; }
@@ -3320,6 +3350,7 @@ window.__lecStart = function () {
     else if (a === 'chk') { tKbKeep(); tChk(); }
     else if (a === 'next') { if (W.t && W.t.fb && !tFresh(W.t)) { tNext(); tKbKeep(); } }
     else if (a === 'kb') { if (W.mode === 't' && W.t && W.t.gate) { W.t.kb = true; tDraw(); } } /* «시작»: 누름 안에서 쓰기 칸에 focus(아이폰 자판) */
+    else if (a === 'aq') { if (W.ev === 'ev' && W.t && W.t.ph === 'res') { W.mode = 't'; tAfter(); } }   /* ①b */
     else if (W.g) {
       g = W.g;
       if (a === 'play' || a === 'again') { if (W.mode === 'gu' && g.ph === 'a' && !g.busy) { g.cue = ''; guPlay(); } }
@@ -3378,11 +3409,11 @@ window.__lecStart = function () {
   /* 외우기(G V3 · V4): setItems → setDeck 20장 · 앞 = 단어 · 누르면 뜻(돌리지 않고 0.18초 겹침) · «다시 / 알아요» · 판 끝이나 «그만»에 setCard 한 번 */
   function memLoad() {
     var my = WRUN, k = S.key;
-    if (W.items) { memRound(true); return; }
+    if (W.items && (V2.s !== 2 || L.v2u.again(k))) { memRound(true); return; }   /* ①b */
     sayPrime(); /* 11-18: 이 누름 안에서 말소리를 미리 엶(아이폰 · 서버를 기다린 첫 카드 자동 발음) */
     W.busy = true;
     setBusyBtns(true);
-    L.setItems(k, W.id).then(function (r) {
+    (V2.s === 2 ? L.v2u.mem(k, W.id) : L.setItems(k, W.id)).then(function (r) {   /* ①b */
       var a, i;
       if (my !== WRUN || !W) return;
       W.busy = false;
@@ -3421,6 +3452,7 @@ window.__lecStart = function () {
       '<span class="vf' + fs + '" aria-hidden="true"><span class="vw">' + esc(w) + '</span>' + (W.nth < 3 ? '<span class="vhint">눌러서 뜻 보기</span>' : '') + '</span>' +
       '<span class="vb" aria-hidden="true"><span class="ve">' + esc(w) + '</span><span class="vm' + (m.length > 36 ? ' s18' : '') + '">' + esc(m) + '</span></span></div>' +
       '<div class="vbtns"><button class="btn-line" type="button" data-act="s1no">다시</button><button class="btn-fill" type="button" data-act="s1yes">알아요</button></div>');
+    W.at = Date.now();   /* ①b */
     memAutoSay(tap);
   }
   /* 자동 발음(11-18 원장님 «어휘 외우기 할 때 발음 소리가 안 나고»): 카드가 나올 때(앞면 = 영어 단어) 단어를 한 번 읽음 · 🔊 = 다시 읽기
@@ -3476,6 +3508,7 @@ window.__lecStart = function () {
     var k, nx;
     if (W.mode !== 'mem' || !W.q || !W.q.length) return;
     k = W.q[0];
+    if (W.vb) L.v2u.mark(k, ok);   /* ①b */
     if (ok) W.marks[k] = 1; else if (W.marks[k] !== 1 && W.rm[k] !== 1) W.marks[k] = 0;
     if (ok) W.rm[k] = 1; else if (W.rm[k] !== 1) W.rm[k] = 0;
     nx = L.setNextQ(W.q, !ok, W.times) || {};
@@ -3510,9 +3543,11 @@ window.__lecStart = function () {
   function memSave(then) {
     var mk = W.marks || {}, ks = Object.keys(mk), day = (S.set && S.set.today) || L.isoDay(), i;
     W.marks = {};
+    if (W.vb && !W.ev && W.mode === 'memsave') L.v2End(S.key, W.vb);   /* ①b */
     if (!ks.length || setPv()) { then(null); return; }
     for (i = 0; i < ks.length; i += 1) W.cards[ks[i]] = L.setMark(W.cards[ks[i]] || {}, mk[ks[i]] === 1, 'card', day);
     S.setDirty = true;
+    if (W.ev) { L.v2u.end(then); return; }   /* ①b */
     setCardQ(W.id, mk, then);
   }
   /* 못 보낸 표시(11-18): setCard 가 안 가면 이 탭에 모아 둠(메모리 + sessionStorage · 학생 열쇠 지문 · 오늘 날짜가 다르면 버림 · 같은 카드는 나중 값)
@@ -3554,7 +3589,7 @@ window.__lecStart = function () {
     sqSave();
   }
   /* setCard 대신: 이 묶음에 남은 표시와 새 표시를 카드마다 큰 값으로 합쳐 40개씩 차례로 · then(마지막 답) */
-  function setCardQ(id, mk, then) {
+  function setCardQ(id, mk, then, once) {   /* ①b */
     var key = S.key, all = {}, parts = [], cur = null, o, p, ks, k, i;
     if (setPv() || !key || typeof L.setCard !== 'function') { then(null); return; }
     o = sqLoad(); p = o.s[String(id)];
@@ -3571,11 +3606,11 @@ window.__lecStart = function () {
       L.setCard(key, id, parts[j]).then(function (r) {
         var x;
         if (r && r.ok) { one(j + 1, r); return; }
-        if (!(r && SQ_DROP[r.err])) { for (x = j; x < parts.length; x += 1) sqPut(key, id, parts[x]); }
+        if (!once && !(r && SQ_DROP[r.err])) { for (x = j; x < parts.length; x += 1) sqPut(key, id, parts[x]); }   /* ①b */
         then(r);
       }, function () {
         var x;
-        for (x = j; x < parts.length; x += 1) sqPut(key, id, parts[x]);
+        for (x = j; !once && x < parts.length; x += 1) sqPut(key, id, parts[x]);   /* ①b */
         then(null);
       });
     }
@@ -3583,7 +3618,7 @@ window.__lecStart = function () {
   }
   /* 남은 묶음을 차례로 한 번씩(조용히) · 하나가 안 가면 거기서 멈춤(다음 기회에) */
   function sqFlush() {
-    var o, ids;
+    var o, ids, once = V2.s === 2 && L.v2u.on('eval');   /* ①b */
     if (SQBUSY || setPv() || !S.key || typeof L.setCard !== 'function') return;
     o = sqLoad(); ids = Object.keys(o.s);
     if (!ids.length) return;
@@ -3593,8 +3628,8 @@ window.__lecStart = function () {
       if (!SQ.s[ids[i]]) { nx(i + 1); return; }
       S.setDirty = true;
       setCardQ(ids[i], {}, function (r) {
-        if (r && (r.ok || SQ_DROP[r.err])) nx(i + 1); else SQBUSY = false;
-      });
+        if (once || (r && (r.ok || SQ_DROP[r.err]))) nx(i + 1); else SQBUSY = false;
+      }, once);   /* ①b */
     }
     nx(0);
   }
@@ -3626,7 +3661,7 @@ window.__lecStart = function () {
     W.items = null; W.byK = null; W.cards = null; W.q = null; /* §9-2 시험에 들어가면 들고 있던 단어 문항을 버림 */
     W.busy = true; W.mode = 'tload';
     setPage(setHead(due ? '목록' : '그만') + '<div class="sload"></div>');
-    p = due ? L.setDue(k) : L.setTest(k, W.id);
+    p = V2.s === 2 ? L.v2u.open(due, k, W.id) : (due ? L.setDue(k) : L.setTest(k, W.id));   /* ①b */
     p.then(function (r) {
       if (my !== WRUN || !W) return;
       W.busy = false;
@@ -3718,6 +3753,7 @@ window.__lecStart = function () {
   function tNote(t) {
     var nc = 0, nw = 0, i;
     if (t.kind === 'due') return '<p class="snote">두 번 맞히면 빠져요</p>';
+    if (W.ev === 'ev') return L.v2u.note(t);   /* ①b */
     if (W.kind === 'gram') { /* 화면 차례(11-18) = 고르기 먼저 · 쓰기 뒤 */
       for (i = 0; i < t.n; i += 1) { if ((t.q[i] || {}).f === 'c') nc += 1; else nw += 1; }
       return '<p class="snote">' + (nc && nw ? '괄호 고르기가 먼저, 고쳐 쓰기가 뒤에 나와요' : (nc ? '괄호 안에서 알맞은 말을 골라요' : '밑줄 친 말을 바르게 고쳐 써요')) + '<br>' +
@@ -3869,6 +3905,7 @@ window.__lecStart = function () {
     }
     if (t.ph !== 'q') return;
     if (setPv()) { pvNo(); return; }
+    if (V2.s === 2 && L.v2u.ans(t, v, sel)) return;   /* ①b */
     idx = t.i;
     t.lockV = $('sIn') ? $('sIn').value : v;
     t.busy = true; tLock(true);
@@ -3924,6 +3961,7 @@ window.__lecStart = function () {
   }
   function tAfter() {
     var t = W.t, j, x;
+    if (V2.s === 2 && L.v2u.after(t)) return;   /* ①b */
     t.ag = [];
     for (j = 0; j < t.n; j += 1) { x = t.ord[j]; if (t.ans[x] && !t.ans[x].r) t.ag.push({ i: x, n: 0 }); } /* 화면 차례대로(고르기 먼저) */
     t.agN = t.ag.length; t.agDone = 0; t.agGate = false;
@@ -3958,7 +3996,7 @@ window.__lecStart = function () {
       h += '<button class="btn-fill" type="button" data-act="s1retake">틀린 ' + wr + '개 다시 보기 · ' + (wr + Math.min(wr, got)) + '문제</button>' +
         '<button class="stxt" type="button" data-act="s1back">목록으로</button>';
     } else h += '<p class="sr3">내일 다시 볼 수 있어요.</p><button class="btn-fill" type="button" data-act="s1back">목록으로</button>';
-    setPage(h + '</div>');
+    setPage(h + '</div>' + (W.ev === 'ev' ? L.v2u.wrong(t) : ''));   /* ①b */
     resAnim(pass);
   }
   /* S5(11-19) 조용한 완성: 링이 0.7초에 차오름(var(--e-soft)) · 통과면 체크가 0.5초 뒤 0.32초에 그려짐 · «통과»/«아직이에요»가 0.4초 뒤 6px 올라옴 · 합 0.82초
@@ -3994,7 +4032,7 @@ window.__lecStart = function () {
     var k = S.key;
     if (setPv() || !S.set || typeof L.setHome !== 'function') return;
     S.setDirty = false;
-    L.setHome(k).then(function (r) {
+    setHomeX(k).then(function (r) {   /* ①b */
       if (k !== S.key) return;
       if (r && r.ok) S.set = r; else S.setDirty = true;
       if (S.view === 'list') quietList();
@@ -4004,6 +4042,7 @@ window.__lecStart = function () {
      end.out(이 판에서 빠진 수) · end.due(남은 수)가 오면 그것(목록은 돌아갈 때 다시 받음) · 없으면(옛 서버 · 흉내) 새 묶음을 받아 «들어올 때 수 − 새 수» */
   function dueResult() {
     var t = W.t, e = t.end, my = WRUN, k = S.key, before = S.set && S.set.due ? +S.set.due.n || 0 : 0;
+    if (t.vp) { setPage(setHead('목록') + '<div class="sload"></div>'); t.vp.then(function () { if (my === WRUN && W && W.t === t) dueResult(); }); return; }   /* ①b */
     W.mode = 'res'; t.ph = 'res';
     function draw(out, left) {
       var h;
@@ -4020,7 +4059,7 @@ window.__lecStart = function () {
     if (setPv()) { draw(0, null); return; }
     setPage(setHead('목록') + '<div class="sload"></div>');
     S.setDirty = false;
-    L.setHome(k).then(function (r) {
+    setHomeX(k).then(function (r) {   /* ①b */
       var left;
       if (k !== S.key) return;
       if (r && r.ok) { S.set = r; left = r.due ? +r.due.n || 0 : 0; draw(Math.max(0, before - left), left); } else { S.setDirty = true; draw(0, null); }
