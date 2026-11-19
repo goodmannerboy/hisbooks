@@ -130,7 +130,11 @@
 
   /* ---------------------------------------------------------------- 시각 */
 
-  function nowMs() { return Math.floor(L().now()); }
+  function nowMs() {   /* V2-1: window.__lecSrvOff = 서버 시각 − 폰 시각(ms · 처음 0 = 예전 그대로) */
+    var off = 0;
+    try { off = typeof w.__lecSrvOff === 'number' && isFinite(w.__lecSrvOff) ? w.__lecSrvOff : 0; } catch (e) { off = 0; }
+    return Math.floor(L().now() + off);
+  }
   function today() { return L().isoDay(nowMs()); }
 
   /* 서버(PostgREST)가 주는 timestamptz 꼴: 2026-11-15T07:12:33.123+00:00 (소수 끝 0 은 뺌) */
@@ -1686,6 +1690,7 @@
     if ((OLD || NORANGE) && /^lec_range_/.test(fn)) sig = null;   /* C2 함수가 없는 서버(아래 C2 절) */
     if ((OLD || NOSET) && /^lec_(set|rec)_/.test(fn)) sig = null;   /* S1 함수가 없는 서버(아래 S1 절) */
     if ((OLD || NOSK) && fn === 'lec_push_count') sig = null;   /* K1 을 아직 안 넣은 서버(위 NOSK) */
+    if ((OLD || NOSET || NOV2) && (/_v2$/.test(fn) || fn === 'lec_v2_watch')) sig = null;   /* V2-1 을 아직 안 넣은 서버(아래 V2-1 절) */
     if (!sig) throw httpErr(404, 'PGRST202', 'Could not find the function public.' + fn);
     args = args && typeof args === 'object' && !isArr(args) ? args : {};
     for (k in args) {
@@ -1709,12 +1714,15 @@
   }
 
   function rpc(fn, args) {
+    v2Note(fn);   /* V2-1: 부름 기록(LecMock.callLog) */
     var a = checkArgs(fn, args);
     /* 선생님 함수는 로그인 없는 부름(anon)에 열려 있지 않음(PostgREST: 42501 → 401) */
     if (has(STAFF, fn)) throw httpErr(401, '42501', 'permission denied for function ' + fn);
+    if (v2Knob('__lec503', fn)) throw httpErr(503, '', 'Service Unavailable');   /* V2-1 손잡이: 저장 전에 503 */
     var d = load();
     var r = IMPL[fn](d, a);
     save(d);
+    if (v2Knob('__lecLoseResp', fn)) throw httpErr(504, '', 'response lost');   /* V2-1 손잡이: 저장한 뒤 응답만 잃음 */
     return clone(r);
   }
 
@@ -4242,10 +4250,12 @@
     for (i = 0; i < d.sprog.length; i += 1) { if (d.sprog[i].sid === oldSid) d.sprog[i].sid = newSid; }
     for (i = 0; i < d.stry.length; i += 1) { if (d.stry[i].sid === oldSid) d.stry[i].sid = newSid; }
     for (i = 0; i < d.srec.length; i += 1) { if (d.srec[i].sid === oldSid) d.srec[i].sid = newSid; }
+    v2Move(d, oldSid, newSid);   /* 트리거 lec__v2_mv(아래 V2-1 절) */
   }
   function s1Gone(d, sid) {
     var i, x;
     sTabs(d);
+    v2Drop(d, sid);   /* 트리거 lec__v2_gone(아래 V2-1 절) */
     d.sprog = d.sprog.filter(function (y) { return y.sid !== sid; });
     d.stry = d.stry.filter(function (y) { return y.sid !== sid; });
     d.srec = d.srec.filter(function (y) { return !(y.sid === sid && y.st === 'gone'); });
@@ -4475,6 +4485,701 @@
       return { Key: 'lec-rec/' + path };
     });
   };
+  /* ======================================================= V2-1 (11-20) 세트 학습 v2 저장 · 채점 바탕
+     class-setup.sql V2-1 절(lec_v2_cfg · lec_set_run · lec_set_log · lec_v2_box)과 같은 규칙 · 둘이 다르면 SQL 이 기준.
+     표: d.v2cfg(스위치 · lim) · d.srun(v2 연습 판) · d.slog(답 한 줄) · d.sbox(폰 보관함 남은 줄) · d.v2bn(부름 묶음 번호)
+     다른 점: 판 씨앗(seed)은 PG hashtext 가 아니라 FNV 32 비트(같은 학생 · 세트 · 판 번호면 늘 같음은 같음)
+     시험용 손잡이(연습 화면에서만):
+       ?nov2=1 또는 LecMock.noV2(true) = v2 함수가 없는 서버(404 PGRST202) · ?v2=eval,log = 처음 한 번 그 스위치를 켬 ·
+       LecMock.v2Cfg({eval: true, lim: 3000}) = 스위치 바꿈 · LecMock.v2Dump() = v2 표 사본 · LecMock.callLog(true) = 부름 기록(true = 비움)
+       window.__lecLoseResp = «서버는 저장했는데 응답만 잃음»(저장한 뒤 504) · window.__lec503 = 저장 전에 503
+         (둘 다 true = 늘 · 수 N = 다음 N 번 · {함수 이름: true | N} = 그 함수만)
+       window.__lecSrvOff = 서버 시각 − 폰 시각(ms · 폰 시계가 틀린 것 흉내 · 처음 0) */
+  var NOV2 = false;
+  try { NOV2 = /[?&]nov2=1(&|$)/.test(w.location.search); } catch (e) { NOV2 = false; }
+  var V2URL = null;
+  try { V2URL = (/[?&]v2=([a-z,]*)(&|$)/.exec(w.location.search) || [])[1] || null; } catch (e) { V2URL = null; }
+  var V2SW = ['log', 'eval', 'spell', 'guw', 'gram', 'review'];
+  var V2_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  var V2_DAY = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+  var V2CALLS = [];
+
+  function v2Gone() { if (NOV2 || NOSET || OLD) throw httpErr(404, 'PGRST202', 'Could not find the function'); }
+  function v2Tabs(d) {
+    var a = ['srun', 'slog', 'sbox'], i;
+    sTabs(d);
+    for (i = 0; i < a.length; i += 1) { if (!isArr(d[a[i]])) d[a[i]] = []; }
+    if (!isObj(d.v2cfg)) d.v2cfg = { log: false, 'eval': false, spell: false, guw: false, gram: false, review: false, lim: 3000 };
+    if (V2URL !== null) {
+      for (i = 0; i < V2SW.length; i += 1) { if ((',' + V2URL + ',').indexOf(',' + V2SW[i] + ',') >= 0) d.v2cfg[V2SW[i]] = true; }
+      V2URL = null;
+    }
+    if (typeof d.v2bn !== 'number') d.v2bn = 0;
+    return d;
+  }
+  /* lec__v2_sw */
+  function v2Sw(d) {
+    var o = {}, i;
+    for (i = 0; i < V2SW.length; i += 1) o[V2SW[i]] = d.v2cfg[V2SW[i]] === true;
+    return o;
+  }
+  /* jsonb ->> 글(없으면 null) */
+  function pgTxt(v) {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'string') return v;
+    if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+    return pgText(v);
+  }
+  /* lec__v2_num */
+  function v2Num(v, max) {
+    var t = pgTxt(v);
+    if (t !== null && /^[0-9]{1,15}$/.test(t)) return Math.min(+t, max);
+    return null;
+  }
+  /* lec__v2_row: 폰이 보낸 한 줄 → 고른 칸만 · 꼴이 틀리면 null */
+  function v2Row(e) {
+    var id, b, i, s, v, n, st;
+    if (!isObj(e)) return null;
+    id = str(pgTxt(e.id));
+    b = str(pgTxt(e.b));
+    i = v2Num(e.i, 100000);
+    if (!/^[0-9a-f]{32}$/.test(id) || !V2_UUID.test(b) || !(i >= 1 && i <= 1000)) return null;
+    s = str(pgTxt(e.s));
+    v = typeof e.v === 'string' || typeof e.v === 'number' ? str(pgTxt(e.v)) : '';
+    n = v2Num(e.n, 100000);
+    st = str(pgTxt(e.st));
+    return {
+      id: id, b: b, i: i, n: n !== null && n >= 1 && n <= 1000 ? n : null, s: V2_UUID.test(s) ? s : null,
+      k: typeof e.k === 'string' ? cpLeft(e.k, 20) : '', f: typeof e.f === 'string' ? cpLeft(e.f, 4) : '',
+      v: cpLeft(v, 400), lg: cps(v) > 400, h: e.h === true || e.h === 1,
+      ms: v2Num(e.ms, 3600000), nx: v2Num(e.nx, 600000), om: v2Num(e.om, 600000),
+      pr: typeof e.pr === 'boolean' ? e.pr : null, ago: v2Num(e.ago, 1209600000) || 0,
+      pt: v2Num(e.pt, 999999999999999), st: V2_DAY.test(st) ? st : ''
+    };
+  }
+  /* lec__v2_ta: 답한 때(ms) = 받은 때 − ago(0~14일) · 판 연 때보다 앞이면 판 연 때 */
+  function v2Ta(ago, bo) {
+    var t = nowMs() - Math.min(Math.max(+ago || 0, 0), 1209600000);
+    return bo == null || !isFinite(bo) ? t : Math.max(t, bo);
+  }
+  /* lec__v2_last: 카드에 적힌 가장 늦은 날 */
+  function v2Last(c) {
+    var o = '', a = [], i;
+    if (!isObj(c)) return '';
+    if (isArr(c.d)) a = a.concat(c.d);
+    if (isArr(c.y)) a = a.concat(c.y);
+    a.push(c.t, c.z);
+    for (i = 0; i < a.length; i += 1) {
+      if (typeof a[i] === 'string' && V2_DAY.test(a[i]) && a[i] > o) o = a[i];
+    }
+    return o;
+  }
+  /* lec__v2_mk */
+  function v2Mk(c, ok, src, v1, day) {
+    var r = L().setMark(c, ok, src, day);
+    if (v1 && src === 'say') r.v = 1;
+    return r;
+  }
+  function v2Log(d, id) {
+    var i;
+    for (i = 0; i < d.slog.length; i += 1) { if (d.slog[i].id === id) return d.slog[i]; }
+    return null;
+  }
+  /* 반영 차례(판 연 때 · 판 · 순번 · id) */
+  function v2Cmp(a, b) {
+    if (a.bo !== b.bo) return a.bo < b.bo ? -1 : 1;
+    if (a.b !== b.b) return a.b < b.b ? -1 : 1;
+    if (a.i !== b.i) return a.i - b.i;
+    if (a.id !== b.id) return a.id < b.id ? -1 : 1;
+    return 0;
+  }
+  /* 한 판 안 줄 차례(순번 · ago 큰 것 먼저 · id) */
+  function v2RowOrd(x, y) {
+    if (x.i !== y.i) return x.i - y.i;
+    if (x.ago !== y.ago) return y.ago - x.ago;
+    return x.id < y.id ? -1 : (x.id > y.id ? 1 : 0);
+  }
+  /* lec__v2_apply */
+  function v2Apply(d, id) {
+    var r = v2Log(d, id), p, c, cs, i;
+    if (!r || r.done || r.why !== '' || r.set_id == null || r.k === '' || r.src === '') return 'skip';
+    p = sProgMake(d, r.sid, r.set_id);
+    c = sCard(p, r.k);
+    if (v2Last(c) > r.day) { r.late = true; r.why = 'late'; return 'late'; }
+    cs = d.slog.filter(function (x) {
+      return x.sid === r.sid && x.set_id === r.set_id && x.k === r.k && x.day === r.day && x.done && v2Cmp(x, r) > 0;
+    }).sort(v2Cmp);
+    if (cs.length) c = cs[0].c0;
+    r.done = true;
+    r.c0 = c === undefined ? null : clone(c);
+    c = v2Mk(c, r.ok, r.src, r.v1, r.day);
+    for (i = 0; i < cs.length; i += 1) {
+      cs[i].c0 = clone(c);
+      c = v2Mk(c, cs[i].ok, cs[i].src, cs[i].v1, cs[i].day);
+    }
+    p.cards = clone(p.cards || {});
+    p.cards[r.k] = c;
+    p.last_at = sNow();
+    return 'ok';
+  }
+  function v2Put(d, o) {
+    if (v2Log(d, o.id)) return false;
+    o.at = nowMs();
+    o.bn = d.v2bn;
+    o.done = false;
+    o.late = false;
+    o.c0 = null;
+    d.slog.push(o);
+    return true;
+  }
+  /* lec__v2_ev: 평가 판 빈 칸만 채우기 · 채점은 lec_set_ans 와 같음 */
+  function v2Ev(d, sid, cl, tryId, rows) {
+    var X = L(), t = null, i, e, vi, ta, v, why, r, q, kk, p, was, n = 0, s, kn, bo, now;
+    for (i = 0; i < d.stry.length; i += 1) {
+      if (d.stry[i].id === tryId && d.stry[i].sid === sid && (d.stry[i].kind === 'test' || d.stry[i].kind === 'drill')) t = d.stry[i];
+    }
+    if (!t) return 0;
+    was = t.done_at == null;
+    bo = tms(t.created_at);
+    rows = (rows || []).filter(function (x) { return x.b === tryId; }).sort(v2RowOrd);
+    for (i = 0; i < rows.length; i += 1) {
+      e = rows[i];
+      vi = e.i - 1;
+      ta = v2Ta(e.ago, bo);
+      v = e.v;
+      why = '';
+      r = null;
+      q = vi < t.n ? t.qs[vi] : null;
+      if (!q || sp(v) === '') why = 'gone';
+      else if (isObj(t.ans[vi]) || t.done_at != null) why = 'done';
+      else {
+        r = q.f === 'c' ? X.setNorm(v) === X.setNorm(q.a) : X.setMatch(v, q.a);
+        r = !!r && cps(v) <= 200;
+      }
+      kk = q ? str(q.k) : '';
+      if (!v2Put(d, { id: e.id, sid: sid, cl: cl, b: t.id, bk: 'ev', i: vi + 1, n: null, set_id: t.set_id, k: kk, f: q ? str(q.f) : '',
+                      v: v, h: e.h, ms: e.ms, nx: e.nx, om: e.om, pr: e.pr, sr: r, ok: !!r, src: t.kind, v1: false, ago: e.ago,
+                      ta: ta, day: L().isoDay(ta), pt: e.pt, st: e.st, bo: bo, why: why })) continue;
+      if (why !== '') continue;
+      now = sNow();
+      t.ans[vi] = { v: v, r: r, at: pgts(ta) };
+      t.got += 1;
+      if (r) t.sc += 1;
+      t.done_at = t.got >= t.n ? now : null;
+      if (t.kind === 'test') {
+        p = sProg(d, sid, t.set_id);
+        if (p) {
+          if (r) { if (p.kn.indexOf(kk) < 0) p.kn.push(kk); }
+          else p.kn = p.kn.filter(function (x) { return x !== kk; });
+          p.last_at = now;
+        }
+      }
+      v2Apply(d, e.id);
+      n += 1;
+    }
+    if (was && t.done_at != null) {
+      s = sFind(d, t.set_id);
+      p = sProg(d, sid, t.set_id);
+      if (p && s) {
+        kn = sKnN(p, sKeys(s));
+        if (p.f1 == null) p.f1 = Math.floor((t.sc * 100) / t.n);
+        p.last_sc = t.sc;
+        p.best = Math.max(p.best, t.kind === 'test' && !t.drawn ? Math.floor((kn * 100) / Math.max(s.n, 1)) : Math.floor((t.sc * 100) / t.n));
+        if (p.pass_at == null && (t.kind === 'test' && !t.drawn ? kn >= X.setNeed(s.n) : t.sc >= X.setNeed(t.n))) p.pass_at = sNow();
+      }
+    }
+    return n;
+  }
+  /* 꼴 검사(lec__v2_row) → {ok: [고른 줄], bad: [id]} */
+  function v2Split(rows) {
+    var ok = [], bad = [], i, r, e;
+    for (i = 0; i < rows.length; i += 1) {
+      e = rows[i];
+      r = v2Row(e);
+      if (!r) { if (isObj(e) && typeof e.id === 'string') bad.push(cpLeft(e.id, 40)); }
+      else ok.push(r);
+    }
+    return { ok: ok, bad: bad };
+  }
+  function v2Got(d, sid, ok) {
+    var ids = ok.map(function (x) { return x.id; });
+    return d.slog.filter(function (x) { return x.sid === sid && ids.indexOf(x.id) >= 0; }).map(function (x) { return x.id; });
+  }
+  /* lec__v2_take */
+  function v2Take(d, sid, cl, tryId, rows) {
+    var sp2;
+    if (!isArr(rows)) return { ok: false, err: 'input' };
+    if (rows.length > 300 || octets(pgText(rows)) > 262144) return { ok: false, err: 'input' };
+    d.v2bn += 1;
+    sp2 = v2Split(rows);
+    sp2.ok = sp2.ok.filter(function (x) { return x.b === tryId; });
+    v2Ev(d, sid, cl, tryId, sp2.ok);
+    return { ok: true, got: v2Got(d, sid, sp2.ok), bad: sp2.bad };
+  }
+  /* lec__v2_head */
+  function v2Head(rn) {
+    return { b: rn.id, md: rn.md, no: rn.no, seed: rn.seed, last: rn.last_i, today: today(), ts: nowMs(), bo: tms(rn.created_at) };
+  }
+  /* 판 씨앗(FNV-1a 32 비트 · 부호 있는 정수) */
+  function v2Seed(s) {
+    var t = unescape(encodeURIComponent(str(s))), h = -2128831035, i;
+    for (i = 0; i < t.length; i += 1) {
+      h ^= t.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) | 0;
+    }
+    return h;
+  }
+  function v2Merge(a, b) {
+    var o = clone(a), k;
+    for (k in b) { if (has(b, k)) o[k] = b[k]; }
+    return o;
+  }
+  function v2Run(d, sid, pred) {
+    var best = null, i, x;
+    for (i = 0; i < d.srun.length; i += 1) {
+      x = d.srun[i];
+      if (x.sid !== sid || !pred(x)) continue;
+      if (!best || tms(x.created_at) >= tms(best.created_at)) best = x;
+    }
+    return best;
+  }
+  function v2Empty(o) { var k; for (k in o) { if (has(o, k)) return false; } return true; }
+  function v2NewRun(d, sid, setId, md, no, qs, seed) {
+    var rn = { id: L().uuid(), sid: sid, set_id: setId, md: md, no: no, day: today(), n: qs.length, qs: qs, seed: seed, shut: {},
+               last_i: 0, end_n: null, created_at: sNow() };
+    d.srun.push(rn);
+    return rn;
+  }
+  /* 구문 쓰기 · 단어 쓰기 «뜻 여럿»(class-api.js 순수 함수 = SQL 과 같은 셈) */
+  function v2Sent(v, ans) { return typeof L().setSentV2 === 'function' ? L().setSentV2(v, ans) : false; }
+  function v2Spell(v, items, k) { return typeof L().setSpellV2 === 'function' ? L().setSpellV2(v, items, k) : false; }
+
+  /* ---------------------------------------------------------- V2-1 학생 함수 */
+
+  function lec_set_home_v2(d, a) {
+    v2Gone();
+    var r = lec_set_home(d, { p_key: a.p_key }), k, n, age, i;
+    if (!isObj(r) || r.ok !== true) return r;
+    v2Tabs(d);
+    k = findKey(d, a.p_key);
+    if (isObj(a.p_box)) {
+      n = v2Num(a.p_box.n, 1000000);
+      age = v2Num(a.p_box.age, 31536000000);
+      d.sbox = d.sbox.filter(function (x) { return x.sid !== k.sid; });
+      if ((n || 0) > 0) d.sbox.push({ sid: k.sid, n: n, age: age || 0, at: sNow() });
+    }
+    i = isObj(r.due) && r.due.n != null ? r.due.n : 0;
+    return v2Merge(r, { v2: v2Sw(d), ts: nowMs(), todo: { n: i } });
+  }
+
+  function lec_set_open_v2(d, a) {
+    v2Gone(); v2Tabs(d);
+    var X = L(), k, rn, r, day = today(), no, cnt, rows = [], qs, q = [], i, j, s, p, it, c, x, o;
+    if (!v2Sw(d)['eval']) return { ok: false, err: 'off' };
+    k = findKey(d, a.p_key);
+    if (!k) return { ok: false, err: 'key' };
+    if (!agreed(d, k.sid)) return { ok: false, err: 'consent' };
+    if (a.p_md !== 'mem' && a.p_md !== 'due') return { ok: false, err: 'input' };
+    if (a.p_md === 'mem') {
+      r = lec_set_items(d, { p_key: a.p_key, p_set: a.p_set });
+      if (!isObj(r) || r.ok !== true) return r;
+      rn = v2Run(d, k.sid, function (y) { return y.set_id === a.p_set && y.md === 'mem' && y.day === day && y.end_n == null && v2Empty(y.shut); });
+      if (!rn) {
+        no = 0;
+        for (i = 0; i < d.srun.length; i += 1) {
+          x = d.srun[i];
+          if (x.sid === k.sid && x.set_id === a.p_set && x.md === 'mem') no = Math.max(no, x.no);
+        }
+        no += 1;
+        rn = v2NewRun(d, k.sid, a.p_set, 'mem', no, [], v2Seed(k.sid + '|' + a.p_set + '|' + no));
+      }
+      return v2Merge(r, v2Head(rn));
+    }
+    rn = v2Run(d, k.sid, function (y) { return y.md === 'due' && y.day === day && y.end_n == null && v2Empty(y.shut); });
+    if (!rn) {
+      cnt = d.srun.filter(function (y) { return y.sid === k.sid && y.md === 'due' && y.day === day; }).length;
+      if (cnt >= 10) return { ok: false, err: 'limit' };
+      for (i = 0; i < d.set.length; i += 1) {
+        s = d.set[i];
+        if ((s.kind !== 'voc' && s.kind !== 'gram') || !sOpen(s, k.cls) || sBusy(d, k.sid, s.id)) continue;
+        p = sProg(d, k.sid, s.id);
+        if (!p) continue;
+        for (j = 0; j < s.items.length; j += 1) {
+          it = s.items[j];
+          c = sCard(p, str(it.k));
+          if (!X.setDueOn(c, day)) continue;
+          rows.push({ zz: str(c.z), on: s.posted_on, cr: tms(s.created_at), o: j,
+                      q: { k: str(it.k), s: s.id, f: s.kind === 'voc' ? 'w' : (X.setOpts(it.s) ? 'c' : 'r') } });
+        }
+      }
+      rows.sort(function (m1, m2) {
+        if (m1.zz !== m2.zz) return m1.zz < m2.zz ? -1 : 1;
+        if (m1.on !== m2.on) return m1.on < m2.on ? 1 : -1;
+        if (m1.cr !== m2.cr) return m2.cr - m1.cr;
+        return m1.o - m2.o;
+      });
+      qs = rows.slice(0, 20).map(function (y) { return y.q; });
+      if (!qs.length) return { ok: true, b: null, n: 0, q: [], today: day };
+      no = d.srun.filter(function (y) { return y.sid === k.sid && y.md === 'due'; }).length + 1;
+      rn = v2NewRun(d, k.sid, null, 'due', no, qs, v2Seed(k.sid + '||' + no));
+    }
+    for (i = 0; i < rn.qs.length; i += 1) {
+      x = rn.qs[i];
+      s = sFind(d, x.s);
+      if (!s || !sOpen(s, k.cls) || sBusy(d, k.sid, s.id) || has(rn.shut, s.id)) continue;
+      it = null;
+      for (j = 0; j < s.items.length; j += 1) { if (str(s.items[j].k) === x.k) { it = s.items[j]; break; } }
+      if (!it) continue;
+      o = s.kind === 'voc' ? null : X.setOpts(it.s);
+      q.push({ s: s.id, k: x.k, kd: s.kind, t: s.title, f: x.f,
+               p: s.kind === 'voc' ? str(it.m) : str(it.s), o: o,
+               a: s.kind === 'voc' ? str(it.w) : str(it.a), x: s.kind === 'voc' ? '' : str(it.x),
+               pt: s.kind === 'voc' ? '' : str(it.p) });
+    }
+    return v2Merge({ ok: true, n: q.length, q: q, title: '쌓인 오답' }, v2Head(rn));
+  }
+
+  function lec_set_log_v2(d, a) {
+    v2Gone(); v2Tabs(d);
+    var X = L(), k, rows = a.p_rows, cl, lim, sp2, bs = [], i, j, b, rn, tr, rws, e, s, it, q, ta, why, sr, okr, src, v1, f, v,
+        setId, nw = [], news, lday = null, lcnt = 0, sets = [], me = {}, mi, mn, bo, x;
+    k = findKey(d, a.p_key);
+    if (!k) return { ok: false, err: 'key' };
+    if (!agreed(d, k.sid)) return { ok: false, err: 'consent' };
+    if (!isArr(rows)) return { ok: false, err: 'input' };
+    if (rows.length > 100 || octets(pgText(rows)) > 61440) return { ok: false, err: 'input' };
+    cl = isArr(k.cls) && k.cls.length && k.cls[0] != null ? str(k.cls[0]) : '';
+    lim = typeof d.v2cfg.lim === 'number' ? d.v2cfg.lim : 3000;
+    d.v2bn += 1;
+    /* 1) 꼴 검사 */
+    sp2 = v2Split(rows);
+    for (i = 0; i < sp2.ok.length; i += 1) { if (bs.indexOf(sp2.ok[i].b) < 0) bs.push(sp2.ok[i].b); }
+    /* 2) 판마다 */
+    for (j = 0; j < bs.length; j += 1) {
+      b = bs[j];
+      rws = sp2.ok.filter(function (y) { return y.b === b; });
+      rn = null;
+      for (i = 0; i < d.srun.length; i += 1) { if (d.srun[i].id === b && d.srun[i].sid === k.sid) rn = d.srun[i]; }
+      if (!rn) {
+        tr = null;
+        for (i = 0; i < d.stry.length; i += 1) {
+          x = d.stry[i];
+          if (x.id === b && x.sid === k.sid && (x.kind === 'test' || x.kind === 'drill')) tr = x;
+        }
+        if (tr) v2Ev(d, k.sid, cl, b, rws);
+        else {
+          for (i = 0; i < rws.length; i += 1) {
+            e = rws[i];
+            ta = v2Ta(e.ago, null);
+            v2Put(d, { id: e.id, sid: k.sid, cl: cl, b: b, bk: 'log', i: e.i, n: e.n, set_id: e.s, k: e.k, f: e.f, v: e.v, h: e.h,
+                       ms: e.ms, nx: e.nx, om: e.om, pr: e.pr, sr: null, ok: false, src: '', v1: false, ago: e.ago, ta: ta,
+                       day: L().isoDay(ta), pt: e.pt, st: e.st, bo: ta, why: 'log' });
+          }
+        }
+        continue;
+      }
+      s = rn.md === 'mem' ? sFind(d, rn.set_id) : null;
+      bo = tms(rn.created_at);
+      rws.sort(v2RowOrd);
+      for (i = 0; i < rws.length; i += 1) {
+        e = rws[i];
+        ta = v2Ta(e.ago, bo);
+        why = ''; sr = null; okr = false; src = ''; v1 = false; it = null; f = e.f; v = e.v;
+        if (rn.md === 'mem') {
+          setId = rn.set_id;
+          if (!s || !sOpen(s, k.cls) || s.kind === 'gram') why = 'gone';
+          else {
+            it = sItem(s, e.k);
+            if (!it) why = 'gone';
+            else if (f === 'k' && (v === '0' || v === '1' || (s.kind === 'gu' && v === '2'))) {
+              okr = v === '1' || v === '2';
+              sr = okr;
+              v1 = v === '2';
+              src = s.kind === 'voc' ? 'card' : 'say';
+            } else if (f === 'sp' && s.kind === 'voc') {
+              sr = !e.lg && v2Spell(v, s.items, e.k);
+              okr = sr && !e.h;
+              src = 'card';
+            } else if (f === 'se' && s.kind === 'gu') {
+              sr = !e.lg && v2Sent(v, it.e);
+              okr = sr && !e.h;
+              src = 'say';
+            } else why = 'gone';
+          }
+        } else {
+          setId = e.s;
+          q = null;
+          for (mi = 0; mi < rn.qs.length; mi += 1) {
+            if (e.s !== null && rn.qs[mi].s === e.s && rn.qs[mi].k === e.k) { q = rn.qs[mi]; break; }
+          }
+          if (!q) why = 'gone';
+          else {
+            s = sFind(d, setId);
+            if (!s || !sOpen(s, k.cls)) why = 'gone';
+            else {
+              it = sItem(s, e.k);
+              if (!it) why = 'gone';
+              else {
+                f = q.f;
+                sr = f === 'c' ? X.setNorm(v) === X.setNorm(it.a) : X.setMatch(v, s.kind === 'voc' ? it.w : it.a);
+                sr = !!sr && !e.lg && sp(v) !== '';
+                okr = sr && !e.h;
+                src = 'due';
+              }
+            }
+          }
+        }
+        /* 평가를 연 세트(닫은 뒤 답 · 지금 열린 시험 · 드릴) = 기록만 */
+        if (why === '' && setId != null && ((has(rn.shut, setId) && ta >= tms(rn.shut[setId])) || sBusy(d, k.sid, setId))) why = 'shut';
+        if (v2Put(d, { id: e.id, sid: k.sid, cl: cl, b: rn.id, bk: rn.md, i: e.i, n: e.n, set_id: setId, k: e.k, f: str(f), v: v, h: e.h,
+                       ms: e.ms, nx: e.nx, om: e.om, pr: e.pr, sr: sr, ok: okr, src: src, v1: v1, ago: e.ago, ta: ta,
+                       day: L().isoDay(ta), pt: e.pt, st: e.st, bo: bo, why: why }) && why === '') nw.push(e.id);
+      }
+      mi = 0;
+      mn = null;
+      for (i = 0; i < rws.length; i += 1) {
+        mi = Math.max(mi, rws[i].i);
+        if (rws[i].n != null) mn = mn == null ? rws[i].n : Math.max(mn, rws[i].n);
+      }
+      rn.last_i = Math.max(rn.last_i, mi);
+      if (mn != null) rn.end_n = rn.end_n == null ? mn : Math.max(rn.end_n, mn);
+    }
+    /* 3) 새 줄만 (판 연 때 · 판 · 순번) 차례로 카드에 반영 · 하루 반영 한도 */
+    news = d.slog.filter(function (y) { return nw.indexOf(y.id) >= 0; }).sort(v2Cmp);
+    for (i = 0; i < news.length; i += 1) {
+      x = news[i];
+      if (lday !== x.day) {
+        lcnt = d.slog.filter(function (y) { return y.day === x.day && y.sid === k.sid && y.done && (y.bk === 'mem' || y.bk === 'due'); }).length;
+        lday = x.day;
+      }
+      if (lcnt >= lim) x.why = 'lim';
+      else if (v2Apply(d, x.id) === 'ok') {
+        lcnt += 1;
+        if (sets.indexOf(x.set_id) < 0) sets.push(x.set_id);
+      }
+    }
+    /* 4) 답(바른 답 0) */
+    for (i = 0; i < sets.length; i += 1) {
+      s = sFind(d, sets[i]);
+      if (s) me[s.id] = sMe(d, s, k.sid, today());
+    }
+    return { ok: true, got: v2Got(d, k.sid, sp2.ok), bad: sp2.bad, me: me, due: sDueN(d, k.sid, k.cls, today()) };
+  }
+  function sItem(s, k) {
+    var i;
+    for (i = 0; i < s.items.length; i += 1) { if (str(s.items[i].k) === k) return s.items[i]; }
+    return null;
+  }
+
+  function lec_set_test_v2(d, a) {
+    v2Gone(); v2Tabs(d);
+    var r, k, t = null, i, x, at, sv = [], lo = dayStr(-14), out;
+    if (!v2Sw(d)['eval']) return { ok: false, err: 'off' };
+    r = lec_set_test(d, { p_key: a.p_key, p_set: a.p_set });
+    if (!isObj(r) || r.ok !== true) return r;
+    k = findKey(d, a.p_key);
+    for (i = 0; i < d.stry.length; i += 1) { if (d.stry[i].id === r['try']) t = d.stry[i]; }
+    at = sNow();
+    for (i = 0; i < d.srun.length; i += 1) {
+      x = d.srun[i];
+      if (x.sid !== k.sid || !(x.day >= lo) || has(x.shut, a.p_set)) continue;
+      if (x.set_id === a.p_set || (x.md === 'due' && x.qs.some(function (y) { return y.s === a.p_set; }))) x.shut[a.p_set] = at;
+    }
+    for (i = 0; i < t.ans.length; i += 1) { if (isObj(t.ans[i])) sv.push({ i: i, v: str(t.ans[i].v) }); }
+    out = clone(r);
+    delete out.done;
+    out.sv = sv;
+    out.ts = nowMs();
+    out.bo = tms(t.created_at);
+    return out;
+  }
+
+  function v2Try(d, sid, id) {
+    var i, t;
+    for (i = 0; i < d.stry.length; i += 1) {
+      t = d.stry[i];
+      if (t.id === id && t.sid === sid && (t.kind === 'test' || t.kind === 'drill')) return t;
+    }
+    return null;
+  }
+  function v2Cl(k) { return isArr(k.cls) && k.cls.length && k.cls[0] != null ? str(k.cls[0]) : ''; }
+
+  function lec_set_save_v2(d, a) {
+    v2Gone(); v2Tabs(d);
+    var st = sStart(d, a.p_key), k, t, r;
+    if (st.e) return st.e;
+    k = st.k;
+    t = v2Try(d, k.sid, a.p_try);
+    if (!t) return { ok: false, err: 'try' };
+    r = v2Take(d, k.sid, v2Cl(k), a.p_try, a.p_rows);
+    if (r.ok !== true) return r;
+    return v2Merge(r, { left: t.n - t.got, done: t.done_at != null });
+  }
+
+  function lec_set_send_v2(d, a) {
+    v2Gone(); v2Tabs(d);
+    var st = sStart(d, a.p_key), k, t, r, s, miss = [], i;
+    if (st.e) return st.e;
+    k = st.k;
+    t = v2Try(d, k.sid, a.p_try);
+    if (!t) return { ok: false, err: 'try' };
+    r = v2Take(d, k.sid, v2Cl(k), a.p_try, a.p_rows);
+    if (r.ok !== true) return r;
+    if (t.done_at == null) {
+      for (i = 0; i < t.ans.length; i += 1) { if (!isObj(t.ans[i])) miss.push(i); }
+      return v2Merge(r, { done: false, left: t.n - t.got, miss: miss });
+    }
+    s = sFind(d, t.set_id);
+    return v2Merge(r, { done: true, end: sEnd(d, t, k.sid, k.cls), ans: sView(t, {}).done,
+                        me: s ? sMe(d, s, k.sid, today()) : null, due: sDueN(d, k.sid, k.cls, today()) });
+  }
+
+  /* ---------------------------------------------------------- V2-1 선생님 함수(지켜보기 · 읽기만 · 이름 없음) */
+
+  function v2P95(a) {
+    var x = a.filter(function (y) { return typeof y === 'number'; }).sort(function (m, n) { return m - n; }), pos, lo, hi;
+    if (!x.length) return null;
+    pos = 0.95 * (x.length - 1);
+    lo = Math.floor(pos);
+    hi = Math.ceil(pos);
+    return x[lo] + (x[hi] - x[lo]) * (pos - lo);
+  }
+  function lec_v2_watch(d, a) {
+    if (!ME) return { ok: false, err: 'forbidden' };
+    v2Tabs(d);
+    var to = today(), nd = Math.min(Math.max(a.p_days == null ? 14 : a.p_days, 1), 60), from = dayStr(-nd), lo7 = dayStr(-nd - 7),
+        to7 = dayStr(-7), lo14 = dayStr(-nd - 14), byDay = {}, days = [], lost = {}, byB = {}, calls = {}, cl = [], i, x, g, k, m, box;
+    for (i = 0; i < d.slog.length; i += 1) {
+      x = d.slog[i];
+      if (x.day >= from) {
+        if (!has(byDay, x.day)) byDay[x.day] = [];
+        byDay[x.day].push(x);
+      }
+      if (x.day >= lo7) {
+        if (!has(byB, x.b)) byB[x.b] = { day: x.day, n: 0, i: 0, is: {} };
+        g = byB[x.b];
+        if (x.day < g.day) g.day = x.day;
+        if (typeof x.n === 'number') g.n = Math.max(g.n, x.n);
+        g.i = Math.max(g.i, x.i);
+        g.is['#' + x.i] = 1;
+      }
+      if (x.day >= lo14 && L().isoDay(x.at) >= from) {
+        k = x.cl + '|' + L().isoDay(x.at);
+        if (!has(calls, k)) calls[k] = { cl: x.cl, day: L().isoDay(x.at), bn: {} };
+        calls[k].bn['#' + x.bn] = 1;
+      }
+    }
+    for (k in byB) {
+      if (!has(byB, k)) continue;
+      g = byB[k];
+      m = Math.max(g.n, g.i) - Object.keys(g.is).length;
+      if (g.day < to7 && m > 0) lost[g.day] = (lost[g.day] || 0) + m;
+    }
+    for (k in byDay) {
+      if (!has(byDay, k)) continue;
+      g = byDay[k];
+      days.push({
+        day: k, rows: g.length,
+        done: g.filter(function (y) { return y.done; }).length,
+        late: g.filter(function (y) { return y.late; }).length,
+        why: { log: cntWhy(g, 'log'), lim: cntWhy(g, 'lim'), shut: cntWhy(g, 'shut'), gone: cntWhy(g, 'gone'), done: cntWhy(g, 'done') },
+        cmp: g.filter(function (y) { return y.pr != null && y.sr != null; }).length,
+        diff: g.filter(function (y) { return y.pr != null && y.sr != null && y.pr !== y.sr; }).length,
+        lost: lost[k] || 0,
+        om95: v2P95(g.map(function (y) { return y.om; })),
+        nx95: v2P95(g.map(function (y) { return y.nx; }))
+      });
+    }
+    days.sort(function (m1, m2) { return m1.day < m2.day ? -1 : (m1.day > m2.day ? 1 : 0); });
+    for (k in calls) { if (has(calls, k)) cl.push({ cl: calls[k].cl, day: calls[k].day, n: Object.keys(calls[k].bn).length }); }
+    cl.sort(function (m1, m2) {
+      if (m1.day !== m2.day) return m1.day < m2.day ? -1 : 1;
+      return m1.cl < m2.cl ? -1 : (m1.cl > m2.cl ? 1 : 0);
+    });
+    box = { who: d.sbox.length, n: 0, age: 0, at: null };
+    for (i = 0; i < d.sbox.length; i += 1) {
+      box.n += d.sbox[i].n;
+      box.age = Math.max(box.age, d.sbox[i].age);
+      if (box.at === null || tms(d.sbox[i].at) > tms(box.at)) box.at = d.sbox[i].at;
+    }
+    return { ok: true, from: from, to: to, sw: v2Sw(d), days: days, calls: cl, box: box };
+  }
+  function cntWhy(g, w2) { return g.filter(function (y) { return y.why === w2; }).length; }
+
+  /* ---------------------------------------------------------- 이름 옮김 · 동의 지움(트리거 lec__v2_mv · lec__v2_gone) */
+
+  function v2Move(d, oldSid, newSid) {
+    var i;
+    v2Tabs(d);
+    for (i = 0; i < d.slog.length; i += 1) { if (d.slog[i].sid === oldSid) d.slog[i].sid = newSid; }
+    for (i = 0; i < d.srun.length; i += 1) { if (d.srun[i].sid === oldSid) d.srun[i].sid = newSid; }
+    d.sbox = d.sbox.filter(function (x) { return x.sid !== oldSid; });
+  }
+  function v2Drop(d, sid) {
+    v2Tabs(d);
+    d.slog = d.slog.filter(function (x) { return x.sid !== sid; });
+    d.srun = d.srun.filter(function (x) { return x.sid !== sid; });
+    d.sbox = d.sbox.filter(function (x) { return x.sid !== sid; });
+  }
+
+  /* 부름 기록 · 손잡이 */
+  function v2Note(fn) {
+    V2CALLS.push({ fn: fn, t: Date.now() });
+    if (V2CALLS.length > 5000) V2CALLS.splice(0, V2CALLS.length - 5000);
+  }
+  function v2Knob(name, fn) {
+    var v;
+    try { v = w[name]; } catch (e) { return false; }
+    if (!v) return false;
+    if (v === true) return true;
+    if (typeof v === 'number') {
+      if (v >= 1) { w[name] = v - 1; return true; }
+      return false;
+    }
+    if (typeof v === 'object' && has(v, fn)) {
+      if (v[fn] === true) return true;
+      if (typeof v[fn] === 'number' && v[fn] >= 1) { v[fn] -= 1; return true; }
+    }
+    return false;
+  }
+
+  IMPL.lec_set_home_v2 = lec_set_home_v2;
+  IMPL.lec_set_open_v2 = lec_set_open_v2;
+  IMPL.lec_set_log_v2 = lec_set_log_v2;
+  IMPL.lec_set_test_v2 = lec_set_test_v2;
+  IMPL.lec_set_save_v2 = lec_set_save_v2;
+  IMPL.lec_set_send_v2 = lec_set_send_v2;
+  SIG.lec_set_home_v2 = { p_key: 'text', p_box: 'json?' };
+  SIG.lec_set_open_v2 = { p_key: 'text', p_set: 'uuid', p_md: 'text' };
+  SIG.lec_set_log_v2 = { p_key: 'text', p_rows: 'json' };
+  SIG.lec_set_test_v2 = { p_key: 'text', p_set: 'uuid' };
+  SIG.lec_set_save_v2 = { p_key: 'text', p_try: 'uuid', p_rows: 'json' };
+  SIG.lec_set_send_v2 = { p_key: 'text', p_try: 'uuid', p_rows: 'json' };
+  SIG.lec_v2_watch = { p_days: 'int?' };
+  STAFF.lec_v2_watch = lec_v2_watch;
+
+  w.LecMock.noV2 = function (on) { if (on !== undefined) NOV2 = !!on; return NOV2; };
+  w.LecMock.v2Cfg = function (o) {
+    var d = load(), i, n;
+    v2Tabs(d);
+    if (isObj(o)) {
+      for (i = 0; i < V2SW.length; i += 1) { if (has(o, V2SW[i])) d.v2cfg[V2SW[i]] = !!o[V2SW[i]]; }
+      if (has(o, 'lim')) { n = Math.floor(+o.lim); if (n >= 0 && n <= 100000) d.v2cfg.lim = n; }
+    }
+    save(d);
+    return clone(d.v2cfg);
+  };
+  w.LecMock.v2Dump = function () {
+    var d = load();
+    v2Tabs(d);
+    return clone({ cfg: d.v2cfg, srun: d.srun, slog: d.slog, sbox: d.sbox, sprog: d.sprog, stry: d.stry });
+  };
+  w.LecMock.callLog = function (clear) {
+    var o = clone(V2CALLS);
+    if (clear) V2CALLS.length = 0;
+    return o;
+  };
+
   w.LecMock.tone = tone;
   w.LecMock.s1ids = S1ID;
   w.LecMock.noSet = function (on) { if (on !== undefined) NOSET = !!on; return NOSET; };

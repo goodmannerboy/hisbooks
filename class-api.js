@@ -3590,3 +3590,585 @@
   };
   for (var name in api) { if (has(api, name)) Lec[name] = api[name]; }
 })(window);
+
+/* ===================================================================== V2-1 (11-20) 세트 학습 v2: 폰 보관함 · 보내기 · 서버 함수 감싸기(묶음 ①a)
+   서버 = class-setup.sql V2-1 절 · 연습 = class-mock.js V2-1 절 · 화면(class.html)은 아직 부르지 않음(묶음 ①b 가 연결 · 위 옛 함수는 그대로)
+   보관함: localStorage 'lec-v2b:' + 열쇠 지문(8) + ':' + 판 id 한 칸 = {b, md, st, hide, rows: [{id, i, s, k, f, v, h, ms, nx, om, pr, t, n}]}
+     내 답과 순번만(바른 답 · 문항 글 없음) · 다른 학생 칸은 건드리지 않음 · 저장이 막히거나 차면 이 화면 메모리에 두고 바로 보냄
+   보내는 때: 판 끝(v2End) · 숨길 때(보이지 않게 된 때 · pagehide · 판마다 두 번까지 · keepalive · 60KB 까지) · 다음에 열 때(남은 줄이 있을 때만)
+     한 번에 하나 · 8초 넘으면 끊음 · 두 번 잇달아 실패하면 다음에 열 때까지 쉼 · 다시 보내는 타이머 0 · 화면 표시 0
+   평가(시험 · 드릴): 50 문항마다 중간 저장(lec_set_save_v2) · 숨길 때 · 내기(lec_set_send_v2 · 실패하면 줄은 보관함에 남아 다음에 열 때 보냄)
+   줄 = {id(32 글자 16진 · getRandomValues), b, i, s, k, f, v, h, ms, nx, om, pr, ago(보낼 때 폰 시각 − 답한 때), pt(답한 폰 시각), st(판을 열 때 받은 서버 오늘), n(판 끝)} */
+(function (w) {
+  'use strict';
+
+  var Lec = w.Lec;
+  if (!Lec) return;
+
+  var PRE = 'lec-v2b:';
+  var LOG_ROWS = 100, LOG_BYTES = 61440, EV_ROWS = 300, EV_BYTES = 262144;
+  var HIDE_MAX = 2, CUT_MS = 8000, FAIL_MAX = 2, SAVE_EVERY = 50, V_MAX = 401, I_MAX = 1000, OLD_MS = 2592000000, AGO_MAX = 1209600000;
+  var SP2 = ',.?!;:"' + String.fromCharCode(8230);
+
+  function str(v) { return v == null ? '' : String(v); }
+  function isArr(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+  function isObj(v) { return !!v && typeof v === 'object' && !isArr(v); }
+  function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function now() { var t = typeof Lec.now === 'function' ? +Lec.now() : Date.now(); return isFinite(t) ? Math.floor(t) : Date.now(); }
+  function clen(s) { return typeof Lec.clen === 'function' ? Lec.clen(str(s)) : str(s).length; }
+  function k0(key) { return key == null ? null : str(key); }
+  /* 앞에서 n 글자(짝 서로게이트는 한 글자 · SQL left 와 같음) */
+  function cpLeft(s, n) {
+    var t = str(s), o = '', i = 0, c = 0, h;
+    while (i < t.length && c < n) {
+      h = t.charCodeAt(i);
+      if (h >= 0xD800 && h <= 0xDBFF && i + 1 < t.length) { o += t.substr(i, 2); i += 2; } else { o += t.charAt(i); i += 1; }
+      c += 1;
+    }
+    return o;
+  }
+  function nat(v, max) {
+    if (v === null || v === undefined || v === '') return null;
+    v = Math.floor(+v);
+    return isFinite(v) && v >= 0 ? Math.min(v, max) : null;
+  }
+
+  /* ------------------------------------------------------------- 판정(SQL lec__set_snorm_v2 · lec__set_sent_v2 · lec__set_spell_v2 와 같은 셈) */
+
+  /* 구문 쓰기 맞추기 글: «/» → 빈칸 · setNorm · 부호 여덟(, . ? ! ; : " …) 지움 · 빈칸 하나로 · 앞뒤 빈칸 */
+  function setSNormV2(t) {
+    var s = Lec.setNorm(str(t).replace(/\//g, ' ')), o = '', i, c;
+    for (i = 0; i < s.length; i += 1) {
+      c = s.charAt(i);
+      if (SP2.indexOf(c) < 0) o += c;
+    }
+    return o.replace(/ +/g, ' ').replace(/^ +| +$/g, '');
+  }
+  /* 구문 쓰기 채점: 답 1~400 글자 · 맞추기 글이 비지 않고 바른 답과 통째로 같음 */
+  function setSentV2(v, ans) {
+    var n, a;
+    if (v == null) return false;
+    n = clen(v);
+    if (n < 1 || n > 400) return false;
+    a = setSNormV2(v);
+    return a !== '' && a === setSNormV2(ans);
+  }
+  /* jsonb ->> 글 */
+  function txt(x) {
+    if (x === null || x === undefined) return null;
+    if (typeof x === 'string') return x;
+    if (typeof x === 'number' || typeof x === 'boolean') return String(x);
+    return JSON.stringify(x);
+  }
+  /* 단어 쓰기 «뜻 여럿»: 이 문항 영어와 맞거나 · 같은 묶음에 뜻(맞추기 글 · 빈 뜻 빼고)이 같은 문항 영어와 맞으면 맞음 · 답 1~200 글자 */
+  function setSpellV2(v, items, k) {
+    var n, tgt = null, nm, i, e;
+    if (v == null || k == null || !isArr(items)) return false;
+    n = clen(v);
+    if (n < 1 || n > 200) return false;
+    k = str(k);
+    for (i = 0; i < items.length; i += 1) {
+      if (isObj(items[i]) && txt(items[i].k) === k) { tgt = items[i]; break; }
+    }
+    if (!tgt) return false;
+    nm = Lec.setNorm(str(txt(tgt.m)));
+    for (i = 0; i < items.length; i += 1) {
+      e = items[i];
+      if (!isObj(e)) continue;
+      if ((txt(e.k) === k || (nm !== '' && Lec.setNorm(str(txt(e.m))) === nm)) && Lec.setMatch(str(v), str(txt(e.w)))) return true;
+    }
+    return false;
+  }
+
+  /* ------------------------------------------------------------- 크기 · id */
+
+  /* jsonb::text 꼴(쉼표 · 쌍점 뒤 빈칸) · 서버 octet_length 와 같은 바이트 */
+  function pgText(v) {
+    var o = [], k;
+    if (v === null || v === undefined) return 'null';
+    if (typeof v === 'string') return JSON.stringify(v);
+    if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+    if (isArr(v)) { for (k = 0; k < v.length; k += 1) o.push(pgText(v[k])); return '[' + o.join(', ') + ']'; }
+    for (k in v) { if (has(v, k) && v[k] !== undefined) o.push(JSON.stringify(k) + ': ' + pgText(v[k])); }
+    return '{' + o.join(', ') + '}';
+  }
+  function bytes(s) {
+    try { return unescape(encodeURIComponent(s)).length; } catch (e) { return str(s).length * 3; }
+  }
+  function rid() {
+    var a = [], s = '', i, c, b;
+    try {
+      c = w.crypto || w.msCrypto;
+      if (c && typeof c.getRandomValues === 'function') {
+        b = new Uint8Array(16);
+        c.getRandomValues(b);
+        for (i = 0; i < 16; i += 1) a.push(b[i]);
+      }
+    } catch (e) { a = []; }
+    for (i = a.length; i < 16; i += 1) a.push(Math.floor(Math.random() * 256));
+    for (i = 0; i < 16; i += 1) s += (a[i] < 16 ? '0' : '') + a[i].toString(16);
+    return s;
+  }
+  /* 열쇠 지문(FNV-1a 32 비트 · 16진 8 글자 · 열쇠 글자는 보관함 이름에 안 씀) */
+  function fp(key) {
+    var t = str(key), h = 0x811c9dc5, i, x;
+    for (i = 0; i < t.length; i += 1) {
+      h ^= t.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    x = h.toString(16);
+    return '00000000'.slice(x.length) + x;
+  }
+
+  /* ------------------------------------------------------------- 보관함 */
+
+  var MEM = {};            /* 저장이 막히거나 찼을 때(이 화면 안에서만) */
+  var memOnly = false;
+  var CUR = {};            /* 이 화면에서 연 판 {b: {fp, b, md, st, next, n50, last, hide, end}} */
+  var Q = { tail: Promise.resolve(), queued: null, qkey: null, fails: 0, paused: false, gone: false, key: null, today: '', swept: false, hooked: false };
+
+  function ls() { try { return w.localStorage || null; } catch (e) { return null; } }
+  function lk(f, b) { return PRE + f + ':' + b; }
+  function boxKeys(f) {
+    var out = [], s = ls(), i, k, n, pre = f ? PRE + f + ':' : PRE;
+    if (s) {
+      try {
+        n = s.length;
+        for (i = 0; i < n; i += 1) { k = s.key(i); if (k && k.indexOf(pre) === 0) out.push(k); }
+      } catch (e) { /* 막힘 */ }
+    }
+    for (k in MEM) { if (has(MEM, k) && k.indexOf(pre) === 0 && out.indexOf(k) < 0) out.push(k); }
+    return out.sort();
+  }
+  function boxDel(k) {
+    var s = ls();
+    delete MEM[k];
+    if (s) { try { s.removeItem(k); } catch (e) { /* 막힘 */ } }
+  }
+  function boxGet(k) {
+    var raw = null, s, o;
+    if (has(MEM, k)) return MEM[k];
+    s = ls();
+    if (!s) return null;
+    try { raw = s.getItem(k); } catch (e) { raw = null; }
+    if (!raw) return null;
+    try { o = JSON.parse(raw); } catch (e2) { o = null; }
+    if (!isObj(o) || !isArr(o.rows) || typeof o.b !== 'string') { boxDel(k); return null; }
+    return o;
+  }
+  /* 적음 → true(폰에 남음) · false(메모리에만 = 바로 보냄) */
+  function boxPut(k, o) {
+    var s;
+    if (!o.rows.length) { boxDel(k); return true; }
+    if (!memOnly) {
+      s = ls();
+      if (s) {
+        try { s.setItem(k, JSON.stringify(o)); delete MEM[k]; return true; } catch (e) { /* 참 · 막힘 */ }
+      }
+      memOnly = true;
+    }
+    MEM[k] = o;
+    return false;
+  }
+  /* 이 학생의 남은 줄(판 · 순번 차례 · b · st 붙임) */
+  function pending(f, b) {
+    var ks = boxKeys(f), out = [], i, j, o, r, x, y;
+    for (i = 0; i < ks.length; i += 1) {
+      o = boxGet(ks[i]);
+      if (!o || (b && o.b !== b)) continue;
+      for (j = 0; j < o.rows.length; j += 1) {
+        r = o.rows[j];
+        x = {};
+        for (y in r) { if (has(r, y)) x[y] = r[y]; }
+        x.b = o.b;
+        x.st = str(o.st);
+        out.push(x);
+      }
+    }
+    out.sort(function (m, n) { return m.b === n.b ? m.i - n.i : (m.b < n.b ? -1 : 1); });
+    return out;
+  }
+  function boxSum(f) {
+    var rows = pending(f), t = now(), old = t, i;
+    for (i = 0; i < rows.length; i += 1) { if (typeof rows[i].t === 'number' && rows[i].t < old) old = rows[i].t; }
+    return { n: rows.length, age: Math.max(0, t - old) };
+  }
+  /* 받은 줄(got) · 꼴 틀린 줄(bad)을 이 학생 칸에서 뺌 */
+  function drop(f, r) {
+    var ids = {}, a = (isArr(r.got) ? r.got : []).concat(isArr(r.bad) ? r.bad : []), ks, i, o, keep;
+    if (!a.length) return;
+    for (i = 0; i < a.length; i += 1) ids['#' + a[i]] = 1;
+    ks = boxKeys(f);
+    for (i = 0; i < ks.length; i += 1) {
+      o = boxGet(ks[i]);
+      if (!o) continue;
+      keep = o.rows.filter(function (x) { return !ids['#' + x.id]; });
+      if (keep.length !== o.rows.length) { o.rows = keep; boxPut(ks[i], o); }
+    }
+  }
+  /* 한 달 넘은 칸(모든 학생 · 가장 늦은 줄 기준)은 지움(서버도 14일 넘은 답은 14일 전으로 셈) · 화면마다 한 번 */
+  function sweep() {
+    var ks, i, o, j, t = now(), late;
+    if (Q.swept) return;
+    Q.swept = true;
+    ks = boxKeys('');
+    for (i = 0; i < ks.length; i += 1) {
+      o = boxGet(ks[i]);
+      if (!o) continue;
+      late = 0;
+      for (j = 0; j < o.rows.length; j += 1) { if (typeof o.rows[j].t === 'number' && o.rows[j].t > late) late = o.rows[j].t; }
+      if (t - late > OLD_MS) boxDel(ks[i]);
+    }
+  }
+
+  /* ------------------------------------------------------------- 보내기 */
+
+  function wire(r, t) {
+    var o = { id: str(r.id), b: str(r.b), i: r.i, v: str(r.v), h: !!r.h, st: str(r.st) }, a;
+    a = typeof r.t === 'number' && isFinite(r.t) ? t - r.t : 0;
+    o.ago = Math.floor(Math.max(0, Math.min(a, AGO_MAX)));
+    if (typeof r.t === 'number' && isFinite(r.t) && r.t >= 0) o.pt = Math.floor(r.t);
+    if (r.s) o.s = str(r.s);
+    if (r.k != null && r.k !== '') o.k = str(r.k);
+    if (r.f) o.f = str(r.f);
+    if (r.n != null) o.n = r.n;
+    if (r.ms != null) o.ms = r.ms;
+    if (r.nx != null) o.nx = r.nx;
+    if (r.om != null) o.om = r.om;
+    if (typeof r.pr === 'boolean') o.pr = r.pr;
+    return o;
+  }
+  /* 앞에서부터 maxN 줄 · maxB 바이트(서버 셈)까지 */
+  function chunk(rows, maxN, maxB, extra) {
+    var out = [], size = 2 + (extra || 0), i, s;
+    for (i = 0; i < rows.length && out.length < maxN; i += 1) {
+      s = bytes(pgText(rows[i])) + (out.length ? 2 : 0);
+      if (out.length && size + s > maxB) break;
+      out.push(rows[i]);
+      size += s;
+    }
+    return out;
+  }
+  function fail(e) {
+    if (e && (e.status === 404 || e.status === 401 || e.status === 403 || e.code === 'PGRST202' || e.code === '42883')) {
+      Q.gone = true;
+      return { ok: false, err: 'old' };
+    }
+    return { ok: false, err: e && e.message === 'network' ? 'network' : 'error' };
+  }
+  /* 8초 넘으면 끊음(답이 늦게 와도 줄은 보관함에 남아 다음에 다시 · 서버는 같은 id 를 한 번만 받음) */
+  function cut(p) {
+    return new Promise(function (res) {
+      var done = false, tm = setTimeout(function () {
+        if (done) return;
+        done = true;
+        res({ ok: false, err: 'network', cut: true });
+      }, CUT_MS);
+      p.then(function (r) {
+        if (done) return;
+        done = true;
+        clearTimeout(tm);
+        res(r);
+      }, function () {
+        if (done) return;
+        done = true;
+        clearTimeout(tm);
+        res({ ok: false, err: 'network' });
+      });
+    });
+  }
+  function call(fn, args, opt) {
+    var p;
+    if (w.__lecPvIn) return Promise.resolve({ ok: false, err: 'preview' });   /* 미리 보기 안쪽 = 부르지 않음 */
+    if (Q.gone) return Promise.resolve({ ok: false, err: 'old' });            /* v2 함수가 없는 서버 = 이 화면에서는 다시 안 부름 */
+    try { p = Lec.rpc(fn, args, opt); } catch (e0) { return Promise.resolve(fail(e0)); }
+    return cut(Promise.resolve(p).then(function (r) {
+      return isObj(r) ? r : { ok: false, err: 'error' };
+    }, fail).then(null, function () { return { ok: false, err: 'error' }; }));
+  }
+  /* 응답 셈: ok = 받은 줄을 뺌 · 실패 = 잇단 실패 수(둘이면 다음에 열 때까지 쉼) */
+  function took(f, r) {
+    if (r && r.ok) { drop(f, r); Q.fails = 0; return true; }
+    Q.fails += 1;
+    if (Q.fails >= FAIL_MAX) Q.paused = true;
+    return false;
+  }
+  /* 한 번에 하나(앞 보내기가 끝난 뒤) */
+  function enqueue(task) {
+    var p = Q.tail.then(task, task);
+    Q.tail = p.then(null, function () { return null; });
+    return p;
+  }
+  function flushNow(key) {
+    var f = fp(key), prev = -1, last = { ok: true, n: 0 };
+    function step() {
+      var rows, part, t;
+      if (Q.paused) return Promise.resolve({ ok: false, err: 'pause' });
+      rows = pending(f);
+      if (!rows.length || rows.length === prev) return Promise.resolve(last);
+      prev = rows.length;
+      t = now();
+      part = chunk(rows.map(function (r) { return wire(r, t); }), LOG_ROWS, LOG_BYTES, bytes(str(key)) + 32);
+      return call('lec_set_log_v2', { p_key: str(key), p_rows: part }).then(function (r) {
+        if (!took(f, r)) return r;
+        last = r;
+        return step();
+      });
+    }
+    return step();
+  }
+  /* 남은 줄 보내기(이미 줄 선 같은 학생 보내기가 있으면 거기에 합침) */
+  function flush(key) {
+    var p;
+    key = str(key);
+    if (Q.queued && Q.qkey === key) return Q.queued;
+    p = enqueue(function () {
+      if (Q.queued === p) Q.queued = null;
+      return flushNow(key);
+    });
+    Q.queued = p;
+    Q.qkey = key;
+    return p;
+  }
+  /* 평가 중간 저장(50 문항마다) */
+  function saveEv(key, b) {
+    return enqueue(function () {
+      var f = fp(key), t = now(), part;
+      if (Q.paused) return { ok: false, err: 'pause' };
+      part = chunk(pending(f, b).map(function (r) { return wire(r, t); }), EV_ROWS, EV_BYTES, 0);
+      if (!part.length) return { ok: true, n: 0 };
+      return call('lec_set_save_v2', { p_key: str(key), p_try: b, p_rows: part }).then(function (r) {
+        took(f, r);
+        return r;
+      });
+    });
+  }
+  /* 숨길 때(보이지 않게 된 때 · pagehide): 지금 학생 줄을 keepalive 로 한 번(판마다 두 번까지 · 60KB 까지 · 쉬는 중이면 안 보냄 ·
+     앞 숨김에서 아직 답이 안 온 줄은 다시 안 실음) */
+  var FLY = {};
+  function onHide() {
+    var key = Q.key, f, ks, list = [], rows = [], t = now(), part, bs = {}, ids = [], i, j, o, c, hd;
+    if (!key || Q.paused || Q.gone || w.__lecPvIn) return;
+    f = fp(key);
+    ks = boxKeys(f);
+    for (i = 0; i < ks.length; i += 1) {
+      o = boxGet(ks[i]);
+      if (!o || !o.rows.length) continue;
+      c = CUR[o.b];
+      hd = Math.max(+o.hide || 0, c && c.fp === f ? c.hide : 0);
+      if (hd >= HIDE_MAX) continue;
+      list.push({ k: ks[i], o: o, hd: hd });
+      for (j = 0; j < o.rows.length; j += 1) {
+        if (FLY['#' + o.rows[j].id]) continue;
+        rows.push(wire({ id: o.rows[j].id, b: o.b, i: o.rows[j].i, s: o.rows[j].s, k: o.rows[j].k, f: o.rows[j].f, v: o.rows[j].v,
+                         h: o.rows[j].h, ms: o.rows[j].ms, nx: o.rows[j].nx, om: o.rows[j].om, pr: o.rows[j].pr, t: o.rows[j].t,
+                         n: o.rows[j].n, st: o.st }, t));
+      }
+    }
+    part = chunk(rows, LOG_ROWS, LOG_BYTES, bytes(key) + 32);
+    if (!part.length) return;
+    for (i = 0; i < part.length; i += 1) {
+      bs['#' + part[i].b] = 1;
+      FLY['#' + part[i].id] = 1;
+      ids.push(part[i].id);
+    }
+    for (i = 0; i < list.length; i += 1) {
+      if (!bs['#' + list[i].o.b]) continue;
+      list[i].o.hide = list[i].hd + 1;
+      boxPut(list[i].k, list[i].o);
+      c = CUR[list[i].o.b];
+      if (c && c.fp === f) c.hide = list[i].o.hide;
+    }
+    call('lec_set_log_v2', { p_key: key, p_rows: part }, { keepalive: true }).then(function (r) {
+      for (i = 0; i < ids.length; i += 1) delete FLY['#' + ids[i]];
+      if (r && r.ok) drop(f, r);
+    });
+  }
+  function hook() {
+    if (Q.hooked) return;
+    Q.hooked = true;
+    try {
+      if (w.document && w.document.addEventListener) {
+        w.document.addEventListener('visibilitychange', function () {
+          if (w.document.visibilityState === 'hidden') onHide();
+        });
+      }
+      if (w.addEventListener) w.addEventListener('pagehide', onHide);
+    } catch (e) { /* 없음 */ }
+  }
+  /* 다음에 열 때: 쉼을 풀고 · 남은 줄이 있을 때만 먼저 보냄 */
+  function opened(key) {
+    Q.key = str(key);
+    Q.paused = false;
+    Q.fails = 0;
+    sweep();
+  }
+  function before(key) {
+    opened(key);
+    if (!pending(fp(key)).length) return Promise.resolve(null);
+    return flush(key).then(null, function () { return null; });
+  }
+  /* 판 적어 둠(이 화면 안 · 다음 순번 = 서버가 받은 가장 큰 순번 · 보관함 줄 가운데 큰 것 + 1) */
+  function reg(key, b, md, st, last) {
+    var f = fp(key), o = boxGet(lk(f, b)), mx = Math.max(0, Math.floor(+last) || 0), c = CUR[b], i;
+    if (o) { for (i = 0; i < o.rows.length; i += 1) mx = Math.max(mx, +o.rows[i].i || 0); }
+    c = c && c.fp === f ? c : null;
+    CUR[b] = { fp: f, b: b, md: md, st: str(st), next: Math.max(c ? c.next : 1, mx + 1), n50: 0, last: c ? c.last : null,
+               hide: c ? c.hide : 0, end: null };
+    hook();
+    return CUR[b];
+  }
+
+  /* ------------------------------------------------------------- 학생: 화면이 부르는 손잡이 */
+
+  /* 목록(옛 lec_set_home 그대로 + v2 스위치 · ts · todo) · 남은 줄이 있으면 먼저 보냄 · 보관함 남은 줄 수 · 나이를 서버에 알림 */
+  function setHomeV2(key) {
+    if (key == null || key === '') return Promise.resolve({ ok: false, err: 'key' });
+    return before(key).then(function () {
+      var s = boxSum(fp(key));
+      return call('lec_set_home_v2', { p_key: str(key), p_box: { n: s.n, age: s.age } });
+    }).then(function (r) {
+      if (r.ok && typeof r.today === 'string') Q.today = r.today;
+      return r;
+    });
+  }
+  /* 연습 판 열기(md = 'mem' 외우기 · 'due' 쌓인 오답) · 'off' · 'old' = 옛 함수로 · ok = r.b 판에 v2Add 로 답을 적음 */
+  function setOpenV2(key, id, md) {
+    return before(key).then(function () {
+      return call('lec_set_open_v2', { p_key: k0(key), p_set: id || null, p_md: str(md) });
+    }).then(function (r) {
+      if (r.ok && typeof r.b === 'string' && r.b) reg(key, r.b, str(r.md || md), r.today, r.last);
+      return r;
+    });
+  }
+  /* 폰이 만든 판(log 단계 · 옛 함수가 카드를 바꾸고 v2 줄은 기록만) → 판 id */
+  function v2Local(key) {
+    var b = typeof Lec.uuid === 'function' ? Lec.uuid() : null;
+    if (!b || key == null || key === '') return null;
+    Q.key = str(key);
+    reg(key, b, 'log', Q.today || (typeof Lec.isoDay === 'function' ? Lec.isoDay(now()) : ''), 0);
+    return b;
+  }
+  /* 답 한 줄 적기(동기) · o = {s, k, f, v, h, ms, nx, om, pr} · 평가 판은 o.i = 문항 차례(0부터) → {id, i} · 못 적음 = null */
+  function v2Add(key, b, o) {
+    var c = CUR[str(b)], f = fp(key), k, e, i, j, mx, r, kept;
+    if (!c || c.fp !== f || !isObj(o)) return null;
+    k = lk(f, c.b);
+    e = boxGet(k) || { b: c.b, md: c.md, st: c.st, hide: c.hide, rows: [] };
+    if (c.md === 'ev') {
+      i = Math.floor(+o.i) + 1;
+      if (!(i >= 1 && i <= I_MAX)) return null;
+    } else {
+      mx = 0;
+      for (j = 0; j < e.rows.length; j += 1) mx = Math.max(mx, +e.rows[j].i || 0);
+      i = Math.max(c.next, mx + 1);
+      if (i > I_MAX) return null;
+      c.next = i + 1;
+    }
+    r = { id: rid(), i: i, v: cpLeft(str(o.v), V_MAX), h: !!o.h, t: now() };
+    if (o.s) r.s = str(o.s);
+    if (o.k != null && o.k !== '') r.k = str(o.k);
+    if (o.f) r.f = str(o.f);
+    if (nat(o.ms, 3600000) !== null) r.ms = nat(o.ms, 3600000);
+    if (nat(o.nx, 600000) !== null) r.nx = nat(o.nx, 600000);
+    if (nat(o.om, 600000) !== null) r.om = nat(o.om, 600000);
+    if (typeof o.pr === 'boolean') r.pr = o.pr;
+    if (c.end != null) r.n = c.end;
+    e.rows.push(r);
+    kept = boxPut(k, e);
+    c.last = r;
+    Q.key = str(key);
+    if (!kept) flush(key);   /* 저장이 막히거나 참 = 바로 보냄 */
+    else if (c.md === 'ev') {
+      c.n50 += 1;
+      if (c.n50 >= SAVE_EVERY) { c.n50 = 0; saveEv(str(key), c.b); }
+    }
+    return { id: r.id, i: i };
+  }
+  /* 판 끝(n = 판 끝 줄 수 · 없으면 마지막 순번) → 남은 줄 보냄 · 응답(me · due = 목록 숫자) */
+  function v2End(key, b, n) {
+    var c = CUR[str(b)], f = fp(key), k, e, j, nn, r;
+    if (!c || c.fp !== f) return Promise.resolve({ ok: false, err: 'board' });
+    nn = Math.floor(+n);
+    if (!(nn >= 1 && nn <= I_MAX)) nn = c.next - 1 >= 1 ? Math.min(c.next - 1, I_MAX) : null;
+    c.end = nn;
+    k = lk(f, c.b);
+    e = boxGet(k);
+    if (nn !== null && e && e.rows.length) {
+      for (j = 0; j < e.rows.length; j += 1) e.rows[j].n = nn;
+      boxPut(k, e);
+    } else if (nn !== null && c.last && c.md !== 'ev') {
+      /* 줄이 다 갔으면 마지막 줄을 같은 id 로 한 번 더(서버는 줄을 다시 넣지 않고 판 끝만 적음) */
+      r = {};
+      for (j in c.last) { if (has(c.last, j)) r[j] = c.last[j]; }
+      r.n = nn;
+      boxPut(k, { b: c.b, md: c.md, st: c.st, hide: c.hide, rows: [r] });
+    }
+    Q.key = str(key);
+    return flush(key);
+  }
+  /* 평가 열기(단어 시험 · 문법 드릴) · 바른 답 0 · sv = 서버에 저장된 내 답 · box = 이 폰 보관함에만 있는 내 답 [{i(0부터), v}] */
+  function setTestV2(key, id) {
+    return before(key).then(function () {
+      return call('lec_set_test_v2', { p_key: k0(key), p_set: id || null });
+    }).then(function (r) {
+      var e, j, mine = [];
+      if (r.ok && typeof r['try'] === 'string' && r['try']) {
+        reg(key, r['try'], 'ev', typeof Lec.isoDay === 'function' && r.ts != null ? Lec.isoDay(+r.ts) : '', 0);
+        e = boxGet(lk(fp(key), r['try']));
+        if (e) { for (j = 0; j < e.rows.length; j += 1) mine.push({ i: e.rows[j].i - 1, v: str(e.rows[j].v) }); }
+        r.box = mine;
+      }
+      return r;
+    });
+  }
+  /* 평가 내기: 이 판 남은 줄을 보내고 채점(300 줄 · 256KB 넘으면 앞은 중간 저장으로) → done · end · ans(바른 답) · me · due 또는 done false · miss */
+  function setSendV2(key, tryId) {
+    var b = str(tryId);
+    opened(key);   /* 내기 = 학생이 누름 → 쉼을 풂 */
+    return enqueue(function () {
+      var f = fp(key), t = now(), all = pending(f, b).map(function (r) { return wire(r, t); }), parts = [], p;
+      while (all.length) {
+        p = chunk(all, EV_ROWS, EV_BYTES, 0);
+        parts.push(p);
+        all = all.slice(p.length);
+      }
+      if (!parts.length) parts.push([]);
+      function step(j) {
+        var last = j === parts.length - 1;
+        return call(last ? 'lec_set_send_v2' : 'lec_set_save_v2', { p_key: k0(key), p_try: b || null, p_rows: parts[j] }).then(function (r) {
+          if (!took(f, r) || last) return r;
+          return step(j + 1);
+        });
+      }
+      return step(0);
+    });
+  }
+
+  /* ------------------------------------------------------------- 선생님: 지켜보기(원장님 · 선생님 · 읽기만) */
+
+  function staffGone(e) {
+    if (typeof Lec.rngGoneErr === 'function') return Lec.rngGoneErr(e);
+    return !!e && (e.status === 404 || e.code === 'PGRST202' || e.code === 'PGRST205' || e.code === '42883' || e.code === '42P01');
+  }
+  /* call(fn, args) = 선생님 화면의 서버 부르기 · days = 1~60(비면 14) → {ok, from, to, sw, days, calls, box} · 옛 서버 = 'old' */
+  function v2Watch(callFn, days) {
+    var p, d = days == null || days === '' ? null : Math.floor(+days);
+    if (d !== null && !(d >= 1 && d <= 60)) d = null;
+    if (typeof callFn !== 'function') return Promise.resolve({ ok: false, err: 'network' });
+    try { p = callFn('lec_v2_watch', { p_days: d }); } catch (e0) { return Promise.resolve(staffGone(e0) ? { ok: false, err: 'old' } : { ok: false, err: 'error' }); }
+    return Promise.resolve(p).then(function (r) {
+      return isObj(r) ? r : { ok: false, err: 'error' };
+    }, function (e) {
+      if (staffGone(e)) return { ok: false, err: 'old' };
+      return { ok: false, err: e && e.message === 'network' ? 'network' : 'error' };
+    }).then(null, function () { return { ok: false, err: 'error' }; });
+  }
+
+  var api = {
+    setSNormV2: setSNormV2, setSentV2: setSentV2, setSpellV2: setSpellV2,
+    setHomeV2: setHomeV2, setOpenV2: setOpenV2, setTestV2: setTestV2, setSendV2: setSendV2,
+    v2Add: v2Add, v2End: v2End, v2Local: v2Local, v2Watch: v2Watch
+  };
+  for (var name in api) { if (has(api, name)) Lec[name] = api[name]; }
+})(window);
