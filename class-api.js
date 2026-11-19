@@ -2769,28 +2769,51 @@
     SET_NUMW = new RegExp('^(\\d{1,4}|' + SET_RNG + ')[.)]\\s+(\\S.*)$'),
     SET_NUMK = new RegExp('^(\\d{1,4}|' + SET_RNG + ')[.)]?\\s+(\\S.*)$'),
     SET_KO = /[가-힣ㄱ-ㆎ]/,
-    SET_KOW = /\s(?=\S*[가-힣ㄱ-ㆎ])/;
+    SET_KOW = /\s(?=\S*[가-힣ㄱ-ㆎ])/,
+    SET_KOEN = /^[A-Za-z '’\-().\/~～]+$/;
+  /* 탭 없는 한 칸 줄(trim 한 것) → «영어 | 뜻»(11-20 좁힘): 앞 번호(«001 » «41~42 »)를 떼고 한글이 든 첫 낱말 앞에서 나누되
+     영어 쪽이 영문자 · 띄어쓰기 · ' ’ - ( ) . / ~ 만(영문자 하나 이상 · 숫자 없음)이고 첫 한글 글자 앞까지 «| · :»가 없을 때만 · 아니면 null ·
+     영어 끝에 따로 떨어진 «~»(«～»)는 뜻이 «~»로 시작하지 않으면 뜻 머리로 옮김(«versus ~ 대(對)» → versus | ~ 대(對)) */
+  function setKoSplit(s) {
+    var n = '', k = SET_NUMK.exec(s), m, h, a, b;
+    if (k) { n = k[1]; s = k[2]; }
+    m = SET_KOW.exec(s);
+    if (!m) return null;
+    a = s.slice(0, m.index).trim();
+    b = s.slice(m.index + 1).trim();
+    h = s.slice(0, s.search(SET_KO));
+    if (h.length <= m.index || /[|·:]/.test(h) || !SET_KOEN.test(a) || !/[A-Za-z]/.test(a)) return null;
+    if ((k = / ([~～])$/.exec(a)) && !/^[~～]/.test(b)) { a = a.slice(0, k.index).trim(); b = k[1] + ' ' + b; }
+    return { n: n, c: [a, b] };
+  }
   /* 빈 줄 뺌 · 탭이 있으면 탭(엑셀 따옴표 칸은 tsvLines) · 없으면 빈칸 둘 이상이나 « | » · 칸 trim ·
      칸이 둘 이상이고 첫 칸이 번호(1~4자리 · «1.» «1)» 꼴도)면 번호 · 칸이 셋 이상이고 첫 칸이 번호 범위(«41~42» «18-19»)여도 번호 ·
      첫 칸이 «1. 낱말» 꼴이면 번호를 떼어 냄 · 칸 안 줄바꿈은 빈칸 하나로 잇고 그 줄은 nl: true ·
-     탭도 두 칸 띄움도 없는 줄(PDF 단어장 복사)은 한글이 든 첫 낱말 앞에서만 두 칸으로 나눔(첫 낱말부터 한글이면 안 나눔 · 앞 번호 «001 » 뗌) · 그 줄은 ko: true ·
+     탭도 두 칸 띄움도 없는 줄(PDF 단어장 복사)은 setKoSplit 꼴일 때만 두 칸으로 나눔(그 줄은 ko: true) ·
+     다만 탭 없는 줄(빈 줄 뺌) 가운데 70% 이상이 그 꼴일 때만 · 아니면 탭 없는 줄은 모두 예전처럼 한 칸 ·
      opt.raw = 칸만 나눔(줄바꿈 그대로 · 번호 · 한글 나눔 없음 · 칸 이름 줄 읽기용) */
   function setParse(text, opt) {
-    var out = [], lines = tsvLines(text), raw = !!(opt && opt.raw), i, s, c, n, j, m, r, ko;
+    var out = [], lines = tsvLines(text), raw = !!(opt && opt.raw), i, s, c, n, j, m, r, ko, tl = 0, tk = 0, useKo;
+    for (i = 0; !raw && i < lines.length; i += 1) {
+      s = lines[i].s;
+      if (!s.trim() || s.indexOf('\t') >= 0) continue;
+      tl += 1;
+      c = lines[i].c ? null : s.split(/ {2,}| \| /);
+      if (c && c.length === 1 && setKoSplit(c[0].trim())) tk += 1;
+    }
+    useKo = tl > 0 && tk * 10 >= tl * 7;
     for (i = 0; i < lines.length; i += 1) {
       s = lines[i].s;
       if (!s.trim()) continue;
       c = lines[i].c ? lines[i].c.slice() : s.split(/ {2,}| \| /);
       for (j = 0; j < c.length; j += 1) c[j] = raw ? c[j].trim() : c[j].replace(/[ \t]*\n[ \t]*/g, ' ').trim();
-      n = ''; ko = false;
-      if (!raw && !lines[i].c && c.length === 1 && (m = SET_KOW.exec(c[0])) && !SET_KO.test(c[0].slice(0, m.index))) {
-        c = [c[0].slice(0, m.index).trim(), c[0].slice(m.index + 1).trim()];
-        ko = true;
-      }
-      if (raw) n = '';
+      n = '';
+      ko = !!(useKo && !lines[i].c && c.length === 1 && (m = setKoSplit(c[0])));
+      if (ko) { n = m.n; c = m.c; }
+      else if (raw) n = '';
       else if (c.length > 1 && (m = /^(\d{1,4})[.)]?$/.exec(c[0]))) { n = m[1]; c.shift(); }
       else if (c.length > 2 && (m = SET_NUMR.exec(c[0]))) { n = m[1]; c.shift(); }
-      else if (c.length > 1 && (m = (ko ? SET_NUMK : SET_NUMW).exec(c[0]))) { n = m[1]; c[0] = m[2]; }
+      else if (c.length > 1 && (m = SET_NUMW.exec(c[0]))) { n = m[1]; c[0] = m[2]; }
       r = { n: n, c: c };
       if (lines[i].nl) r.nl = true;
       if (ko) r.ko = true;
