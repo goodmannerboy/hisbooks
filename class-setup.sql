@@ -4,7 +4,7 @@
 -- 1) supabase.com 로그인 → 히즈북스 프로젝트 → 왼쪽 «SQL Editor»
 -- 2) «New query» → 이 파일 전체(Ctrl+A → Ctrl+C)를 붙여 넣고 «Run»
 --    (경고 창이 뜨면 «Run this query»)
--- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 13/13 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림 · 녹음 저장 곳 · 30일 지난 녹음» 표가 나오면 통과입니다.
+-- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 14/14 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림 · 녹음 저장 곳 · 30일 지난 녹음» 표가 나오면 통과입니다.
 --    (스스로 점검 열은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
 --    빨간 오류가 나오면 아무것도 바뀌지 않은 것입니다(통째로 되돌려짐).
 --    «PDF 저장 곳» 칸이 «됨»이 아니면 강의 필기 PDF 저장 곳(Storage)만 못 만든 것입니다 · 강의실은 그대로 씁니다
@@ -10613,6 +10613,9 @@ begin
         v_sr := (v_q ->> 'sr')::boolean;
         v_okr := coalesce((v_q ->> 'ok')::boolean, false);
         v_src := coalesce(v_q ->> 'src', '');
+        if v_why = '' then   -- V2-35 아래 V2-5 인정 답(sp · se · r)이 세트 종류(s.kind)를 읽음 · 이 판 줄의 세트로
+          select * into s from public.lec_set xs where xs.id = v_set;
+        end if;
       else
         v_set := case when (v_e ->> 's') is not null then (v_e ->> 's')::uuid end;
         select q.e into v_q from jsonb_array_elements(rn.qs) as q(e)
@@ -11423,6 +11426,9 @@ begin
     join public.lec_set xs on xs.id = (q.e ->> 's')::uuid
    cross join lateral (select y.e from jsonb_array_elements(xs.items) as y(e) where y.e ->> 'k' = q.e ->> 'k' limit 1) it
    where public.lec__set_open(xs, k.cls) and not public.lec__set_busy(k.sid, xs.id) and not (rn.shut ? xs.id::text);
+  if to_regprocedure('public.lec__v2_ok2q(jsonb)') is not null then   -- V2-35 쓰기 문항(sp · gw · se · r)에 켜진 인정 답 a2(V2-5 절이 있을 때만 · 폰 채점 = 서버 채점)
+    v_q := public.lec__v2_ok2q(v_q);
+  end if;
   if p_md = 'review' then
     select jsonb_build_object('voc', count(*) filter (where x.e ->> 'kd' = 'voc'), 'gu', count(*) filter (where x.e ->> 'kd' = 'gu'),
                               'gram', count(*) filter (where x.e ->> 'kd' = 'gram'))
@@ -12451,7 +12457,7 @@ begin
 end
 $$;
 
--- ---------------------------------------------------------------- V2-5 (11-20) 선생님 현황 · 첫 답 · 인정 답 · 열셋째 스스로 점검
+-- ---------------------------------------------------------------- V2-5 (11-20) 선생님 현황 · 첫 답 · 인정 답 · 열넷째 스스로 점검
 -- 결론안 v2(11-20) 묶음 ⑤: 결과 표에서 학생 줄 → «첫 답에서 틀린 문항» · 결과 표에 «포인트별 반 첫 답 정답률» · 틀린 쓰기 답 «이 답도 맞음»
 -- 앞 절은 그대로 두고 더하기만(옛 함수 몸 · 표 칸 바꿈 0 · DROP 0 · V2-1 안은 «-- V2-5» 꼬리표 자리만 넓힘):
 --   1) 표 둘(행 보안 · 표로는 아무도 못 읽고 못 씀 · 함수로만): lec_set_ok2(인정 답 · 세트 · 문항 열쇠 · 맞춤 글 · 누가 · 언제 · 되돌림 = 줄 하나 더) ·
@@ -12460,7 +12466,7 @@ $$;
 --      켜기 전 기록 다시 매겨 견주기(lec__v2_regrade · 재는 데에만 · 화면 0 · SQL Editor 에서 select public.lec__v2_regrade(null);)
 --   3) 선생님 함수 셋(원장님만 · 결과 표 lec_set_staff 와 같은 권한 · 학생 열쇠로는 못 부름): lec_set_staff_v2(결과 표 + 포인트별 반 첫 답 정답률 +
 --      인정 답으로 맞은 첫 답이 5% 넘는 문항) · lec_set_wrong1_v2(학생 하나 · 첫 답에서 틀린 문항) · lec_set_ok2_v2(이 답도 맞음 · 되돌리기)
---   4) 열셋째 스스로 점검(가짜 세트 · 열쇠 · 스위치 · 끝에 모두 되돌림)
+--   4) 열넷째 스스로 점검(가짜 세트 · 열쇠 · 스위치 · 끝에 모두 되돌림)
 -- 인정 답 맞추기: 단어 · 문법 = lec__set_norm 이 같음(«/» 로 나누지 않음 · 1~200 글자) · 구문 = lec__set_snorm_v2 가 같음(1~400 글자) · 고르기 문항은 없음
 -- 옛 채점 lec_set_ans 는 그대로(인정 답을 안 읽음 · 옛 판 답은 넣을 때 다시 셈) · v2 채점(lec__v2_ev · lec_set_log_v2)과 폰 채점이 인정 답을 읽음
 -- 운영에 넣은 뒤 확인(바꾸는 것 없음):
@@ -12537,11 +12543,12 @@ language sql stable set search_path = public as $$
 $$;
 
 -- 쌓인 오답 판 문항(lec_set_open_v2 의 q)에 인정 답 a2 를 실음(쓰기 문항 w · r 만 · 있을 때만 · 차례 그대로)
+--   V2-35: V2-3 새 판(lec__v2_open3 의 q)도 같은 함수 · 쓰기 문항 sp(단어) · gw · se(구문 통째) · r(문법) · 고르기 c 는 안 실음
 create or replace function public.lec__v2_ok2q(p_q jsonb) returns jsonb
 language sql stable set search_path = public as $$
   select coalesce(jsonb_agg(case when z.a2 is null then z.e else z.e || jsonb_build_object('a2', z.a2) end order by z.o), '[]'::jsonb)
     from (select q.e, q.o,
-                 case when q.e ->> 'f' in ('w', 'r') then
+                 case when q.e ->> 'f' in ('w', 'r', 'sp', 'gw', 'se') then   -- V2-35 V2-3 새 판 꼴 sp · gw · se
                    (select jsonb_agg(y.m order by y.id)
                       from (select distinct on (x2.nm) x2.nm, x2.m, x2.id, x2.undo
                               from public.lec_set_ok2 x2
@@ -12552,13 +12559,13 @@ language sql stable set search_path = public as $$
             from jsonb_array_elements(case when jsonb_typeof(p_q) = 'array' then p_q else '[]'::jsonb end) with ordinality as q(e, o)) z
 $$;
 
--- 규칙 판정(읽을 때 · 인정 답 없이 · 서버가 매기지 않은 «기록만» 줄용): 단어 쓰기 sp = lec__set_spell_v2 · 구문 쓰기 se = lec__set_sent_v2 ·
+-- 규칙 판정(읽을 때 · 인정 답 없이 · 서버가 매기지 않은 «기록만» 줄용): 단어 쓰기 sp = lec__set_spell_v2 · 구문 쓰기 se · 배열 ar = lec__set_sent_v2 ·
 --   고르기 c = lec__set_norm 같음 · 쓰기 w · r = lec__set_match(200 글자까지)
 create or replace function public.lec__v2_r0(p_kd text, p_items jsonb, p_k text, p_f text, p_v text) returns boolean
 language sql stable set search_path = public as $$
   select coalesce(case
            when p_f = 'sp' and p_kd = 'voc' then public.lec__set_spell_v2(p_v, p_items, p_k)
-           when p_f = 'se' and p_kd = 'gu' then public.lec__set_sent_v2(p_v, it.e ->> 'e')
+           when p_f in ('se', 'ar') and p_kd = 'gu' then public.lec__set_sent_v2(p_v, it.e ->> 'e')   -- V2-35 구문 배열 ar(V2-3 lec__v2_judge 와 같은 셈)
            when p_f = 'c' and p_kd = 'gram' then public.lec__set_norm(p_v) = public.lec__set_norm(it.e ->> 'a')
            when p_f in ('w', 'r') and p_kd in ('voc', 'gram')
              then public.lec__set_match(p_v, case when p_kd = 'voc' then it.e ->> 'w' else it.e ->> 'a' end) and char_length(p_v) <= 200
@@ -12570,7 +12577,9 @@ $$;
 -- 첫 답(새 기록 표 lec_set_log 에서 · 학생 · 문항마다 답한 때 차례 첫 줄): 스스로 확인(k) · 문항 없음(gone) · 이미 찬 칸(done) · 빈 답 뺌 ·
 --   b0 = 규칙 판정(채점 때 인정 답으로 맞은 줄 = 틀림 · 힌트 본 연습 답 = 틀림) · o2 = 지금 켜진 인정 답(쓰기 답만) · ok = b0 또는 o2 ·
 --   rno = 그 학생이 이 세트에 줄을 남긴 판을 판 연 때 차례로 센 번호
-create or replace function public.lec__v2_first(p_set uuid)
+--   V2-35: 이름 lec__v2_ans1(V2-3 의 lec__v2_first(jsonb) = 카드 가장 이른 날과 겹쳐 바꿈) · V2-3 새 판 줄(bk spell · guw · gram · review)도 셈 ·
+--     구문 써 보기는 배열 ar 첫 답이 그 문항 첫 답(오늘 볼 것 판은 se) · 힌트 본 답 = 틀림 · 배열 ar 은 인정 답 없음
+create or replace function public.lec__v2_ans1(p_set uuid)
 returns table (sid text, k text, f text, v text, bk text, h boolean, b0 boolean, o2 bigint, ok boolean, rno integer, ta timestamptz)
 language sql stable set search_path = public as $$
   with s as (select xs.id, xs.kind, xs.items from public.lec_set xs where xs.id = p_set),
@@ -12581,7 +12590,7 @@ language sql stable set search_path = public as $$
   fa as (select distinct on (xl.sid, xl.k) xl.id, xl.sid, xl.k, xl.f, xl.v, xl.bk, xl.h, xl.sr, xl.b, xl.ta
            from public.lec_set_log xl
           where xl.set_id = p_set and xl.k <> '' and xl.why not in ('gone', 'done')
-            and xl.f in ('sp', 'se', 'w', 'r', 'c') and btrim(xl.v) <> ''
+            and xl.f in ('sp', 'se', 'w', 'r', 'c', 'ar') and btrim(xl.v) <> ''   -- V2-35 구문 배열 ar
           order by xl.sid, xl.k, xl.ta, xl.bo, xl.b, xl.i, xl.id)
   select fa.sid, fa.k, fa.f, fa.v, fa.bk, fa.h, x.b0, x.o2, x.b0 or x.o2 is not null, rn.rno, fa.ta
     from fa
@@ -12628,6 +12637,7 @@ $$;
 
 -- 다시 셈(이 답도 맞음 · 되돌리기 뒤 · 그 세트 · 문항만): 쓰기 답 줄 = 옛 판 시험 칸(t · 옛 lec_set_ans) · v2 평가 줄(l · ev · 그 판 칸) ·
 --   v2 쌓인 오답 줄(l · due · 카드에 반영한 줄) · 지금 맞음(마지막 고침 줄 · 없으면 원래 판정) ≠ (규칙 또는 켜진 인정 답)이면 고침 줄 + 그 판 점수 ±1
+--   V2-35: V2-3 새 판(spell · guw · gram · review)의 쌓인 오답 문항 줄(src due · 카드에 반영한 줄 · 단어 sp · 문법 r)도 l 로 셈 · card · say 줄(d · g 만)은 안 셈
 --   학생마다: kn(단어 시험 · 그 문항 마지막 답) · z · y(날짜 차례 다시 접기 · 지금 카드 = 고치기 전 접기일 때만) · 첫 판 f1 · 마지막 판 last_sc(고치기 전 값과 같을 때만) ·
 --   통과(없으면 넣고 ch.pa · 되돌려 조건이 깨지면 같은 때 넣은 것만 지움) · d · t · w · best · last_at 은 그대로 · 돌려줌 = 고친 줄 수
 create or replace function public.lec__v2_fix(p_set uuid, p_k text, p_ok2 bigint) returns integer
@@ -12681,8 +12691,9 @@ begin
                and not exists (select 1 from public.lec_set_fix fx where fx.log_id = xl.id and fx.g),
              xl.h and xl.bk <> 'ev', xl.v, xl.done
         from public.lec_set_log xl
-       where xl.set_id = p_set and xl.k = p_k and xl.f in ('w', 'r')
-         and ((xl.bk = 'ev' and xl.why in ('', 'late')) or (xl.bk = 'due' and xl.done))
+       where xl.set_id = p_set and xl.k = p_k and xl.f in ('w', 'r', 'sp')   -- V2-35 sp = V2-3 오늘 볼 것 판의 단어 쌓인 오답
+         and ((xl.bk = 'ev' and xl.why in ('', 'late')) or (xl.bk = 'due' and xl.done)
+              or (xl.bk in ('spell', 'guw', 'gram', 'review') and xl.src = 'due' and xl.done))   -- V2-35 V2-3 새 판의 쌓인 오답 줄(z 를 바꾼 줄)
     ) z
     order by z.sid, z.day, z.at, z.src, z.lid
   loop
@@ -12853,13 +12864,13 @@ begin
                    cross join lateral jsonb_array_elements(xs.items) as u(e)
                    where xs.id = p_set and xs.kind in ('gu', 'gram') and coalesce(btrim(u.e ->> 'p'), '') <> ''
                    group by btrim(u.e ->> 'p')) ip
-            join public.lec__v2_first(p_set) fa on fa.k = any (ip.ks)
+            join public.lec__v2_ans1(p_set) fa on fa.k = any (ip.ks)   -- V2-35 이름
            group by ip.p, ip.n) z;
   select coalesce(jsonb_agg(jsonb_build_object('k', z.k, 'w', z.w, 'n', z.n, 'f', z.f) order by z.o), '[]'::jsonb)
     into v_fx
     from (select fa.k, count(*)::integer as n, (count(*) filter (where fa.ok and not fa.b0))::integer as f, min(u.o) as o,
                  min(left(coalesce(case xs.kind when 'voc' then u.e ->> 'w' when 'gu' then u.e ->> 'e' else u.e ->> 's' end, ''), 40)) as w
-            from public.lec__v2_first(p_set) fa
+            from public.lec__v2_ans1(p_set) fa   -- V2-35 이름
             join public.lec_set xs on xs.id = p_set
            cross join lateral jsonb_array_elements(xs.items) with ordinality as u(e, o)
            where u.e ->> 'k' = fa.k
@@ -12895,7 +12906,7 @@ begin
            'v', fa.v, 'f', fa.f, 'no', fa.rno, 'at', fa.ta, 'acc', fa.o2 is not null,
            'can', fa.f in ('sp', 'se', 'w', 'r') and not (fa.h and fa.bk <> 'ev')) order by u.o), '[]'::jsonb)
     into v_rows
-    from public.lec__v2_first(p_set) fa
+    from public.lec__v2_ans1(p_set) fa   -- V2-35 이름
    cross join lateral jsonb_array_elements(s.items) with ordinality as u(e, o)
    where fa.sid = p_sid and not fa.b0 and u.e ->> 'k' = fa.k;
   return jsonb_build_object('ok', true, 'set', s.id, 'sid', p_sid, 'items', v_rows);
@@ -12933,7 +12944,8 @@ begin
   if (found and not v_cur.undo) = p_on then
     return jsonb_build_object('ok', true, 'on', p_on, 'n', 0, 'again', true);
   end if;
-  v_who := lower(btrim(coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'email', '')));
+  select st.name into v_who from public.lec__staff() st;   -- V2-35 who = 선생님 이름(lec_lecture.created_by · lec_set.made_by 꼴 · 이메일 0)
+  v_who := coalesce(v_who, '');   -- V2-35
   insert into public.lec_set_ok2 (set_id, k, m, nm, who, undo)
   values (p_set, p_k, left(btrim(p_v), 400), v_nm, v_who, not p_on)
   returning id into v_id;
@@ -12944,7 +12956,7 @@ $$;
 
 -- 권한: 속 함수 = 밖에서 못 부름 · 선생님 함수 셋 = 로그인한 사람만(안에서 원장님 확인 · 결과 표 lec_set_staff 와 같음)
 revoke all on function public.lec__v2_ok2nm(text, text), public.lec__v2_ok2id(uuid, text, text, text), public.lec__v2_ok2s(uuid),
-  public.lec__v2_ok2q(jsonb), public.lec__v2_r0(text, jsonb, text, text, text), public.lec__v2_first(uuid),
+  public.lec__v2_ok2q(jsonb), public.lec__v2_r0(text, jsonb, text, text, text), public.lec__v2_ans1(uuid),   -- V2-35 이름
   public.lec__v2_zy(jsonb, text, text), public.lec__v2_fix(uuid, text, bigint), public.lec__v2_regrade(uuid)
   from public, anon, authenticated;
 revoke all on function public.lec_set_staff_v2(uuid), public.lec_set_wrong1_v2(uuid, text), public.lec_set_ok2_v2(uuid, text, text, boolean)
@@ -12952,7 +12964,7 @@ revoke all on function public.lec_set_staff_v2(uuid), public.lec_set_wrong1_v2(u
 grant execute on function public.lec_set_staff_v2(uuid), public.lec_set_wrong1_v2(uuid, text), public.lec_set_ok2_v2(uuid, text, text, boolean)
   to authenticated;
 
--- 열셋째 스스로 점검(V2-5): 선생님 함수 막기(로그인 없음 · 다른 계정) · 옛 판 단어 시험 틀린 쓰기 답 → 이 답도 맞음 → 그 판 점수 · kn · 통과 · f1 · z 다시 셈 ·
+-- 열넷째 스스로 점검(V2-5): 선생님 함수 막기(로그인 없음 · 다른 계정) · 옛 판 단어 시험 틀린 쓰기 답 → 이 답도 맞음 → 그 판 점수 · kn · 통과 · f1 · z 다시 셈 ·
 --   원래 답 줄 · 세트 문항 · 다른 세트 그대로 · 되돌리기 = 처음과 같음(두 번 왕복) · 첫 답은 새 기록 표에서만 · v2 드릴 첫 답 · 포인트별 정답률(낮은 차례) ·
 --   포인트 없는 세트 = 줄 없음 · 5% 표시 · 고르기 문항 = input · 구문 외우기 첫 답(뒤에 맞혀도 남음) · 구문 «/» 안 붙음 · 폰에 실은 인정 답 = 서버 채점 ·
 --   평가 여는 응답에 인정 답 0 · 켜기 전 기록 견주기 · 권한
@@ -13073,7 +13085,8 @@ begin
       end if;
     end loop;
     if (select count(*) from public.lec_set_ok2 o where o.set_id = v_sv) <> 4
-       or (select count(*) from public.lec_set_ok2 o where o.set_id = v_sv and o.undo) <> 2 then
+       or (select count(*) from public.lec_set_ok2 o where o.set_id = v_sv and o.undo) <> 2
+       or exists (select 1 from public.lec_set_ok2 o where o.set_id = v_sv and o.who is distinct from 'Benjamin') then   -- V2-35 who = 선생님 이름
       raise exception '점검 실패(V2-5 인정 답 줄)';
     end if;
 
@@ -13174,6 +13187,34 @@ begin
       raise exception '점검 실패(V2-5 다른 세트 · 평가 응답 · 견주기): % / %', left(r::text, 300), left(r2::text, 300);
     end if;
 
+    -- 9b) V2-35 V2-3 새 판에도 인정 답: 단어 써 보기 판 문항에 a2(인정 답 있는 문항만) · 그 답 = 서버 채점 맞음(채점 때 인정 답 표시) ·
+    --     구문 써 보기 문항에 a2 · 배열(ar)은 인정 답을 안 읽음 · 통째(se)는 읽음(폰 Lec.setCheckV2 와 같음)
+    update public.lec_v2_cfg set spell = true, guw = true where id = 1;
+    r := public.lec_set_open_v2(v_kb, v_sx, 'spell');
+    v_b := (r ->> 'b')::uuid;
+    if (r ->> 'ok') is distinct from 'true'
+       or not exists (select 1 from jsonb_array_elements(r -> 'q') as q(e) where q.e ->> 'k' = 'k1' and q.e -> 'a2' = '["colr"]'::jsonb)
+       or exists (select 1 from jsonb_array_elements(r -> 'q') as q(e) where q.e ->> 'k' = 'k2' and q.e ? 'a2') then
+      raise exception '점검 실패(V2-35 써 보기 판 인정 답 실음): %', left(r::text, 400);
+    end if;
+    r := public.lec_set_log_v2(v_kb, jsonb_build_array(
+           jsonb_build_object('id', md5('v35s' || v_ks), 'b', v_b, 'i', 1, 's', v_sx, 'k', 'k1', 'f', 'sp', 'v', 'COLR', 'ago', 10)));
+    if (select xl.sr::text || xl.ok::text from public.lec_set_log xl where xl.id = md5('v35s' || v_ks)) is distinct from 'truetrue'
+       or not exists (select 1 from public.lec_set_fix fx where fx.log_id = md5('v35s' || v_ks) and fx.g) then
+      raise exception '점검 실패(V2-35 써 보기 판 인정 답 채점): %', left(r::text, 300);
+    end if;
+    perform public.lec_set_ok2_v2(v_sr, 'k1', 'I am boy', true);
+    r := public.lec_set_open_v2(v_kb, v_sr, 'guw');
+    v_b := (r ->> 'b')::uuid;
+    r2 := public.lec_set_log_v2(v_kb, jsonb_build_array(
+            jsonb_build_object('id', md5('v35a' || v_ks), 'b', v_b, 'i', 1, 's', v_sr, 'k', 'k1', 'f', 'ar', 'v', 'I am boy', 'ago', 20),
+            jsonb_build_object('id', md5('v35e' || v_ks), 'b', v_b, 'i', 2, 's', v_sr, 'k', 'k1', 'f', 'se', 'v', 'i am boy.', 'ago', 10)));
+    if (r #> '{q,0,a2}') is distinct from '["I am boy"]'::jsonb
+       or (select xl.sr::text from public.lec_set_log xl where xl.id = md5('v35a' || v_ks)) is distinct from 'false'
+       or (select xl.sr::text || xl.ok::text from public.lec_set_log xl where xl.id = md5('v35e' || v_ks)) is distinct from 'truetrue' then
+      raise exception '점검 실패(V2-35 구문 써 보기 인정 답): % / %', left(r::text, 300), left(r2::text, 300);
+    end if;
+
     -- 10) 권한: 선생님 함수 셋 = 로그인한 사람만 · 표 둘 = 아무도 · 속 함수 = 밖에서 못 부름
     if has_function_privilege('anon', 'public.lec_set_staff_v2(uuid)', 'execute')
        or has_function_privilege('anon', 'public.lec_set_wrong1_v2(uuid, text)', 'execute')
@@ -13183,7 +13224,7 @@ begin
        or not has_function_privilege('authenticated', 'public.lec_set_ok2_v2(uuid, text, text, boolean)', 'execute')
        or has_function_privilege('authenticated', 'public.lec__v2_fix(uuid, text, bigint)', 'execute')
        or has_function_privilege('authenticated', 'public.lec__v2_regrade(uuid)', 'execute')
-       or has_function_privilege('anon', 'public.lec__v2_first(uuid)', 'execute') then
+       or has_function_privilege('anon', 'public.lec__v2_ans1(uuid)', 'execute') then   -- V2-35 이름
       raise exception '점검 실패(V2-5 권한)';
     end if;
     select string_agg(c.relname || ' ' || u.rl, ', ') into v_t
@@ -13207,7 +13248,7 @@ $$;
 notify pgrst, 'reload schema';
 
 select '강의실 준비 끝' as "결과",
-       '점검 13/13 통과' as "점검",
+       '점검 14/14 통과' as "점검",
        (select count(*) from public.lec__roster()) as "학생 수",
        (select count(*) from public.lec_lecture) as "강의 수",
        public.lec__pdf_store() as "PDF 저장 곳",

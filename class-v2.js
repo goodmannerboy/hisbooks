@@ -4,7 +4,8 @@
    선생님: setStaffV2(call, set) = 결과 표 + pts(포인트별 반 첫 답 정답률) + fx(인정 답으로 맞은 첫 답이 5% 넘는 문항) · v2 없는 서버 = 옛 결과 표 그대로 ·
      setWrong1V2(call, set, sid) = 학생 하나 · 첫 답에서 틀린 문항 · setOk2PutV2(call, set, k, v, on) = 이 답도 맞음(on true) · 되돌리기(false)
    폰 채점: 외우기 판 응답 ok2 = {열쇠: [맞춤 글]} · 쌓인 오답 판 문항 a2 = [맞춤 글](있을 때만) →
-     규칙(setSpellV2 · setSentV2 · setMatch)이 틀리면 setOk2V2(답, 목록, 세트 종류 voc | gu | gram)로 한 번 더(= 서버 lec__v2_ok2id) */
+     규칙(setSpellV2 · setSentV2 · setMatch)이 틀리면 setOk2V2(답, 목록, 세트 종류 voc | gu | gram)로 한 번 더(= 서버 lec__v2_ok2id)
+   V2-35: V2-3 새 판(spell · guw · gram · review) 문항도 a2(쓰기 꼴 sp · gw · se · r) · 그 판 폰 채점 = Lec.setCheckV2 가 a2 를 읽음(아래 V2-3 IIFE) */
 (function (w) {
   'use strict';
 
@@ -667,7 +668,8 @@
    - Lec.setArrV2(e, seed) = 구문 배열 조각 {ans, parts, toks}(«/» 덩어리가 둘 이상이면 덩어리 · 아니면 낱말 = 종이 어순 배열 나눔 · 씨앗으로 섞음 ·
        그대로면 앞 둘 바꿈)
    - Lec.setHintV2(a, f) = 힌트 {c 첫 글자, n 글자 수(빈칸 · 부호 뺌), m 가린 꼴}: 단어(sp) = 첫 답 꼴(«/» 앞 · 괄호 뺌) · 구문(gw · se) = 낱말마다 첫 글자
-   - Lec.setCheckV2(q, v, qs) = 폰 미리 채점(서버 lec__v2_judge 의 sr 과 같은 셈 · 단어 «뜻 여럿»은 판 안 문항 qs 로만 봄 · 서버는 세트 전부) */
+   - Lec.setCheckV2(q, v, qs) = 폰 미리 채점(서버 lec__v2_judge 의 sr 과 같은 셈 · 단어 «뜻 여럿»은 판 안 문항 qs 로만 봄 · 서버는 세트 전부)
+       V2-35: 규칙이 틀리면 문항의 인정 답 q.a2(V2-5 · Lec.setOk2V2)로 한 번 더 · 구문 배열 단계는 q 의 f 를 'ar' 로 넘김(인정 답 안 읽음) */
 (function (w) {
   'use strict';
 
@@ -756,6 +758,11 @@
     } else if (f === 'gw' || f === 'se' || f === 'ar') sr = X.setSentV2(v, q.a);
     else if (f === 'c') sr = X.setNorm(v) === X.setNorm(q.a);
     else sr = X.setMatch(v, q.a);
+    /* V2-35 규칙이 틀리면 문항의 켜진 인정 답 a2(V2-5 · 서버 lec__v2_ok2id 와 같은 셈) · 쓰기 꼴만(sp · gw · se · w · r) ·
+       배열 단계는 f 'ar' 로 넘김(인정 답 안 읽음 · 서버 lec__v2_judge 도 줄 f 'ar' 이 아니면 통째 se 로 셈) */
+    if (!sr && isArr(q.a2) && typeof X.setOk2V2 === 'function' && ['sp', 'gw', 'se', 'w', 'r'].indexOf(f) >= 0) {
+      sr = X.setOk2V2(v, q.a2, q.kd || (f === 'gw' || f === 'se' ? 'gu' : (f === 'r' ? 'gram' : 'voc')));
+    }
     return !!sr;
   }
 

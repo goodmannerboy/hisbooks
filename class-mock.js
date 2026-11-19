@@ -4922,6 +4922,7 @@
         } else if (rn.md !== 'due') {   /* V2-3 새 판(spell · guw · gram · review) 채점 = v3Judge 한 곳 */
           q = v3Judge(d, rn, k.cls, e);
           setId = q.s; why = q.why; f = q.f; sr = q.sr; okr = q.ok; src = q.src;
+          if (why === '') s = sFind(d, setId);   /* V2-35 아래 V2-5 인정 답(sp · se · r)이 세트 종류(s.kind)를 읽음 · 이 판 줄의 세트로 */
         } else {
           setId = e.s;
           q = null;
@@ -5363,6 +5364,7 @@
       if (x.z) it.z = true;
       q.push(it);
     }
+    q = v5Q(d, q);   /* V2-35 쓰기 문항(sp · gw · se · r)에 켜진 인정 답 a2(있을 때만 · 폰 채점 = 서버 채점) */
     if (md === 'review') {
       left = { voc: 0, gu: 0, gram: 0 };
       for (i = 0; i < all.length; i += 1) {
@@ -5638,11 +5640,11 @@
     }
     return o;
   }
-  /* lec__v2_ok2q: 쌓인 오답 판 쓰기 문항에 a2(있을 때만) */
+  /* lec__v2_ok2q: 쌓인 오답 판 쓰기 문항에 a2(있을 때만) · V2-35 V2-3 새 판(v3Open3)도 · sp · gw · se 더함 */
   function v5Q(d, q) {
     var out = [], i, m;
     for (i = 0; i < q.length; i += 1) {
-      if (q[i].f === 'w' || q[i].f === 'r') {
+      if (['w', 'r', 'sp', 'gw', 'se'].indexOf(q[i].f) >= 0) {   /* V2-35 */
         m = v5Map(d, q[i].s);
         if (has(m, q[i].k)) { out.push(v2Merge(q[i], { a2: m[q[i].k] })); continue; }
       }
@@ -5667,7 +5669,7 @@
     if (f === 'sp' && s.kind === 'voc') return !!v2Spell(v, s.items, k);
     it = sItem(s, k);
     if (!it) return false;
-    if (f === 'se' && s.kind === 'gu') return !!v2Sent(v, str(it.e));
+    if ((f === 'se' || f === 'ar') && s.kind === 'gu') return !!v2Sent(v, str(it.e));   /* V2-35 구문 배열 ar(v3Judge 와 같은 셈) */
     if (f === 'c' && s.kind === 'gram') return X.setNorm(v) === X.setNorm(str(it.a));
     if ((f === 'w' || f === 'r') && (s.kind === 'voc' || s.kind === 'gram')) return !!X.setMatch(v, str(s.kind === 'voc' ? it.w : it.a)) && cps(v) <= 200;
     return false;
@@ -5680,7 +5682,7 @@
     if (a.i !== b.i) return a.i < b.i;
     return a.id < b.id;
   }
-  /* lec__v2_first: 학생 · 문항마다 첫 답(새 기록 표에서) */
+  /* lec__v2_ans1(V2-35 이름 · 옛 lec__v2_first(uuid)): 학생 · 문항마다 첫 답(새 기록 표에서 · V2-3 새 판 줄도 · 구문 배열 ar 첫 답) */
   function v5First(d, s) {
     var rows = d.slog.filter(function (x) { return x.set_id === s.id; }), bmin = {}, bl = [], rno = {}, fa = {}, out = [], i, x, key, hh, b0, o2;
     for (i = 0; i < rows.length; i += 1) {
@@ -5699,7 +5701,7 @@
     }
     for (i = 0; i < rows.length; i += 1) {
       x = rows[i];
-      if (x.k === '' || x.why === 'gone' || x.why === 'done' || ['sp', 'se', 'w', 'r', 'c'].indexOf(x.f) < 0 || sp(x.v) === '') continue;
+      if (x.k === '' || x.why === 'gone' || x.why === 'done' || ['sp', 'se', 'w', 'r', 'c', 'ar'].indexOf(x.f) < 0 || sp(x.v) === '') continue;   /* V2-35 ar */
       key = JSON.stringify([x.sid, x.k]);
       if (!has(fa, key) || v5Before(x, fa[key])) fa[key] = x;
     }
@@ -5764,8 +5766,9 @@
     }
     for (i = 0; i < d.slog.length; i += 1) {
       x = d.slog[i];
-      if (x.set_id !== s.id || x.k !== k || (x.f !== 'w' && x.f !== 'r')) continue;
-      if (!((x.bk === 'ev' && (x.why === '' || x.why === 'late')) || (x.bk === 'due' && x.done))) continue;
+      if (x.set_id !== s.id || x.k !== k || (x.f !== 'w' && x.f !== 'r' && x.f !== 'sp')) continue;   /* V2-35 sp = V2-3 오늘 볼 것 판의 단어 쌓인 오답 */
+      if (!((x.bk === 'ev' && (x.why === '' || x.why === 'late')) || (x.bk === 'due' && x.done) ||
+            (['spell', 'guw', 'gram', 'review'].indexOf(x.bk) >= 0 && x.src === 'due' && x.done))) continue;   /* V2-35 V2-3 새 판의 쌓인 오답 줄 */
       ents.push({ src: 'l', tid: x.bk === 'ev' ? x.b : null, ix: x.bk === 'ev' ? x.i - 1 : null, lid: x.id, sid: x.sid, tk: x.src,
                   at: x.ta, day: x.day, st: x.bk === 'ev' ? !!x.sr : !!x.ok,
                   b0: !!x.sr && !(x.h && x.bk !== 'ev') && !v5HasG(d, x.id), hh: !!x.h && x.bk !== 'ev', v: str(x.v), cd: !!x.done });
@@ -5973,7 +5976,7 @@
     cur = v5Last(d, s.id, a.p_k, nm);
     if ((!!cur && !cur.undo) === a.p_on) return { ok: true, on: a.p_on, n: 0, again: true };
     d.v5seq += 1;
-    row = { id: d.v5seq, set_id: s.id, k: a.p_k, m: cpLeft(sp(a.p_v), 400), nm: nm, who: ME && ME.admin ? 'benjamin@his.kr' : '',
+    row = { id: d.v5seq, set_id: s.id, k: a.p_k, m: cpLeft(sp(a.p_v), 400), nm: nm, who: ME && ME.name ? str(ME.name) : '',   /* V2-35 who = 선생님 이름(lec__staff) */
             at: sNow(), undo: !a.p_on };
     d.sok2.push(row);
     n = v5Fix(d, s, a.p_k, row.id);
