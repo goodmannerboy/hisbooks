@@ -4514,6 +4514,7 @@
       for (i = 0; i < V2SW.length; i += 1) { if ((',' + V2URL + ',').indexOf(',' + V2SW[i] + ',') >= 0) d.v2cfg[V2SW[i]] = true; }
       V2URL = null;
     }
+    if (V3RONQ !== undefined) { d.v2cfg.review_on = V3RONQ; V3RONQ = undefined; save(d); }   /* V2-3 ?revon= 켠 날(한 번 넣고 저장) */
     if (typeof d.v2bn !== 'number') d.v2bn = 0;
     return d;
   }
@@ -5065,9 +5066,16 @@
        lec_set_test_v2(오늘 볼 것 판도 닫음)를 넓힘(그 자리마다 V2-3 꼬리표)
      다른 점: 일정 칸 고친 시각 t 가 '5' 꼴 글자면 앱(examMerge)처럼 수로 읽음(SQL 은 0 · 히즈북스는 늘 수로 씀) · 판 씨앗 FNV(문항 차례는 같음)
      손잡이: ?dayoff=N 또는 LecMock.dayOff(N) = 폰 · 서버 «지금»을 N 일 옮김(window.__lecNow · 0 = 돌려놓음) ·
-       window.__lecSrvOff(서버만 옮김 · V2-1) · LecMock.v3 = 셈 함수(plan · enorm · grade · exams · examOf · todo · pan · sum · 시험용) */
+       window.__lecSrvOff(서버만 옮김 · V2-1) · LecMock.v3 = 셈 함수(plan · enorm · grade · exams · examOf · todo · pan · sum · 시험용)
+     켠 날(review_on · SQL lec_v2_cfg 칸 + 트리거 lec__v2_revon 흉내): 다시 보기를 마지막으로 켠 날 · 그 앞 일정 날은 볼 날 아님(놓친 날도 그 뒤만) ·
+       LecMock.v2Cfg 로 review 가 끔 → 켬이 되면 오늘 · 끄면 그대로 · 비면 자르지 않음 · ?revon=YYYY-MM-DD 또는 LecMock.v3.revOn(날 | null) 로 정함 ·
+       ?v2=review(처음 불러올 때 켬)는 날을 적지 않음(칸 빔 = 예전 그대로) */
   var V3KO = { voc: 1, gu: 2, gram: 3 };
   var V3OFF = 0, V3BASE = null, V3HOOK = false;
+  var V3RONQ;   /* ?revon= 값(undefined = 없음 · null = 칸 비움 · 날 글) · v2Tabs 가 한 번 넣음 */
+  try {
+    (function (m) { if (m) V3RONQ = m[1] === '' ? null : m[1]; })(/[?&]revon=([0-9-]{0,10})(&|$)/.exec(w.location.search));
+  } catch (e) { V3RONQ = undefined; }
 
   /* 날짜 글 ↔ 날 수 */
   function v3N(s) { var p = str(s).split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }
@@ -5178,7 +5186,8 @@
   }
   function v3Fm(s, it) { return s.kind === 'voc' ? 'sp' : (s.kind === 'gu' ? 'se' : (L().setOpts(it.s) ? 'c' : 'r')); }
   /* lec__v2_todo: 오늘 볼 것 줄 [{s, k, kd, o, gr, sk, on, cr, z, f}](차례대로 · 종류 · gr · sk · 공개일 늦은 것 · 만든 때 늦은 것 · 문항 차례) */
-  function v3Todo(d, sid, cls, ex, day) {
+  /*   ron = 다시 보기를 마지막으로 켠 날(그 앞 일정 날은 볼 날 아님 · null = 자르지 않음) */
+  function v3Todo(d, sid, cls, ex, day, ron) {
     var X = L(), rows = [], grp = {}, out = [], i, j, s, p, xe, e, it, k, c, lg, f, r, a, g, pl, pd, zd, gr;
     for (i = 0; i < d.set.length; i += 1) {
       s = d.set[i];
@@ -5216,7 +5225,7 @@
       r = rows[i];
       pl = !r.e || r.e > day ? v3Plan(r.f, r.e, r.ge ? r.r : null, r.ge ? r.n : null) : [];
       pd = null;
-      for (j = 0; j < pl.length; j += 1) { if (pl[j] <= day && (r.ls == null || r.ls < pl[j])) { pd = pl[j]; break; } }
+      for (j = 0; j < pl.length; j += 1) { if (pl[j] <= day && (r.ls == null || r.ls < pl[j]) && (ron == null || pl[j] >= ron)) { pd = pl[j]; break; } }
       zd = (r.s.kind === 'voc' || r.s.kind === 'gram') && X.setDueOn(r.c, day);
       if (pd == null && !zd) continue;
       gr = pd != null && pd < day ? 0 : (zd && !(r.e && r.e <= day) ? 1 : (pd != null ? 2 : 3));
@@ -5233,9 +5242,11 @@
     });
     return out;
   }
+  /* 켠 날(lec_v2_cfg.review_on · 꼴이 틀리거나 없으면 null) */
+  function v3Ron(d) { return isObj(d.v2cfg) ? v3Ld(d.v2cfg.review_on) : null; }
   /* lec__v2_sum: 목록에 더하는 오늘 볼 것 {n, day, ex, kd} */
   function v3Sum(d, sid, cls) {
-    var day = today(), ex = v3Ex(d, sid), z = v3Todo(d, sid, cls, ex, day), kd = { voc: 0, gu: 0, gram: 0 }, sx = {}, i, s, w2;
+    var day = today(), ex = v3Ex(d, sid), z = v3Todo(d, sid, cls, ex, day, v3Ron(d)), kd = { voc: 0, gu: 0, gram: 0 }, sx = {}, i, s, w2;
     for (i = 0; i < z.length; i += 1) kd[z[i].kd] += 1;
     for (i = 0; i < d.set.length; i += 1) {
       s = d.set[i];
@@ -5329,7 +5340,7 @@
       if (sBusy(d, k.sid, s.id)) return { ok: false, err: 'testing' };
       vs = s.id;
     } else {
-      all = v3Todo(d, k.sid, k.cls, v3Ex(d, k.sid), day);
+      all = v3Todo(d, k.sid, k.cls, v3Ex(d, k.sid), day, v3Ron(d));
     }
     rn = v2Run(d, k.sid, function (y) { return y.md === md && y.set_id === vs && y.day === day && y.end_n == null && v2Empty(y.shut); });
     if (!rn) {
@@ -5413,7 +5424,14 @@
   w.LecMock.dayOff = function (n) { return n === undefined ? V3OFF : v3DayOff(n); };
   w.LecMock.v3 = {
     plan: v3Plan, enorm: v3Enorm, grade: v3Grade, exams: v3Exams, examOf: v3ExamOf, first: v3First,
-    todo: function (db, sid, cls, ex, day) { return v3Todo(db, sid, cls, ex, day); },
+    todo: function (db, sid, cls, ex, day, ron) { return v3Todo(db, sid, cls, ex, day, ron == null ? null : ron); },
+    /* 켠 날: revOn() = 읽기 · revOn('YYYY-MM-DD' | null) = 정함(트리거 없이 칸만 · 저장) */
+    revOn: function (day) {
+      var d = load();
+      v2Tabs(d);
+      if (arguments.length) { d.v2cfg.review_on = day == null ? null : str(day); save(d); }
+      return d.v2cfg.review_on == null ? null : d.v2cfg.review_on;
+    },
     pan: function (db, sid, s, md, day) { return v3Pan(db, sid, s, md, day); },
     sum: function (sid, cls) { var d = load(); v2Tabs(d); return v3Sum(d, sid, cls); },
     ex: function (sid) { var d = load(); return v3Ex(d, sid); }
@@ -5545,11 +5563,13 @@
 
   w.LecMock.noV2 = function (on) { if (on !== undefined) NOV2 = !!on; return NOV2; };
   w.LecMock.v2Cfg = function (o) {
-    var d = load(), i, n;
+    var d = load(), i, n, rv;
     v2Tabs(d);
     if (isObj(o)) {
+      rv = d.v2cfg.review === true;   /* V2-3 */
       for (i = 0; i < V2SW.length; i += 1) { if (has(o, V2SW[i])) d.v2cfg[V2SW[i]] = !!o[V2SW[i]]; }
       if (has(o, 'lim')) { n = Math.floor(+o.lim); if (n >= 0 && n <= 100000) d.v2cfg.lim = n; }
+      if (!rv && d.v2cfg.review === true) d.v2cfg.review_on = today();   /* V2-3 트리거 lec__v2_revon 흉내: 끔 → 켬 = 그날(끄면 그대로) */
     }
     save(d);
     return clone(d.v2cfg);

@@ -10876,7 +10876,8 @@ revoke all on function public.lec_v2_watch(integer) from public, anon;
 grant execute on function public.lec_v2_watch(integer) to authenticated;
 
 -- ---------------------------------------------------------------- V2-3 (11-20) 세트 학습 v2 학습 흐름 · 다시 보기 일정 · 오늘 볼 것 · 새 연습 판 · 열셋째 스스로 점검
--- 묶음 ③a 서버층(화면은 따로). 더하기만: 속 함수 lec__v2_* 열다섯 · 찾아보기 하나 · 권한 · 열셋째 스스로 점검(이 절 맨 끝 do 블록).
+-- 묶음 ③a 서버층(화면은 따로). 더하기만: 속 함수 lec__v2_* 열여섯(트리거 하나 포함) · 찾아보기 하나 · lec_v2_cfg 칸 하나(review_on) ·
+--   트리거 하나 · 권한 · 열셋째 스스로 점검(이 절 맨 끝 do 블록).
 --   V2-1 안을 넓힌 곳(줄마다 «-- V2-3» 꼬리표): lec_set_run.md · lec_set_log.bk 허용 값 · lec_set_home_v2 의 todo ·
 --   lec_set_open_v2 새 판 넷(spell · guw · gram · review → lec__v2_open3) · lec_set_log_v2 새 판 채점(lec__v2_judge) · 하루 한도 셈 ·
 --   lec_set_test_v2(오늘 볼 것 판도 닫음)
@@ -10890,7 +10891,10 @@ grant execute on function public.lec_v2_watch(integer) to authenticated;
 --   R = 시험 날 − f · 첫 = f + min(R/3, 7) · 둘째 = f + 2R/3(나머지 버림 · 최소 1일) · 마지막 = D-6 ~ D-2 를 같은 시험 문항들의 f 차례로
 --     고르게(둘째보다 뒤 · 겹치면 다음 날 · D-2 를 넘으면 없음) · R ≤ 5 면 마지막만 · 같은 날은 하나 · 시험이 없으면 f + 1 · 3 · 7 ·
 --     시험이 지나면 멈춤 · 그 날이 왔고 그 날 뒤로 아직 안 본(기록 줄 · 카드 날짜 없음) 가장 이른 날 하나 = 볼 날(놓친 날이 여럿이어도 한 번)
--- 오늘 볼 것 = 열린 세트 전부(시험 · 드릴을 연 세트 뺌) · 위 볼 날 + 쌓인 오답(단어 · 문법 z · lec__set_due_on 그대로) ·
+--   켠 날(lec_v2_cfg.review_on = review 를 마지막으로 끔 → 켬으로 바꾼 서버 날짜 · 트리거 lec__v2_revon 이 적음 · 다시 켜면 새 날 · 끄면 그대로):
+--     그 날 앞 일정 날은 볼 날로 치지 않음(켜는 첫날 옛 세트 일정이 놓친 날로 몰리지 않게 · 놓친 날도 켠 날부터) · 시험 있는 세트 · 없는 세트 모두 ·
+--     쌓인 오답 · 처음 배운 날 셈은 그대로 · 칸이 비면(켜 본 적 없음) 자르지 않음
+-- 오늘 볼 것 =열린 세트 전부(시험 · 드릴을 연 세트 뺌) · 위 볼 날 + 쌓인 오답(단어 · 문법 z · lec__set_due_on 그대로) ·
 --   차례 = 단어 → 구문 → 문법 · 놓친 날(gr 0) → 쌓인 오답(1) → 오늘 날(2) → 시험 지난 세트의 쌓인 오답(3) · 점수 · 통과 · 추천 칸 없음
 -- 새 연습 판(판 꾸리기 규칙은 이 절 한 곳 · 폰은 받은 차례대로 · 바른 답을 같이 줌 · 지금 시험 · 드릴을 연 세트 문항은 판에서 뺌):
 --   spell 단어 써 보기(sp · 카드 꼴 card = 맞으면 d 만 · 외움 뜻 그대로) · guw 구문 써 보기(gw · 줄 꼴 ar 배열 → se 통째 · say) ·
@@ -10899,7 +10903,22 @@ grant execute on function public.lec_v2_watch(integer) to authenticated;
 --   쌓인 오답 문항 = 카드 꼴 due(V2-1 쌓인 오답 판과 같음) · 그 밖 = card(구문 say) · 힌트 본 답 = 틀림(카드) ·
 --   판 20 문항 · 하루 판 200 까지(판마다) · 줄 꼴 = V2-1 그대로(첫 답 = 판 · 문항마다 가장 작은 순번 · h 힌트 · f 단계 · ms)
 -- 운영에 넣은 뒤 확인(SQL Editor 에서 · 바꾸는 것 없음):
---   select has_function_privilege('anon', 'public.lec__v2_todo(text, text[], jsonb, date)', 'execute') as "속 함수 밖에서 부름(false)";
+--   select has_function_privilege('anon', 'public.lec__v2_todo(text, text[], jsonb, date, date)', 'execute') as "속 함수 밖에서 부름(false)";
+--   select review, review_on from public.lec_v2_cfg;   -- 켠 날(review 를 켜면 그날 · 비어 있으면 자르지 않음)
+
+-- 켠 날 칸(더하기만 · 비면 자르지 않음) · review 끔 → 켬이면 그날(서버 날짜 lec__set_today)을 적는 트리거(끄거나 다른 칸만 바꾸면 그대로)
+alter table public.lec_v2_cfg add column if not exists review_on date;
+create or replace function public.lec__v2_revon() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if new.review and not coalesce(old.review, false) then
+    new.review_on := public.lec__set_today();
+  end if;
+  return new;
+end
+$$;
+create or replace trigger lec_v2_cfg_revon before update on public.lec_v2_cfg
+  for each row execute function public.lec__v2_revon();
 
 -- 일정 날짜 칸 → 날짜(앱 examNorm 과 같은 셈: 숫자 무리 넷 · 두 자리 이하 · 두 자리 이하 또는 여덟 자리 하나 · 2000~2100 · 없는 날 null)
 create or replace function public.lec__v2_enorm(p jsonb) returns date
@@ -11180,10 +11199,11 @@ begin
 end
 $$;
 
--- 오늘 볼 것(학생 p_sid · 반 p_cls · 학교 시험 p_ex = lec__v2_ex · 오늘 p_day): 열린 세트(시험 · 드릴을 연 세트 뺌)의 문항마다
---   볼 날이 왔거나(일정) 쌓인 오답(단어 · 문법) → 줄 하나 · gr 차례 무리 · sk 무리 안 차례 글 · fm 오늘 볼 것 판의 꼴(단어 sp · 구문 se · 문법 c · r)
+-- 오늘 볼 것(학생 p_sid · 반 p_cls · 학교 시험 p_ex = lec__v2_ex · 오늘 p_day · 켠 날 p_ron = lec_v2_cfg.review_on · null = 자르지 않음):
+--   열린 세트(시험 · 드릴을 연 세트 뺌)의 문항마다 볼 날이 왔거나(일정 · 켠 날 앞 일정 날은 안 침) 쌓인 오답(단어 · 문법) → 줄 하나 ·
+--   gr 차례 무리 · sk 무리 안 차례 글 · fm 오늘 볼 것 판의 꼴(단어 sp · 구문 se · 문법 c · r)
 --   부르는 쪽 차례 = 종류(단어 · 구문 · 문법) · gr · sk · 공개일 늦은 것 · 만든 때 늦은 것 · 문항 차례
-create or replace function public.lec__v2_todo(p_sid text, p_cls text[], p_ex jsonb, p_day date)
+create or replace function public.lec__v2_todo(p_sid text, p_cls text[], p_ex jsonb, p_day date, p_ron date)
 returns table (set_id uuid, kd text, k text, o bigint, gr integer, sk text, on_ date, cr timestamptz, z boolean, fm text)
 language sql stable set search_path = public as $$
   with st as (
@@ -11225,7 +11245,7 @@ language sql stable set search_path = public as $$
     select rn.*,
            (select min(p.d)
               from unnest(case when rn.ex is null or rn.ex > p_day then public.lec__v2_plan(rn.f, rn.ex, rn.r, rn.n) else '{}'::date[] end) as p(d)
-             where p.d <= p_day and (rn.ls is null or rn.ls < p.d)) as pd,
+             where p.d <= p_day and (rn.ls is null or rn.ls < p.d) and (p_ron is null or p.d >= p_ron)) as pd,
            rn.kd_ in ('voc', 'gram') and public.lec__set_due_on(rn.c, p_day) as zd
       from rn
   )
@@ -11251,7 +11271,7 @@ begin
   select jsonb_build_object('n', count(*), 'voc', count(*) filter (where z.kd = 'voc'), 'gu', count(*) filter (where z.kd = 'gu'),
                             'gram', count(*) filter (where z.kd = 'gram'))
     into v_n
-    from public.lec__v2_todo(p_sid, p_cls, v_ex, v_day) z;
+    from public.lec__v2_todo(p_sid, p_cls, v_ex, v_day, (select c.review_on from public.lec_v2_cfg c where c.id = 1)) z;
   select coalesce(jsonb_object_agg(xs.id::text, x.w ->> 'e'), '{}'::jsonb) into v_sx
     from public.lec_set xs
    cross join lateral (select public.lec__v2_exam_of(v_ex, xs.posted_on, xs.class_ids, v_day) as w) x
@@ -11388,7 +11408,7 @@ begin
                               order by case z.kd when 'voc' then 1 when 'gu' then 2 else 3 end, z.gr, z.sk, z.on_ desc, z.cr desc, z.o),
                     '[]'::jsonb)
       into v_all
-      from public.lec__v2_todo(k.sid, k.cls, public.lec__v2_ex(k.sid), v_day) z;
+      from public.lec__v2_todo(k.sid, k.cls, public.lec__v2_ex(k.sid), v_day, (select c.review_on from public.lec_v2_cfg c where c.id = 1)) z;
   end if;
   select * into rn from public.lec_set_run xr
    where xr.sid = k.sid and xr.md = p_md and xr.set_id is not distinct from v_set and xr.day = v_day and xr.end_n is null
@@ -11493,13 +11513,13 @@ create index if not exists lec_set_log_seen on public.lec_set_log (sid, set_id, 
 -- 권한(V2-3): 속 함수 = 밖에서 못 부름(학생 함수는 V2-1 권한 그대로)
 revoke all on function public.lec__v2_enorm(jsonb), public.lec__v2_grade(jsonb), public.lec__v2_tnum(jsonb), public.lec__v2_join(jsonb, jsonb),
   public.lec__v2_exams(jsonb, date), public.lec__v2_ex(text), public.lec__v2_exam_of(jsonb, date, text[], date), public.lec__v2_first(jsonb),
-  public.lec__v2_plan(date, date, integer, integer), public.lec__v2_todo(text, text[], jsonb, date), public.lec__v2_sum(text, text[]),
+  public.lec__v2_plan(date, date, integer, integer), public.lec__v2_todo(text, text[], jsonb, date, date), public.lec__v2_sum(text, text[]),
   public.lec__v2_q(public.lec_set, jsonb, text), public.lec__v2_pan(text, public.lec_set, text, date),
-  public.lec__v2_open3(public.lec_key, uuid, text), public.lec__v2_judge(public.lec_set_run, text[], jsonb)
+  public.lec__v2_open3(public.lec_key, uuid, text), public.lec__v2_judge(public.lec_set_run, text[], jsonb), public.lec__v2_revon()
   from public, anon, authenticated;
 
 -- 열셋째 스스로 점검(V2-3): 사례표(_check/class_v3_cases.json · 일정 · 날짜 칸 · 학년 · 학교 시험 · 오늘 볼 것 · 판 꾸리기) ·
---   스위치 끔 = V2-1 그대로(목록 todo · 새 판 'off') · 켬: 목록 오늘 볼 것 · 써 보기 판(바른 답 같이 · 이어서 · 종류 · 없는 세트 ·
+--   스위치 끔 = V2-1 그대로(목록 todo · 새 판 'off') · 켬: 켠 날 트리거(켬 · 그대로 · 다시 켬 · 자름) · 목록 오늘 볼 것 · 써 보기 판(바른 답 같이 · 이어서 · 종류 · 없는 세트 ·
 --   카드 d 만 · 힌트 본 답 = 틀림) · 구문(배열 · 통째) · 문법(포인트 무리 · 쌓인 오답 = due) · 오늘 볼 것 판(한 종류 · 남은 수 ·
 --   시험 중 세트 뺌 · 평가를 열면 판 닫힘 · 닫힌 뒤 답 = 기록만) · 권한
 -- 넣은 세트 · 열쇠 · 동의 · 줄 · 스위치는 끝에 되돌려 남지 않습니다
@@ -11633,18 +11653,26 @@ begin
     insert into public.lec_set_try (sid, set_id, kind, day, n, qs) values ('selftest-v3a|점검가', '00000000-0000-4000-8000-000000000006'::uuid, 'test', '2026-03-01'::date, 1, '[]'::jsonb);
     -- 기대값 = 세트 번호(열쇠 끝 12 자리):문항:무리(gr):차례 글(sk) · 쉼표로 이음
     for v_case in select * from (values
-        ('S1', '2026-03-25'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,4:k2:0:2026-03-10,4:k1:1:2026-03-20'),
-        ('S1', '2026-04-08'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,2:k1:0:2026-03-27,2:k2:0:2026-04-03,1:k4:2:2026-03-02,3:k1:0:2026-03-30,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
-        ('S1', '2026-04-15'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-08,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
-        ('S1', '2026-04-25'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-08,1:k6:0:2026-04-22,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
-        ('S1', '2026-05-01'::date, '5:k1:0:2026-01-07,4:k1:3:2026-03-20'),
-        ('S2', '2026-04-22'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-06,1:k6:2:2026-04-20,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
-        ('S4', '2026-03-25'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-02,1:k1:0:2026-03-03,1:k2:0:2026-03-12,2:k1:0:2026-03-22,4:k2:0:2026-03-04,4:k1:0:2026-03-21')
-      ) as x(s, d, w) loop
+        ('S1', '2026-03-25'::date, '2026-01-01'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,4:k2:0:2026-03-10,4:k1:1:2026-03-20'),
+        ('S1', '2026-04-08'::date, '2026-01-01'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,2:k1:0:2026-03-27,2:k2:0:2026-04-03,1:k4:2:2026-03-02,3:k1:0:2026-03-30,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
+        ('S1', '2026-04-15'::date, '2026-01-01'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-08,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
+        ('S1', '2026-04-25'::date, '2026-01-01'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-08,1:k6:0:2026-04-22,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
+        ('S1', '2026-05-01'::date, '2026-01-01'::date, '5:k1:0:2026-01-07,4:k1:3:2026-03-20'),
+        ('S2', '2026-04-22'::date, '2026-01-01'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-06,1:k6:2:2026-04-20,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
+        ('S4', '2026-03-25'::date, '2026-01-01'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-02,1:k1:0:2026-03-03,1:k2:0:2026-03-12,2:k1:0:2026-03-22,4:k2:0:2026-03-04,4:k1:0:2026-03-21'),
+        ('S1', '2026-03-25'::date, '2026-03-20'::date, '4:k1:1:2026-03-20'),
+        ('S1', '2026-04-08'::date, '2026-04-08'::date, '1:k3:2:2026-03-01,1:k1:2:2026-03-02,1:k4:2:2026-03-02,4:k1:1:2026-03-20,4:k2:2:2026-03-03'),
+        ('S1', '2026-03-25'::date, '2026-03-09'::date, '1:k1:0:2026-03-09,1:k2:0:2026-03-12,4:k2:0:2026-03-10,4:k1:1:2026-03-20'),
+        ('S1', '2026-04-15'::date, '2026-04-10'::date, '4:k1:0:2026-04-14'),
+        ('S1', '2026-04-15'::date, '2026-04-15'::date, '4:k1:1:2026-03-20'),
+        ('S1', '2026-03-25'::date, null::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,4:k2:0:2026-03-10,4:k1:1:2026-03-20'),
+        ('S1', '2026-04-25'::date, '2026-04-20'::date, '1:k1:0:2026-04-21,1:k3:0:2026-04-21,1:k4:0:2026-04-22,1:k6:0:2026-04-22,1:k2:0:2026-04-23,3:k1:0:2026-04-24,4:k2:0:2026-04-22,4:k1:0:2026-04-24'),
+        ('S4', '2026-03-25'::date, '2026-03-24'::date, '2:k1:0:2026-03-24,4:k1:1:2026-03-20')
+      ) as x(s, d, r, w) loop
       select coalesce(string_agg(ltrim(right(z.set_id::text, 12), '0') || ':' || z.k || ':' || z.gr || ':' || z.sk, ','
                order by case z.kd when 'voc' then 1 when 'gu' then 2 else 3 end, z.gr, z.sk, z.on_ desc, z.cr desc, z.o), '')
-        into v_t from public.lec__v2_todo('selftest-v3a|점검가', array['selftest-v3-c1', 'selftest-v3-c2'], public.lec__v2_exams(v_sc -> v_case.s, v_case.d), v_case.d) z;
-      if v_t is distinct from v_case.w then raise exception '점검 실패(V3 오늘 볼 것 % %): %', v_case.s, v_case.d, v_t; end if;
+        into v_t from public.lec__v2_todo('selftest-v3a|점검가', array['selftest-v3-c1', 'selftest-v3-c2'], public.lec__v2_exams(v_sc -> v_case.s, v_case.d), v_case.d, v_case.r) z;
+      if v_t is distinct from v_case.w then raise exception '점검 실패(V3 오늘 볼 것 % % 켠 날 %): %', v_case.s, v_case.d, v_case.r, v_t; end if;
     end loop;
     -- 판 꾸리기(써 보기 · 구문 · 문법 포인트): 사례마다 그때의 줄 · 진행으로 바꿔 넣고 lec__v2_pan
     insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000011'::uuid, 'gram', '점검 v3 포인트', array['selftest-v3-c1'], '2026-03-01'::date, '[{"k": "a1", "n": "1", "s": "A1 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a2", "n": "2", "s": "A2 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a3", "n": "3", "s": "A3 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a4", "n": "4", "s": "A4 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a5", "n": "5", "s": "A5 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a6", "n": "6", "s": "A6 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a7", "n": "7", "s": "A7 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a8", "n": "8", "s": "A8 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a9", "n": "9", "s": "A9 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a10", "n": "10", "s": "A10 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "b1", "n": "11", "s": "B1 ___", "a": "y", "x": "", "p": "포인트 B"}, {"k": "b2", "n": "12", "s": "B2 ___", "a": "y", "x": "", "p": "포인트 B"}, {"k": "b3", "n": "13", "s": "B3 ___", "a": "y", "x": "", "p": "포인트 B"}, {"k": "n1", "n": "14", "s": "N1 ___", "a": "z", "x": "", "p": ""}, {"k": "n2", "n": "15", "s": "N2 ___", "a": "z", "x": "", "p": ""}]'::jsonb, 15, '2026-03-01T01:00:00+00:00'::timestamptz);
@@ -11711,8 +11739,34 @@ begin
       raise exception '점검 실패(V3 판 스위치 끔)';
     end if;
 
-    -- 4) 켬: 목록 todo = lec__v2_sum(n · day 서버 오늘 · ex · kd)
+    -- 4) 켬: 켠 날 트리거(끔 → 켬 = 서버 오늘 · 켠 채 칸만 · 다른 칸 · 끄기 = 그대로 · 다시 켬 = 새 날) ·
+    --    켠 날 = 오늘이면 놓친 날(gr 0) 없음 · 칸 빔 = 아주 앞 날(자르지 않음) · 아래 점검은 켠 날을 아주 앞으로 두고(옛 일정 날도 침)
+    --    목록 todo = lec__v2_sum(n · day 서버 오늘 · ex · kd)
     update public.lec_v2_cfg set spell = true, guw = true, gram = true, review = true where id = 1;
+    if (select c.review_on from public.lec_v2_cfg c where c.id = 1) is distinct from v_d then
+      raise exception '점검 실패(V3 켠 날 · 켬)';
+    end if;
+    update public.lec_v2_cfg set review_on = date '2000-01-01' where id = 1;
+    update public.lec_v2_cfg set lim = 3000, updated_at = now() where id = 1;
+    update public.lec_v2_cfg set review = false where id = 1;
+    if (select c.review_on from public.lec_v2_cfg c where c.id = 1) is distinct from date '2000-01-01' then
+      raise exception '점검 실패(V3 켠 날 · 그대로)';
+    end if;
+    update public.lec_v2_cfg set review = true where id = 1;
+    if (select c.review_on from public.lec_v2_cfg c where c.id = 1) is distinct from v_d then
+      raise exception '점검 실패(V3 켠 날 · 다시 켬)';
+    end if;
+    if exists (select 1 from public.lec__v2_todo(v_sa, array['selftest-v3-c1', 'selftest-v3-c2'], public.lec__v2_ex(v_sa), v_d, v_d) z
+                where z.gr = 0)
+       or (select count(*) from public.lec__v2_todo(v_sa, array['selftest-v3-c1', 'selftest-v3-c2'], public.lec__v2_ex(v_sa), v_d, null) z)
+          is distinct from
+          (select count(*) from public.lec__v2_todo(v_sa, array['selftest-v3-c1', 'selftest-v3-c2'], public.lec__v2_ex(v_sa), v_d, date '2000-01-01') z)
+       or (public.lec__v2_sum(v_sa, array['selftest-v3-c1', 'selftest-v3-c2']) ->> 'n')::integer
+          is distinct from
+          (select count(*) from public.lec__v2_todo(v_sa, array['selftest-v3-c1', 'selftest-v3-c2'], public.lec__v2_ex(v_sa), v_d, v_d) z)::integer then
+      raise exception '점검 실패(V3 켠 날 · 자름)';
+    end if;
+    update public.lec_v2_cfg set review_on = date '2000-01-01' where id = 1;
     r := public.lec_set_home_v2(v_ka, null);
     if (r -> 'todo') is distinct from public.lec__v2_sum(v_sa, array['selftest-v3-c1', 'selftest-v3-c2'])
        or (r #>> '{todo,day}') is distinct from to_char(v_d, 'YYYY-MM-DD')
@@ -11821,7 +11875,8 @@ begin
     end if;
 
     -- 9) 권한: 새 속 함수는 밖에서 못 부름 · 학생 함수는 V2-1 그대로
-    if has_function_privilege('anon', 'public.lec__v2_todo(text, text[], jsonb, date)', 'execute')
+    if has_function_privilege('anon', 'public.lec__v2_todo(text, text[], jsonb, date, date)', 'execute')
+       or has_function_privilege('anon', 'public.lec__v2_revon()', 'execute')
        or has_function_privilege('authenticated', 'public.lec__v2_open3(public.lec_key, uuid, text)', 'execute')
        or has_function_privilege('anon', 'public.lec__v2_judge(public.lec_set_run, text[], jsonb)', 'execute')
        or not has_function_privilege('anon', 'public.lec_set_open_v2(text, uuid, text)', 'execute') then
