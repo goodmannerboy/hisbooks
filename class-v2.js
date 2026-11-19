@@ -493,8 +493,8 @@
     return { id: r.id, i: i };
   }
   /* 판 끝(n = 판 끝 줄 수 · 없으면 마지막 순번) → 남은 줄 보냄 · 응답(me · due = 목록 숫자) */
-  function v2End(key, b, n) {
-    var c = CUR[str(b)], f = fp(key), k, e, j, nn, r;
+  function v2End(key, b, n, lr) {   /* ①b lr = 다시 연 판에서 이 화면이 줄을 아직 안 적었을 때 마지막 줄(같은 id · 쌓인 오답 이어 하기) */
+    var c = CUR[str(b)], f = fp(key), k, e, j, nn, r, cl;   /* ①b */
     if (!c || c.fp !== f) return Promise.resolve({ ok: false, err: 'board' });
     nn = Math.floor(+n);
     if (!(nn >= 1 && nn <= I_MAX)) nn = c.next - 1 >= 1 ? Math.min(c.next - 1, I_MAX) : null;
@@ -504,10 +504,10 @@
     if (nn !== null && e && e.rows.length) {
       for (j = 0; j < e.rows.length; j += 1) e.rows[j].n = nn;
       boxPut(k, e);
-    } else if (nn !== null && c.last && c.md !== 'ev') {
+    } else if (nn !== null && (cl = c.last || (isObj(lr) && typeof lr.id === 'string' ? lr : null)) && c.md !== 'ev') {   /* ①b */
       /* 줄이 다 갔으면 마지막 줄을 같은 id 로 한 번 더(서버는 줄을 다시 넣지 않고 판 끝만 적음) */
       r = {};
-      for (j in c.last) { if (has(c.last, j)) r[j] = c.last[j]; }
+      for (j in cl) { if (has(cl, j)) r[j] = cl[j]; }   /* ①b */
       r.n = nn;
       boxPut(k, { b: c.b, md: c.md, st: c.st, hide: c.hide, rows: [r] });
     }
@@ -585,6 +585,7 @@
    스위치 = 홈 _v2 의 v2(S.set.v2) · 끔 · v2 없는 서버 = 옛 함수 그대로(부르는 횟수 같음) · log = 옛 길 + 기록 줄(카드는 옛 함수가 바꿈 · 두 번 세지 않음)
    eval = 평가(단어 시험 · 문법 드릴) 열기 1 + 50 문항마다 1 + 내기 1 · 문항마다 서버 0 · 칸 잠금 0 · 맞음 · 틀림은 끝에 모아
           연습(외우기 · 쌓인 오답) 열기 1 + 판 끝 1 · 쌓인 오답은 받은 바른 답으로 폰에서 바로 채점(서버와 같은 셈)
+          쌓인 오답을 풀다 닫으면 같은 서버 날 같은 판은 남은 문항부터(폰 'lec-v2d:' · 서버 그대로 · 아래 dueMine)
    재기(기록 줄): om 판을 연 누름 → 첫 문항 그림 · nx 앞 답 누름 → 이 문항 그림 · ms 이 문항 그림 → 답
    TX = 새 화면 글(디자인 회의 전 자리 글) */
 (function (w) {
@@ -621,14 +622,35 @@
   function key() { return B.S.key; }
   function on(f) { var s = B && B.S.set; return !!(s && s.v2 && s.v2[f]) && !B.pv(); }
   function oldNow() { return +Lec.lsGet(OLD_K, 0) > Date.now() - OLD_MS; }
+  /* 쌓인 오답 이어 하기(eval · 폰만 · 서버 그대로): 'lec-v2d:' + 열쇠 지문 = {day: 서버 날, b: 판, a: {'s|k': [내 답, 맞음]}, l: 마지막 줄(같은 id)}
+     같은 날 같은 판을 다시 열면 답한 문항은 답한 채로 두고 남은 문항부터 · 다른 날 · 다른 판 = 지움 · 판 끝을 서버가 받으면 지움 */
+  function dk(k) {
+    var t = str(k == null ? key() : k), h = 0x811c9dc5, i;
+    for (i = 0; i < t.length; i += 1) { h ^= t.charCodeAt(i); h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0; }
+    return 'lec-v2d:' + h.toString(16);
+  }
+  function dueMine(x, r) {
+    var m = Lec.lsGet(dk(), null), o = [], q = r.q || [], i, a;
+    if (m && (typeof m !== 'object' || m.day !== str(r.today) || m.b !== str(r.b) || !m.a || typeof m.a !== 'object')) { Lec.lsDel(dk()); m = null; }
+    x.dm = m || { day: str(r.today), b: str(r.b), a: {}, l: null };
+    for (i = 0; m && i < q.length; i += 1) {
+      a = m.a[str(q[i].s) + '|' + str(q[i].k)];
+      if (a) o.push({ i: i, v: str(a[0]), r: !!a[1], a: str(q[i].a), x: str(q[i].x), pt: str(q[i].pt) });
+    }
+    return o;
+  }
 
   /* 목록 묶음: 홈 _v2(스위치 · 서버 오늘 · 남은 줄 먼저 보냄) · v2 없는 서버(old) · 서버 오류 = 옛 lec_set_home 그대로 ·
      끊김 · 열쇠 · 기록 동의 = 그 답 그대로(옛 길에서 실패한 것과 같은 결과 · 더 부르지 않음) */
   function home(k) {
     if (oldNow()) return Lec.setHome(k);
     return Lec.setHomeV2(k).then(function (r) {
-      var e = r && r.err;
-      if (r && r.ok) return r;
+      var e = r && r.err, m;
+      if (r && r.ok) {
+        m = Lec.lsGet(dk(k), null);   /* 쌓인 오답 이어 하기 기억 · 서버 날이 지났으면 지움 */
+        if (m && r.ts != null && typeof Lec.isoDay === 'function' && (typeof m !== 'object' || m.day !== Lec.isoDay(+r.ts))) Lec.lsDel(dk(k));
+        return r;
+      }
       if (e === 'old') Lec.lsSet(OLD_K, Date.now());
       return e === 'old' || e === 'error' ? Lec.setHome(k) : r;
     });
@@ -663,7 +685,7 @@
   function open(due, k, id) {
     var x = W();
     function old() { return due ? Lec.setDue(k) : Lec.setTest(k, id); }
-    x.ev = ''; x.lb = null; x.op = Date.now(); x.tap = 0; x.omd = 0;
+    x.ev = ''; x.lb = null; x.dm = null; x.op = Date.now(); x.tap = 0; x.omd = 0;
     if (!on('eval')) {
       if (on('log')) x.lb = Lec.v2Local(k);
       return old();
@@ -677,7 +699,7 @@
         return old();
       }
       if (r && r.ok) {
-        if (due) r['try'] = r.b || null;
+        if (due) { r['try'] = r.b || null; r.done = dueMine(x, r); }
         else r.done = mine(r);
       }
       return r;
@@ -694,7 +716,15 @@
     if (x.ev === 'due') {
       a = str(q.a);
       ok = q.f === 'c' ? Lec.setNorm(v) === Lec.setNorm(a) : !!Lec.setMatch(v, a);
-      Lec.v2Add(k, t.id, row(q, v, ok));
+      j = Lec.v2Add(k, t.id, row(q, v, ok));
+      if (j && x.dm) {
+        o = { id: j.id, i: j.i, v: str(v).slice(0, 400), h: false, t: Date.now(), f: str(q.f), pr: ok };
+        if (q.s) o.s = str(q.s);
+        if (q.k != null && q.k !== '') o.k = str(q.k);
+        x.dm.a[str(q.s) + '|' + str(q.k)] = [o.v, ok];
+        x.dm.l = o;
+        Lec.lsSet(dk(), x.dm);
+      }
       t.ans[idx] = { v: v, r: ok, a: a, x: str(q.x), pt: str(q.pt) };
       t.ph = 'shown';
       t.fb = { ok: ok, a: a, x: str(q.x), pt: str(q.pt), v: v, sel: sel };
@@ -723,9 +753,10 @@
     if (x.lb && !t.lbE) { t.lbE = 1; Lec.v2End(k, x.lb); }
     if (x.ev === 'due' && !t.vp0) {
       t.vp0 = 1;
-      t.vp = Lec.v2End(k, t.id).then(function (r) {
+      t.vp = Lec.v2End(k, t.id, null, x.dm && x.dm.l).then(function (r) {
         var s = B.S.set, n;
         t.vp = null;
+        if (r && r.ok) { Lec.lsDel(dk()); x.dm = null; }
         if (r && r.ok && r.due && r.due.n != null) {
           n = +r.due.n || 0;
           t.end = { out: Math.max(0, (s && s.due ? +s.due.n || 0 : 0) - n), due: n };
