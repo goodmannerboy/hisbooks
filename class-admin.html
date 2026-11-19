@@ -966,8 +966,21 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 #dw.ip .dh .thm .thm-n{top:9px;left:6px;font-size:12px;line-height:16px}
 #dw.ip .dh .thm .thm-p{display:none}
 #dw.ip .db{padding:12px 20px 28px}
-#dw.ip .cr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-#dw.ip .cr .cra{grid-column:1/-1;justify-content:flex-start}
+/* A4 ① 학생 한 줄 52px(인스펙터 서랍 · 1600 오른쪽 칸): 이름 15/600 | 알약 또는 «25%» + 막대 64 | «확인 완료» · 메모 칸이 열리면 그 줄만 아래로 */
+#dw.ip .cr,.ia .cr{grid-template-columns:minmax(0,1fr) 112px auto;min-height:52px;align-items:center;column-gap:8px;row-gap:6px;padding:7px 0 8px}   /* 줄 52 = 7 + «확인 완료» 36 + 8 + 밑줄 1 */
+.ia .cr{border-bottom-color:var(--sep)}
+#dw.ip .cr .cra,.ia .cr .cra{grid-column:auto;justify-content:flex-end;flex-wrap:nowrap}
+#dw.ip .cr.open .cra,.ia .cr.open .cra{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}
+#dw.ip .crm,.ia .crm{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;min-width:0}
+#dw.ip .crm .lnk,.ia .crm .lnk{margin-right:0;font-size:15px;line-height:20px;font-weight:600;text-align:left;overflow-wrap:anywhere}
+#dw.ip .crm .tag:not(.tg-lk),.ia .crm .tag:not(.tg-lk){display:none}
+#dw.ip .crp,.ia .crp{flex-wrap:nowrap;gap:6px;padding:4px}
+#dw.ip .crp .mut,.ia .crp .mut{display:none}
+#dw.ip .crp .pbar,.ia .crp .pbar{flex:0 1 64px;width:64px;min-width:16px}
+#dw.ip .cr.k-pend .pbar,#dw.ip .cr.k-none .pbar,#dw.ip .cr.k-conf .pbar,#dw.ip .cr.k-done .pbar,.ia .cr.k-pend .pbar,.ia .cr.k-none .pbar,.ia .cr.k-conf .pbar,.ia .cr.k-done .pbar{display:none}
+#dw.ip .cr:not(.open) .cfd,.ia .cr:not(.open) .cfd{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.ia .ia-cr{margin:0 0 4px}
+.ia .ia-all{display:inline-block;min-height:32px;margin:4px 0 0;font-size:13px;font-weight:600}
 #dw.ip .chl li{grid-template-columns:46px minmax(0,1fr) 54px 38px}
 #dw.ip .chl .cn{white-space:normal;overflow:visible;text-overflow:clip;word-break:keep-all;overflow-wrap:anywhere}
 #dw.ip .sec>.chips{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--fill2)}
@@ -2161,7 +2174,7 @@ window.__lecAdminStart = function () {
     var rec = L.recOf(D.consents, r.skey), h = '';
     if (rec === 'none') h += '<span class="tag t-neutral">기록 안 함</span>';
     else if (rec === 'pending') h += '<span class="tag t-neutral">동의 전</span>';
-    if (D.locked[r.skey]) h += '<span class="tag t-coral">잠김</span>';
+    if (D.locked[r.skey]) h += '<span class="tag t-coral tg-lk">잠김</span>';
     return h;
   }
   function clsNames(ids) {
@@ -2732,13 +2745,26 @@ window.__lecAdminStart = function () {
       '<p class="in-none">이 강의를 보는 내 반이 없어요.</p>');
     h += '<p class="in-s">질문<span>' + (q.all ? q.all + '개' + (q.wait ? ' · <b class="org">답변 대기 ' + q.wait + '</b>' : '') : '없음') + '</span></p>' +
       (q.all ? '<div class="grp"><button type="button" class="gi" data-act="iaQ" data-l="' + lid + '">' + nIcon('qna') + '<span class="gi-t"><b>이 강의 질문 보기</b></span>' + nIcon('chev') + '</button></div>' : '');
-    h += '<p class="in-s">정보</p><div class="grp kvs">' +
-      '<div class="kv"><span>수업일</span><span>' + esc((L.fmtDay(dayOf(l)) || '–') + (l.lesson_on && n > 1 ? ' 외 ' + (n - 1) + '일' : '')) + '</span></div>' +
-      '<div class="kv"><span>반</span><span>' + esc(clsNames(l.class_ids) || '–') + '</span></div>' +
-      '<div class="kv"><span>길이</span><span>' + (l.dur > 0 ? esc(L.fmtDur(l.dur)) : '–') + '</span></div>' +
-      '<div class="kv"><span>공개</span><span>' + pubHtml(l) + '</span></div></div>' + hideSw(l) +
+    h += iaBehind(l, dc) + hideSw(l) +   /* A4 ③: «정보» 4줄(표 값 되풀이) 자리 = 덜 본 학생 */
       '<p class="in-by">' + esc('올린 사람 ' + (l.created_by || '모름') + (l.created_at ? ' · ' + whenFull(l.created_at) : '')) + '</p>';
     return h + '</aside>';
+  }
+
+  /* A4 ③: 1600 오른쪽 칸 덜 본 학생 = 서랍과 같은 거름(behindOf) · 같은 한 줄 · 6명까지 + 넘으면 «모두 보기 ›»(서랍 · «결석·덜 봄») */
+  function iaBehind(l, dc) {
+    var rows, out = [], n = 0, i, s, b, op, h;
+    if (!dc) return '';
+    rows = stuIn(dc).filter(function (y) { return schIn(l, y.skey); });
+    for (i = 0; i < rows.length; i += 1) {
+      s = stat(l, rows[i].skey); b = behindOf(l, rows[i].skey, s);
+      op = !!(S.cf && S.cf.s === rows[i].skey && S.cf.l === l.id);
+      if (b) n += 1;
+      if ((b || op) && out.length < 6) out.push(crHtml(l, rows[i], s, true));
+    }
+    h = '<p class="in-s">' + (D.att ? '결석·덜 봄' : '덜 본 학생') + '<span>' + (n ? n + '명' : '없음') + '</span></p>';
+    if (out.length) h += '<div class="ia-cr">' + out.join('') + '</div>';
+    if (n > 6) h += '<button type="button" class="lnk ia-all" data-act="iaCol" data-l="' + esc(l.id) + '" data-c="' + esc(dc) + '">모두 보기 ›</button>';
+    return h;
   }
 
   /* ------------------------------------------- 다른 선생님 수업(11-17 · 보기만)
@@ -2968,7 +2994,7 @@ window.__lecAdminStart = function () {
     var l = D && D.lmap[id], dc = l ? defCls(l) : '';
     if (!dc) return;
     if (wq() === 2 && S.iaPick !== id) { S.iaPick = id; render(); }
-    openDrawer({ t: 'col', l: id, c: dc, f: 'all' });
+    openDrawer({ t: 'col', l: id, c: dc, f: 'auto' });   /* A4 ② */
   }
   /* sub = 글 하나 또는 덩어리 목록(덩어리 안에서는 줄을 안 바꾸고 « · »로 이음 · 폰 열 서랍 «복습 / 3명» 갈림 · 검수 2차 B L5) */
   /* J17: 보조 줄 = div.dh-m(flex · 줄바꿈 · 사이 6px) · 조각마다 한 줄(span) · 글 «A · B · C» 는 그대로(점은 다음 조각 앞) */
@@ -3182,15 +3208,15 @@ window.__lecAdminStart = function () {
     if (x.a === 'in') return '<span class="tag t-neutral">교실</span>';
     return '<span class="tag t-coral">결석 ' + esc(L.fmtDay(x.d)) + (x.mk ? ' · 보강' : '') + '</span>';
   }
-  function crHtml(l, r, s) {
+  function crHtml(l, r, s, ia) {
     var p = s.p, open = S.cf && S.cf.s === r.skey && S.cf.l === l.id;
-    return '<div class="cr' + (open ? ' open' : '') + '"><div class="crm"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + attTag(l.id, r.skey) + '</div>' +
+    return '<div class="cr k-' + s.k + (open ? ' open' : '') + '"><div class="crm"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + attTag(l.id, r.skey) + '</div>' +
       '<button type="button" class="crp" data-act="cellOpen" data-s="' + esc(r.skey) + '" data-l="' + esc(l.id) + '" aria-label="' + esc(r.sname + ' 진도 자세히') + '">' +
       pillHtml(s) + barHtml(s.k === 'none' || s.k === 'pend' ? 0 : s.pct) + '<span class="mut sm">' + (p && p.last_at ? '마지막 ' + esc(md(p.last_at)) : '') + '</span></button>' +
-      '<div class="cra">' + confCtl(l, r, s) + '</div></div>';
+      '<div class="cra">' + (ia && S.drawer ? '' : confCtl(l, r, s)) + '</div></div>';
   }
   function colHtml(d) {
-    var l = D.lmap[d.l], cls, cid, rows, i, s, nD = 0, nB = 0, list = [], h, f = d.f || 'all', qm = [], x, cnt = [], n, bits, j;
+    var l = D.lmap[d.l], cls, cid, rows, i, s, nD = 0, nB = 0, list = [], h, f = d.f || 'all', qm = [], x, cnt = [], n, bits, j, st = [];
     if (!l) return '';
     cls = colClasses(l);
     cid = cls.indexOf(d.c) >= 0 ? d.c : (cls[0] || '');
@@ -3200,9 +3226,15 @@ window.__lecAdminStart = function () {
       s = stat(l, rows[i].skey);
       x = behindOf(l, rows[i].skey, s);
       if (isDone(s)) nD += 1; else if (x) nB += 1;
-      if (f === 'all' || (f === 'done' && isDone(s)) || (f === 'behind' && x)) list.push({ r: rows[i], s: s });
+      st.push({ r: rows[i], s: s, b: x });
     }
     x = complRows(l, rows);
+    /* A4 ②: 열 때 덜 본 학생이 있으면 «결석·덜 봄»(J 식 · 빈 거름으로 열지 않게 nB 도 봄) · 고른 거름은 그대로 */
+    if (f === 'auto') { f = (x.abs - x.absDone > 0 && nB > 0) ? 'behind' : 'all'; d.f = f; }
+    for (i = 0; i < st.length; i += 1) {
+      s = st[i].s;
+      if (f === 'all' || (f === 'done' && isDone(s)) || (f === 'behind' && (st[i].b || (S.cf && S.cf.s === st[i].r.skey && S.cf.l === l.id)))) list.push(st[i]);
+    }
     h = dHead(l.title, [L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업' : '', cid ? D.cname[cid] : '', schNames(lecSch(l)), x.big, x.small], thumbHtml(l));
     h += '<div class="db">';
     /* 2차 인스펙터 머리 단추: 학생 화면(새 탭) · 고치기(보기) — 반 공지 문구 복사는 아래 그 자리에 */
@@ -7073,9 +7105,9 @@ window.__lecAdminStart = function () {
         break;
       case 'newLec': openEditor(''); break;
       case 'editLec': openEditor(l); break;
-      case 'colOpen': openDrawer({ t: 'col', l: l, c: c, f: 'all' }, inDw); break;
+      case 'colOpen': openDrawer({ t: 'col', l: l, c: c, f: 'auto' }, inDw); break;   /* A4 ② */
       case 'mxMore': mxMore(); break;
-      case 'iaCol': openDrawer({ t: 'col', l: l, c: c, f: 'all' }); break;   /* 2차 1600 인스펙터 «학생별 진도» */
+      case 'iaCol': openDrawer({ t: 'col', l: l, c: c, f: 'auto' }); break;   /* 2차 1600 인스펙터 «학생별 진도» */
       case 'iaQ': closeDrawer(); S.tab = 'qna'; S.qLec = l; S.qf = 'all'; S.qFocus = ''; render(); scrollMain(); break;
       case 'colCls': if (S.drawer) { S.drawer.c = c; S.cf = null; renderDrawer(); } break;
       case 'colF': if (S.drawer) { S.drawer.f = v; renderDrawer(); } break;
