@@ -263,6 +263,11 @@ textarea{resize:vertical}
 .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);max-width:calc(100% - 28px);background:#0C4631;color:#FAFAF5;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:650;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:60;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .toast.bad{background:#7C2F25}
+/* A1 토스트 단추(‹ 오늘) · 같은 색 안에서 */
+.toast.act{display:flex;align-items:center;gap:12px;pointer-events:auto}
+.toast .tgo{flex:none;min-height:32px;padding:4px 10px;border:1px solid rgba(250,250,245,.55);border-radius:8px;background:transparent;color:#FAFAF5;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.toast .tgo:hover{background:rgba(250,250,245,.12)}
+.toast .tgo:focus-visible{outline:2px solid #FAFAF5;outline-offset:2px}
 /* 로그인 */
 .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 14px}
 .lg{width:100%;max-width:380px;padding:26px 24px}
@@ -1585,14 +1590,26 @@ window.__lecAdminStart = function () {
 
   /* --------------------------------------------------------------------- 알림 */
   var toastT = null;
-  function toast(msg, bad) {
-    var t = $('toast');
+  /* o = { ms: 머무는 시간, go: 단추로 갈 탭, btn: 단추 글 }(A1 · A2) · 단추가 있으면 마우스를 올린 동안 머묾 · Esc = 단추 */
+  function toast(msg, bad, o) {
+    var t = $('toast'), b;
     if (!t) return;
+    o = o || {};
     t.textContent = msg;
-    t.className = 'toast on' + (bad ? ' bad' : '');
+    S.toastGo = '';
+    if (o.go && o.btn) {
+      b = document.createElement('button');
+      b.type = 'button'; b.className = 'tgo'; b.setAttribute('data-act', 'toastGo'); b.setAttribute('data-v', o.go); b.textContent = o.btn;
+      t.appendChild(b);
+      S.toastGo = o.go;
+      t.onmouseenter = function () { clearTimeout(toastT); };
+      t.onmouseleave = function () { if (S.toastGo) { clearTimeout(toastT); toastT = setTimeout(toastOff, 1600); } };
+    }
+    t.className = 'toast on' + (bad ? ' bad' : '') + (S.toastGo ? ' act' : '');
     clearTimeout(toastT);
-    toastT = setTimeout(function () { t.className = 'toast'; }, 2600);
+    toastT = setTimeout(toastOff, o.ms || 2600);
   }
+  function toastOff() { var t = $('toast'); S.toastGo = ''; if (t) { t.className = 'toast'; t.onmouseenter = null; t.onmouseleave = null; } }
 
   /* 복사: 누른 그 자리에서 clipboard 를 부르고, 안 되면 글을 골라 둠 */
   function selectCopy(el) {
@@ -2359,7 +2376,7 @@ window.__lecAdminStart = function () {
       qi = ti('todoQ', '', 't-honey', '질문', '답을 기다리는 질문 ' + w.count, { t: '답을 기다리는 질문', s: waitSub(w), srs: wq3.length > 0, n: w.count, u: '개', ic: 'am', i: 'msg', hd: 1 });
       for (i = 0; i < wq3.length; i += 1) {
         b = wq3[i];
-        qi += '<button type="button" class="tsr" data-act="qGo" data-q="' + esc(b.id) + '" data-l="' + esc(b.lecture) + '"><span class="tsx"><span class="tsn"><b>' + esc(str(b.sname || '학생')) + '</b></span>' +
+        qi += '<button type="button" class="tsr" data-act="todoQGo" data-q="' + esc(b.id) + '" data-l="' + esc(b.lecture) + '"><span class="tsx"><span class="tsn"><b>' + esc(str(b.sname || '학생')) + '</b></span>' +
           '<span class="tss">' + esc(str(b.title) + ((b.at || b.created_at) ? ' · ' + L.fmtWhen(b.at || b.created_at) : '')) + '</span></span><span class="go" aria-hidden="true">›</span></button>';
       }
       if (w.count > wq3.length && wq3.length) qi += '<button type="button" class="tmore" data-act="todoQ">질문 ' + (w.count - wq3.length) + '개 더 보기</button>';
@@ -6705,14 +6722,21 @@ window.__lecAdminStart = function () {
   /* 선생님 함수 부르기: 끝나면 모두 다시 불러옴 */
   /* 2차(⑥): 화면에서 이 질문 아래에 있는 첫 «답변 대기» 질문(없으면 '') */
   function ansNext(q) {
-    var a = document.querySelectorAll('#main article.th[data-th]'), w = {}, i, past = false, id;
+    var a = document.querySelectorAll('#main article.th[data-th]'), w = {}, i, past = false, id, first = '';
     for (i = 0; i < D.th.length; i += 1) { if (D.th[i].k === 'wait') w[D.th[i].root.id] = 1; }
     for (i = 0; i < a.length; i += 1) {
       id = a[i].getAttribute('data-th');
       if (past && w[id] && id !== q) return id;
+      if (!first && w[id] && id !== q) first = id;   /* A1: 아래에 없으면 위의 대기 질문으로 */
       if (id === q) past = true;
     }
-    return '';
+    return first;
+  }
+  /* A1: 이 질문 말고 남은 답변 대기 수(강의 · 거름 상관없이) */
+  function waitLeft(q) {
+    var n = 0, i;
+    for (i = 0; i < D.th.length; i += 1) { if (D.th[i].k === 'wait' && D.th[i].root.id !== q) n += 1; }
+    return n;
   }
   /* 2차(8): 숨기기 바로 단추 · 숨김 칸 하나만 저장(고치기 저장과 같은 길 · 다시 누르면 되돌림) */
   function lecHide(id, btn) {
@@ -7048,6 +7072,14 @@ window.__lecAdminStart = function () {
       case 'qLecClear': S.qLec = ''; render(); break;
       case 'qSel': S.qSel = q; S.qFocus = ''; render(); break;   /* 2차(8): 질문 목록 한 줄 → 오른쪽에 그 질문 */
       case 'qGo': closeDrawer(); S.tab = 'qna'; S.qLec = l; S.qf = 'all'; S.qFocus = q; render(); break;
+      case 'todoQGo':   /* A1: «오늘» 질문 줄 = 대기 거름 · 강의 거름 없음 · 그 질문을 고른 채 · 마우스 PC 는 답 칸에 커서(폰은 자판이 갑자기 뜨지 않게 그대로) */
+        closeDrawer(); S.tab = 'qna'; S.qf = 'wait'; S.qLec = ''; S.qFocus = q; S.qSel = q; render();
+        if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+          t = $('ans-' + q);
+          if (t) { try { t.focus({ preventScroll: true }); } catch (e) { try { t.focus(); } catch (e2) {} } }
+        }
+        break;
+      case 'toastGo': toastOff(); closeDrawer(); S.tab = v || 'today'; S.qFocus = ''; render(); scrollMain(); break;   /* A1 토스트 [‹ 오늘] */
       case 'answer':
         t = trim(S.inputs['ans:' + q]);
         if (!t) { toast('답을 적어 주세요', true); r = $('ans-' + q); if (r) r.focus(); break; }
@@ -7055,7 +7087,9 @@ window.__lecAdminStart = function () {
         for (i = 0; i < D.th.length; i += 1) { if (D.th[i].root.id === q) r = D.th[i].root; }
         if (!r) break;
         k = ansNext(q);   /* 2차(⑥): 답을 달면 아래 «답변 대기» 질문 답 칸으로(손을 떼지 않고 이어서) */
-        act('ans' + q, el, DA.answer(r, t), k ? '답을 달았어요 · 다음 질문으로' : '답을 달았어요', function () {
+        i = waitLeft(q);   /* A1: 남은 대기가 없으면 «다 달았어요» 토스트 + [‹ 오늘] */
+        act('ans' + q, el, DA.answer(r, t), k ? '답을 달았어요 · 다음 질문으로' : (i ? '답을 달았어요' : ''), function () {
+          if (!k && !i) toast('답변 대기 질문을 다 달았어요', false, { ms: 1600, go: 'today', btn: '‹ 오늘' });
           delete S.inputs['ans:' + q];
           dfDrop('ans:' + q);   /* 보낸 답은 남겨 둔 글에서도 지움(다시 읽혀도 안 뜸 · §8-220) · 칸도 비움(새로 불러오기 전에 떠나도) */
           var ta = $('ans-' + q); if (ta) ta.value = '';
@@ -7387,6 +7421,7 @@ window.__lecAdminStart = function () {
       if (k === 'cfnote' && !ev.shiftKey) { if (keyAct(t, 'cfSave', 'cfbox')) ev.preventDefault(); return; }
     }
     if (ev.key === 'Escape' || ev.keyCode === 27) {
+      if (S.toastGo && !S.ed && !S.drawer) { k = S.toastGo; toastOff(); S.tab = k; S.qFocus = ''; render(); scrollMain(); return; }   /* A1 */
       edDropIfNew();
       if (closeEditor()) return;
       if (S.drawer) closeDrawer();
