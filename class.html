@@ -672,6 +672,11 @@ a.row:focus-visible{outline-offset:-2px}
 .pdfm:empty{display:none}
 .vid{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:12px;overflow:hidden}
 .vid iframe,.vid .yt,.vid .fake{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+/* S2(11-19) 포스터: 영상 칸에 같은 썸네일(sd → mq) · 재생기 준비 때 200ms 에 사라짐 · 겹 그림(.mph) = 누른 그림이 영상 칸으로(누름을 막지 않음) */
+.vid .vpost{position:absolute;left:0;top:0;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.mph,.mph-bg{position:fixed;pointer-events:none}
+.mph-bg{left:0;top:0;right:0;bottom:0;z-index:60}
+.mph{z-index:61;display:block;object-fit:cover}
 .fake{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#F4ECD7;background:#000}
 .fake .fl{font-size:12px;opacity:.75}
 .fake .ft{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -2307,7 +2312,7 @@ window.__lecStart = function () {
     }
     var wasPlayer = S.view === 'player';
     teardown();
-    if (hs === 'rng') showRange(); else showList();   /* C2 학교 시험 범위 영상 */
+    if (hs === 'rng') showRange(); else { showList(); mphOut(); }   /* C2 학교 시험 범위 영상 · S2 돌아가는 겹 그림 */
     if (wasPlayer) loadHome(true);
   }
   function goList() {
@@ -4684,7 +4689,7 @@ window.__lecStart = function () {
       '<div class="pt"><b>' + esc(l.title) + '</b>' + (sub.length ? '<span>' + esc(sub.join(' · ')) + '</span>' : '') + '</div>' + pdfBtnHTML(l) + '</div>' +
       (lecPdf(l.id) ? '<p class="pdfm" id="pdfM" role="status"></p>' : '') +
       '<div class="pgrid" id="pgrid"><div class="pl">' +
-      '<div class="vid" id="vid"><div class="yt" id="ytbox"></div></div>' +
+      '<div class="vid" id="vid"><div class="yt" id="ytbox"></div>' + vpostHTML(l) + '</div>' +
       '<div class="card verr" id="verr" hidden><p id="verrT"></p><button class="btn-line" type="button" data-act="list">목록으로</button></div>' +
       '<div class="endc" id="endW" role="status" hidden></div>' +
       '<div class="band" id="band" role="group" aria-label="지문" hidden></div>' +
@@ -4704,6 +4709,7 @@ window.__lecStart = function () {
       '</div>';
     app.innerHTML = h;
     try { window.scrollTo(0, 0); } catch (e) { /* 없음 */ }
+    vpostWatch();
     startTrack(l);
     T.auto = !!S.autoplay && Date.now() - S.autoplay < 4000; /* 맨 위 카드로 열었으면 준비되는 대로 재생 */
     S.autoplay = 0;
@@ -4711,6 +4717,100 @@ window.__lecStart = function () {
     paperPaint();
     if (S.tab === 'qna') openQna(); else drawToc(true);
     bandDraw();
+    mphIn(l);
+  }
+  /* S2(11-19) 썸네일이 무대가 됨 — J 값(380ms · 바탕 240ms · 돌아갈 때 320ms · 둥글기 따라감)을 View Transition 대신 겹 그림(FLIP)으로
+     까닭: View Transition 은 화면 바꾸기를 콜백(다음 프레임)으로 미룸 → 재생기 만들기가 누름 처리에서 떨어짐(아이폰 소리 조건) · 그래서 길(route)은 지금 그대로 두고
+     바뀐 뒤에 그림만 겹쳐 움직임 · 겹 그림은 누름을 막지 않음(pointer-events:none) · 줄임 설정 · animate 없음 = 지금처럼 바로 바뀜 */
+  var MPH = null, E_OUT = 'cubic-bezier(.2,.8,.2,1)', E_SOFT = 'cubic-bezier(.3,.7,.2,1)';
+  function noMo() { try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return true; } }
+  function anim(el, kf, o) { if (!el || noMo() || typeof el.animate !== 'function') return null; try { return el.animate(kf, o); } catch (e) { return null; } }
+  function rmEl(e) { if (e && e.parentNode) e.parentNode.removeChild(e); }
+  function onScr(r) { var H = window.innerHeight || 0; return !!r && r.width > 0 && r.bottom > 0 && r.top < H; }
+  function mphBox(r, rad) { return { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', borderRadius: rad }; }
+  function mphClear() { var a = document.querySelectorAll('.mph,.mph-bg'), i; for (i = 0; i < a.length; i += 1) rmEl(a[i]); }
+  function mphImg(src, from, to, ms) {
+    var im = document.createElement('img'), k0 = mphBox(from[0], from[1]), a, x;
+    im.className = 'mph'; im.alt = ''; im.setAttribute('aria-hidden', 'true'); im.src = src;
+    for (x in k0) im.style[x] = k0[x];
+    document.body.appendChild(im);
+    a = anim(im, [k0, mphBox(to[0], to[1])], { duration: ms, easing: E_OUT, fill: 'both' });
+    if (a) a.onfinish = function () { rmEl(im); }; else rmEl(im);
+  }
+  function mphBg(col) {
+    var bg = document.createElement('div'), a;
+    bg.className = 'mph-bg'; bg.setAttribute('aria-hidden', 'true'); bg.style.background = col;
+    document.body.appendChild(bg);
+    a = anim(bg, [{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'linear', fill: 'both' });
+    if (a) a.onfinish = function () { rmEl(bg); }; else rmEl(bg);
+  }
+  /* 누른 그림(큰 카드 .art · 줄 .sth)을 잡아 둠 · 화면 밖이면 그림 없이 바탕만 · 그림이 아직 안 떴으면 바탕만 */
+  function mphGrab(el) {
+    var hr = el && el.getAttribute ? String(el.getAttribute('href') || '') : '', b, im, r, id = '';
+    MPH = null;
+    if (noMo() || hr.indexOf('#v=') !== 0) return;
+    try { id = decodeURIComponent(hr.slice(3)); } catch (e) { return; }
+    b = el.querySelector('.art, .sth');
+    im = b ? b.querySelector('.art-i, .sth-i') : null;
+    r = b ? b.getBoundingClientRect() : null;
+    MPH = { id: id, t: Date.now(), r: onScr(r) ? r : null, rad: b ? getComputedStyle(b).borderTopLeftRadius : '0px', kind: b ? (b.classList.contains('art') ? 'art' : 'sth') : '',
+      src: im && im.complete && im.naturalWidth > 120 ? (im.currentSrc || im.src) : '' };
+  }
+  function mphIn(l) {
+    var m = MPH, v = $('vid'), to;
+    MPH = null;
+    if (!m || m.back || m.id !== String(l.id) || Date.now() - m.t > 1500 || !v || noMo()) return;
+    if (T) T.mphKind = m.kind;
+    mphClear();
+    mphBg('#FAF6EC');
+    to = v.getBoundingClientRect();
+    if (m.r && m.src && onScr(to)) mphImg(m.src, [m.r, m.rad], [to, getComputedStyle(v).borderTopLeftRadius], 380);
+  }
+  /* «‹ 목록» · «목록으로»: 영상 칸 자리를 잡아 둠 → 목록을 그린 뒤 그 강의 그림 자리로 320ms */
+  function mphBack() {
+    var v = $('vid'), r;
+    MPH = null;
+    if (!T || noMo() || !v || v.hidden) return;
+    r = v.getBoundingClientRect();
+    MPH = { back: true, id: String(T.lec.id), t: Date.now(), r: onScr(r) ? r : null, rad: getComputedStyle(v).borderTopLeftRadius, kind: T.mphKind || '', src: T.postSrc || '' };
+  }
+  function mphOut() {
+    var m = MPH, q, b, el = null, i, j, ks;
+    MPH = null;
+    if (!m || !m.back || Date.now() - m.t > 1500 || noMo() || S.view !== 'list') return;
+    mphClear();
+    mphBg('#0D241A');
+    if (!m.r || !m.src) return;
+    /* 목록 자리(되돌린 스크롤 포함)가 잡힌 다음 프레임에 그 그림을 찾음 · 그 줄이 화면 밖이면 바탕만 */
+    var go = function () {
+      if (S.view !== 'list') return;
+      q = app.querySelectorAll('a[href="#v=' + encodeURIComponent(m.id) + '"]');
+      ks = m.kind ? ['.' + m.kind, '.art, .sth'] : ['.art, .sth'];
+      for (j = 0; j < ks.length && !el; j += 1) {
+        for (i = 0; i < q.length; i += 1) { b = q[i].querySelector(ks[j]); if (b && onScr(b.getBoundingClientRect())) { el = b; break; } }
+      }
+      if (el) mphImg(m.src, [m.r, m.rad], [el.getBoundingClientRect(), getComputedStyle(el).borderTopLeftRadius], 320);
+    };
+    if (window.requestAnimationFrame) window.requestAnimationFrame(go); else go();
+  }
+  function vpostHTML(l) {
+    var src = L.ytThumb(l.yt, 'sddefault');
+    return src ? '<img class="vpost" id="vPost" src="' + esc(src) + '" data-thq="mqdefault" alt="" decoding="async">' : '';
+  }
+  /* 포스터가 뜨면 그 주소를 남김(돌아갈 때 겹 그림) */
+  function vpostWatch() {
+    var p = $('vPost');
+    if (!p) return;
+    var f = function () { if (T && p.naturalWidth > 120 && p.parentNode) T.postSrc = p.currentSrc || p.src; };
+    if (p.complete) setTimeout(f, 0); else p.addEventListener('load', f);
+  }
+  function vpostOff(now) {
+    var p = $('vPost'), a;
+    if (!p) return;
+    if (T && p.complete && p.naturalWidth > 120) T.postSrc = p.currentSrc || p.src;
+    p.id = '';
+    a = now ? null : anim(p, [{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-out', fill: 'forwards' });
+    if (a) a.onfinish = function () { rmEl(p); }; else rmEl(p);
   }
 
   /* ------------------------------------------------------------ C3 종이 자리 · C7 멈추고 풀기 */
@@ -4889,6 +4989,7 @@ window.__lecStart = function () {
 
   function onReady() {
     if (!T) return;
+    vpostOff(false);
     var want = rateWant();
     if (RATES.indexOf(want) >= 0 && want !== 1) T.P.rate(want);
     checkDur();
@@ -4923,6 +5024,7 @@ window.__lecStart = function () {
     if (!T) return;
     T.err = code || -1;
     T.stopped = true;
+    vpostOff(true);
     stopHide();
     if (T.iv) { clearInterval(T.iv); T.iv = null; }
     try { T.P.destroy(); } catch (e) { /* 없음 */ }
@@ -5105,6 +5207,7 @@ window.__lecStart = function () {
   }
 
   function teardown() {
+    mphClear();
     stage(false);
     setStop(); /* S1 공부 화면: 말소리 · 녹음 · 마이크 · 타이머 · 내 소리 주소를 모두 거둠(주소가 바뀌어 다른 화면으로 가도) */
     if (!T) return;
@@ -5573,7 +5676,7 @@ window.__lecStart = function () {
     var el = findAct(e.target);
     if (!el) return;
     var act = el.getAttribute('data-act');
-    if (act === 'go') { S.nav = true; S.autoplay = attr(el, 'data-play') ? Date.now() : 0; S.wantTab = attr(el, 'data-tab') === 'qna' ? 'qna' : ''; return; } /* 주소(#v=) 그대로 따라감 · 맨 위 카드 = 열리면 바로 재생(결론안 K 3절) */
+    if (act === 'go') { mphGrab(el); S.nav = true; S.autoplay = attr(el, 'data-play') ? Date.now() : 0; S.wantTab = attr(el, 'data-tab') === 'qna' ? 'qna' : ''; return; } /* 주소(#v=) 그대로 따라감 · 맨 위 카드 = 열리면 바로 재생(결론안 K 3절) */
     if (act === 'pdf') { /* P1 필기 PDF: 주소(href · target)는 그릴 때 정함 · 여기서는 영상을 멈추고 한 줄만(받기 · 열기는 브라우저가) */
       if (T && T.P) { try { T.P.pause(); } catch (ep) { /* 없음 */ } }
       var pm = $('pdfM');
@@ -5601,7 +5704,7 @@ window.__lecStart = function () {
     else if (act === 'merec') { pwaClose(false); if (PV) location.replace('#rec'); else location.hash = '#rec'; } /* <a> 기본 이동은 위에서 막힘 → 주소를 직접 #rec 로(hashchange → 기록 안내 판) · 미리 보기는 기록 없이 바꿔치기(바깥 «닫기» = 뒤로 한 번 · §8-220) */
     else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; S.set = null; spkFresh(); clearHash(); showLogin(''); }
     else if (act === 'retry') { loadHome(); }
-    else if (act === 'list') { goList(); }
+    else if (act === 'list') { mphBack(); goList(); }
     else if (act === 'absmore') { jumpAbs(); }
     else if (act === 'restart') {
       if (T && T.P) { T.pendSeekL = null; T.skipTo = 0; seekL(0); }   /* 처음부터 = 모든 멈춤을 다시 봄(검수 B2 M-1) */
