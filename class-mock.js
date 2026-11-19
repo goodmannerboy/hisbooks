@@ -4777,7 +4777,7 @@
       if ((n || 0) > 0) d.sbox.push({ sid: k.sid, n: n, age: age || 0, at: sNow() });
     }
     i = isObj(r.due) && r.due.n != null ? r.due.n : 0;
-    return v2Merge(r, { v2: v2Sw(d), ts: nowMs(), todo: { n: i } });
+    return v2Merge(r, { v2: v2Sw(d), ts: nowMs(), todo: v2Sw(d)['eval'] && v2Sw(d).review ? v3Sum(d, k.sid, k.cls) : { n: i } });   /* V2-3 오늘 볼 것 */
   }
 
   function lec_set_open_v2(d, a) {
@@ -4787,7 +4787,8 @@
     k = findKey(d, a.p_key);
     if (!k) return { ok: false, err: 'key' };
     if (!agreed(d, k.sid)) return { ok: false, err: 'consent' };
-    if (a.p_md !== 'mem' && a.p_md !== 'due') return { ok: false, err: 'input' };
+    if (a.p_md !== 'mem' && a.p_md !== 'due' && ['spell', 'guw', 'gram', 'review'].indexOf(a.p_md) < 0) return { ok: false, err: 'input' };   /* V2-3 */
+    if (['spell', 'guw', 'gram', 'review'].indexOf(a.p_md) >= 0) return v3Open3(d, k, a.p_set, a.p_md);   /* V2-3 새 판 = v3Open3 */
     if (a.p_md === 'mem') {
       r = lec_set_items(d, { p_key: a.p_key, p_set: a.p_set });
       if (!isObj(r) || r.ok !== true) return r;
@@ -4918,6 +4919,9 @@
               src = 'say';
             } else why = 'gone';
           }
+        } else if (rn.md !== 'due') {   /* V2-3 새 판(spell · guw · gram · review) 채점 = v3Judge 한 곳 */
+          q = v3Judge(d, rn, k.cls, e);
+          setId = q.s; why = q.why; f = q.f; sr = q.sr; okr = q.ok; src = q.src;
         } else {
           setId = e.s;
           q = null;
@@ -4969,7 +4973,7 @@
     for (i = 0; i < news.length; i += 1) {
       x = news[i];
       if (lday !== x.day) {
-        lcnt = d.slog.filter(function (y) { return y.day === x.day && y.sid === k.sid && y.done && (y.bk === 'mem' || y.bk === 'due'); }).length;
+        lcnt = d.slog.filter(function (y) { return y.day === x.day && y.sid === k.sid && y.done && ['mem', 'due', 'spell', 'guw', 'gram', 'review'].indexOf(y.bk) >= 0; }).length;   /* V2-3 */
         lday = x.day;
       }
       if (lcnt >= lim) x.why = 'lim';
@@ -5003,7 +5007,7 @@
     for (i = 0; i < d.srun.length; i += 1) {
       x = d.srun[i];
       if (x.sid !== k.sid || !(x.day >= lo) || has(x.shut, a.p_set)) continue;
-      if (x.set_id === a.p_set || (x.md === 'due' && x.qs.some(function (y) { return y.s === a.p_set; }))) x.shut[a.p_set] = at;
+      if (x.set_id === a.p_set || ((x.md === 'due' || x.md === 'review') && x.qs.some(function (y) { return y.s === a.p_set; }))) x.shut[a.p_set] = at;   /* V2-3 오늘 볼 것 판도 */
     }
     for (i = 0; i < t.ans.length; i += 1) { if (isObj(t.ans[i])) sv.push({ i: i, v: str(t.ans[i].v) }); }
     out = clone(r);
@@ -5053,6 +5057,365 @@
     return v2Merge(r, { done: true, end: sEnd(d, t, k.sid, k.cls), ans: sView(t, {}).done,
                         me: s ? sMe(d, s, k.sid, today()) : null, due: sDueN(d, k.sid, k.cls, today()) });
   }
+
+  /* ======================================================= V2-3 (11-20) 세트 학습 v2 학습 흐름(다시 보기 일정 · 오늘 볼 것 · 새 연습 판)
+     class-setup.sql V2-3 절(lec__v2_* 속 함수 열다섯)과 같은 규칙 · 둘이 다르면 SQL 이 기준 · 사례표 _check/class_v3_cases.json
+     새 RPC 이름 없음: V2-1 의 lec_set_home_v2(todo) · lec_set_open_v2(spell · guw · gram · review) · lec_set_log_v2(새 판 채점) ·
+       lec_set_test_v2(오늘 볼 것 판도 닫음)를 넓힘(그 자리마다 V2-3 꼬리표)
+     다른 점: 일정 칸 고친 시각 t 가 '5' 꼴 글자면 앱(examMerge)처럼 수로 읽음(SQL 은 0 · 히즈북스는 늘 수로 씀) · 판 씨앗 FNV(문항 차례는 같음)
+     손잡이: ?dayoff=N 또는 LecMock.dayOff(N) = 폰 · 서버 «지금»을 N 일 옮김(window.__lecNow · 0 = 돌려놓음) ·
+       window.__lecSrvOff(서버만 옮김 · V2-1) · LecMock.v3 = 셈 함수(plan · enorm · grade · exams · examOf · todo · pan · sum · 시험용) */
+  var V3KO = { voc: 1, gu: 2, gram: 3 };
+  var V3OFF = 0, V3BASE = null, V3HOOK = false;
+
+  /* 날짜 글 ↔ 날 수 */
+  function v3N(s) { var p = str(s).split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }
+  function v3Add(s, n) { return L().addDays(s, n); }
+  /* lec__date: 'YYYY-MM-DD' 이고 2000~2100 · 있는 날이면 그대로 · 아니면 null */
+  function v3Ld(s) {
+    var p, t;
+    if (typeof s !== 'string' || !V2_DAY.test(s)) return null;
+    p = s.split('-');
+    if (+p[0] < 2000 || +p[0] > 2100) return null;
+    t = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    return t.getUTCMonth() + 1 === +p[1] && t.getUTCDate() === +p[2] ? s : null;
+  }
+  function v3Min(a, b) { return a == null ? b : (b == null ? a : (b < a ? b : a)); }
+  function v3Max(a, b) { return a == null ? b : (b == null ? a : (b > a ? b : a)); }
+  /* lec__v2_first: 카드에 적힌 가장 이른 날 */
+  function v3First(c) {
+    var o = '', a = [], i;
+    if (!isObj(c)) return '';
+    if (isArr(c.d)) a = a.concat(c.d);
+    if (isArr(c.y)) a = a.concat(c.y);
+    a.push(c.t, c.z);
+    for (i = 0; i < a.length; i += 1) {
+      if (typeof a[i] === 'string' && V2_DAY.test(a[i]) && (o === '' || a[i] < o)) o = a[i];
+    }
+    return o;
+  }
+  /* lec__v2_enorm: 일정 날짜 칸 → 'YYYY-MM-DD' · 아니면 null(앱 examNorm) */
+  function v3Enorm(v) {
+    var t = typeof v === 'string' || typeof v === 'number' ? String(v) : (isArr(v) ? pgText(v) : '');
+    return L().isoOf(t) || null;
+  }
+  /* lec__v2_grade: 반 줄 {g, ig, s, is, cn} → 학년(앱 stuGrade) */
+  function v3Grade(me) {
+    if (!isObj(me)) return '';
+    return str(L().stuGrade({ grade: me.g, school: me.s, intake: { grade: me.ig, school: me.is } }, { name: me.cn }));
+  }
+  /* lec__v2_exams: lec__sched 답 → [{cid, k, g, e, end}](학년 예외가 끝나지 않았으면 그것 → 학교 일정 → 지난 학년 예외 → 지난 학교 일정) */
+  function v3Exams(sc, day) {
+    var X = L(), m = X.examMerge(isObj(sc) ? sc.rows : null), out = [], me = isObj(sc) && isArr(sc.me) ? sc.me : [], i, r, k, g, rg, rs,
+        gd, ge, sd, se, pd, pe;
+    if (!m) return out;
+    for (i = 0; i < me.length; i += 1) {
+      r = me[i];
+      if (!isObj(r)) continue;
+      k = X.schoolKey(X.stuSchool({ school: r.s, intake: { school: r.is } }));
+      if (!k) continue;
+      g = v3Grade(r);
+      rg = g !== '' && has(m.eg, k + '|' + g) ? m.eg[k + '|' + g] : null;
+      rs = has(m.es, k) ? m.es[k] : null;
+      gd = isObj(rg) && !X.truthy(rg.del) ? v3Enorm(rg.date) : null;
+      ge = gd ? v3Max(gd, v3Enorm(rg.end) || gd) : null;
+      sd = isObj(rs) && !X.truthy(rs.del) ? v3Enorm(rs.date) : null;
+      se = sd ? v3Max(sd, v3Enorm(rs.end) || sd) : null;
+      if (gd && ge >= day) { pd = gd; pe = ge; } else if (sd && se >= day) { pd = sd; pe = se; } else if (gd) { pd = gd; pe = ge; } else { pd = sd; pe = se; }
+      if (pd) out.push({ cid: typeof r.cid === 'string' || typeof r.cid === 'number' ? String(r.cid) : null, k: k, g: g, e: pd, end: pe });
+    }
+    return out;
+  }
+  /* lec__v2_ex: 이 학생의 학교 시험(본앱 일정 = schedOf 한 번) */
+  function v3Ex(d, sid) { return v3Exams(schedOf(d, sid), today()); }
+  /* lec__v2_exam_of: 세트 하나의 시험(공개일 on · 세트 반 cls) → {e, end} · 없으면 null */
+  function v3ExamOf(ex, on, cls, day) {
+    var c = isArr(ex) ? ex : [], mine, w2;
+    cls = isArr(cls) ? cls : [];
+    mine = c.filter(function (x) { return x.cid != null && cls.indexOf(x.cid) >= 0; });
+    w2 = (mine.length ? mine : c).filter(function (x) { return on >= v3Add(x.e, -70) && on <= v3Add(x.end, -1); });
+    if (!w2.length) return null;
+    w2.sort(function (a, b) {
+      var fa = a.e > day, fb = b.e > day;
+      if (fa !== fb) return fa ? -1 : 1;
+      if (a.e !== b.e) return fa ? (a.e < b.e ? -1 : 1) : (a.e > b.e ? -1 : 1);
+      return a.end > b.end ? -1 : (a.end < b.end ? 1 : 0);
+    });
+    return { e: w2[0].e, end: w2[0].end };
+  }
+  /* lec__v2_plan: 다시 볼 날(f 처음 배운 날 · e 시험 날 · r 처음 배운 차례(0부터) · n 그 수) → 날짜 글 차례 · 같은 날 하나 */
+  function v3Plan(f, e, r, n) {
+    var R, lo, out = [], s, o = [], i;
+    if (!f) return [];
+    if (!e) return [v3Add(f, 1), v3Add(f, 3), v3Add(f, 7)];
+    R = v3N(e) - v3N(f);
+    if (R <= 0) return [];
+    lo = f;
+    if (R > 5) {
+      lo = v3Add(f, Math.max(1, Math.floor(2 * R / 3)));
+      out = [v3Add(f, Math.max(1, Math.min(Math.floor(R / 3), 7))), lo];
+    }
+    if (n != null && n > 0 && r != null) {
+      s = v3Add(e, -6 + Math.floor(r * 5 / n));
+      if (s <= lo) s = v3Add(lo, 1);
+      if (s <= v3Add(e, -2)) out.push(s);
+    }
+    out.sort();
+    for (i = 0; i < out.length; i += 1) { if (!i || out[i] !== out[i - 1]) o.push(out[i]); }
+    return o;
+  }
+  /* 문항 한 칸의 기록 줄 날짜(지운 문항 줄 뺌) */
+  function v3Days(d, sid, setId, k) {
+    var lo = null, hi = null, i, x;
+    for (i = 0; i < d.slog.length; i += 1) {
+      x = d.slog[i];
+      if (x.sid !== sid || x.set_id !== setId || x.k !== k || x.why === 'gone') continue;
+      lo = v3Min(lo, x.day);
+      hi = v3Max(hi, x.day);
+    }
+    return { lo: lo, hi: hi };
+  }
+  function v3Fm(s, it) { return s.kind === 'voc' ? 'sp' : (s.kind === 'gu' ? 'se' : (L().setOpts(it.s) ? 'c' : 'r')); }
+  /* lec__v2_todo: 오늘 볼 것 줄 [{s, k, kd, o, gr, sk, on, cr, z, f}](차례대로 · 종류 · gr · sk · 공개일 늦은 것 · 만든 때 늦은 것 · 문항 차례) */
+  function v3Todo(d, sid, cls, ex, day) {
+    var X = L(), rows = [], grp = {}, out = [], i, j, s, p, xe, e, it, k, c, lg, f, r, a, g, pl, pd, zd, gr;
+    for (i = 0; i < d.set.length; i += 1) {
+      s = d.set[i];
+      p = sProg(d, sid, s.id);
+      if (!p || !sOpen(s, cls) || sBusy(d, sid, s.id)) continue;
+      xe = v3ExamOf(ex, s.posted_on, s.class_ids, day);
+      e = xe ? xe.e : null;
+      for (j = 0; j < s.items.length; j += 1) {
+        it = s.items[j];
+        k = str(it.k);
+        c = sCard(p, k);
+        lg = v3Days(d, sid, s.id, k);
+        f = v3Min(lg.lo, v3Ld(v3First(c)));
+        if (f == null && isObj(c) && p.first_at != null) f = X.isoDay(p.first_at) || null;
+        if (f == null) continue;
+        r = { s: s, it: it, k: k, o: j + 1, c: c, f: f, ls: v3Max(lg.hi, v3Ld(v2Last(c))), e: e, cr: tms(s.created_at) };
+        r.ge = e && e > day && f < e ? e : null;
+        if (r.ge) (grp[r.ge] = grp[r.ge] || []).push(r);
+        rows.push(r);
+      }
+    }
+    for (g in grp) {
+      if (!has(grp, g)) continue;
+      a = grp[g];
+      a.sort(function (x, y) {
+        if (x.f !== y.f) return x.f < y.f ? -1 : 1;
+        if (x.s.posted_on !== y.s.posted_on) return x.s.posted_on < y.s.posted_on ? -1 : 1;
+        if (x.cr !== y.cr) return x.cr - y.cr;
+        if (x.s.id !== y.s.id) return x.s.id < y.s.id ? -1 : 1;
+        return x.o - y.o;
+      });
+      for (j = 0; j < a.length; j += 1) { a[j].r = j; a[j].n = a.length; }
+    }
+    for (i = 0; i < rows.length; i += 1) {
+      r = rows[i];
+      pl = !r.e || r.e > day ? v3Plan(r.f, r.e, r.ge ? r.r : null, r.ge ? r.n : null) : [];
+      pd = null;
+      for (j = 0; j < pl.length; j += 1) { if (pl[j] <= day && (r.ls == null || r.ls < pl[j])) { pd = pl[j]; break; } }
+      zd = (r.s.kind === 'voc' || r.s.kind === 'gram') && X.setDueOn(r.c, day);
+      if (pd == null && !zd) continue;
+      gr = pd != null && pd < day ? 0 : (zd && !(r.e && r.e <= day) ? 1 : (pd != null ? 2 : 3));
+      out.push({ s: r.s.id, k: r.k, kd: r.s.kind, o: r.o, gr: gr,
+                 sk: pd != null && pd < day ? pd : (zd ? str(r.c.z) : r.f), on: r.s.posted_on, cr: r.cr, z: zd, f: v3Fm(r.s, r.it) });
+    }
+    out.sort(function (x, y) {
+      if (x.kd !== y.kd) return V3KO[x.kd] - V3KO[y.kd];
+      if (x.gr !== y.gr) return x.gr - y.gr;
+      if (x.sk !== y.sk) return x.sk < y.sk ? -1 : 1;
+      if (x.on !== y.on) return x.on < y.on ? 1 : -1;
+      if (x.cr !== y.cr) return y.cr - x.cr;
+      return x.o - y.o;
+    });
+    return out;
+  }
+  /* lec__v2_sum: 목록에 더하는 오늘 볼 것 {n, day, ex, kd} */
+  function v3Sum(d, sid, cls) {
+    var day = today(), ex = v3Ex(d, sid), z = v3Todo(d, sid, cls, ex, day), kd = { voc: 0, gu: 0, gram: 0 }, sx = {}, i, s, w2;
+    for (i = 0; i < z.length; i += 1) kd[z[i].kd] += 1;
+    for (i = 0; i < d.set.length; i += 1) {
+      s = d.set[i];
+      if (!sOpen(s, cls)) continue;
+      w2 = v3ExamOf(ex, s.posted_on, s.class_ids, day);
+      if (w2 && w2.end >= day) sx[s.id] = w2.e;
+    }
+    return { n: z.length, day: day, ex: sx, kd: kd };
+  }
+  /* lec__v2_q: 판 문항 한 칸(V2-1 쌓인 오답 판과 같은 꼴 + 구문) */
+  function v3Q(s, it, f) {
+    return { s: s.id, k: str(it.k), kd: s.kind, t: s.title, f: f,
+             p: s.kind === 'voc' ? str(it.m) : (s.kind === 'gu' ? str(it.t) : str(it.s)),
+             o: s.kind === 'gram' ? L().setOpts(it.s) : null,
+             a: s.kind === 'voc' ? str(it.w) : (s.kind === 'gu' ? str(it.e) : str(it.a)),
+             x: s.kind === 'gram' ? str(it.x) : '', pt: s.kind === 'voc' ? '' : str(it.p) };
+  }
+  /* lec__v2_pan: 판 꾸리기(세트 하나 · [{s, k, f(, z)}]) */
+  function v3Pan(d, sid, s, md, day) {
+    var X = L(), F = md === 'spell' ? ['sp'] : ['ar', 'se'], a = [], p, its = [], pts = {}, hp = false, nw = null, blk = [], mx = [], out = [],
+        i, j, it, k, l, x, c, lg, g, q, zd;
+    if (md === 'spell' || md === 'guw') {
+      for (i = 0; i < s.items.length; i += 1) {
+        k = str(s.items[i].k);
+        l = null;
+        for (j = 0; j < d.slog.length; j += 1) {
+          x = d.slog[j];
+          if (x.sid !== sid || x.set_id !== s.id || x.k !== k || x.why === 'gone' || x.why === 'log' || F.indexOf(x.f) < 0) continue;
+          if (!l || tms(x.ta) > tms(l.ta) || (tms(x.ta) === tms(l.ta) && (x.i > l.i || (x.i === l.i && x.id > l.id)))) l = x;
+        }
+        if (!l) a.push({ st: 1, lt: null, o: i, k: k });
+        else if (l.ok && (md === 'spell' || l.f === 'se')) a.push({ st: 2, lt: tms(l.ta), o: i, k: k });
+        else a.push({ st: 0, lt: null, o: i, k: k });
+      }
+      a.sort(function (m1, m2) {
+        if (m1.st !== m2.st) return m1.st - m2.st;
+        if (m1.lt !== m2.lt) return m1.lt == null ? -1 : (m2.lt == null ? 1 : m1.lt - m2.lt);
+        return m1.o - m2.o;
+      });
+      return a.slice(0, 20).map(function (y) { return { s: s.id, k: y.k, f: md === 'spell' ? 'sp' : 'gw' }; });
+    }
+    p = sProg(d, sid, s.id);
+    for (i = 0; i < s.items.length; i += 1) {
+      it = s.items[i];
+      k = str(it.k);
+      c = sCard(p, k);
+      lg = v3Days(d, sid, s.id, k);
+      zd = X.setDueOn(c, day);
+      x = { k: k, o: i + 1, pt: str(it.p), zd: zd, zz: zd ? str(c.z) : '', ls: v3Max(lg.hi, v3Ld(v2Last(c))), seen: lg.hi != null || isObj(c),
+            f: X.setOpts(it.s) ? 'c' : 'r' };
+      its.push(x);
+      if (!has(pts, x.pt)) pts[x.pt] = { po: x.o, lrn: false };
+      pts[x.pt].lrn = pts[x.pt].lrn || x.seen;
+      if (x.pt !== '') hp = true;
+    }
+    if (hp) {
+      for (g in pts) { if (has(pts, g) && !pts[g].lrn && (nw === null || pts[g].po < pts[nw].po)) nw = g; }
+    }
+    if (nw !== null) blk = its.filter(function (y) { return y.pt === nw; }).slice(0, 8);
+    if (!blk.length) {
+      for (g in pts) {
+        if (!has(pts, g) || (hp && !pts[g].lrn)) continue;
+        q = its.filter(function (y) { return y.pt === g; });
+        q.sort(function (m1, m2) {
+          if (m1.zd !== m2.zd) return m1.zd ? -1 : 1;
+          if (m1.zz !== m2.zz) return m1.zz < m2.zz ? -1 : 1;
+          if (m1.seen !== m2.seen) return m1.seen ? 1 : -1;
+          if (m1.ls !== m2.ls) return m1.ls == null ? -1 : (m2.ls == null ? 1 : (m1.ls < m2.ls ? -1 : 1));
+          return m1.o - m2.o;
+        });
+        for (j = 0; j < q.length; j += 1) mx.push({ rk: j, po: pts[g].po, x: q[j] });
+      }
+      mx.sort(function (m1, m2) { return m1.rk - m2.rk || m1.po - m2.po || m1.x.o - m2.x.o; });
+      blk = mx.slice(0, 20).map(function (y) { return y.x; });
+    }
+    for (i = 0; i < blk.length; i += 1) {
+      x = { s: s.id, k: blk[i].k, f: blk[i].f };
+      if (blk[i].zd) x.z = true;
+      out.push(x);
+    }
+    return out;
+  }
+  /* lec__v2_open3: 새 판 열기(lec_set_open_v2 가 열쇠 · 동의 뒤에 부름) */
+  function v3Open3(d, k, setId, md) {
+    var day = today(), s = null, vs = null, all = [], rn, cnt, qs, no, q = [], left = null, i, j, x, it, o, kd0;
+    if (!v2Sw(d)[md]) return { ok: false, err: 'off' };
+    if (md !== 'review') {
+      s = sFind(d, setId);
+      if (!s || !sOpen(s, k.cls)) return { ok: false, err: 'none' };
+      if (s.kind !== (md === 'spell' ? 'voc' : (md === 'guw' ? 'gu' : 'gram'))) return { ok: false, err: 'kind' };
+      if (sBusy(d, k.sid, s.id)) return { ok: false, err: 'testing' };
+      vs = s.id;
+    } else {
+      all = v3Todo(d, k.sid, k.cls, v3Ex(d, k.sid), day);
+    }
+    rn = v2Run(d, k.sid, function (y) { return y.md === md && y.set_id === vs && y.day === day && y.end_n == null && v2Empty(y.shut); });
+    if (!rn) {
+      cnt = d.srun.filter(function (y) { return y.sid === k.sid && y.md === md && y.day === day; }).length;
+      if (cnt >= 200) return { ok: false, err: 'limit' };
+      if (md === 'review') {
+        kd0 = all.length ? all[0].kd : null;
+        qs = all.filter(function (y) { return y.kd === kd0; }).slice(0, 20).map(function (y) {
+          return y.z ? { s: y.s, k: y.k, f: y.f, z: true } : { s: y.s, k: y.k, f: y.f };
+        });
+      } else qs = v3Pan(d, k.sid, s, md, day);
+      if (!qs.length) {
+        o = { ok: true, b: null, n: 0, q: [], today: day, kd: null };
+        if (md === 'review') o.left = { voc: 0, gu: 0, gram: 0 };
+        return o;
+      }
+      no = 0;
+      for (i = 0; i < d.srun.length; i += 1) {
+        x = d.srun[i];
+        if (x.sid === k.sid && x.md === md && x.set_id === vs) no = Math.max(no, x.no);
+      }
+      no += 1;
+      rn = v2NewRun(d, k.sid, vs, md, no, qs, v2Seed(k.sid + '|' + (vs || '') + '|' + md + '|' + no));
+    }
+    for (i = 0; i < rn.qs.length; i += 1) {
+      x = rn.qs[i];
+      o = sFind(d, x.s);
+      if (!o || !sOpen(o, k.cls) || sBusy(d, k.sid, o.id) || has(rn.shut, o.id)) continue;
+      it = sItem(o, x.k);
+      if (!it) continue;
+      it = v3Q(o, it, x.f);
+      if (x.z) it.z = true;
+      q.push(it);
+    }
+    if (md === 'review') {
+      left = { voc: 0, gu: 0, gram: 0 };
+      for (i = 0; i < all.length; i += 1) {
+        for (j = 0; j < rn.qs.length; j += 1) { if (rn.qs[j].s === all[i].s && rn.qs[j].k === all[i].k) break; }
+        if (j === rn.qs.length) left[all[i].kd] += 1;
+      }
+    }
+    o = { ok: true, n: q.length, q: q, title: md === 'review' ? '오늘 볼 것' : s.title, kd: md === 'review' ? (q.length ? q[0].kd : null) : s.kind };
+    if (left) o.left = left;
+    return v2Merge(o, v2Head(rn));
+  }
+  /* lec__v2_judge: 새 판 한 줄 채점 → {why, s, f, sr, ok, src} */
+  function v3Judge(d, rn, cls, e) {
+    var X = L(), q = null, s, it, f, v = str(e.v), sr, i;
+    for (i = 0; i < rn.qs.length; i += 1) { if (e.s !== null && rn.qs[i].s === e.s && rn.qs[i].k === e.k) { q = rn.qs[i]; break; } }
+    if (!q) return { why: 'gone', s: e.s, f: str(e.f), sr: null, ok: false, src: '' };
+    s = sFind(d, q.s);
+    if (!s || !sOpen(s, cls)) return { why: 'gone', s: q.s, f: str(e.f), sr: null, ok: false, src: '' };
+    it = sItem(s, e.k);
+    if (!it) return { why: 'gone', s: s.id, f: str(e.f), sr: null, ok: false, src: '' };
+    f = q.f;
+    if (f === 'sp') sr = v2Spell(v, s.items, e.k);
+    else if (f === 'gw' || f === 'se') {
+      f = f === 'gw' && e.f === 'ar' ? 'ar' : 'se';
+      sr = v2Sent(v, it.e);
+    } else if (f === 'c') sr = X.setNorm(v) === X.setNorm(it.a);
+    else sr = X.setMatch(v, it.a);
+    sr = !!sr && !e.lg && sp(v) !== '';
+    return { why: '', s: s.id, f: f, sr: sr, ok: sr && !e.h, src: q.z ? 'due' : (s.kind === 'gu' ? 'say' : 'card') };
+  }
+  /* 오늘 날짜 옮기기(폰 · 서버 함께 · window.__lecNow) */
+  function v3DayOff(n) {
+    n = Math.floor(+n);
+    if (!isFinite(n)) n = 0;
+    if (!V3HOOK) {
+      V3BASE = typeof w.__lecNow === 'function' ? w.__lecNow : null;
+      V3HOOK = true;
+      w.__lecNow = function () { return (V3BASE ? +V3BASE() : new Date().getTime()) + V3OFF * 86400000; };
+    }
+    V3OFF = n;
+    return V3OFF;
+  }
+  try {
+    (function (m) { if (m) v3DayOff(+m[1]); })(/[?&]dayoff=(-?[0-9]{1,4})(&|$)/.exec(w.location.search));
+  } catch (e) { /* 없음 */ }
+  w.LecMock.dayOff = function (n) { return n === undefined ? V3OFF : v3DayOff(n); };
+  w.LecMock.v3 = {
+    plan: v3Plan, enorm: v3Enorm, grade: v3Grade, exams: v3Exams, examOf: v3ExamOf, first: v3First,
+    todo: function (db, sid, cls, ex, day) { return v3Todo(db, sid, cls, ex, day); },
+    pan: function (db, sid, s, md, day) { return v3Pan(db, sid, s, md, day); },
+    sum: function (sid, cls) { var d = load(); v2Tabs(d); return v3Sum(d, sid, cls); },
+    ex: function (sid) { var d = load(); return v3Ex(d, sid); }
+  };
 
   /* ---------------------------------------------------------- V2-1 선생님 함수(지켜보기 · 읽기만 · 이름 없음) */
 

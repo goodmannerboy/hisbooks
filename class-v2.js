@@ -657,6 +657,113 @@
   for (var name in api) { if (has(api, name)) Lec[name] = api[name]; }
 })(window);
 
+/* ================================================================ V2-3 (11-20) 세트 학습 v2 학습 흐름 감싸개(묶음 ③a · 화면은 ③b)
+   서버 규칙의 기준 = class-setup.sql V2-3 절(판 꾸리기 · 일정은 서버 한 곳 · 폰은 받은 차례대로) · ES5 · 바깥 라이브러리 0
+   불러올 때 다른 IIFE 에 기대지 않음(누를 때 window.Lec 의 setOpenV2 · sayText · sayParts · setNorm · setMatch · setSentV2 · setSpellV2 를 부름)
+   - Lec.setTodayV2(key) = 오늘 볼 것 한 판(lec_set_open_v2 md 'review' · 답은 setOpenV2 와 같음 + kd · left(이 판 밖 종류마다 남은 수))
+   - 새 연습 판 = Lec.setOpenV2(key, set, 'spell' | 'guw' | 'gram')(①a 그대로) · 답마다 v2Add({s, k, f, v, h, ms}) · 판 끝 v2End
+       f = 판 문항 꼴(sp · c · r) · 구문 gw 문항은 배열 줄 f 'ar'(첫 답) → 통째 줄 f 'se' · 오늘 볼 것 판의 구문은 'se' 만(배열을 힌트로 썼으면 h 참)
+   - Lec.setTodoV2(home) = 목록 응답의 todo 읽기 → {n, day, ex, kd, skew(받은 날 ≠ 폰 오늘 · 날짜는 서버 것을 씀)} · 없거나 옛 꼴이면 n 만
+   - Lec.setArrV2(e, seed) = 구문 배열 조각 {ans, parts, toks}(«/» 덩어리가 둘 이상이면 덩어리 · 아니면 낱말 = 종이 어순 배열 나눔 · 씨앗으로 섞음 ·
+       그대로면 앞 둘 바꿈)
+   - Lec.setHintV2(a, f) = 힌트 {c 첫 글자, n 글자 수(빈칸 · 부호 뺌), m 가린 꼴}: 단어(sp) = 첫 답 꼴(«/» 앞 · 괄호 뺌) · 구문(gw · se) = 낱말마다 첫 글자
+   - Lec.setCheckV2(q, v, qs) = 폰 미리 채점(서버 lec__v2_judge 의 sr 과 같은 셈 · 단어 «뜻 여럿»은 판 안 문항 qs 로만 봄 · 서버는 세트 전부) */
+(function (w) {
+  'use strict';
+
+  function L() { return w.Lec; }
+  function str(v) { return v == null ? '' : String(v); }
+  function isArr(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+  function isObj(v) { return !!v && typeof v === 'object' && !isArr(v); }
+  /* 글자 수(짝 서로게이트 한 글자) */
+  function clen(s) { var X = L(); return X && typeof X.clen === 'function' ? X.clen(str(s)) : str(s).length; }
+  /* 히즈북스 구문 시험지와 같은 낱말 나눔(class-api.js words 와 같음) */
+  function words(en) {
+    var a = str(en).split(' '), o = [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i].replace(/^\s+|\s+$/g, '').length) o.push(a[i]); }
+    return o;
+  }
+  /* 씨앗 섞기(mulberry32 · 같은 씨앗 = 같은 차례) */
+  function rnd(seed) {
+    var t = (Math.floor(+seed) || 0) >>> 0;
+    return function () {
+      t = (t + 0x6D2B79F5) >>> 0;
+      var r = Math.imul ? Math.imul(t ^ (t >>> 15), t | 1) : ((t ^ (t >>> 15)) * (t | 1)) | 0;
+      r ^= r + (Math.imul ? Math.imul(r ^ (r >>> 7), r | 61) : ((r ^ (r >>> 7)) * (r | 61)) | 0);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function setTodayV2(key) {
+    var X = L();
+    if (!X || typeof X.setOpenV2 !== 'function') return Promise.resolve({ ok: false, err: 'old' });
+    return X.setOpenV2(key, null, 'review');
+  }
+  function setTodoV2(home) {
+    var X = L(), t = isObj(home) && isObj(home.todo) ? home.todo : null, n, day, mine;
+    n = t && typeof t.n === 'number' && t.n >= 0 ? Math.floor(t.n) : 0;
+    if (!t || typeof t.day !== 'string') return { n: n, day: null, ex: {}, kd: null, skew: false };
+    mine = X && typeof X.isoDay === 'function' ? X.isoDay() : '';
+    day = t.day;
+    return { n: n, day: day, ex: isObj(t.ex) ? t.ex : {}, kd: isObj(t.kd) ? t.kd : null, skew: mine !== '' && mine !== day };
+  }
+  function setArrV2(e, seed) {
+    var X = L(), ans = X.sayText(e), parts = X.sayParts(e), toks, sw, r = rnd(seed), i, j, t;
+    toks = parts.length > 1 ? parts : words(ans);
+    sw = toks.slice();
+    for (i = sw.length - 1; i > 0; i -= 1) {
+      j = Math.floor(r() * (i + 1));
+      t = sw[i]; sw[i] = sw[j]; sw[j] = t;
+    }
+    if (sw.length > 1 && sw.join(' ') === toks.join(' ')) { t = sw[0]; sw[0] = sw[1]; sw[1] = t; }
+    return { ans: ans, parts: toks, toks: sw };
+  }
+  /* 한 낱말 가리기: 첫 글자 + 글자는 _ (부호 · 숫자는 그대로) */
+  function mask(wd) {
+    var o = '', i, c, first = true;
+    for (i = 0; i < wd.length; i += 1) {
+      c = wd.charAt(i);
+      if (/[A-Za-z]/.test(c)) { o += first ? c : '_'; first = false; } else o += c;
+    }
+    return o;
+  }
+  function setHintV2(a, f) {
+    var X = L(), base, ws, m = [], n = 0, i, c = '';
+    if (f === 'sp' || f === 'w') base = str(a).split('/')[0].replace(/[(][^()]*[)]/g, ' ');
+    else base = X.sayText(a);
+    ws = words(base.replace(/\s+/g, ' '));
+    for (i = 0; i < ws.length; i += 1) {
+      m.push(mask(ws[i]));
+      n += ws[i].replace(/[^A-Za-z]/g, '').length;
+    }
+    for (i = 0; i < ws.length && c === ''; i += 1) { c = (/[A-Za-z]/.exec(ws[i]) || [''])[0]; }
+    return { c: c, n: n, m: m.join(' ') };
+  }
+  function setCheckV2(q, v, qs) {
+    var X = L(), items = [], i, f, sr;
+    if (!isObj(q) || v == null) return false;
+    v = str(v);
+    if (clen(v) > 400 || v.replace(/^ +| +$/g, '') === '') return false;
+    f = str(q.f);
+    if (f === 'sp') {
+      if (isArr(qs)) {
+        for (i = 0; i < qs.length; i += 1) {
+          if (isObj(qs[i]) && qs[i].s === q.s && qs[i].kd === 'voc') items.push({ k: qs[i].k, w: qs[i].a, m: qs[i].p });
+        }
+      }
+      if (!items.length) items.push({ k: q.k, w: q.a, m: q.p });
+      sr = X.setSpellV2(v, items, q.k);
+    } else if (f === 'gw' || f === 'se' || f === 'ar') sr = X.setSentV2(v, q.a);
+    else if (f === 'c') sr = X.setNorm(v) === X.setNorm(q.a);
+    else sr = X.setMatch(v, q.a);
+    return !!sr;
+  }
+
+  var api = { setTodayV2: setTodayV2, setTodoV2: setTodoV2, setArrV2: setArrV2, setHintV2: setHintV2, setCheckV2: setCheckV2 }, nm;
+  if (!w.Lec) return;
+  for (nm in api) { if (Object.prototype.hasOwnProperty.call(api, nm)) w.Lec[nm] = api[nm]; }
+})(window);
+
 /* ===================================================================== V2-UI (11-20 · 묶음 ①b) 세트 학습 v2 화면 손잡이 Lec.v2u
    class.html 이 이 파일을 늦게 읽은 뒤(세트 칸을 열 때 · 판에 들어갈 때 · 보관함에 남은 줄이 있을 때 한가할 때) Lec.v2u.init(다리)로 이음
    스위치 = 홈 _v2 의 v2(S.set.v2) · 끔 · v2 없는 서버 = 옛 함수 그대로(부르는 횟수 같음) · log = 옛 길 + 기록 줄(카드는 옛 함수가 바꿈 · 두 번 세지 않음)

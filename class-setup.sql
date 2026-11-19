@@ -9910,7 +9910,7 @@ create table if not exists public.lec_set_run (
   last_i      integer not null default 0,
   end_n       integer,
   created_at  timestamptz not null default now(),
-  constraint lec_set_run_md_ok check (md in ('mem', 'due')),
+  constraint lec_set_run_md_ok check (md in ('mem', 'due', 'spell', 'guw', 'gram', 'review')),   -- V2-3 새 판 넷
   constraint lec_set_run_js_ok check (jsonb_typeof(qs) = 'array' and jsonb_typeof(shut) = 'object')
 );
 create index if not exists lec_set_run_sid on public.lec_set_run (sid, day);
@@ -9953,7 +9953,7 @@ create table if not exists public.lec_set_log (
   why    text not null default '',
   c0     jsonb,
   constraint lec_set_log_id_ok  check (id ~ '^[0-9a-f]{32}$'),
-  constraint lec_set_log_bk_ok  check (bk in ('mem', 'due', 'ev', 'log')),
+  constraint lec_set_log_bk_ok  check (bk in ('mem', 'due', 'ev', 'log', 'spell', 'guw', 'gram', 'review')),   -- V2-3 새 판 넷
   constraint lec_set_log_i_ok   check (i between 1 and 1000),
   constraint lec_set_log_v_ok   check (char_length(v) <= 400),
   constraint lec_set_log_why_ok check (why in ('', 'log', 'late', 'lim', 'shut', 'gone', 'done'))
@@ -10367,7 +10367,10 @@ begin
     end if;
   end if;
   return v_r || jsonb_build_object('v2', public.lec__v2_sw(), 'ts', floor(extract(epoch from now()) * 1000)::bigint,
-                                   'todo', jsonb_build_object('n', coalesce(v_r #> '{due,n}', '0'::jsonb)));
+                                   'todo', case when coalesce((public.lec__v2_sw() ->> 'eval')::boolean, false)
+                                                     and coalesce((public.lec__v2_sw() ->> 'review')::boolean, false)
+                                                then public.lec__v2_sum(k.sid, k.cls)   -- V2-3 오늘 볼 것(n · day · ex · kd) · 끄면 V2-1 그대로
+                                                else jsonb_build_object('n', coalesce(v_r #> '{due,n}', '0'::jsonb)) end);
 end
 $$;
 
@@ -10397,10 +10400,14 @@ begin
   if not public.lec__agreed(k.sid) then
     return jsonb_build_object('ok', false, 'err', 'consent');
   end if;
-  if p_md is distinct from 'mem' and p_md is distinct from 'due' then
+  if p_md is distinct from 'mem' and p_md is distinct from 'due'
+     and not coalesce(p_md in ('spell', 'guw', 'gram', 'review'), false) then   -- V2-3 새 판 넷
     return jsonb_build_object('ok', false, 'err', 'input');
   end if;
   perform pg_advisory_xact_lock(hashtext('lec_v2|' || k.sid));
+  if p_md in ('spell', 'guw', 'gram', 'review') then   -- V2-3 새 판 = lec__v2_open3 한 곳(그 모드 스위치 · 판 꾸리기)
+    return public.lec__v2_open3(k, p_set, p_md);
+  end if;
   if p_md = 'mem' then
     v_r := public.lec_set_items(p_key, p_set);
     if (v_r ->> 'ok') is distinct from 'true' then
@@ -10598,6 +10605,14 @@ begin
             v_why := 'gone';
           end if;
         end if;
+      elsif rn.md <> 'due' then   -- V2-3 새 판(spell · guw · gram · review) 채점 = lec__v2_judge 한 곳
+        v_q := public.lec__v2_judge(rn, k.cls, v_e);
+        v_set := (v_q ->> 's')::uuid;
+        v_why := v_q ->> 'why';
+        v_f := v_q ->> 'f';
+        v_sr := (v_q ->> 'sr')::boolean;
+        v_okr := coalesce((v_q ->> 'ok')::boolean, false);
+        v_src := coalesce(v_q ->> 'src', '');
       else
         v_set := case when (v_e ->> 's') is not null then (v_e ->> 's')::uuid end;
         select q.e into v_q from jsonb_array_elements(rn.qs) as q(e)
@@ -10668,7 +10683,7 @@ begin
   loop
     if v_lday is distinct from v_day then
       select count(*) into v_lcnt from public.lec_set_log xl
-       where xl.day = v_day and xl.sid = k.sid and xl.done and xl.bk in ('mem', 'due');
+       where xl.day = v_day and xl.sid = k.sid and xl.done and xl.bk in ('mem', 'due', 'spell', 'guw', 'gram', 'review');   -- V2-3
       v_lday := v_day;
     end if;
     if v_lcnt >= v_lim then
@@ -10711,7 +10726,7 @@ begin
   select * into t from public.lec_set_try xt where xt.id = (v_r ->> 'try')::uuid;
   update public.lec_set_run xr set shut = xr.shut || jsonb_build_object(p_set::text, now())
    where xr.sid = k.sid and xr.day >= public.lec__set_today() - 14 and not (xr.shut ? p_set::text)
-     and (xr.set_id = p_set or (xr.md = 'due' and xr.qs @> jsonb_build_array(jsonb_build_object('s', p_set))));
+     and (xr.set_id = p_set or (xr.md in ('due', 'review') and xr.qs @> jsonb_build_array(jsonb_build_object('s', p_set))));   -- V2-3 오늘 볼 것 판도
   return (v_r - 'done') || jsonb_build_object(
            'sv', (select coalesce(jsonb_agg(jsonb_build_object('i', v.i - 1, 'v', v.a ->> 'v') order by v.i), '[]'::jsonb)
                     from jsonb_array_elements(t.ans) with ordinality as v(a, i) where jsonb_typeof(v.a) = 'object'),
@@ -10856,6 +10871,971 @@ grant execute on function public.lec_set_home_v2(text, jsonb), public.lec_set_op
   to anon, authenticated;
 revoke all on function public.lec_v2_watch(integer) from public, anon;
 grant execute on function public.lec_v2_watch(integer) to authenticated;
+
+-- ---------------------------------------------------------------- V2-3 (11-20) 세트 학습 v2 학습 흐름 · 다시 보기 일정 · 오늘 볼 것 · 새 연습 판 · 열셋째 스스로 점검
+-- 묶음 ③a 서버층(화면은 따로). 더하기만: 속 함수 lec__v2_* 열다섯 · 찾아보기 하나 · 권한 · 열셋째 스스로 점검(이 절 맨 끝 do 블록).
+--   V2-1 안을 넓힌 곳(줄마다 «-- V2-3» 꼬리표): lec_set_run.md · lec_set_log.bk 허용 값 · lec_set_home_v2 의 todo ·
+--   lec_set_open_v2 새 판 넷(spell · guw · gram · review → lec__v2_open3) · lec_set_log_v2 새 판 채점(lec__v2_judge) · 하루 한도 셈 ·
+--   lec_set_test_v2(오늘 볼 것 판도 닫음)
+--   스위치(lec_v2_cfg): 새 판은 eval 과 그 판 스위치가 둘 다 켜졌을 때만 · 목록 todo 는 eval · review 가 둘 다 켜졌을 때만(끄면 V2-1 그대로)
+-- 다시 보기 일정(저장하지 않고 부를 때마다 셈 · 흉내 저장소 class-mock.js 가 같은 셈 · 사례표 _check/class_v3_cases.json):
+--   처음 배운 날 f = 그 문항 기록 줄(lec_set_log · 지운 문항 줄 뺌) 가운데 가장 이른 날 · 카드 날짜(d · y · t · z)가 더 이르면 그 날 ·
+--     둘 다 없고 카드가 있으면 세트를 처음 연 날(first_at · 서울 날짜)
+--   시험 = 세트 공개일이 «시험 날 − 70일 ~ 시험 끝 − 1일» 안인 내 학교 시험(그 세트 반의 줄 · 없으면 내 모든 줄) · 앞으로 올 것 가운데
+--     가장 이른 것 · 없으면 가장 늦게 지난 것 · 시험 날 = D-9 링과 같은 일정(lec__sched · main · pt-etc 합침 · 학년 예외가 끝나지 않았으면
+--     그것 · 아니면 학교 일정 · 시험 기간 첫날) · 다만 학년 예외가 D-20 보다 멀어도 학년 예외를 씀(링은 D-20 안 · 대비 시작부터 보임)
+--   R = 시험 날 − f · 첫 = f + min(R/3, 7) · 둘째 = f + 2R/3(나머지 버림 · 최소 1일) · 마지막 = D-6 ~ D-2 를 같은 시험 문항들의 f 차례로
+--     고르게(둘째보다 뒤 · 겹치면 다음 날 · D-2 를 넘으면 없음) · R ≤ 5 면 마지막만 · 같은 날은 하나 · 시험이 없으면 f + 1 · 3 · 7 ·
+--     시험이 지나면 멈춤 · 그 날이 왔고 그 날 뒤로 아직 안 본(기록 줄 · 카드 날짜 없음) 가장 이른 날 하나 = 볼 날(놓친 날이 여럿이어도 한 번)
+-- 오늘 볼 것 = 열린 세트 전부(시험 · 드릴을 연 세트 뺌) · 위 볼 날 + 쌓인 오답(단어 · 문법 z · lec__set_due_on 그대로) ·
+--   차례 = 단어 → 구문 → 문법 · 놓친 날(gr 0) → 쌓인 오답(1) → 오늘 날(2) → 시험 지난 세트의 쌓인 오답(3) · 점수 · 통과 · 추천 칸 없음
+-- 새 연습 판(판 꾸리기 규칙은 이 절 한 곳 · 폰은 받은 차례대로 · 바른 답을 같이 줌 · 지금 시험 · 드릴을 연 세트 문항은 판에서 뺌):
+--   spell 단어 써 보기(sp · 카드 꼴 card = 맞으면 d 만 · 외움 뜻 그대로) · guw 구문 써 보기(gw · 줄 꼴 ar 배열 → se 통째 · say) ·
+--   gram 문법(포인트 칸이 있으면 새 포인트 첫 판 = 그 포인트만 8문항까지 · 다음 판부터 배운 포인트를 돌아가며 · 같은 포인트의 안 본 문항 먼저 ·
+--   쌓인 오답 먼저 · c 고르기 · r 쓰기) · review 오늘 볼 것 한 판(한 종류 · 20 · 단어 sp · 구문 se · 문법 c · r) ·
+--   쌓인 오답 문항 = 카드 꼴 due(V2-1 쌓인 오답 판과 같음) · 그 밖 = card(구문 say) · 힌트 본 답 = 틀림(카드) ·
+--   판 20 문항 · 하루 판 200 까지(판마다) · 줄 꼴 = V2-1 그대로(첫 답 = 판 · 문항마다 가장 작은 순번 · h 힌트 · f 단계 · ms)
+-- 운영에 넣은 뒤 확인(SQL Editor 에서 · 바꾸는 것 없음):
+--   select has_function_privilege('anon', 'public.lec__v2_todo(text, text[], jsonb, date)', 'execute') as "속 함수 밖에서 부름(false)";
+
+-- 일정 날짜 칸 → 날짜(앱 examNorm 과 같은 셈: 숫자 무리 넷 · 두 자리 이하 · 두 자리 이하 또는 여덟 자리 하나 · 2000~2100 · 없는 날 null)
+create or replace function public.lec__v2_enorm(p jsonb) returns date
+language plpgsql immutable set search_path = public as $$
+declare
+  v_a  text[];
+begin
+  v_a := array(select x.v
+                 from regexp_split_to_table(case jsonb_typeof(p) when 'string' then p #>> '{}' when 'number' then p #>> '{}'
+                                                 when 'array' then p::text else '' end, '[^0-9]+') with ordinality as x(v, o)
+                where x.v <> '' order by x.o);
+  if cardinality(v_a) = 1 and char_length(v_a[1]) = 8 then
+    v_a := array[left(v_a[1], 4), substr(v_a[1], 5, 2), substr(v_a[1], 7, 2)];
+  elsif not (cardinality(v_a) = 3 and char_length(v_a[1]) = 4 and char_length(v_a[2]) <= 2 and char_length(v_a[3]) <= 2) then
+    return null;
+  end if;
+  if v_a[2]::integer not between 1 and 12 or v_a[3]::integer not between 1 and 31 or v_a[1]::integer not between 2000 and 2100 then
+    return null;
+  end if;
+  return make_date(v_a[1]::integer, v_a[2]::integer, v_a[3]::integer);
+exception when others then
+  return null;
+end
+$$;
+
+-- 학년(앱 stuGrade 와 같은 셈 · 반 줄 {g, ig, s, is, cn}): 학년 칸(거짓이면 접수 학년) 끝 숫자 → 학교 이름 뒤 숫자(1~6 · 앱 schoolDisp) →
+--   반 이름(H · M · E + 숫자 · 고등 · 중등은 3 까지 · 학교 끝 글자와 맞아야 함 → 아니면 N학년) · 없으면 ''
+create or replace function public.lec__v2_grade(p_me jsonb) returns text
+language plpgsql immutable set search_path = public as $$
+declare
+  v_ws   text := '[' || chr(9) || chr(10) || chr(11) || chr(12) || chr(13) || chr(32) || chr(160) || chr(5760) || chr(8192) || '-' || chr(8202)
+                 || chr(8232) || chr(8233) || chr(8239) || chr(8287) || chr(12288) || chr(65279) || ']*';
+  v_g    jsonb;
+  v_raw  text;
+  v_x    text;
+  v_sup  integer := 0;
+  v_go   boolean := true;
+  v_ch   integer;
+  v_nm   text;
+  v_k    text;
+  v_m    text[];
+begin
+  if jsonb_typeof(p_me) is distinct from 'object' then
+    return '';
+  end if;
+  v_g := case when public.lec__truthy(p_me -> 'g') then p_me -> 'g' when public.lec__truthy(p_me -> 'ig') then p_me -> 'ig' end;
+  v_m := regexp_match(case jsonb_typeof(v_g) when 'string' then v_g #>> '{}' when 'number' then v_g #>> '{}'
+                                             when 'array' then v_g::text else '' end, '([0-9])[^0-9]*$');
+  if v_m is not null then
+    return v_m[1];
+  end if;
+  v_raw := public.lec__stu_school(jsonb_build_object('school', p_me -> 's', 'intake', jsonb_build_object('school', p_me -> 'is')));
+  v_x := v_raw;
+  for i in 1 .. char_length(v_x) loop
+    if ascii(substr(v_x, i, 1)) > 65535 then
+      v_sup := v_sup + 1;
+    end if;
+  end loop;
+  while v_go and char_length(v_x) + v_sup > 1 loop
+    v_go := false;
+    v_ch := ascii(right(v_x, 1));
+    if v_ch between 48 and 57 or v_ch in (45, 46, 32) then
+      v_x := left(v_x, -1); v_go := true; continue;
+    end if;
+    if char_length(v_x) + v_sup > 2 and right(v_x, 2) = '학년' then
+      v_x := left(v_x, -2); v_go := true; continue;
+    end if;
+    if char_length(v_x) + v_sup > 2 and v_ch = ascii('반') and ascii(substr(v_x, char_length(v_x) - 1, 1)) between 48 and 57 then
+      v_x := left(v_x, -1); v_go := true; continue;
+    end if;
+  end loop;
+  v_x := btrim(v_x, chr(9) || chr(10) || chr(11) || chr(12) || chr(13) || chr(32) || chr(160) || chr(5760) ||
+                    chr(8192) || chr(8193) || chr(8194) || chr(8195) || chr(8196) || chr(8197) || chr(8198) || chr(8199) ||
+                    chr(8200) || chr(8201) || chr(8202) || chr(8232) || chr(8233) || chr(8239) || chr(8287) || chr(12288) || chr(65279));
+  if v_x <> '' and left(v_raw, char_length(v_x)) = v_x then
+    v_m := regexp_match(substr(v_raw, char_length(v_x) + 1), '[1-6]');
+    if v_m is not null then
+      return v_m[1];
+    end if;
+  end if;
+  v_nm := case when public.lec__truthy(p_me -> 'cn')
+               then (case jsonb_typeof(p_me -> 'cn') when 'string' then p_me ->> 'cn' when 'number' then p_me ->> 'cn'
+                                                     when 'array' then (p_me -> 'cn')::text else '' end)
+               else '' end;
+  if v_nm = '' then
+    return '';
+  end if;
+  v_k := public.lec__skey(v_raw);
+  v_m := regexp_match(v_nm, '([HMEhme])' || v_ws || '([1-6])');
+  if v_m is not null then
+    if (upper(v_m[1]) in ('H', 'M') and v_m[2] > '3')
+       or (v_k <> '' and ((upper(v_m[1]) = 'H' and right(v_k, 1) <> '고') or (upper(v_m[1]) = 'M' and right(v_k, 1) <> '중')
+                          or (upper(v_m[1]) = 'E' and right(v_k, 1) <> '초'))) then
+      return '';
+    end if;
+    return v_m[2];
+  end if;
+  v_m := regexp_match(v_nm, '([1-6])' || v_ws || '학년');
+  return coalesce(v_m[1], '');
+end
+$$;
+
+-- 일정 한 칸의 고친 시각(수만 · 글자 수는 0 · 앱 pickT 는 '5' 꼴 글자도 수로 읽음 = 히즈북스는 늘 수로 씀)
+create or replace function public.lec__v2_tnum(p jsonb) returns numeric
+language sql immutable set search_path = public as $$
+  select case when jsonb_typeof(p -> 't') = 'number' then (p ->> 't')::numeric else 0 end
+$$;
+
+-- main · pt-etc 일정 칸 합치기(앱 joinV · mapMerge · pickT): pt-etc 가 없으면 main · main 이 없으면 pt-etc ·
+--   같은 칸은 시각(t) 큰 쪽(같으면 pt-etc) · 둘 다 시각이 없으면 main(main 이 null 이면 pt-etc)
+create or replace function public.lec__v2_join(p_m jsonb, p_e jsonb) returns jsonb
+language sql immutable set search_path = public as $$
+  select case when p_e is null or jsonb_typeof(p_e) = 'null'
+                then (case when jsonb_typeof(p_m) = 'object' then p_m else '{}'::jsonb end)
+              when p_m is null or jsonb_typeof(p_m) = 'null'
+                then (case when jsonb_typeof(p_e) = 'object' then p_e else '{}'::jsonb end)
+              else coalesce((select jsonb_object_agg(coalesce(a.key, b.key),
+                                      case when a.key is null then b.value
+                                           when b.key is null then a.value
+                                           when public.lec__v2_tnum(a.value) <> 0 or public.lec__v2_tnum(b.value) <> 0
+                                             then (case when public.lec__v2_tnum(b.value) >= public.lec__v2_tnum(a.value) then b.value else a.value end)
+                                           when jsonb_typeof(a.value) = 'null' then b.value
+                                           else a.value end)
+                               from jsonb_each(case when jsonb_typeof(p_m) = 'object' then p_m else '{}'::jsonb end) as a
+                               full join jsonb_each(case when jsonb_typeof(p_e) = 'object' then p_e else '{}'::jsonb end) as b
+                                 on b.key = a.key), '{}'::jsonb) end
+$$;
+
+-- 내 학교 시험(lec__sched 답 하나 · 반 줄마다 · 학교 열쇠가 빈 줄 뺌) → [{cid, k, g, e 시험 날, end 시험 끝}] · 두 줄(main · pt-etc)을 다 못 읽었으면 []
+--   고름 = 끝나지 않은 학년 예외 → 끝나지 않은 학교 일정 → 지난 학년 예외 → 지난 학교 일정(지운 칸 · 날짜가 틀린 칸 뺌)
+create or replace function public.lec__v2_exams(p_sched jsonb, p_day date) returns jsonb
+language plpgsql immutable set search_path = public as $$
+declare
+  v_m    jsonb;
+  v_e    jsonb;
+  v_es   jsonb;
+  v_eg   jsonb;
+  v_me   jsonb;
+  v_k    text;
+  v_g    text;
+  v_rg   jsonb;
+  v_rs   jsonb;
+  v_gd   date;
+  v_ge   date;
+  v_sd   date;
+  v_se   date;
+  v_pd   date;
+  v_pe   date;
+  v_out  jsonb := '[]'::jsonb;
+begin
+  select x.r into v_m
+    from jsonb_array_elements(case when jsonb_typeof(p_sched -> 'rows') = 'array' then p_sched -> 'rows' else '[]'::jsonb end)
+         with ordinality as x(r, o)
+   where jsonb_typeof(x.r) = 'object' and x.r ->> 'id' = 'main'
+   order by x.o desc limit 1;
+  select x.r into v_e
+    from jsonb_array_elements(case when jsonb_typeof(p_sched -> 'rows') = 'array' then p_sched -> 'rows' else '[]'::jsonb end)
+         with ordinality as x(r, o)
+   where jsonb_typeof(x.r) = 'object' and x.r ->> 'id' = 'pt-etc'
+   order by x.o desc limit 1;
+  if v_m is null or v_e is null then
+    return v_out;
+  end if;
+  v_es := public.lec__v2_join(v_m -> 'es', v_e -> 'es');
+  v_eg := public.lec__v2_join(v_m -> 'eg', v_e -> 'eg');
+  for v_me in
+    select x.v
+      from jsonb_array_elements(case when jsonb_typeof(p_sched -> 'me') = 'array' then p_sched -> 'me' else '[]'::jsonb end)
+           with ordinality as x(v, o)
+     where jsonb_typeof(x.v) = 'object'
+     order by x.o
+  loop
+    v_k := public.lec__skey(public.lec__stu_school(jsonb_build_object('school', v_me -> 's',
+                                                                      'intake', jsonb_build_object('school', v_me -> 'is'))));
+    if v_k <> '' then
+      v_g := public.lec__v2_grade(v_me);
+      v_rg := case when v_g <> '' then v_eg -> (v_k || '|' || v_g) end;
+      v_rs := v_es -> v_k;
+      v_gd := case when jsonb_typeof(v_rg) = 'object' and not public.lec__truthy(v_rg -> 'del') then public.lec__v2_enorm(v_rg -> 'date') end;
+      v_ge := greatest(v_gd, coalesce(public.lec__v2_enorm(v_rg -> 'end'), v_gd));
+      v_sd := case when jsonb_typeof(v_rs) = 'object' and not public.lec__truthy(v_rs -> 'del') then public.lec__v2_enorm(v_rs -> 'date') end;
+      v_se := greatest(v_sd, coalesce(public.lec__v2_enorm(v_rs -> 'end'), v_sd));
+      v_pd := case when v_gd is not null and v_ge >= p_day then v_gd
+                   when v_sd is not null and v_se >= p_day then v_sd
+                   when v_gd is not null then v_gd
+                   else v_sd end;
+      v_pe := case when v_gd is not null and v_ge >= p_day then v_ge
+                   when v_sd is not null and v_se >= p_day then v_se
+                   when v_gd is not null then v_ge
+                   else v_se end;
+      if v_pd is not null then
+        v_out := v_out || jsonb_build_array(jsonb_build_object(
+                   'cid', case when jsonb_typeof(v_me -> 'cid') in ('string', 'number') then v_me ->> 'cid' end,
+                   'k', v_k, 'g', v_g, 'e', to_char(v_pd, 'YYYY-MM-DD'), 'end', to_char(v_pe, 'YYYY-MM-DD')));
+      end if;
+    end if;
+  end loop;
+  return v_out;
+end
+$$;
+
+-- 이 학생의 학교 시험(app_state 는 읽기만 · 본앱 일정을 푸는 lec__sched 를 한 번 부름 · 부르는 쪽이 요청마다 한 번만 부르고 값을 넘김)
+create or replace function public.lec__v2_ex(p_sid text) returns jsonb
+language sql stable set search_path = public as $$
+  select public.lec__v2_exams(public.lec__sched((select a.data from public.app_state a where a.id = 'main'),
+                                                (select a.data from public.app_state a where a.id = 'pt-etc'), p_sid),
+                              public.lec__set_today())
+$$;
+
+-- 세트 하나의 시험(공개일 p_on · 세트 반 p_cls): 그 반 줄(없으면 모든 줄) 가운데 «시험 날 − 70 ~ 시험 끝 − 1» 안 →
+--   앞으로 올 것 가운데 가장 이른 것 · 없으면 가장 늦게 지난 것 → {e, end} · 없으면 null
+create or replace function public.lec__v2_exam_of(p_ex jsonb, p_on date, p_cls text[], p_day date) returns jsonb
+language sql immutable set search_path = public as $$
+  with c as (
+    select (x.v ->> 'e')::date as e, (x.v ->> 'end')::date as d2, x.v ->> 'cid' as cid
+      from jsonb_array_elements(case when jsonb_typeof(p_ex) = 'array' then p_ex else '[]'::jsonb end) as x(v)
+  ),
+  w as (
+    select c.e, c.d2
+      from c
+     where (c.cid = any (p_cls) or not exists (select 1 from c as c2 where c2.cid = any (p_cls)))
+       and p_on between c.e - 70 and c.d2 - 1
+  )
+  select jsonb_build_object('e', to_char(w.e, 'YYYY-MM-DD'), 'end', to_char(w.d2, 'YYYY-MM-DD'))
+    from w
+   order by (w.e > p_day) desc, (case when w.e > p_day then w.e end), w.e desc, w.d2 desc
+   limit 1
+$$;
+
+-- 카드에 적힌 가장 이른 날(d · t · z · y) · 없으면 ''(lec__v2_last 의 거꿀)
+create or replace function public.lec__v2_first(p_c jsonb) returns text
+language sql immutable set search_path = public as $$
+  select coalesce(min(x.v), '')
+    from (select jsonb_array_elements_text(case when jsonb_typeof(p_c -> 'd') = 'array' then p_c -> 'd' else '[]'::jsonb end) as v
+          union all
+          select jsonb_array_elements_text(case when jsonb_typeof(p_c -> 'y') = 'array' then p_c -> 'y' else '[]'::jsonb end)
+          union all
+          select p_c ->> 't'
+          union all
+          select p_c ->> 'z') x
+   where x.v ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+$$;
+
+-- 다시 볼 날(p_f 처음 배운 날 · p_e 시험 날 · p_r 같은 시험 문항 가운데 처음 배운 차례(0부터) · p_n 그 수) → 날짜 차례 · 같은 날 하나
+create or replace function public.lec__v2_plan(p_f date, p_e date, p_r integer, p_n integer) returns date[]
+language plpgsql immutable set search_path = public as $$
+declare
+  v_r    integer;
+  v_lo   date;
+  v_s    date;
+  v_out  date[] := '{}';
+begin
+  if p_f is null then
+    return v_out;
+  end if;
+  if p_e is null then
+    return array[p_f + 1, p_f + 3, p_f + 7];
+  end if;
+  v_r := p_e - p_f;
+  if v_r <= 0 then
+    return v_out;
+  end if;
+  v_lo := p_f;
+  if v_r > 5 then
+    v_lo := p_f + greatest(1, (2 * v_r) / 3);
+    v_out := array[p_f + greatest(1, least(v_r / 3, 7)), v_lo];
+  end if;
+  if coalesce(p_n, 0) > 0 and p_r is not null then
+    v_s := p_e - 6 + (p_r * 5) / p_n;
+    if v_s <= v_lo then
+      v_s := v_lo + 1;
+    end if;
+    if v_s <= p_e - 2 then
+      v_out := v_out || v_s;
+    end if;
+  end if;
+  return array(select distinct x.d from unnest(v_out) as x(d) order by x.d);
+end
+$$;
+
+-- 오늘 볼 것(학생 p_sid · 반 p_cls · 학교 시험 p_ex = lec__v2_ex · 오늘 p_day): 열린 세트(시험 · 드릴을 연 세트 뺌)의 문항마다
+--   볼 날이 왔거나(일정) 쌓인 오답(단어 · 문법) → 줄 하나 · gr 차례 무리 · sk 무리 안 차례 글 · fm 오늘 볼 것 판의 꼴(단어 sp · 구문 se · 문법 c · r)
+--   부르는 쪽 차례 = 종류(단어 · 구문 · 문법) · gr · sk · 공개일 늦은 것 · 만든 때 늦은 것 · 문항 차례
+create or replace function public.lec__v2_todo(p_sid text, p_cls text[], p_ex jsonb, p_day date)
+returns table (set_id uuid, kd text, k text, o bigint, gr integer, sk text, on_ date, cr timestamptz, z boolean, fm text)
+language sql stable set search_path = public as $$
+  with st as (
+    select xs.id as sid_, xs.kind as kd_, xs.items, xs.posted_on, xs.created_at, xp.cards, xp.first_at,
+           (public.lec__v2_exam_of(p_ex, xs.posted_on, xs.class_ids, p_day) ->> 'e')::date as ex
+      from public.lec_set xs
+      join public.lec_set_prog xp on xp.set_id = xs.id and xp.sid = p_sid
+     where public.lec__set_open(xs, p_cls) and not public.lec__set_busy(p_sid, xs.id)
+  ),
+  lg as (
+    select xl.set_id as ls_, xl.k as lk, min(xl.day) as d0, max(xl.day) as d1
+      from public.lec_set_log xl
+     where xl.sid = p_sid and xl.why <> 'gone' and xl.set_id in (select st.sid_ from st)
+     group by xl.set_id, xl.k
+  ),
+  it as (
+    select st.sid_, st.kd_, st.posted_on, st.created_at, st.ex, u.e ->> 'k' as ik, u.o as io, u.e ->> 's' as iq,
+           st.cards -> (u.e ->> 'k') as c,
+           coalesce(least(lg.d0, public.lec__date(public.lec__v2_first(st.cards -> (u.e ->> 'k')))),
+                    case when jsonb_typeof(st.cards -> (u.e ->> 'k')) = 'object' then (st.first_at at time zone 'Asia/Seoul')::date end) as f,
+           greatest(lg.d1, public.lec__date(public.lec__v2_last(st.cards -> (u.e ->> 'k')))) as ls
+      from st
+     cross join lateral jsonb_array_elements(st.items) with ordinality as u(e, o)
+      left join lg on lg.ls_ = st.sid_ and lg.lk = u.e ->> 'k'
+  ),
+  rk as (
+    select it.*, case when it.ex > p_day and it.f < it.ex then it.ex end as ge
+      from it
+     where it.f is not null
+  ),
+  rn as (
+    select rk.*,
+           case when rk.ge is not null
+                then (row_number() over (partition by rk.ge order by rk.f, rk.posted_on, rk.created_at, rk.sid_, rk.io) - 1)::integer end as r,
+           case when rk.ge is not null then (count(*) over (partition by rk.ge))::integer end as n
+      from rk
+  ),
+  pl as (
+    select rn.*,
+           (select min(p.d)
+              from unnest(case when rn.ex is null or rn.ex > p_day then public.lec__v2_plan(rn.f, rn.ex, rn.r, rn.n) else '{}'::date[] end) as p(d)
+             where p.d <= p_day and (rn.ls is null or rn.ls < p.d)) as pd,
+           rn.kd_ in ('voc', 'gram') and public.lec__set_due_on(rn.c, p_day) as zd
+      from rn
+  )
+  select pl.sid_, pl.kd_, pl.ik, pl.io,
+         case when pl.pd < p_day then 0 when pl.zd and not coalesce(pl.ex <= p_day, false) then 1 when pl.pd is not null then 2 else 3 end,
+         case when pl.pd < p_day then to_char(pl.pd, 'YYYY-MM-DD') when pl.zd then coalesce(pl.c ->> 'z', '') else to_char(pl.f, 'YYYY-MM-DD') end,
+         pl.posted_on, pl.created_at, pl.zd,
+         case pl.kd_ when 'voc' then 'sp' when 'gu' then 'se' else (case when public.lec__set_opts(pl.iq) is null then 'r' else 'c' end) end
+    from pl
+   where pl.pd is not null or pl.zd
+$$;
+
+-- 목록에 더하는 오늘 볼 것: n(문항 수) · day(받은 날 = 서버 오늘) · ex({세트: 시험 날} · 끝나지 않은 시험이 있는 열린 세트만 · 세트마다 한 번) ·
+--   kd(종류마다 수 · 판 끝 «이어서» 단추) · 본앱 일정은 lec__v2_ex 로 한 번만 읽음
+create or replace function public.lec__v2_sum(p_sid text, p_cls text[]) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare
+  v_day  date := public.lec__set_today();
+  v_ex   jsonb := public.lec__v2_ex(p_sid);
+  v_n    jsonb;
+  v_sx   jsonb;
+begin
+  select jsonb_build_object('n', count(*), 'voc', count(*) filter (where z.kd = 'voc'), 'gu', count(*) filter (where z.kd = 'gu'),
+                            'gram', count(*) filter (where z.kd = 'gram'))
+    into v_n
+    from public.lec__v2_todo(p_sid, p_cls, v_ex, v_day) z;
+  select coalesce(jsonb_object_agg(xs.id::text, x.w ->> 'e'), '{}'::jsonb) into v_sx
+    from public.lec_set xs
+   cross join lateral (select public.lec__v2_exam_of(v_ex, xs.posted_on, xs.class_ids, v_day) as w) x
+   where public.lec__set_open(xs, p_cls) and (x.w ->> 'end')::date >= v_day;
+  return jsonb_build_object('n', (v_n ->> 'n')::integer, 'day', to_char(v_day, 'YYYY-MM-DD'), 'ex', v_sx, 'kd', v_n - 'n');
+end
+$$;
+
+-- 판 문항 한 칸(V2-1 쌓인 오답 판과 같은 꼴 + 구문): s · k · kd · t(세트 이름) · f(판 꼴) · p(문제: 단어 뜻 · 구문 해석 · 문법 문장) ·
+--   o(문법 고르기 보기 · 아니면 null) · a(바른 답: 단어 영어 · 구문 영어 · 문법 답) · x(문법 해설 · 없으면 '') · pt(포인트 · 단어 '')
+create or replace function public.lec__v2_q(p_s public.lec_set, p_it jsonb, p_f text) returns jsonb
+language sql immutable set search_path = public as $$
+  select jsonb_build_object(
+           's', p_s.id, 'k', p_it ->> 'k', 'kd', p_s.kind, 't', p_s.title, 'f', p_f,
+           'p', case p_s.kind when 'voc' then p_it ->> 'm' when 'gu' then p_it ->> 't' else p_it ->> 's' end,
+           'o', case when p_s.kind = 'gram' then to_jsonb(public.lec__set_opts(p_it ->> 's')) end,
+           'a', case p_s.kind when 'voc' then p_it ->> 'w' when 'gu' then p_it ->> 'e' else p_it ->> 'a' end,
+           'x', case when p_s.kind = 'gram' then coalesce(p_it ->> 'x', '') else '' end,
+           'pt', case when p_s.kind = 'voc' then '' else coalesce(p_it ->> 'p', '') end)
+$$;
+
+-- 판 꾸리기(세트 하나 · 차례대로 [{s, k, f(, z)}]):
+--   spell · guw = 아직 안 쓴 문항 → 틀린 문항(구문은 배열만 한 문항도) 먼저 · 맞힌 문항은 오래된 것부터 · 20
+--   gram = 포인트 칸이 있고 아직 안 본 무리(포인트 차례 · 빈 포인트도 한 무리)가 있으면 그 무리만 8문항까지(새 포인트 첫 판) ·
+--     없으면 배운 무리를 돌아가며(무리 안 = 쌓인 오답 먼저 · 안 본 문항 · 오래 안 본 문항) 20 · 포인트 칸이 없으면 모두 한 무리 · 쌓인 오답 문항 z
+create or replace function public.lec__v2_pan(p_sid text, p_s public.lec_set, p_md text, p_day date) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare
+  v_qs  jsonb;
+begin
+  if p_md in ('spell', 'guw') then
+    select coalesce(jsonb_agg(jsonb_build_object('s', p_s.id, 'k', y.k, 'f', case when p_md = 'spell' then 'sp' else 'gw' end)
+                              order by y.st, y.lt nulls first, y.o), '[]'::jsonb)
+      into v_qs
+      from (select u.e ->> 'k' as k, u.o,
+                   case when l.id is null then 1 when l.ok and (p_md = 'spell' or l.f = 'se') then 2 else 0 end as st,
+                   case when l.ok and (p_md = 'spell' or l.f = 'se') then l.ta end as lt
+              from jsonb_array_elements(p_s.items) with ordinality as u(e, o)
+              left join lateral (select xl.id, xl.ok, xl.f, xl.ta
+                                   from public.lec_set_log xl
+                                  where xl.sid = p_sid and xl.set_id = p_s.id and xl.k = u.e ->> 'k' and xl.why not in ('gone', 'log')
+                                    and xl.f = any (case when p_md = 'spell' then array['sp'] else array['ar', 'se'] end)
+                                  order by xl.ta desc, xl.i desc, xl.id desc
+                                  limit 1) l on true
+             order by 3, 4 nulls first, 2
+             limit 20) y;
+    return v_qs;
+  end if;
+  with it as (
+    select u.e ->> 'k' as k, u.o, coalesce(u.e ->> 'p', '') as pt,
+           public.lec__set_due_on(xp.cards -> (u.e ->> 'k'), p_day) as zd,
+           case when public.lec__set_due_on(xp.cards -> (u.e ->> 'k'), p_day) then coalesce(xp.cards -> (u.e ->> 'k') ->> 'z', '') else '' end as zz,
+           greatest(l.d1, public.lec__date(public.lec__v2_last(xp.cards -> (u.e ->> 'k')))) as ls,
+           (l.d1 is not null or jsonb_typeof(xp.cards -> (u.e ->> 'k')) = 'object') as seen,
+           case when public.lec__set_opts(u.e ->> 's') is null then 'r' else 'c' end as f
+      from jsonb_array_elements(p_s.items) with ordinality as u(e, o)
+      left join public.lec_set_prog xp on xp.sid = p_sid and xp.set_id = p_s.id
+      left join lateral (select max(xl.day) as d1 from public.lec_set_log xl
+                          where xl.sid = p_sid and xl.set_id = p_s.id and xl.k = u.e ->> 'k' and xl.why <> 'gone') l on true
+  ),
+  g as (
+    select it.pt, min(it.o) as po, bool_or(it.seen) as lrn from it group by it.pt
+  ),
+  hp as (
+    select exists (select 1 from g where g.pt <> '') as y
+  ),
+  nw as (
+    select g.pt from g where (select hp.y from hp) and not g.lrn order by g.po limit 1
+  ),
+  blk as (
+    select it.k, it.o, it.f, it.zd, row_number() over (order by it.o) as rk
+      from it
+     where it.pt = (select nw.pt from nw)
+     order by it.o
+     limit 8
+  ),
+  mx as (
+    select it.k, it.o, it.f, it.zd, g.po,
+           row_number() over (partition by it.pt order by (case when it.zd then 0 else 1 end), it.zz, (case when it.seen then 1 else 0 end),
+                                                          it.ls nulls first, it.o) as rk
+      from it
+      join g on g.pt = it.pt
+     where (case when (select hp.y from hp) then g.lrn else true end)
+  ),
+  sel as (
+    select blk.k, blk.o, blk.f, blk.zd, 0 as part, blk.rk, 0::bigint as po from blk
+    union all
+    select y.k, y.o, y.f, y.zd, 1, y.rk, y.po
+      from (select mx.* from mx order by mx.rk, mx.po, mx.o limit (case when exists (select 1 from blk) then 0 else 20 end)) y
+  )
+  select coalesce(jsonb_agg(case when sel.zd then jsonb_build_object('s', p_s.id, 'k', sel.k, 'f', sel.f, 'z', true)
+                                 else jsonb_build_object('s', p_s.id, 'k', sel.k, 'f', sel.f) end
+                            order by sel.part, sel.rk, sel.po, sel.o), '[]'::jsonb)
+    into v_qs
+    from sel;
+  return v_qs;
+end
+$$;
+
+-- 새 판 열기(lec_set_open_v2 가 열쇠 · 동의 · 잠금 뒤에 부름): 그 판 스위치 · 세트(열림 · 종류 · 시험 중이면 testing) ·
+--   오늘 끝나지 않은 같은 판이 있으면 이어서(닫힌 판은 안 이음) · 없으면 판 꾸리기(review = 오늘 볼 것 첫 종류 20) · 하루 200 판 ·
+--   답 = V2-1 판 머리 + n · q(lec__v2_q · 시험 · 드릴을 연 세트 · 닫힌 세트 문항 뺌) · title · kd(+ review 는 left = 이 판 밖 종류마다 남은 수)
+create or replace function public.lec__v2_open3(k public.lec_key, p_set uuid, p_md text) returns jsonb
+language plpgsql volatile set search_path = public as $$
+declare
+  s      public.lec_set;
+  rn     public.lec_set_run;
+  v_day  date := public.lec__set_today();
+  v_set  uuid;
+  v_all  jsonb;
+  v_qs   jsonb;
+  v_q    jsonb;
+  v_left jsonb;
+  v_no   integer;
+  v_cnt  integer;
+begin
+  if not coalesce((public.lec__v2_sw() ->> p_md)::boolean, false) then
+    return jsonb_build_object('ok', false, 'err', 'off');
+  end if;
+  if p_md <> 'review' then
+    select * into s from public.lec_set xs where xs.id = p_set;
+    if not found or not public.lec__set_open(s, k.cls) then
+      return jsonb_build_object('ok', false, 'err', 'none');
+    end if;
+    if s.kind is distinct from (case p_md when 'spell' then 'voc' when 'guw' then 'gu' else 'gram' end) then
+      return jsonb_build_object('ok', false, 'err', 'kind');
+    end if;
+    if public.lec__set_busy(k.sid, s.id) then
+      return jsonb_build_object('ok', false, 'err', 'testing');
+    end if;
+    v_set := s.id;
+  else
+    select coalesce(jsonb_agg(jsonb_build_object('s', z.set_id, 'k', z.k, 'kd', z.kd, 'f', z.fm, 'z', z.z)
+                              order by case z.kd when 'voc' then 1 when 'gu' then 2 else 3 end, z.gr, z.sk, z.on_ desc, z.cr desc, z.o),
+                    '[]'::jsonb)
+      into v_all
+      from public.lec__v2_todo(k.sid, k.cls, public.lec__v2_ex(k.sid), v_day) z;
+  end if;
+  select * into rn from public.lec_set_run xr
+   where xr.sid = k.sid and xr.md = p_md and xr.set_id is not distinct from v_set and xr.day = v_day and xr.end_n is null
+     and xr.shut = '{}'::jsonb
+   order by xr.created_at desc limit 1;
+  if not found then
+    select count(*) into v_cnt from public.lec_set_run xr where xr.sid = k.sid and xr.md = p_md and xr.day = v_day;
+    if v_cnt >= 200 then
+      return jsonb_build_object('ok', false, 'err', 'limit');
+    end if;
+    if p_md = 'review' then
+      select coalesce(jsonb_agg(case when (y.e ->> 'z')::boolean then jsonb_build_object('s', y.e -> 's', 'k', y.e -> 'k', 'f', y.e -> 'f', 'z', true)
+                                     else jsonb_build_object('s', y.e -> 's', 'k', y.e -> 'k', 'f', y.e -> 'f') end order by y.o), '[]'::jsonb)
+        into v_qs
+        from (select x.e, x.o from jsonb_array_elements(v_all) with ordinality as x(e, o)
+               where x.e ->> 'kd' = (v_all -> 0 ->> 'kd') order by x.o limit 20) y;
+    else
+      v_qs := public.lec__v2_pan(k.sid, s, p_md, v_day);
+    end if;
+    if jsonb_array_length(v_qs) = 0 then
+      return jsonb_build_object('ok', true, 'b', null, 'n', 0, 'q', '[]'::jsonb, 'today', to_char(v_day, 'YYYY-MM-DD'), 'kd', null)
+             || case when p_md = 'review' then jsonb_build_object('left', jsonb_build_object('voc', 0, 'gu', 0, 'gram', 0)) else '{}'::jsonb end;
+    end if;
+    select coalesce(max(xr.no), 0) + 1 into v_no from public.lec_set_run xr
+     where xr.sid = k.sid and xr.md = p_md and xr.set_id is not distinct from v_set;
+    insert into public.lec_set_run (sid, set_id, md, no, day, n, qs, seed)
+    values (k.sid, v_set, p_md, v_no, v_day, jsonb_array_length(v_qs), v_qs,
+            hashtext(k.sid || '|' || coalesce(v_set::text, '') || '|' || p_md || '|' || v_no::text))
+    returning * into rn;
+  end if;
+  select coalesce(jsonb_agg(public.lec__v2_q(xs, it.e, q.e ->> 'f')
+                            || case when (q.e ->> 'z')::boolean then jsonb_build_object('z', true) else '{}'::jsonb end order by q.o), '[]'::jsonb)
+    into v_q
+    from jsonb_array_elements(rn.qs) with ordinality as q(e, o)
+    join public.lec_set xs on xs.id = (q.e ->> 's')::uuid
+   cross join lateral (select y.e from jsonb_array_elements(xs.items) as y(e) where y.e ->> 'k' = q.e ->> 'k' limit 1) it
+   where public.lec__set_open(xs, k.cls) and not public.lec__set_busy(k.sid, xs.id) and not (rn.shut ? xs.id::text);
+  if p_md = 'review' then
+    select jsonb_build_object('voc', count(*) filter (where x.e ->> 'kd' = 'voc'), 'gu', count(*) filter (where x.e ->> 'kd' = 'gu'),
+                              'gram', count(*) filter (where x.e ->> 'kd' = 'gram'))
+      into v_left
+      from jsonb_array_elements(v_all) as x(e)
+     where not exists (select 1 from jsonb_array_elements(rn.qs) as q(e) where q.e ->> 's' = x.e ->> 's' and q.e ->> 'k' = x.e ->> 'k');
+  end if;
+  return jsonb_build_object('ok', true, 'n', jsonb_array_length(v_q), 'q', v_q,
+                            'title', case when p_md = 'review' then '오늘 볼 것' else s.title end,
+                            'kd', case when p_md = 'review' then v_q -> 0 ->> 'kd' else s.kind end)
+         || case when p_md = 'review' then jsonb_build_object('left', v_left) else '{}'::jsonb end
+         || public.lec__v2_head(rn);
+end
+$$;
+
+-- 새 판 한 줄 채점(lec_set_log_v2 가 부름 · 판 문항 꼴대로): sp = 단어 쓰기(뜻 여럿) · gw = 구문(줄 꼴 ar 이면 배열 · 아니면 통째 se) ·
+--   se = 통째 · c = 고르기(맞추기 글 같음) · r = 쓰기(lec__set_match) · 400 글자 넘음 · 빈 답 = 틀림 · ok = 맞음이고 힌트 안 봄 ·
+--   src = 쌓인 오답 문항 due · 구문 say · 그 밖 card → {why('' · gone), s, f(적을 단계), sr, ok, src}
+create or replace function public.lec__v2_judge(p_run public.lec_set_run, p_cls text[], p_e jsonb) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare
+  s      public.lec_set;
+  v_q    jsonb;
+  v_it   jsonb;
+  v_f    text;
+  v_v    text := coalesce(p_e ->> 'v', '');
+  v_sr   boolean;
+begin
+  select q.e into v_q from jsonb_array_elements(p_run.qs) as q(e)
+   where q.e ->> 's' = (p_e ->> 's') and q.e ->> 'k' = (p_e ->> 'k') limit 1;
+  if v_q is null then
+    return jsonb_build_object('why', 'gone', 's', p_e ->> 's', 'f', coalesce(p_e ->> 'f', ''));
+  end if;
+  select * into s from public.lec_set xs where xs.id = (v_q ->> 's')::uuid;
+  if not found or not public.lec__set_open(s, p_cls) then
+    return jsonb_build_object('why', 'gone', 's', v_q ->> 's', 'f', coalesce(p_e ->> 'f', ''));
+  end if;
+  select y.e into v_it from jsonb_array_elements(s.items) as y(e) where y.e ->> 'k' = (p_e ->> 'k') limit 1;
+  if v_it is null then
+    return jsonb_build_object('why', 'gone', 's', s.id, 'f', coalesce(p_e ->> 'f', ''));
+  end if;
+  v_f := v_q ->> 'f';
+  if v_f = 'sp' then
+    v_sr := public.lec__set_spell_v2(v_v, s.items, p_e ->> 'k');
+  elsif v_f in ('gw', 'se') then
+    v_f := case when v_f = 'gw' and (p_e ->> 'f') = 'ar' then 'ar' else 'se' end;
+    v_sr := public.lec__set_sent_v2(v_v, v_it ->> 'e');
+  elsif v_f = 'c' then
+    v_sr := public.lec__set_norm(v_v) = public.lec__set_norm(v_it ->> 'a');
+  else
+    v_sr := public.lec__set_match(v_v, v_it ->> 'a');
+  end if;
+  v_sr := coalesce(v_sr, false) and not coalesce((p_e ->> 'lg')::boolean, false) and btrim(v_v) <> '';
+  return jsonb_build_object('why', '', 's', s.id, 'f', v_f, 'sr', v_sr, 'ok', v_sr and not coalesce((p_e ->> 'h')::boolean, false),
+                            'src', case when coalesce((v_q ->> 'z')::boolean, false) then 'due' when s.kind = 'gu' then 'say' else 'card' end);
+end
+$$;
+
+-- 판 고르기 · 일정이 학생 줄을 문항마다 찾음(lec_set_log_card 는 반영한 줄만이라 따로)
+create index if not exists lec_set_log_seen on public.lec_set_log (sid, set_id, k, day);
+
+-- 권한(V2-3): 속 함수 = 밖에서 못 부름(학생 함수는 V2-1 권한 그대로)
+revoke all on function public.lec__v2_enorm(jsonb), public.lec__v2_grade(jsonb), public.lec__v2_tnum(jsonb), public.lec__v2_join(jsonb, jsonb),
+  public.lec__v2_exams(jsonb, date), public.lec__v2_ex(text), public.lec__v2_exam_of(jsonb, date, text[], date), public.lec__v2_first(jsonb),
+  public.lec__v2_plan(date, date, integer, integer), public.lec__v2_todo(text, text[], jsonb, date), public.lec__v2_sum(text, text[]),
+  public.lec__v2_q(public.lec_set, jsonb, text), public.lec__v2_pan(text, public.lec_set, text, date),
+  public.lec__v2_open3(public.lec_key, uuid, text), public.lec__v2_judge(public.lec_set_run, text[], jsonb)
+  from public, anon, authenticated;
+
+-- 열셋째 스스로 점검(V2-3): 사례표(_check/class_v3_cases.json · 일정 · 날짜 칸 · 학년 · 학교 시험 · 오늘 볼 것 · 판 꾸리기) ·
+--   스위치 끔 = V2-1 그대로(목록 todo · 새 판 'off') · 켬: 목록 오늘 볼 것 · 써 보기 판(바른 답 같이 · 이어서 · 종류 · 없는 세트 ·
+--   카드 d 만 · 힌트 본 답 = 틀림) · 구문(배열 · 통째) · 문법(포인트 무리 · 쌓인 오답 = due) · 오늘 볼 것 판(한 종류 · 남은 수 ·
+--   시험 중 세트 뺌 · 평가를 열면 판 닫힘 · 닫힌 뒤 답 = 기록만) · 권한
+-- 넣은 세트 · 열쇠 · 동의 · 줄 · 스위치는 끝에 되돌려 남지 않습니다
+do $$
+declare
+  r       jsonb;
+  r2      jsonb;
+  v_t     text;
+  v_ks    text := replace(gen_random_uuid()::text, '-', '');
+  v_ka    text;
+  v_sa    text := 'selftest-v3a|점검가';
+  v_case  record;
+  v_sc    jsonb;
+  v_set   public.lec_set;
+  v_b     uuid;
+  v_d     date := public.lec__set_today();
+begin
+  begin
+    -- 1) 사례표(_check/class_v3_cases.json 과 같은 값 · class_v3_vec.py render 가 만든 글 · 흉내 저장소도 같은 값)
+    for v_case in select * from (values
+        ('2026-03-01'::date, '2026-03-01'::date, 0, 1, '[]'::jsonb),
+        ('2026-03-01'::date, '2026-03-02'::date, 0, 1, '[]'::jsonb),
+        ('2026-03-01'::date, '2026-03-03'::date, 0, 1, '[]'::jsonb),
+        ('2026-03-01'::date, '2026-03-04'::date, 0, 1, '["2026-03-02"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-06'::date, 0, 1, '["2026-03-02"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-06'::date, 4, 5, '["2026-03-04"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-07'::date, 0, 1, '["2026-03-03", "2026-03-05"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-08'::date, 0, 1, '["2026-03-03", "2026-03-05", "2026-03-06"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-08'::date, 4, 5, '["2026-03-03", "2026-03-05", "2026-03-06"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-09'::date, 0, 3, '["2026-03-03", "2026-03-06", "2026-03-07"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-13'::date, 2, 3, '["2026-03-05", "2026-03-09", "2026-03-10"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-22'::date, 0, 2, '["2026-03-08", "2026-03-15", "2026-03-16"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-22'::date, 1, 2, '["2026-03-08", "2026-03-15", "2026-03-18"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-31'::date, 0, 5, '["2026-03-08", "2026-03-21", "2026-03-25"]'::jsonb),
+        ('2026-03-01'::date, '2026-03-31'::date, 4, 5, '["2026-03-08", "2026-03-21", "2026-03-29"]'::jsonb),
+        ('2026-03-01'::date, '2026-04-30'::date, 2, 5, '["2026-03-08", "2026-04-10", "2026-04-26"]'::jsonb),
+        ('2026-03-01'::date, '2026-04-30'::date, 0, 1, '["2026-03-08", "2026-04-10", "2026-04-24"]'::jsonb),
+        ('2026-03-01'::date, '2026-04-30'::date, null::integer, null::integer, '["2026-03-08", "2026-04-10"]'::jsonb),
+        ('2026-03-01'::date, '2026-05-30'::date, 9, 10, '["2026-03-08", "2026-04-30", "2026-05-28"]'::jsonb),
+        ('2026-03-01'::date, '2026-02-26'::date, 0, 1, '[]'::jsonb),
+        ('2026-03-01'::date, null::date, null::integer, null::integer, '["2026-03-02", "2026-03-04", "2026-03-08"]'::jsonb)
+      ) as x(f, e, r, n, w) loop
+      if to_jsonb(public.lec__v2_plan(v_case.f, v_case.e, v_case.r, v_case.n)) is distinct from v_case.w then
+        raise exception '점검 실패(V3 일정 % → % · %/%): %', v_case.f, v_case.e, v_case.r, v_case.n, to_jsonb(public.lec__v2_plan(v_case.f, v_case.e, v_case.r, v_case.n));
+      end if;
+    end loop;
+    for v_case in select * from (values
+        ('"2026.04.20"'::jsonb, '2026-04-20'::date),
+        ('"20260420"'::jsonb, '2026-04-20'::date),
+        ('"2026-4-2"'::jsonb, '2026-04-02'::date),
+        ('" 2026/04/20 "'::jsonb, '2026-04-20'::date),
+        ('"2026.02.30"'::jsonb, null::date),
+        ('"1999.01.01"'::jsonb, null::date),
+        ('"2026.13.01"'::jsonb, null::date),
+        ('"2026.4"'::jsonb, null::date),
+        ('""'::jsonb, null::date),
+        ('20260420'::jsonb, '2026-04-20'::date),
+        ('0'::jsonb, null::date),
+        ('"2026년 4월 27일"'::jsonb, '2026-04-27'::date),
+        ('"2026.04.20."'::jsonb, '2026-04-20'::date),
+        ('"12026.04.20"'::jsonb, null::date),
+        ('"2026.004.20"'::jsonb, null::date),
+        ('"x"'::jsonb, null::date)
+      ) as x(v, w) loop
+      if public.lec__v2_enorm(v_case.v) is distinct from v_case.w then raise exception '점검 실패(V3 날짜 칸 %)', v_case.v; end if;
+    end loop;
+    for v_case in select * from (values
+        ('{"g": "1"}'::jsonb, '1'),
+        ('{"g": "고2"}'::jsonb, '2'),
+        ('{"g": 3}'::jsonb, '3'),
+        ('{"g": "", "ig": "2학년"}'::jsonb, '2'),
+        ('{"g": 0, "ig": "1"}'::jsonb, '1'),
+        ('{"s": "새솔고 2학년"}'::jsonb, '2'),
+        ('{"s": "바다고등학교3"}'::jsonb, '3'),
+        ('{"s": "한빛여고 1-3"}'::jsonb, '1'),
+        ('{"s": "바다고", "cn": "고1 H2 반"}'::jsonb, '2'),
+        ('{"s": "바다고", "cn": "M2"}'::jsonb, ''),
+        ('{"s": "바다중", "cn": "m 3반"}'::jsonb, '3'),
+        ('{"s": "바다고", "cn": "H5"}'::jsonb, ''),
+        ('{"s": "", "cn": "E5"}'::jsonb, '5'),
+        ('{"s": "바다초", "cn": "e5"}'::jsonb, '5'),
+        ('{"s": "바다고", "cn": "2 학년 A"}'::jsonb, '2'),
+        ('{"s": "바다고", "cn": "종합반"}'::jsonb, ''),
+        ('{"is": "푸른고 1", "cn": "x"}'::jsonb, '1'),
+        ('{"g": "1반", "s": "바다고"}'::jsonb, '1'),
+        ('{"s": "바다고7", "cn": "3학년"}'::jsonb, '3'),
+        ('{}'::jsonb, '')
+      ) as x(v, w) loop
+      if public.lec__v2_grade(v_case.v) is distinct from v_case.w then raise exception '점검 실패(V3 학년 %)', v_case.v; end if;
+    end loop;
+    v_sc := jsonb_build_object('S1', '{"rows": [{"id": "main", "es": {"바다고": {"label": "1학기 중간", "date": "2026.04.20", "end": "2026.04.23", "t": 1}, "새솔고": {"date": "2026.04.10", "t": 1}}, "eg": null}, {"id": "pt-etc", "es": {"바다고": {"date": "2026.04.21", "t": 0}}, "eg": {"바다고|1": {"date": "2026.04.27", "end": "2026.04.29", "t": 5}, "새솔고|2": {"date": "2026.03.30", "del": true, "t": 9}}}], "me": [{"g": "1", "ig": null, "s": "바다고등학교", "is": null, "cn": "고1 A반", "cid": "selftest-v3-c1"}, {"g": null, "ig": null, "s": "새솔고 2학년", "is": null, "cn": "H2 B반", "cid": "selftest-v3-c2"}]}'::jsonb, 'S2', '{"rows": [{"id": "main", "es": {"바다고": {"label": "1학기 중간", "date": "2026.04.20", "end": "2026.04.23", "t": 1}, "새솔고": {"date": "2026.04.10", "t": 1}}, "eg": null}, {"id": "pt-etc", "es": {"바다고": {"date": "2026.04.21", "t": 0}}, "eg": {"바다고|1": {"date": "2026.04.24", "end": "2026.04.29", "t": 6}, "새솔고|2": {"date": "2026.03.30", "del": true, "t": 9}}}], "me": [{"g": "1", "ig": null, "s": "바다고등학교", "is": null, "cn": "고1 A반", "cid": "selftest-v3-c1"}, {"g": null, "ig": null, "s": "새솔고 2학년", "is": null, "cn": "H2 B반", "cid": "selftest-v3-c2"}]}'::jsonb, 'S3', '{"rows": [{"id": "main", "es": {"바다고": {"date": "2026.04.20", "t": 3}}, "eg": {"바다고|1": {"date": "2026.03.10", "t": 1}}}, {"id": "pt-etc", "es": {"바다고": {"date": "2026.04.22", "t": 3}}, "eg": null}], "me": [{"g": "1", "s": "바다고", "cid": "x"}, {"s": "", "cid": "y"}, {"g": "1", "s": "바다고", "cid": "z"}]}'::jsonb, 'S4', '{"rows": [{"id": "main", "es": null, "eg": null}], "me": [{"g": "1", "s": "바다고", "cid": "selftest-v3-c1"}]}'::jsonb);
+    for v_case in select * from (values
+        ('S1', '2026-03-25'::date, '[{"cid": "selftest-v3-c1", "k": "바다고", "g": "1", "e": "2026-04-27", "end": "2026-04-29"}, {"cid": "selftest-v3-c2", "k": "새솔고", "g": "2", "e": "2026-04-10", "end": "2026-04-10"}]'::jsonb),
+        ('S1', '2026-04-28'::date, '[{"cid": "selftest-v3-c1", "k": "바다고", "g": "1", "e": "2026-04-27", "end": "2026-04-29"}, {"cid": "selftest-v3-c2", "k": "새솔고", "g": "2", "e": "2026-04-10", "end": "2026-04-10"}]'::jsonb),
+        ('S1', '2026-05-01'::date, '[{"cid": "selftest-v3-c1", "k": "바다고", "g": "1", "e": "2026-04-27", "end": "2026-04-29"}, {"cid": "selftest-v3-c2", "k": "새솔고", "g": "2", "e": "2026-04-10", "end": "2026-04-10"}]'::jsonb),
+        ('S2', '2026-04-20'::date, '[{"cid": "selftest-v3-c1", "k": "바다고", "g": "1", "e": "2026-04-24", "end": "2026-04-29"}, {"cid": "selftest-v3-c2", "k": "새솔고", "g": "2", "e": "2026-04-10", "end": "2026-04-10"}]'::jsonb),
+        ('S3', '2026-03-01'::date, '[{"cid": "x", "k": "바다고", "g": "1", "e": "2026-03-10", "end": "2026-03-10"}, {"cid": "z", "k": "바다고", "g": "1", "e": "2026-03-10", "end": "2026-03-10"}]'::jsonb),
+        ('S3', '2026-03-11'::date, '[{"cid": "x", "k": "바다고", "g": "1", "e": "2026-04-22", "end": "2026-04-22"}, {"cid": "z", "k": "바다고", "g": "1", "e": "2026-04-22", "end": "2026-04-22"}]'::jsonb),
+        ('S4', '2026-03-01'::date, '[]'::jsonb)
+      ) as x(s, d, w) loop
+      if public.lec__v2_exams(v_sc -> v_case.s, v_case.d) is distinct from v_case.w then
+        raise exception '점검 실패(V3 학교 시험 % %): %', v_case.s, v_case.d, public.lec__v2_exams(v_sc -> v_case.s, v_case.d);
+      end if;
+    end loop;
+    -- 오늘 볼 것: 가짜 세트 · 진행 · 줄 · 열린 시험(되돌림)
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000001'::uuid, 'voc', '점검 v3 단어 1', array['selftest-v3-c1'], '2026-03-01'::date, '[{"k": "k1", "n": "1", "w": "w1", "m": "뜻1"}, {"k": "k2", "n": "2", "w": "w2", "m": "뜻2"}, {"k": "k3", "n": "3", "w": "w3", "m": "뜻3"}, {"k": "k4", "n": "4", "w": "w4", "m": "뜻4"}, {"k": "k5", "n": "5", "w": "w5", "m": "뜻5"}, {"k": "k6", "n": "6", "w": "w6", "m": "뜻6"}]'::jsonb, 6, '2026-03-01T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000002'::uuid, 'voc', '점검 v3 단어 2', array['selftest-v3-c2'], '2026-03-20'::date, '[{"k": "k1", "n": "1", "w": "x1", "m": "뜻 1"}, {"k": "k2", "n": "2", "w": "x2", "m": "뜻 2"}]'::jsonb, 2, '2026-03-20T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000003'::uuid, 'gu', '점검 v3 구문', array['selftest-v3-c1', 'selftest-v3-c2'], '2026-03-25'::date, '[{"k": "k1", "n": "1", "e": "I / am a boy.", "t": "나는 소년이다.", "p": ""}]'::jsonb, 1, '2026-03-25T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000004'::uuid, 'gram', '점검 v3 문법', array['selftest-v3-c1'], '2026-03-02'::date, '[{"k": "k1", "n": "1", "s": "He (go / goes) home.", "a": "goes", "x": "삼인칭 단수", "p": "수 일치"}, {"k": "k2", "n": "2", "s": "She ___ tall.", "a": "is", "x": "", "p": "be"}]'::jsonb, 2, '2026-03-02T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000005'::uuid, 'voc', '점검 v3 지난 단어', array['selftest-v3-c1'], '2026-01-05'::date, '[{"k": "k1", "n": "1", "w": "old", "m": "옛"}, {"k": "k2", "n": "2", "w": "past", "m": "지난"}]'::jsonb, 2, '2026-01-05T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000006'::uuid, 'voc', '점검 v3 시험 중', array['selftest-v3-c1'], '2026-03-01'::date, '[{"k": "k1", "n": "1", "w": "busy", "m": "바쁜"}]'::jsonb, 1, '2026-03-01T02:00:00+00:00'::timestamptz);
+    insert into public.lec_set_prog (sid, set_id, cards, first_at) values ('selftest-v3a|점검가', '00000000-0000-4000-8000-000000000001'::uuid, '{"k1": {"s": 1}, "k2": {"s": 1, "d": ["2026-03-05", "2026-03-10"]}, "k3": {"s": 1}, "k4": {"s": 1, "d": ["2026-03-09"]}, "k6": {"s": 1}}'::jsonb, '2026-03-01T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set_prog (sid, set_id, cards, first_at) values ('selftest-v3a|점검가', '00000000-0000-4000-8000-000000000002'::uuid, '{"k1": {"s": 1}, "k2": {"s": 1}}'::jsonb, '2026-03-21T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set_prog (sid, set_id, cards, first_at) values ('selftest-v3a|점검가', '00000000-0000-4000-8000-000000000003'::uuid, '{"k1": {"s": 1, "g": 1}}'::jsonb, '2026-03-25T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set_prog (sid, set_id, cards, first_at) values ('selftest-v3a|점검가', '00000000-0000-4000-8000-000000000004'::uuid, '{"k1": {"s": 1, "w": 1, "z": "2026-03-20"}, "k2": {"s": 1, "d": ["2026-03-03"], "t": "2026-03-03"}}'::jsonb, '2026-03-03T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set_prog (sid, set_id, cards, first_at) values ('selftest-v3a|점검가', '00000000-0000-4000-8000-000000000005'::uuid, '{"k1": {"s": 1}, "k2": {"s": 1}}'::jsonb, '2026-01-06T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set_prog (sid, set_id, cards, first_at) values ('selftest-v3a|점검가', '00000000-0000-4000-8000-000000000006'::uuid, '{"k1": {"s": 1, "w": 1, "z": "2026-03-05"}}'::jsonb, '2026-03-01T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set_log (id, sid, b, bk, i, set_id, k, f, v, ok, ta, day, bo, why) values
+      ('0000000000000000000000000003a001', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000901'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000001'::uuid, 'k1', 'k', '0', false, '2026-03-02T02:00:00+00:00'::timestamptz, '2026-03-02'::date, '2026-03-02T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a002', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000901'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000001'::uuid, 'k4', 'k', '1', true, '2026-03-02T02:00:00+00:00'::timestamptz, '2026-03-02'::date, '2026-03-02T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a003', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000902'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000001'::uuid, 'k4', 'sp', 'w4', true, '2026-03-09T02:00:00+00:00'::timestamptz, '2026-03-09'::date, '2026-03-09T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a004', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000903'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000001'::uuid, 'k6', 'k', '0', false, '2026-04-20T02:00:00+00:00'::timestamptz, '2026-04-20'::date, '2026-04-20T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a005', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000903'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000001'::uuid, 'k5', 'k', '0', false, '2026-03-03T02:00:00+00:00'::timestamptz, '2026-03-03'::date, '2026-03-03T02:00:00+00:00'::timestamptz, 'gone'),
+      ('0000000000000000000000000003a006', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000904'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000002'::uuid, 'k1', 'k', '0', false, '2026-03-21T02:00:00+00:00'::timestamptz, '2026-03-21'::date, '2026-03-21T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a007', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000904'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000002'::uuid, 'k2', 'k', '0', false, '2026-03-21T02:00:00+00:00'::timestamptz, '2026-03-21'::date, '2026-03-21T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a008', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000905'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000002'::uuid, 'k2', 'sp', 'x2', true, '2026-03-27T02:00:00+00:00'::timestamptz, '2026-03-27'::date, '2026-03-27T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a009', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000906'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000003'::uuid, 'k1', 'ar', 'I am a boy', true, '2026-03-25T02:00:00+00:00'::timestamptz, '2026-03-25'::date, '2026-03-25T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a00a', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000907'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000005'::uuid, 'k1', 'k', '0', false, '2026-01-06T02:00:00+00:00'::timestamptz, '2026-01-06'::date, '2026-01-06T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a00b', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000907'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000005'::uuid, 'k2', 'k', '0', false, '2026-01-06T02:00:00+00:00'::timestamptz, '2026-01-06'::date, '2026-01-06T02:00:00+00:00'::timestamptz, ''),
+      ('0000000000000000000000000003a00c', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000908'::uuid, 'log', 1, '00000000-0000-4000-8000-000000000005'::uuid, 'k2', 'sp', 'past', true, '2026-01-14T02:00:00+00:00'::timestamptz, '2026-01-14'::date, '2026-01-14T02:00:00+00:00'::timestamptz, '');
+    insert into public.lec_set_try (sid, set_id, kind, day, n, qs) values ('selftest-v3a|점검가', '00000000-0000-4000-8000-000000000006'::uuid, 'test', '2026-03-01'::date, 1, '[]'::jsonb);
+    -- 기대값 = 세트 번호(열쇠 끝 12 자리):문항:무리(gr):차례 글(sk) · 쉼표로 이음
+    for v_case in select * from (values
+        ('S1', '2026-03-25'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,4:k2:0:2026-03-10,4:k1:1:2026-03-20'),
+        ('S1', '2026-04-08'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,2:k1:0:2026-03-27,2:k2:0:2026-04-03,1:k4:2:2026-03-02,3:k1:0:2026-03-30,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
+        ('S1', '2026-04-15'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-08,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
+        ('S1', '2026-04-25'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-08,1:k6:0:2026-04-22,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
+        ('S1', '2026-05-01'::date, '5:k1:0:2026-01-07,4:k1:3:2026-03-20'),
+        ('S2', '2026-04-22'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-08,1:k1:0:2026-03-09,1:k2:0:2026-03-12,1:k4:0:2026-04-06,1:k6:2:2026-04-20,3:k1:0:2026-04-01,4:k2:0:2026-03-10,4:k1:0:2026-03-27'),
+        ('S4', '2026-03-25'::date, '5:k1:0:2026-01-07,1:k3:0:2026-03-02,1:k1:0:2026-03-03,1:k2:0:2026-03-12,2:k1:0:2026-03-22,4:k2:0:2026-03-04,4:k1:0:2026-03-21')
+      ) as x(s, d, w) loop
+      select coalesce(string_agg(ltrim(right(z.set_id::text, 12), '0') || ':' || z.k || ':' || z.gr || ':' || z.sk, ','
+               order by case z.kd when 'voc' then 1 when 'gu' then 2 else 3 end, z.gr, z.sk, z.on_ desc, z.cr desc, z.o), '')
+        into v_t from public.lec__v2_todo('selftest-v3a|점검가', array['selftest-v3-c1', 'selftest-v3-c2'], public.lec__v2_exams(v_sc -> v_case.s, v_case.d), v_case.d) z;
+      if v_t is distinct from v_case.w then raise exception '점검 실패(V3 오늘 볼 것 % %): %', v_case.s, v_case.d, v_t; end if;
+    end loop;
+    -- 판 꾸리기(써 보기 · 구문 · 문법 포인트): 사례마다 그때의 줄 · 진행으로 바꿔 넣고 lec__v2_pan
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000011'::uuid, 'gram', '점검 v3 포인트', array['selftest-v3-c1'], '2026-03-01'::date, '[{"k": "a1", "n": "1", "s": "A1 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a2", "n": "2", "s": "A2 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a3", "n": "3", "s": "A3 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a4", "n": "4", "s": "A4 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a5", "n": "5", "s": "A5 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a6", "n": "6", "s": "A6 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a7", "n": "7", "s": "A7 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a8", "n": "8", "s": "A8 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a9", "n": "9", "s": "A9 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "a10", "n": "10", "s": "A10 (x / y)", "a": "x", "x": "", "p": "포인트 A"}, {"k": "b1", "n": "11", "s": "B1 ___", "a": "y", "x": "", "p": "포인트 B"}, {"k": "b2", "n": "12", "s": "B2 ___", "a": "y", "x": "", "p": "포인트 B"}, {"k": "b3", "n": "13", "s": "B3 ___", "a": "y", "x": "", "p": "포인트 B"}, {"k": "n1", "n": "14", "s": "N1 ___", "a": "z", "x": "", "p": ""}, {"k": "n2", "n": "15", "s": "N2 ___", "a": "z", "x": "", "p": ""}]'::jsonb, 15, '2026-03-01T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000012'::uuid, 'gram', '점검 v3 포인트 없음', array['selftest-v3-c1'], '2026-03-01'::date, '[{"k": "q1", "n": "1", "s": "Q1 ___", "a": "q", "x": ""}, {"k": "q2", "n": "2", "s": "Q2 ___", "a": "q", "x": ""}, {"k": "q3", "n": "3", "s": "Q3 ___", "a": "q", "x": ""}, {"k": "q4", "n": "4", "s": "Q4 ___", "a": "q", "x": ""}, {"k": "q5", "n": "5", "s": "Q5 ___", "a": "q", "x": ""}]'::jsonb, 5, '2026-03-01T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000013'::uuid, 'voc', '점검 v3 써 보기', array['selftest-v3-c1'], '2026-03-01'::date, '[{"k": "s1", "n": "1", "w": "sp1", "m": "쓰기1"}, {"k": "s2", "n": "2", "w": "sp2", "m": "쓰기2"}, {"k": "s3", "n": "3", "w": "sp3", "m": "쓰기3"}, {"k": "s4", "n": "4", "w": "sp4", "m": "쓰기4"}, {"k": "s5", "n": "5", "w": "sp5", "m": "쓰기5"}, {"k": "s6", "n": "6", "w": "sp6", "m": "쓰기6"}, {"k": "s7", "n": "7", "w": "sp7", "m": "쓰기7"}, {"k": "s8", "n": "8", "w": "sp8", "m": "쓰기8"}, {"k": "s9", "n": "9", "w": "sp9", "m": "쓰기9"}, {"k": "s10", "n": "10", "w": "sp10", "m": "쓰기10"}, {"k": "s11", "n": "11", "w": "sp11", "m": "쓰기11"}, {"k": "s12", "n": "12", "w": "sp12", "m": "쓰기12"}, {"k": "s13", "n": "13", "w": "sp13", "m": "쓰기13"}, {"k": "s14", "n": "14", "w": "sp14", "m": "쓰기14"}, {"k": "s15", "n": "15", "w": "sp15", "m": "쓰기15"}, {"k": "s16", "n": "16", "w": "sp16", "m": "쓰기16"}, {"k": "s17", "n": "17", "w": "sp17", "m": "쓰기17"}, {"k": "s18", "n": "18", "w": "sp18", "m": "쓰기18"}, {"k": "s19", "n": "19", "w": "sp19", "m": "쓰기19"}, {"k": "s20", "n": "20", "w": "sp20", "m": "쓰기20"}, {"k": "s21", "n": "21", "w": "sp21", "m": "쓰기21"}, {"k": "s22", "n": "22", "w": "sp22", "m": "쓰기22"}, {"k": "s23", "n": "23", "w": "sp23", "m": "쓰기23"}, {"k": "s24", "n": "24", "w": "sp24", "m": "쓰기24"}]'::jsonb, 24, '2026-03-01T01:00:00+00:00'::timestamptz);
+    insert into public.lec_set (id, kind, title, class_ids, posted_on, items, n, created_at) values ('00000000-0000-4000-8000-000000000014'::uuid, 'gu', '점검 v3 구문 쓰기', array['selftest-v3-c1'], '2026-03-01'::date, '[{"k": "g1", "n": "1", "e": "It is / 1.", "t": "그것은 1.", "p": ""}, {"k": "g2", "n": "2", "e": "It is / 2.", "t": "그것은 2.", "p": ""}, {"k": "g3", "n": "3", "e": "It is / 3.", "t": "그것은 3.", "p": ""}, {"k": "g4", "n": "4", "e": "It is / 4.", "t": "그것은 4.", "p": ""}]'::jsonb, 4, '2026-03-01T01:00:00+00:00'::timestamptz);
+    r2 := '[{"id": "0000000000000000000000000003b001", "s": 11, "k": "a1", "d": "2026-03-09", "f": "c", "ok": true, "why": "", "i": 1, "ta": "2026-03-09T03:00:00+00:00"}, {"id": "0000000000000000000000000003b002", "s": 11, "k": "a2", "d": "2026-03-09", "f": "c", "ok": true, "why": "", "i": 2, "ta": "2026-03-09T03:01:00+00:00"}, {"id": "0000000000000000000000000003b003", "s": 11, "k": "a3", "d": "2026-03-09", "f": "c", "ok": false, "why": "", "i": 3, "ta": "2026-03-09T03:02:00+00:00"}, {"id": "0000000000000000000000000003b004", "s": 11, "k": "a4", "d": "2026-03-09", "f": "c", "ok": true, "why": "", "i": 4, "ta": "2026-03-09T03:03:00+00:00"}, {"id": "0000000000000000000000000003b005", "s": 11, "k": "a5", "d": "2026-03-09", "f": "c", "ok": true, "why": "", "i": 5, "ta": "2026-03-09T03:04:00+00:00"}, {"id": "0000000000000000000000000003b006", "s": 11, "k": "a6", "d": "2026-03-09", "f": "c", "ok": false, "why": "", "i": 6, "ta": "2026-03-09T03:05:00+00:00"}, {"id": "0000000000000000000000000003b007", "s": 11, "k": "a7", "d": "2026-03-09", "f": "c", "ok": true, "why": "", "i": 7, "ta": "2026-03-09T03:06:00+00:00"}, {"id": "0000000000000000000000000003b008", "s": 11, "k": "a8", "d": "2026-03-09", "f": "c", "ok": true, "why": "", "i": 8, "ta": "2026-03-09T03:07:00+00:00"}, {"id": "0000000000000000000000000003b009", "s": 11, "k": "b1", "d": "2026-03-09", "f": "r", "ok": true, "why": "", "i": 11, "ta": "2026-03-09T03:08:00+00:00"}, {"id": "0000000000000000000000000003b00a", "s": 11, "k": "b2", "d": "2026-03-09", "f": "r", "ok": true, "why": "", "i": 12, "ta": "2026-03-09T03:09:00+00:00"}, {"id": "0000000000000000000000000003b00b", "s": 11, "k": "b3", "d": "2026-03-09", "f": "r", "ok": true, "why": "", "i": 13, "ta": "2026-03-09T03:10:00+00:00"}, {"id": "0000000000000000000000000003b00c", "s": 11, "k": "n1", "d": "2026-03-09", "f": "r", "ok": true, "why": "", "i": 21, "ta": "2026-03-09T03:11:00+00:00"}, {"id": "0000000000000000000000000003b00d", "s": 11, "k": "n2", "d": "2026-03-09", "f": "r", "ok": true, "why": "", "i": 22, "ta": "2026-03-09T03:12:00+00:00"}, {"id": "0000000000000000000000000003b00e", "s": 12, "k": "q2", "d": "2026-03-08", "f": "r", "ok": true, "why": "", "i": 1, "ta": "2026-03-08T03:13:00+00:00"}, {"id": "0000000000000000000000000003b00f", "s": 13, "k": "s1", "d": "2026-03-08", "f": "sp", "ok": true, "why": "", "i": 1, "ta": "2026-03-08T03:14:00+00:00"}, {"id": "0000000000000000000000000003b010", "s": 13, "k": "s2", "d": "2026-03-08", "f": "sp", "ok": false, "why": "", "i": 1, "ta": "2026-03-08T03:15:00+00:00"}, {"id": "0000000000000000000000000003b011", "s": 13, "k": "s3", "d": "2026-03-07", "f": "sp", "ok": true, "why": "", "i": 1, "ta": "2026-03-07T03:16:00+00:00"}, {"id": "0000000000000000000000000003b012", "s": 13, "k": "s4", "d": "2026-03-08", "f": "sp", "ok": true, "why": "log", "i": 1, "ta": "2026-03-08T03:17:00+00:00"}, {"id": "0000000000000000000000000003b013", "s": 13, "k": "s5", "d": "2026-03-08", "f": "k", "ok": false, "why": "", "i": 1, "ta": "2026-03-08T03:18:00+00:00"}, {"id": "0000000000000000000000000003b014", "s": 14, "k": "g1", "d": "2026-03-08", "f": "ar", "ok": true, "why": "", "i": 1, "ta": "2026-03-08T03:19:00+00:00"}, {"id": "0000000000000000000000000003b015", "s": 14, "k": "g2", "d": "2026-03-08", "f": "ar", "ok": true, "why": "", "i": 1, "ta": "2026-03-08T03:20:00+00:00"}, {"id": "0000000000000000000000000003b016", "s": 14, "k": "g2", "d": "2026-03-08", "f": "se", "ok": true, "why": "", "i": 2, "ta": "2026-03-08T03:21:00+00:00"}]'::jsonb;
+    for v_case in select * from (values
+        ('문법 첫 판(새 포인트 A 8)', '00000000-0000-4000-8000-000000000011'::uuid, 'gram', '2026-03-10'::date, 0, '[]'::jsonb, 'a1:c,a2:c,a3:c,a4:c,a5:c,a6:c,a7:c,a8:c'),
+        ('문법 둘째 판(새 포인트 B + 배운 A)', '00000000-0000-4000-8000-000000000011'::uuid, 'gram', '2026-03-10'::date, 8, '[]'::jsonb, 'b1:r,b2:r,b3:r'),
+        ('문법 섞은 판(쌓인 오답 먼저 · 안 본 문항 먼저)', '00000000-0000-4000-8000-000000000011'::uuid, 'gram', '2026-03-10'::date, 11, '[{"a3": {"s": 1, "w": 1, "z": "2026-03-05"}, "a6": {"s": 1, "w": 1, "z": "2026-03-04"}}]'::jsonb, 'n1:r,n2:r'),
+        ('문법 모두 배움(포인트 돌아가며 · 쌓인 오답 먼저)', '00000000-0000-4000-8000-000000000011'::uuid, 'gram', '2026-03-10'::date, 13, '[{"a3": {"s": 1, "w": 1, "z": "2026-03-05"}, "a6": {"s": 1, "w": 1, "z": "2026-03-04"}}]'::jsonb, 'a6:c:z,b1:r,n1:r,a3:c:z,b2:r,n2:r,a9:c,b3:r,a10:c,a1:c,a2:c,a4:c,a5:c,a7:c,a8:c'),
+        ('문법 포인트 없음', '00000000-0000-4000-8000-000000000012'::uuid, 'gram', '2026-03-10'::date, 13, '[]'::jsonb, 'q1:r,q2:r,q3:r,q4:r,q5:r'),
+        ('문법 포인트 없음 · 본 문항 뒤로', '00000000-0000-4000-8000-000000000012'::uuid, 'gram', '2026-03-10'::date, 14, '[]'::jsonb, 'q1:r,q3:r,q4:r,q5:r,q2:r'),
+        ('써 보기 첫 판(차례 · 20)', '00000000-0000-4000-8000-000000000013'::uuid, 'spell', '2026-03-10'::date, 14, '[]'::jsonb, 's1:sp,s2:sp,s3:sp,s4:sp,s5:sp,s6:sp,s7:sp,s8:sp,s9:sp,s10:sp,s11:sp,s12:sp,s13:sp,s14:sp,s15:sp,s16:sp,s17:sp,s18:sp,s19:sp,s20:sp'),
+        ('써 보기 틀림 → 안 씀 → 맞음(오래된 것 먼저)', '00000000-0000-4000-8000-000000000013'::uuid, 'spell', '2026-03-10'::date, 19, '[]'::jsonb, 's2:sp,s4:sp,s5:sp,s6:sp,s7:sp,s8:sp,s9:sp,s10:sp,s11:sp,s12:sp,s13:sp,s14:sp,s15:sp,s16:sp,s17:sp,s18:sp,s19:sp,s20:sp,s21:sp,s22:sp'),
+        ('구문 써 보기(배열만 = 아직 · 통째 맞음 = 뒤)', '00000000-0000-4000-8000-000000000014'::uuid, 'guw', '2026-03-10'::date, 22, '[]'::jsonb, 'g1:gw,g3:gw,g4:gw,g2:gw')
+      ) as x(nm, s, md, d, nl, pg, w) loop
+      delete from public.lec_set_log xl where xl.sid = 'selftest-v3a|점검가' and xl.set_id = v_case.s;
+      delete from public.lec_set_prog xp where xp.sid = 'selftest-v3a|점검가' and xp.set_id = v_case.s;
+      insert into public.lec_set_log (id, sid, b, bk, i, set_id, k, f, v, ok, ta, day, bo, why)
+      select y.e ->> 'id', 'selftest-v3a|점검가', '00000000-0000-4000-8000-000000000999'::uuid, 'log', (y.e ->> 'i')::integer, v_case.s, y.e ->> 'k', y.e ->> 'f',
+             '', (y.e ->> 'ok')::boolean, (y.e ->> 'ta')::timestamptz, (y.e ->> 'd')::date, (y.e ->> 'ta')::timestamptz, y.e ->> 'why'
+        from jsonb_array_elements(r2) with ordinality as y(e, o)
+       where y.o <= v_case.nl and ltrim(right(v_case.s::text, 12), '0') = y.e ->> 's';
+      insert into public.lec_set_prog (sid, set_id, cards, first_at)
+      select 'selftest-v3a|점검가', v_case.s, y.e, '2026-03-09T01:00:00+00:00'::timestamptz from jsonb_array_elements(v_case.pg) as y(e);
+      select * into v_set from public.lec_set xs where xs.id = v_case.s;
+      r := public.lec__v2_pan('selftest-v3a|점검가', v_set, v_case.md, v_case.d);
+      select coalesce(string_agg((x.e ->> 'k') || ':' || (x.e ->> 'f') || case when x.e ? 'z' then ':z' else '' end, ',' order by x.o), '')
+        into v_t from jsonb_array_elements(r) with ordinality as x(e, o);
+      if v_t is distinct from v_case.w or jsonb_path_exists(r, '$[*] ? (@.s != $s)', jsonb_build_object('s', v_case.s))
+         or jsonb_path_exists(r, '$[*].z ? (@ != true)') then
+        raise exception '점검 실패(V3 판 꾸리기 «%»): %', v_case.nm, r;
+      end if;
+    end loop;
+
+    -- 2) 준비: 스위치 모두 끔 · 학생(위 사례표의 학생 · 두 반 · 기록 동의)
+    update public.lec_v2_cfg set log = false, eval = false, spell = false, guw = false, gram = false, review = false, lim = 3000
+     where id = 1;
+    v_ka := 'selftest' || v_ks || 'v3a';
+    insert into public.lec_key (kh, sid, rid, pin, sname, cls)
+    values (public.lec__kh(v_ka), v_sa, 'selftest-v3a', '', '점검가', array['selftest-v3-c1', 'selftest-v3-c2']);
+    insert into public.lec_consent (sid, choice, ver) values (v_sa, 'agree', public.lec__consent_ver());
+
+    -- 3) 스위치 끔 = V2-1 그대로(목록 todo = 쌓인 오답 수 · 새 판 off) · eval 만 켜도 새 판 off · todo 그대로
+    r := public.lec_set_home_v2(v_ka, null);
+    if (r ->> 'ok') is distinct from 'true' or (r - 'v2' - 'ts' - 'todo') is distinct from public.lec_set_home(v_ka)
+       or (r -> 'todo') is distinct from jsonb_build_object('n', coalesce(r #> '{due,n}', '0'::jsonb)) then
+      raise exception '점검 실패(V3 스위치 끔 · 목록): %', left(r::text, 600);
+    end if;
+    if (public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000013'::uuid, 'spell') ->> 'err') is distinct from 'off'
+       or (public.lec_set_open_v2(v_ka, null, 'review') ->> 'err') is distinct from 'off' then
+      raise exception '점검 실패(V3 스위치 끔 · 새 판)';
+    end if;
+    update public.lec_v2_cfg set log = true, eval = true where id = 1;
+    r := public.lec_set_home_v2(v_ka, null);
+    if (r -> 'todo') is distinct from jsonb_build_object('n', coalesce(r #> '{due,n}', '0'::jsonb))
+       or (public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000013'::uuid, 'spell') ->> 'err') is distinct from 'off'
+       or (public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000014'::uuid, 'guw') ->> 'err') is distinct from 'off'
+       or (public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000011'::uuid, 'gram') ->> 'err') is distinct from 'off'
+       or (public.lec_set_open_v2(v_ka, null, 'review') ->> 'err') is distinct from 'off'
+       or (public.lec_set_open_v2(v_ka, null, 'x') ->> 'err') is distinct from 'input' then
+      raise exception '점검 실패(V3 판 스위치 끔)';
+    end if;
+
+    -- 4) 켬: 목록 todo = lec__v2_sum(n · day 서버 오늘 · ex · kd)
+    update public.lec_v2_cfg set spell = true, guw = true, gram = true, review = true where id = 1;
+    r := public.lec_set_home_v2(v_ka, null);
+    if (r -> 'todo') is distinct from public.lec__v2_sum(v_sa, array['selftest-v3-c1', 'selftest-v3-c2'])
+       or (r #>> '{todo,day}') is distinct from to_char(v_d, 'YYYY-MM-DD')
+       or coalesce((r #>> '{todo,n}')::integer, 0) < 1
+       or (r #>> '{todo,n}')::integer is distinct from (r #>> '{todo,kd,voc}')::integer + (r #>> '{todo,kd,gu}')::integer + (r #>> '{todo,kd,gram}')::integer then
+      raise exception '점검 실패(V3 목록 오늘 볼 것): %', left((r -> 'todo')::text, 600);
+    end if;
+
+    -- 5) 써 보기: 판 20 · 바른 답 같이 · 틀린 문항 먼저 · 이어서 같은 판 · 다른 종류 = kind · 없는 세트 = none · 시험 중 = testing
+    r := public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000013'::uuid, 'spell');
+    v_b := (r ->> 'b')::uuid;
+    if (r ->> 'ok') is distinct from 'true' or (r ->> 'n') is distinct from '20' or (r ->> 'md') is distinct from 'spell'
+       or (r #>> '{q,0,k}') is distinct from 's2' or (r #>> '{q,0,f}') is distinct from 'sp' or (r #>> '{q,0,a}') is distinct from 'sp2'
+       or (r #>> '{q,0,p}') is distinct from '쓰기2' or (r #>> '{q,0,kd}') is distinct from 'voc' or v_b is null
+       or (public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000013'::uuid, 'spell') ->> 'b')::uuid is distinct from v_b
+       or (public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000011'::uuid, 'spell') ->> 'err') is distinct from 'kind'
+       or (public.lec_set_open_v2(v_ka, gen_random_uuid(), 'spell') ->> 'err') is distinct from 'none'
+       or (public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000006'::uuid, 'spell') ->> 'err') is distinct from 'testing' then
+      raise exception '점검 실패(V3 써 보기 열기): %', left(r::text, 600);
+    end if;
+    r := public.lec_set_log_v2(v_ka, jsonb_build_array(
+           jsonb_build_object('id', 'a3a' || substr(v_ks, 1, 29), 'b', v_b, 'i', 1, 's', '00000000-0000-4000-8000-000000000013',
+                              'k', 's2', 'f', 'sp', 'v', 'sp2', 'h', false, 'ms', 3000),
+           jsonb_build_object('id', 'b3b' || substr(v_ks, 1, 29), 'b', v_b, 'i', 2, 's', '00000000-0000-4000-8000-000000000013',
+                              'k', 's6', 'f', 'sp', 'v', 'sp6', 'h', true, 'ms', 5000, 'n', 2)));
+    if jsonb_array_length(r -> 'got') is distinct from 2
+       or not exists (select 1 from public.lec_set_log xl where xl.id = 'a3a' || substr(v_ks, 1, 29) and xl.bk = 'spell' and xl.f = 'sp'
+                        and xl.sr and xl.ok and xl.src = 'card' and xl.done and xl.why = '' and xl.ms = 3000)
+       or not exists (select 1 from public.lec_set_log xl where xl.id = 'b3b' || substr(v_ks, 1, 29) and xl.sr and not xl.ok and xl.h)
+       or not exists (select 1 from public.lec_set_prog xp
+                       where xp.sid = v_sa and xp.set_id = '00000000-0000-4000-8000-000000000013'::uuid
+                         and xp.cards -> 's2' -> 'd' = jsonb_build_array(to_char(v_d, 'YYYY-MM-DD')) and not (xp.cards -> 's2' ? 't')
+                         and xp.cards -> 's6' = '{"s": 1}'::jsonb)
+       or (select xr.end_n from public.lec_set_run xr where xr.id = v_b) is distinct from 2
+       or (public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000013'::uuid, 'spell') ->> 'no') is distinct from '2' then
+      raise exception '점검 실패(V3 써 보기 줄 · 카드): %', left(r::text, 600);
+    end if;
+
+    -- 6) 구문 써 보기: 배열(ar · 맞음 = 첫 답) → 통째(se · 첫 글자 힌트 = 틀림) · 틀린 통째 · 카드 꼴 say
+    r := public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000014'::uuid, 'guw');
+    v_b := (r ->> 'b')::uuid;
+    if (r #>> '{q,0,k}') is distinct from 'g1' or (r #>> '{q,0,f}') is distinct from 'gw' or (r #>> '{q,0,a}') is distinct from 'It is / 1.'
+       or (r #>> '{q,0,p}') is distinct from '그것은 1.' or (r #>> '{q,3,k}') is distinct from 'g2' then
+      raise exception '점검 실패(V3 구문 열기): %', left(r::text, 600);
+    end if;
+    r := public.lec_set_log_v2(v_ka, jsonb_build_array(
+           jsonb_build_object('id', 'c3c' || substr(v_ks, 1, 29), 'b', v_b, 'i', 1, 's', '00000000-0000-4000-8000-000000000014',
+                              'k', 'g1', 'f', 'ar', 'v', 'It is 1.'),
+           jsonb_build_object('id', 'd3d' || substr(v_ks, 1, 29), 'b', v_b, 'i', 2, 's', '00000000-0000-4000-8000-000000000014',
+                              'k', 'g1', 'f', 'se', 'v', 'it is 1', 'h', true),
+           jsonb_build_object('id', 'e3e' || substr(v_ks, 1, 29), 'b', v_b, 'i', 3, 's', '00000000-0000-4000-8000-000000000014',
+                              'k', 'g3', 'f', 'se', 'v', 'It is three.')));
+    if (select count(*) from public.lec_set_log xl
+         where (xl.id = 'c3c' || substr(v_ks, 1, 29) and xl.f = 'ar' and xl.sr and xl.ok and xl.src = 'say')
+            or (xl.id = 'd3d' || substr(v_ks, 1, 29) and xl.f = 'se' and xl.sr and not xl.ok)
+            or (xl.id = 'e3e' || substr(v_ks, 1, 29) and xl.f = 'se' and not xl.sr and not xl.ok and xl.bk = 'guw')) is distinct from 3::bigint then
+      raise exception '점검 실패(V3 구문 줄): %', left(r::text, 600);
+    end if;
+
+    -- 7) 문법: 모두 배운 세트 = 포인트 돌아가며 · 쌓인 오답 문항 먼저(z) · 보기 · 해설 칸 · 쌓인 오답 맞음 = due(d · y · t 없음)
+    r := public.lec_set_open_v2(v_ka, '00000000-0000-4000-8000-000000000011'::uuid, 'gram');
+    v_b := (r ->> 'b')::uuid;
+    if (r #>> '{q,0,k}') is distinct from 'a6' or (r #> '{q,0,z}') is distinct from 'true'::jsonb or (r #>> '{q,0,f}') is distinct from 'c'
+       or (r #> '{q,0,o}') is distinct from '["x", "y"]'::jsonb or (r #>> '{q,0,a}') is distinct from 'x' or (r #>> '{q,0,pt}') is distinct from '포인트 A'
+       or (r #>> '{q,0,x}') is distinct from '' or (r #>> '{q,1,k}') is distinct from 'b1' or (r #>> '{q,1,f}') is distinct from 'r'
+       or (r #> '{q,1,o}') is distinct from 'null'::jsonb or (r #> '{q,1,z}') is not null
+       or (r #>> '{q,2,k}') is distinct from 'n1' or (r ->> 'n') is distinct from '15' or (r ->> 'kd') is distinct from 'gram' then
+      raise exception '점검 실패(V3 문법 열기): %', left(r::text, 600);
+    end if;
+    r := public.lec_set_log_v2(v_ka, jsonb_build_array(
+           jsonb_build_object('id', 'f3f' || substr(v_ks, 1, 29), 'b', v_b, 'i', 1, 's', '00000000-0000-4000-8000-000000000011',
+                              'k', 'a6', 'f', 'c', 'v', 'x')));
+    if not exists (select 1 from public.lec_set_log xl where xl.id = 'f3f' || substr(v_ks, 1, 29) and xl.src = 'due' and xl.ok and xl.bk = 'gram')
+       or not exists (select 1 from public.lec_set_prog xp
+                       where xp.sid = v_sa and xp.set_id = '00000000-0000-4000-8000-000000000011'::uuid
+                         and xp.cards -> 'a6' -> 'y' = jsonb_build_array(to_char(v_d, 'YYYY-MM-DD')) and (xp.cards -> 'a6' ->> 'z') = '2026-03-04'
+                         and not (xp.cards -> 'a6' ? 't')) then
+      raise exception '점검 실패(V3 문법 줄 · 카드): %', left(r::text, 600);
+    end if;
+
+    -- 8) 오늘 볼 것 판: 한 종류(단어 먼저 · 써 보기 꼴) · 20 까지 · 남은 수 · 시험 중 세트 문항 0 · 평가를 열면 판 닫힘 · 닫힌 뒤 답 = 기록만
+    r := public.lec_set_open_v2(v_ka, null, 'review');
+    v_b := (r ->> 'b')::uuid;
+    if (r ->> 'ok') is distinct from 'true' or (r ->> 'md') is distinct from 'review' or (r ->> 'kd') is distinct from 'voc'
+       or (r ->> 'title') is distinct from '오늘 볼 것' or coalesce((r ->> 'n')::integer, 0) not between 1 and 20
+       or exists (select 1 from jsonb_array_elements(r -> 'q') as x(e) where x.e ->> 'kd' <> 'voc' or x.e ->> 'f' <> 'sp' or x.e ->> 'a' is null)
+       or r::text like '%00000000-0000-4000-8000-000000000006%'
+       or jsonb_typeof(r -> 'left') is distinct from 'object' or coalesce((r #>> '{left,gu}')::integer, 0) < 1
+       or not (r::text like '%00000000-0000-4000-8000-000000000001%')
+       or (public.lec_set_open_v2(v_ka, null, 'review') ->> 'b')::uuid is distinct from v_b then
+      raise exception '점검 실패(V3 오늘 볼 것 판): %', left(r::text, 800);
+    end if;
+    r2 := public.lec_set_test_v2(v_ka, '00000000-0000-4000-8000-000000000001'::uuid);
+    if (r2 ->> 'ok') is distinct from 'true'
+       or not exists (select 1 from public.lec_set_run xr where xr.id = v_b and xr.shut ? '00000000-0000-4000-8000-000000000001') then
+      raise exception '점검 실패(V3 평가 열면 오늘 볼 것 판 닫힘): %', left(r2::text, 600);
+    end if;
+    perform public.lec_set_log_v2(v_ka, jsonb_build_array(
+              jsonb_build_object('id', '93a' || substr(v_ks, 1, 29), 'b', v_b, 'i', 1, 's', '00000000-0000-4000-8000-000000000001',
+                                 'k', 'k1', 'f', 'sp', 'v', 'w1')));
+    r := public.lec_set_open_v2(v_ka, null, 'review');
+    if not exists (select 1 from public.lec_set_log xl where xl.id = '93a' || substr(v_ks, 1, 29) and xl.why = 'shut' and not xl.done)
+       or (r ->> 'b')::uuid is not distinct from v_b or r::text like '%00000000-0000-4000-8000-000000000001%'
+       or jsonb_path_exists(r2, '$.**.a') then
+      raise exception '점검 실패(V3 평가 중 오늘 볼 것): %', left(r::text, 600);
+    end if;
+
+    -- 9) 권한: 새 속 함수는 밖에서 못 부름 · 학생 함수는 V2-1 그대로
+    if has_function_privilege('anon', 'public.lec__v2_todo(text, text[], jsonb, date)', 'execute')
+       or has_function_privilege('authenticated', 'public.lec__v2_open3(public.lec_key, uuid, text)', 'execute')
+       or has_function_privilege('anon', 'public.lec__v2_judge(public.lec_set_run, text[], jsonb)', 'execute')
+       or not has_function_privilege('anon', 'public.lec_set_open_v2(text, uuid, text)', 'execute') then
+      raise exception '점검 실패(V3 권한)';
+    end if;
+    select string_agg(p.oid::regprocedure::text, ', ' order by p.oid::regprocedure::text) into v_t
+      from pg_proc p
+     where p.pronamespace = 'public'::regnamespace
+       and left(p.proname, 7) = 'lec__v2'
+       and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'));
+    if v_t is not null then
+      raise exception '점검 실패(V3 · 속 함수를 밖에서 부를 수 있음): %', v_t;
+    end if;
+
+    raise exception 'LEC_SELFTEST_OK';
+  exception when others then
+    if sqlerrm <> 'LEC_SELFTEST_OK' then raise; end if;
+  end;
+end
+$$;
 
 -- 열두째 스스로 점검(V2-1): 판정 표(_check/class_v2_vectors.json) · 없는 열쇠 · 스위치 끔 = 옛 판 그대로 · 폰이 만든 판 = 기록만 ·
 --   켬: 외우기 판(이어서 · 같은 줄 두 번 · 앞 순번 늦게) · 쌓인 오답 판(늦게 온 앞 판 줄 = 그 카드만 다시 셈 = 차례대로 보낸 값) ·
