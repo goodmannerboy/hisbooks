@@ -2310,10 +2310,11 @@ window.__lecStart = function () {
     var ci = function (t, d) { return '<li><span class="ci-t">' + t + '<span class="sr">: </span></span><span class="ci-d">' + d + '</span></li>'; };
     var h = '<div class="wrap"><div class="cons ob"><span class="ob-ic" aria-hidden="true">' + icon('doc', 30) + '</span>' +
       '<h1>히즈클래스 기록 안내</h1><ol class="cis">' +
-      ci('기록하는 것', '영상을 어디까지 봤는지(재생 위치·본 칸), 남긴 질문과 받은 답') +
+      /* 3-1 (가)(원장님 11-19): 실제 남기는 것대로 넓힘 · 판 번호 v1-2026-11 그대로(다시 동의 받지 않음) */
+      ci('기록하는 것', '영상을 언제·어디까지 봤는지(재생 위치·본 칸·본 시간·배속), 단어·구문·문법 연습과 시험 기록, 구문 녹음, 남긴 질문과 받은 답, 들어온 기기 종류') +
       ci('보는 사람', '원장 선생님과 담당 선생님') +
-      ci('보관', '강의가 내려가면 그 강의 기록도 함께 지우고, 학원을 그만두면 30일 안에 지웁니다') +
-      ci('지우기', '지워 달라고 하면 30일 안에 지웁니다') +
+      ci('보관', '강의를 지우면 그 강의 기록도 함께 지우고, 학원을 그만두면 30일 안에 지워요') +
+      ci('지우기', '지워 달라고 하면 30일 안에 지워요') +
       '</ol>' + (cur ? '<p class="cur">' + cur + '</p>' : '') +
       (again ? '' : '<div class="btns"><button class="btn-fill" type="button" data-act="agree">동의하고 들어가기</button></div>' +
       '<p id="cErr" class="err" role="alert"></p>') +
