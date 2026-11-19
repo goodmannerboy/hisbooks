@@ -127,7 +127,7 @@
     '.pvt b{flex:0 0 auto;font-weight:700}' +
     '.pvs2{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:#B8B4A6}' +
     '.pvc{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:700;line-height:18px;border-radius:999px;padding:1px 10px;background:#FBF0C9;color:#7A5410}' +
-    '.pvc.end{background:#EFEDE5;color:#5F6256}' +
+    '.pvc.end{background:#EFEDE5;color:#57534A}' +
     '.pvg{flex:0 0 auto;display:flex;padding:3px;border-radius:999px;background:#343B36}' +
     '.pvb button{position:relative;border:0;margin:0;font:inherit;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
     '.pvb button:after{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}' +
