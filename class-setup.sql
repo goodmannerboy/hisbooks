@@ -746,6 +746,7 @@ begin
     'consent', (select jsonb_build_object('choice', c.choice, 'ver', c.ver, 'at', c.at)
                   from public.lec_consent c where c.sid = k.sid),
     'consent_ver', public.lec__consent_ver(),
+    'al_mine', exists (select 1 from public.lec_lecture l where public.lec__open_s(l, v_cls, v_sch) and l.class_ids && coalesce(v_cls, '{}')),
     'lectures', coalesce((
       select jsonb_agg(jsonb_build_object(
                'id', l.id, 'title', l.title, 'book', l.book, 'yt', l.yt, 'dur', l.dur,
@@ -3856,6 +3857,7 @@ begin
     'consent', (select jsonb_build_object('choice', c.choice, 'ver', c.ver, 'at', c.at)
                   from public.lec_consent c where c.sid = k.sid),
     'consent_ver', public.lec__consent_ver(),
+    'al_mine', exists (select 1 from public.lec_lecture l where public.lec__open_s(l, v_cls, v_sch) and l.class_ids && coalesce(v_cls, '{}')),
     'lectures', coalesce((
       select jsonb_agg(jsonb_build_object(
                'id', l.id, 'title', l.title, 'book', l.book, 'yt', l.yt, 'dur', l.dur,
@@ -4217,6 +4219,7 @@ declare
   v_t     text;
   v_mk    text := 'selftest' || replace(gen_random_uuid()::text, '-', '');
   v_hk    text := 'selftest' || replace(gen_random_uuid()::text, '-', '');
+  v_ak    text := 'selftest' || replace(gen_random_uuid()::text, '-', '');
   v_sk    text := 'selftest-m2-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
   v_cls   text := 'c-selftest-m2' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
   v_rid   text := 'selftest-m2';
@@ -4237,6 +4240,7 @@ declare
   v_rh    uuid;
   v_rs    text;
   v_rc    text;
+  v_as    text;
   v_mr    text;
   v_mc    text;
   v_l     public.lec_lecture;
@@ -4446,12 +4450,34 @@ begin
             is distinct from to_char(v_today + 3, 'YYYY-MM-DD') then
         raise exception '점검 실패(M2 · 첫 화면 늘어남): %', left(r::text, 400);
       end if;
+      -- AL(11-19): 내 반을 겨눈 열린 강의(h)가 있으면 al_mine = 참(lec_push_on 의 show 와 같은 셈 · 학생 앱이 알림 답을 기다릴지)
+      if (r ->> 'al_mine') is distinct from 'true' then
+        raise exception '점검 실패(AL · 내 반 강의 학생 al_mine): %', coalesce(r ->> 'al_mine', '없음');
+      end if;
       update public.lec_range set lecture_ids = '{}' where id = v_rh;
       r := public.lec_home(v_hk);
       if (select e ->> 'ended' from jsonb_array_elements(r -> 'lectures') e where e ->> 'id' = v_h::text) is distinct from 'true'
          or (select e ->> 'until' from jsonb_array_elements(r -> 'lectures') e where e ->> 'id' = v_h::text)
             is distinct from to_char(v_today - 1, 'YYYY-MM-DD') then
         raise exception '점검 실패(M2 · 첫 화면 뺀 뒤): %', left(r::text, 400);
+      end if;
+    end if;
+
+    -- AL(11-19): «전체('*')» 강의만 있는 학생(반을 겨눈 강의가 하나도 없는 실제 학생 · 없으면 건너뜀) →
+    --   «전체» 강의 g 는 보이지만 al_mine = 거짓(학생 앱이 알림 답을 기다리지 않음)
+    select t.skey into v_as
+      from public.lec__roster() t
+     where coalesce(t.skey, '') <> '' and coalesce(cardinality(t.cls), 0) > 0
+       and not exists (select 1 from public.lec_lecture l where l.class_ids && t.cls)
+     order by t.skey
+     limit 1;
+    if v_as is not null then
+      insert into public.lec_key (kh, sid, rid, pin, sname, cls)
+      values (public.lec__kh(v_ak), v_as, '', '', '점검', '{}');
+      r := public.lec_home(v_ak);
+      if (r ->> 'ok') is distinct from 'true' or (r ->> 'al_mine') is distinct from 'false'
+         or not exists (select 1 from jsonb_array_elements(r -> 'lectures') e where e ->> 'id' = v_g::text) then
+        raise exception '점검 실패(AL · 전체 강의만 있는 학생 al_mine): % · %', coalesce(r ->> 'ok', '없음'), coalesce(r ->> 'al_mine', '없음');
       end if;
     end if;
 
