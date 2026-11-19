@@ -3068,7 +3068,7 @@ window.__lecAdminStart = function () {
       h += '</div>';
     }
     h += '<p class="rgi">시험 ' + esc(rngWhen(g)) + ' · 받는 학생 ' + g.rids.length + '명</p>' +
-      '<p class="rgi mut">학생 화면에는 ' + esc(L.fmtDay(row && row.show_on ? row.show_on : g.show_on)) + '부터 보여요(시험 20일 전).</p>';
+      (g.on && str(D.rg.today) < str(row && row.show_on ? row.show_on : g.show_on) ? '<p class="rgi mut">학생 화면에 지금 보여요(히즈북스 D-day 켬).</p>' : '<p class="rgi mut">학생 화면에는 ' + esc(L.fmtDay(row && row.show_on ? row.show_on : g.show_on)) + '부터 보여요(시험 20일 전).</p>');
     u = rg.unknown[g.k] || 0;
     if (u) h += '<p class="rgi mut">이 학교에서 학년을 모르는 학생 ' + u + '명은 받는 학생에서 빠져요. 히즈북스에서 학년을 적어 주세요.</p>';
     if (row) h += '<p class="rgi mut">저장됨 · ' + esc(row.saved_by || '모름') + (row.saved_at ? ' · ' + esc(whenFull(row.saved_at)) : '') + '</p>';

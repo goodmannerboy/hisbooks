@@ -1750,7 +1750,8 @@
           by[gk] = {
             k: k, g: g, src: pk.src, name: nm.name, term: nm.term, kind: nm.kind, label: str(pk.rec.label).trim(),
             exam_on: exi, end_on: x.d2.split('.').join('-'), show_on: addDays(exi, -20),
-            school_nm: Lec.left(snm, 40), disp: Lec.left(schoolShort(snm) || k, 40), rids: [], cids: [], t: grpT(es, eg, k, g)
+            school_nm: Lec.left(snm, 40), disp: Lec.left(schoolShort(snm) || k, 40), rids: [], cids: [], t: grpT(es, eg, k, g),
+            on: !!pk.rec.on   /* D1(11-19): 히즈북스 D-day 켬 = 학생 화면에 날짜 없이 보임(관리 화면 안내 글만 씀 · 묶기 규칙 그대로) */
           };
           order.push(gk);
         }
@@ -1773,6 +1774,42 @@
       if (live) out.unknown[uk] = unk[uk].length;
     }
     return out;
+  }
+
+  /* D1(11-19) 학생 홈 시험 카드의 시험 = 히즈북스 학생 칩(_examChipRaw)과 같은 셈
+     sched = 서버 lec_range_me 의 sched {rows:[{id:'main', es, eg}, {id:'pt-etc', es, eg}], me:[{g, ig, s, is, cn}]}(내 학교 칸만)
+     me 줄(내가 든 반)마다 학교 key = schoolKey(stuSchool) · 학년 = stuGrade(반 이름) → examPick → examCalc(켬이면 날짜 없이 · 끔이면 20일 전부터 ·
+     시험 중 보임 · 끝나면 없음) · 보이는 것 중 시험 중 먼저 · 다음 가까운 것
+     → {k, g, src, on, name, label, exam_on, end_on, n, during}(날짜 'YYYY-MM-DD') · 없음 · 옛 서버(sched 없음) · 두 줄 못 읽음 = null */
+  function examMine(sched, today) {
+    var td = tdDot(today), m, me, i, o, stu, k, g, pk, c, x, nm, best = null, cand;
+    if (!td || !isObj(sched) || !isArr(sched.me)) return null;
+    m = examMerge(sched.rows);
+    if (!m) return null;
+    me = sched.me;
+    for (i = 0; i < me.length; i += 1) {
+      o = me[i];
+      if (!isObj(o)) continue;
+      stu = { grade: o.g, school: o.s, intake: { grade: o.ig, school: o.is } };
+      k = schoolKey(stuSchool(stu));
+      if (!k) continue;
+      g = stuGrade(stu, { name: o.cn });
+      pk = examPick(m.es, m.eg, k, g, td);
+      if (!pk) continue;
+      c = examCalc(pk.rec, td);
+      if (!c) continue;
+      x = recDays(pk.rec);
+      nm = examName(pk.rec.label, x.d);
+      cand = {
+        k: k, g: g, src: pk.src, on: !!pk.rec.on, name: nm ? nm.name : '', label: str(pk.rec.label).trim(),
+        exam_on: x.d.split('.').join('-'), end_on: x.d2.split('.').join('-'), n: c.n, during: !!c.during
+      };
+      if (!best || (cand.during && !best.during) || (cand.during === best.during && (cand.n < best.n ||
+          (cand.n === best.n && (cmpS(cand.end_on, best.end_on) || cmpS(cand.k, best.k) || cmpS(cand.g, best.g)) < 0)))) {
+        best = cand;
+      }
+    }
+    return best;
   }
 
   /* 강의의 수업일(가장 늦은 수업일 · 없으면 올린 날) */
@@ -2089,7 +2126,7 @@
     schMap: schMap, schOk: schOk, schLabel: schLabel,
     gradeFromClass: gradeFromClass, stuGrade: stuGrade,
     RNG_VER: RNG_VER, grpT: grpT,
-    examMerge: examMerge, examPick: examPick, examName: examName, examGroups: examGroups, isoOf: isoOf, addDays: addDays,
+    examMerge: examMerge, examPick: examPick, examName: examName, examGroups: examGroups, examMine: examMine, isoOf: isoOf, addDays: addDays,
     rngCands: rngCands, rngBase: rngBase, rngName: rngName, rngBand: rngBand, rngBandText: rngBandText, rngSyncRows: rngSyncRows,
     ddayOf: ddayOf, rngPickItem: rngPickItem, rngCard: rngCard,
     rngGoneErr: rngGoneErr, rngMe: rngMe, rngStaff: rngStaff, rngSave: rngSave, rngSeen: rngSeen, rngSync: rngSync, rngReset: rngReset

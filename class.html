@@ -607,6 +607,8 @@ html.stg .ky{background:#1A3B2C;color:#F4ECD7}
 .exam1 .l1{display:block;font-size:17px;font-weight:600;line-height:22px;letter-spacing:-.01em}
 .exam1 .l2{display:block;margin-top:2px;font-size:15px;line-height:20px;color:var(--ink2)}
 .exam1::after{content:'\203A';flex:0 0 auto;font-size:20px;line-height:1;color:var(--ink2)}
+/* D1(11-19) 일정만 카드(범위를 저장하지 않은 시험): 겉모양 같음(링 56 · 높이 86) · 첫 줄 하나만 세로 가운데 · 누를 곳 아님(div · 화살표 없음) */
+.exam1.only::after{content:none}
 .rhead{margin:4px 0 12px}
 .rhead h1{margin:0;font-size:20px;font-weight:700;line-height:1.3;letter-spacing:-.02em}
 .rhead p{margin:4px 0 0;font-size:13px;color:var(--ink2)}
@@ -2802,23 +2804,47 @@ window.__lecStart = function () {
     }
     return out;
   }
-  /* 카드에 띄울 시험 → {it, c:{title, sub, n, during, total, done}, ls} · 없으면 null
-     범위가 저장된 시험만(서버가 D-20부터 시험 끝날까지만 줌 · 여기서도 D-20 넘으면 안 띄움) · 일정 없는 학교 = 빈 카드도 없음 */
+  /* 범위 줄과 내 학교 시험(sc · L.examMine)이 같은 시험인가: 날짜가 겹침(범위 exam_on~end_on · 일정 date~end) */
+  function rngTie(it, sc) {
+    var a = L.isoOf(it.exam_on), b = L.isoOf(it.end_on) || a;
+    if (!a || !sc) return false;
+    if (b < a) b = a;
+    return a <= sc.end_on && sc.exam_on <= b;
+  }
+  /* 카드에 띄울 시험 → {it, c:{title, sub, n, during, total, done}, ls, only} · 없으면 null
+     D1(11-19): 보이는 때 = 히즈북스 학생 칩과 같음(L.examMine · 켬이면 날짜 없이 · 끔이면 20일 전부터 · 시험 중 · 끝나면 없음) ·
+     범위를 저장했고 그 시험과 날짜가 겹치면 범위 카드(링 진도 · 범위 n편) · 범위가 없으면 일정만 카드(only · 누를 곳 아님) ·
+     일정에 안 묶인 범위 줄 = 예전 규칙(show_on 부터 · 시험 중이거나 20일 안) · 옛 서버(sched 없음) = 범위 카드만(지금과 같음) */
   function examTop(rec) {
-    var r = S.rng, today = L.isoDay(), items = [], i, it, ls, n, j, best, c;
+    var r = S.rng, today = L.isoDay(), items = [], i, it, ls, n, j, best, c, sc, tie = false, dd, bd;
     if (!r || Object.prototype.toString.call(r.items) !== '[object Array]') return null;
+    try { sc = L.examMine ? L.examMine(r.sched, today) : null; } catch (e0) { sc = null; }   /* D1: sched 꼴이 틀려도 홈은 그대로(범위 카드 규칙) */
     for (i = 0; i < r.items.length; i += 1) {
       it = r.items[i];
       if (!it || typeof it !== 'object') continue;
       ls = rngLecs(it);
       if (!ls.length) continue;
+      if (rngTie(it, sc)) tie = true;
+      else {
+        if (it.show_on && L.isoOf(it.show_on) && today < L.isoOf(it.show_on)) continue;
+        dd = L.ddayOf(it.exam_on, it.end_on, today);
+        if (!dd || (!dd.during && dd.n > 20)) continue;
+      }
       for (n = 0, j = 0; j < ls.length; j += 1) { if (isDone(ls[j], +ls[j].pct || 0)) n += 1; }
       items.push({ id: it.id, name: it.name, exam_on: it.exam_on, end_on: it.end_on, lectures: ls, done: n, src: it });
     }
     best = L.rngPickItem(items, today);
+    if (sc && !tie) {   /* 일정만 후보: 시험 중 먼저 · 가까운 것 · 같으면 범위 줄 */
+      bd = best ? L.ddayOf(best.exam_on, best.end_on, today) : null;
+      if (!bd || (sc.during && !bd.during) || (sc.during === bd.during && sc.n < bd.n)) {
+        it = { name: sc.name, exam_on: sc.exam_on, end_on: sc.end_on };
+        c = L.rngCard({ name: sc.name, exam_on: sc.exam_on, end_on: sc.end_on, lectures: [], done: 0 }, today, rec);
+        return c ? { it: it, c: c, ls: [], only: true } : null;
+      }
+    }
     if (!best) return null;
     c = L.rngCard(best, today, rec);
-    if (!c || (!c.during && c.n > 20)) return null;
+    if (!c) return null;
     return { it: best.src, c: c, ls: best.lectures };
   }
   /* 결론안 K 시험 카드: «D-9»(28) · «2학기 기말 · 11.25(수)» · «범위 4편 중 2편 학습 완료» · 칸 막대(다 본 칸 = 끝남 색)
@@ -2843,6 +2869,8 @@ window.__lecStart = function () {
   }
   function examCardHTML(ex, rec) {
     var c = ex.c;
+    /* D1 일정만 카드: 같은 링(진도 호 없음) + 첫 줄 하나 · 누를 곳 아님(범위 화면 없음) */
+    if (ex.only) return '<div class="exam1 card only" data-top="exam">' + examRing(c, false) + '<span class="mn"><span class="l1">' + esc(examLine(ex)) + '</span></span></div>';
     return '<a class="exam1 card" href="#rng" data-act="go" data-top="exam" aria-label="' + esc(M.examLab + ' ' + c.title + ' · ' + examSub(c, rec)) + '">' +
       examRing(c, rec) + '<span class="mn"><span class="l1">' + esc(examLine(ex)) + '</span>' +
       '<span class="l2">' + esc(examSub(c, rec)) + '</span></span></a>';
@@ -2850,7 +2878,7 @@ window.__lecStart = function () {
   /* 범위 영상 목록(#rng): 덜 본 것 먼저(다 본 것은 아래 · 같으면 수업일 이른 차례) */
   function showRange() {
     var m = recMode(), rec = m === 'agree', ex = examTop(rec);
-    if (!ex) { clearHash(); showList(); return; } /* 시험이 지났거나 범위가 빠짐 = 목록으로 */
+    if (!ex || ex.only) { clearHash(); showList(); return; } /* 시험이 지났거나 범위가 빠짐(일정만 카드 포함) = 목록으로 */
     S.view = 'rng';
     PYN = pyeonMap(listBase()); /* 범위 화면도 목록과 같은 타일(«N / 편» 차례는 전체 목록 기준) */
     var today = L.isoDay(), am = attMap(), ls = ex.ls.slice(), ord = {}, i;

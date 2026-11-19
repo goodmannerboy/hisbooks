@@ -2392,6 +2392,8 @@
      ?manyexams=1 = 위에 더해 시험 다섯(c2Many · 띠가 여럿일 때) · 그냥 ?demo=1 은 위 그대로 */
   var NORANGE = false;
   try { NORANGE = /[?&]norange=1(&|$)/.test(w.location.search); } catch (e) { NORANGE = false; }
+  var NOSCHED = false;   /* D1(11-19): lec_range_me 를 D1 앞 판으로(?nosched=1 · LecMock.noSched) */
+  try { NOSCHED = /[?&]nosched=1(&|$)/.test(w.location.search); } catch (e) { NOSCHED = false; }
   var C2ID = {
     R1: '5eedc2a0-0000-4000-8000-000000000001',
     R2: '5eedc2a0-0000-4000-8000-000000000002'
@@ -2635,15 +2637,60 @@
     return ch;
   }
 
-  /* lec_range_me: 내 rid(또는 학생 열쇠)가 든 줄 · 꺼지지 않음 · 오늘이 show_on ~ end_on · 볼 수 있는 강의만 · 빈 줄 뺌
-     같은 이름 · 같은 날짜 줄이 둘이면 나중에 저장한 줄 하나(C2 검수 L-3) · 저장한 뒤 올린 강의도 들어감(M1 · c2New) */
+  /* D1(11-19) lec__sched 와 같음: 내 반 줄(명단 거름 = rosterFrom · 나 = id|맞춘 이름) · 내 학교 열쇠 칸만(examSchool · «열쇠|» 로 시작하는 examSchoolG) ·
+     칸 값 = label · date · end · del · on · t 만(빈 칸 뺌) · 묶음이 아니면 null · 고른 칸이 없으면 null · rows 는 늘 두 줄 */
+  function schedOf(d, sid) {
+    var X = L(), me = [], ks = [], app = d.app && typeof d.app === 'object' ? d.app : {}, F = ['label', 'date', 'end', 'del', 'on', 't'];
+    function nz(v) { return v === undefined ? null : v; }
+    function obj(v) { return !!v && typeof v === 'object' && !isArr(v); }
+    (isArr(d.classes) ? d.classes : []).forEach(function (c) {
+      (c && isArr(c.students) ? c.students : []).forEach(function (s) {
+        var rid, nn, k;
+        if (!obj(s)) return;
+        rid = X.jtext(s.id);
+        nn = X.norm(X.jtext(s.name));
+        if (rid == null || rid === '' || nn === '' || X.truthy(s.withdrawn) || X.truthy(s.pending) || rid + '|' + nn !== sid) return;
+        me.push({ g: nz(s.grade), ig: obj(s.intake) ? nz(s.intake.grade) : null, s: nz(s.school), is: obj(s.intake) ? nz(s.intake.school) : null, cn: nz(c.name) });
+        k = X.schoolKey(X.stuSchool(s));
+        if (k && ks.indexOf(k) < 0) ks.push(k);
+      });
+    });
+    function val(v) {
+      var o = {}, i;
+      if (!obj(v)) return null;
+      for (i = 0; i < F.length; i += 1) { if (has(v, F[i]) && v[F[i]] != null) o[F[i]] = v[F[i]]; }
+      return o;
+    }
+    function pickOf(m, g) {
+      var out = {}, n = 0, key, i, ok;
+      if (!obj(m)) return null;
+      for (key in m) {
+        if (!has(m, key)) continue;
+        ok = false;
+        for (i = 0; i < ks.length && !ok; i += 1) ok = g ? key.indexOf(ks[i] + '|') === 0 : key === ks[i];
+        if (ok) { out[key] = val(m[key]); n += 1; }
+      }
+      return n ? out : null;
+    }
+    return {
+      rows: ['main', 'pt-etc'].map(function (id) {
+        var r = obj(app[id]) ? app[id] : {};
+        return { id: id, es: pickOf(r.examSchool, false), eg: pickOf(r.examSchoolG, true) };
+      }),
+      me: me
+    };
+  }
+
+  /* lec_range_me: 내 rid(또는 학생 열쇠)가 든 줄 · 꺼지지 않음 · 시험 끝 날까지(D1 · 보이기 시작한 날 전 줄도) · 볼 수 있는 강의만 · 빈 줄 뺌
+     같은 이름 · 같은 날짜 줄이 둘이면 나중에 저장한 줄 하나(C2 검수 L-3) · 저장한 뒤 올린 강의도 들어감(M1 · c2New) ·
+     D1: 줄마다 show_on · 답에 sched(내 학교 시험 일정) · ?nosched=1 또는 LecMock.noSched(true) = D1 을 안 넣은 서버(show_on ~ end_on 줄만 · show_on · sched 없음) */
   function lec_range_me(d, a) {
-    var k = findKey(d, a.p_key), t = today(), items = [], pick = {}, order = [];
+    var k = findKey(d, a.p_key), t = today(), items = [], pick = {}, order = [], out;
     if (!k) return { ok: false, err: 'key' };
     var rid = str(k.rid) !== '' ? str(k.rid) : str(k.sid).split('|')[0];
     (d.range || []).forEach(function (g) {
       var rids = g.rids || [], key, cur;
-      if (g.off || !(t >= g.show_on && t <= g.end_on)) return;
+      if (g.off || !(t <= g.end_on) || (NOSCHED && !(t >= g.show_on))) return;
       if (!((rid !== '' && rids.indexOf(rid) >= 0) || rids.indexOf(k.sid) >= 0)) return;
       key = str(g.name) + '|' + g.exam_on + '|' + g.end_on;
       cur = pick[key];
@@ -2663,10 +2710,13 @@
         var p = findProgress(d, k.sid, l.id);
         if (p && (p.done_at != null || p.done_by != null)) done += 1;
       });
-      items.push({ id: g.id, name: g.name, exam_on: g.exam_on, end_on: g.end_on, lectures: ls.map(function (l) { return l.id; }), done: done });
+      out = { id: g.id, name: g.name, exam_on: g.exam_on, end_on: g.end_on, lectures: ls.map(function (l) { return l.id; }), done: done };
+      if (!NOSCHED) out.show_on = g.show_on;
+      items.push(out);
     });
     items.sort(function (x, y) { return cmpC(x.exam_on, y.exam_on) || cmpC(x.id, y.id); });
-    return { ok: true, today: t, items: items };
+    if (NOSCHED) return { ok: true, today: t, items: items };
+    return { ok: true, today: t, items: items, sched: schedOf(d, k.sid) };
   }
 
   /* lec_range_staff: 끝난 지 90일이 안 된 줄(꺼진 줄 포함) */
@@ -2809,6 +2859,7 @@
   w.LecMock.c2ids = C2ID;
   /* 시험용: C2 함수만 없는 서버 켜기·끄기 */
   w.LecMock.noRange = function (on) { if (on !== undefined) NORANGE = !!on; return NORANGE; };
+  w.LecMock.noSched = function (on) { if (on !== undefined) NOSCHED = !!on; return NOSCHED; };
 
   /* ======================================================= N1 (11-17) 새 영상 알림(CLAUDE.md §8-205)
      class-setup.sql N1 절(lec_push_cfg · lec_push_sub · lec_push_queue · 트리거 lec__push_mark · lec_push_on · lec_push_save ·

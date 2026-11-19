@@ -4,6 +4,7 @@
      안쪽 학생 화면을 iframe 으로 띄움. 세션이 없거나 선생님이 아니면 preview 를 버리고 보통 학생 화면(로그인)으로.
    - 안쪽(class.html?preview=<id>&in=1): 학생 화면 코드 그대로 · 자료만 바깥이 읽어 둔 강의로 바꿈(읽기만).
      기록 0: 서버에 쓰지 않음(진도 · 질문 · 동의 · 알림) · 학생 localStorage 키는 건드리지 않음(메모리에만).
+     학생 홈 시험 카드(D1 · 11-19)도 바깥이 읽어 둔 반 학생 · 학교 시험 일정 · 범위 줄로 만듦(rngOf · 못 읽으면 카드만 없음).
    연습 화면(&demo=1)은 LecMock 자료로 같은 흐름. 학생용 «기록 없이 보기» 길은 없음(동의 판은 선생님 세션의 미리 보기에서만 건너뜀). */
 (function (w) {
   'use strict';
@@ -48,8 +49,85 @@
     return isArr(v) ? v : [];
   }
   var PDF_P = /^[0-9a-f]{64}\.pdf$/;
-  /* lecs = lec_lecture 줄(SQL 칸 그대로) · classes = 히즈북스 반 [{id, name}] · id = 보려는 강의 */
-  function build(L, lecs, classes, id) {
+  function nz(v) { return v === undefined ? null : v; }
+  function isObj(v) { return !!v && typeof v === 'object' && !isArr(v); }
+  /* 강의의 수업일(가장 늦은 수업일 · 없으면 올린 날 · class-api.js lecDay 와 같음) */
+  function lastDay(l) {
+    var best = '', a = [l.lesson_on].concat(isArr(l.lesson_more) ? l.lesson_more : []), i;
+    for (i = 0; i < a.length; i += 1) { if (typeof a[i] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(a[i]) && a[i] > best) best = a[i]; }
+    if (!best && typeof l.posted_on === 'string') best = l.posted_on.slice(0, 10);
+    return best;
+  }
+  /* D1(11-19) 학생 홈 시험 카드: 서버 lec_range_me 의 답(items · sched)을 미리 보기 반 학생으로 만듦(읽어 둔 자료만 · 기록 0)
+     sched.me = 그 반(반 없이 «전체»면 모든 반) 명단 학생마다 한 줄(lec__roster 거름 · 볼 학교를 고른 강의면 그 학교 학생만 · 이름은 안 넣음) ·
+     sched.rows = main · pt-etc 학교 시험 일정 · items = 그 학생들이 받는 범위 줄(꺼지지 않음 · 끝나지 않음 · 같은 시험 두 줄이면 나중 줄) ·
+     줄의 강의 = 범위 강의 + M1(저장 뒤 올린 강의 · 모든 반 아님 · 볼 학교 · 수업일 시험 70일 전 ~ 끝 전날) 중 이 미리 보기 목록에 있는 것(수업일 차례 · done 0) ·
+     saved_at 이 없는 줄은 범위 강의만 · 일정이나 범위를 못 읽었으면 null(카드 없음 · 미리 보기는 그대로) */
+  function rngOf(L, t, classes, cid, sch, pick, ex) {
+    if (!ex || !isArr(ex.rows) || !isArr(ex.range) || !L.examMine) return null;
+    var me = [], who = {}, rm = null, re = null, by = {}, order = [], items = [], i, j, c, s, rid, nn, g, en, exo, rr, hit, key, cur, ids, sv, ls, l, d, ld;
+    for (i = 0; i < classes.length; i += 1) {
+      c = classes[i];
+      if (!c || !isArr(c.students) || (cid && str(c.id) !== cid)) continue;
+      for (j = 0; j < c.students.length; j += 1) {
+        s = c.students[j];
+        if (!isObj(s)) continue;
+        rid = L.jtext(s.id);
+        nn = L.norm(L.jtext(s.name));
+        if (rid == null || rid === '' || nn === '' || L.truthy(s.withdrawn) || L.truthy(s.pending)) continue;
+        if (sch.length && L.schoolKey(L.stuSchool(s)) !== sch[0]) continue;
+        me.push({ g: nz(s.grade), ig: isObj(s.intake) ? nz(s.intake.grade) : null, s: nz(s.school), is: isObj(s.intake) ? nz(s.intake.school) : null, cn: nz(c.name) });
+        who['#' + rid] = 1;
+        who['#' + rid + '|' + nn] = 1;
+      }
+    }
+    for (i = 0; i < ex.rows.length; i += 1) {
+      if (!isObj(ex.rows[i])) continue;
+      if (ex.rows[i].id === 'main') rm = ex.rows[i]; else if (ex.rows[i].id === 'pt-etc') re = ex.rows[i];
+    }
+    function tsOf(v) { var x = v ? L.ts(v) : NaN; return isFinite(x) ? x : NaN; }
+    for (i = 0; i < ex.range.length; i += 1) {
+      g = ex.range[i];
+      if (!isObj(g) || g.off) continue;
+      exo = L.isoOf(g.exam_on); en = L.isoOf(g.end_on) || exo;
+      if (!exo || en < t) continue;
+      rr = isArr(g.rids) ? g.rids : [];
+      for (hit = false, j = 0; j < rr.length && !hit; j += 1) hit = has(who, '#' + str(rr[j]));
+      if (!hit) continue;
+      key = str(g.name) + '|' + exo + '|' + en;
+      cur = by[key];
+      if (!cur) { by[key] = g; order.push(key); continue; }
+      d = (tsOf(g.saved_at) || 0) - (tsOf(cur.saved_at) || 0);
+      if (d > 0 || (d === 0 && str(g.id) < str(cur.id))) by[key] = g;
+    }
+    for (i = 0; i < order.length; i += 1) {
+      g = by[order[i]];
+      exo = L.isoOf(g.exam_on); en = L.isoOf(g.end_on) || exo;
+      ids = isArr(g.lecture_ids) ? g.lecture_ids.map(str) : [];
+      sv = tsOf(g.saved_at);
+      ls = [];
+      for (j = 0; j < pick.length; j += 1) {
+        l = pick[j].l;
+        if (ids.indexOf(str(l.id)) >= 0 ||
+            (isFinite(sv) && tsOf(l.created_at) > sv && !(isArr(l.class_ids) && l.class_ids.indexOf('*') >= 0) &&
+             (!isArr(l.school_keys) || !l.school_keys.length || l.school_keys.indexOf(str(g.school_key)) >= 0) &&
+             (ld = lastDay(l)) && ld >= L.addDays(exo, -70) && ld <= L.addDays(en, -1))) ls.push(l.id);
+      }
+      if (!ls.length) continue;
+      items.push({ id: g.id, name: str(g.name), exam_on: exo, end_on: en, show_on: g.show_on ? L.isoOf(g.show_on) : null, lectures: ls, done: 0 });
+    }
+    items.sort(function (a, b) { return a.exam_on < b.exam_on ? -1 : a.exam_on > b.exam_on ? 1 : (str(a.id) < str(b.id) ? -1 : str(a.id) > str(b.id) ? 1 : 0); });
+    return {
+      ok: true, today: t, items: items,
+      sched: {
+        rows: [{ id: 'main', es: rm ? nz(rm.es) : null, eg: rm ? nz(rm.eg) : null }, { id: 'pt-etc', es: re ? nz(re.es) : null, eg: re ? nz(re.eg) : null }],
+        me: me
+      }
+    };
+  }
+  /* lecs = lec_lecture 줄(SQL 칸 그대로) · classes = 히즈북스 반 [{id, name, students}] · id = 보려는 강의 ·
+     ex = {rows: 학교 시험 일정 두 줄, range: 범위 줄}(D1 · 못 읽었으면 null = 시험 카드 없음) */
+  function build(L, lecs, classes, id, ex) {
     var t = L.isoDay(), tgt = null, known = {}, i, j, x;
     for (i = 0; i < lecs.length; i += 1) { if (lecs[i] && str(lecs[i].id) === id) { tgt = lecs[i]; break; } }
     if (!tgt) return null;
@@ -111,10 +189,12 @@
       }
       if (f.length) pdf.push({ id: src[i].id, f: f });
     }
+    var rng = null;
+    try { rng = rngOf(L, t, classes, cid, sch, pick, ex); } catch (e9) { rng = null; }   /* 시험 카드 자료가 틀려도 미리 보기는 그대로 */
     return {
       ok: true, id: id, title: str(tgt.title), cname: cname,
       chip: !open(tgt) ? '학생에게 아직 안 보여요' : (ended(tgt) ? '공개 끝' : ''),
-      lectures: out, paper: { ok: true, items: paper }, pdf: { ok: true, items: pdf }
+      lectures: out, paper: { ok: true, items: paper }, pdf: { ok: true, items: pdf }, rng: rng
     };
   }
 
@@ -161,7 +241,12 @@
       var M = w.LecMock, db = null;
       try { db = M && typeof M.db === 'function' ? M.db() : null; } catch (e0) { db = null; }
       if (!db) { plain(); return; }
-      shell(id, true, function (cb) { cb({ lectures: db.lecture || [], classes: db.classes || [] }); });
+      shell(id, true, function (cb) {
+        var ap = isObj(db.app) ? db.app : {}, rows = [];
+        if (isObj(ap.main)) rows.push({ id: 'main', es: nz(ap.main.examSchool), eg: nz(ap.main.examSchoolG) });
+        if (isObj(ap['pt-etc'])) rows.push({ id: 'pt-etc', es: nz(ap['pt-etc'].examSchool), eg: nz(ap['pt-etc'].examSchoolG) });
+        cb({ lectures: db.lecture || [], classes: db.classes || [], ex: { rows: rows, range: isArr(db.range) ? db.range : [] } });
+      });
       return;
     }
     if (!w.supabase || !w.supabase.createClient) { plain(); return; }
@@ -173,10 +258,13 @@
       shell(id, false, function (cb) { realLoad(sb, cb); });
     }, plain);
   }
-  /* lec_lecture 전부(1000줄씩 · 선생님 화면과 같음) + 히즈북스 반 이름 · 읽기만(GET) */
+  /* lec_lecture 전부(1000줄씩 · 선생님 화면과 같음) + 히즈북스 반 이름 · 읽기만(GET)
+     D1(11-19) 학생 홈 시험 카드: 반 학생(명단 거름 · 학교 · 학년 칸만 남김) · 학교 시험 일정 두 줄(main · pt-etc) · 범위 줄(lec_range_staff) ·
+     일정이나 범위를 못 읽으면 시험 카드만 없음(미리 보기는 열림) */
   function realLoad(sb, cb) {
-    var all = [], size = 1000;
+    var all = [], size = 1000, out = [], ex = { rows: null, range: null };
     function fail() { cb(null); }
+    function done() { cb({ lectures: all, classes: out, ex: ex.rows && ex.range ? ex : null }); }
     function page(from) {
       sb.from('lec_lecture').select('*').order('created_at', { ascending: true }).order('id', { ascending: true }).range(from, from + size - 1).then(function (r) {
         if (!r || r.error) { fail(); return; }
@@ -185,12 +273,40 @@
         if (a.length === size) page(from + size); else cls();
       }, fail);
     }
+    function lean(s) {   /* 학생 칸 중 명단 거름 · 학교 · 학년만(연락처 따위는 안 들고 있음) */
+      if (!isObj(s)) return null;
+      var o = { id: nz(s.id), name: nz(s.name), withdrawn: nz(s.withdrawn), pending: nz(s.pending), grade: nz(s.grade), school: nz(s.school) };
+      if (isObj(s.intake)) o.intake = { grade: nz(s.intake.grade), school: nz(s.intake.school) };
+      return o;
+    }
     function cls() {
       sb.from('app_state').select('classes:data->classes').eq('id', 'main').then(function (r) {
-        var row = r && !r.error && r.data ? r.data[0] : null, c = row && isArr(row.classes) ? row.classes : [], out = [], i;
-        for (i = 0; i < c.length; i += 1) { if (c[i] && c[i].id != null) out.push({ id: c[i].id, name: str(c[i].name) }); }   /* 반 이름만 남김 */
-        cb({ lectures: all, classes: out });
-      }, function () { cb({ lectures: all, classes: [] }); });
+        var row = r && !r.error && r.data ? r.data[0] : null, c = row && isArr(row.classes) ? row.classes : [], i, j, st;
+        for (i = 0; i < c.length; i += 1) {
+          if (!c[i] || c[i].id == null) continue;
+          st = [];
+          for (j = 0; isArr(c[i].students) && j < c[i].students.length; j += 1) st.push(lean(c[i].students[j]));
+          out.push({ id: c[i].id, name: str(c[i].name), students: st });   /* 반 이름 + 학생(학교 · 학년) */
+        }
+        exams();
+      }, exams);
+    }
+    function exams() {
+      try {
+        sb.from('app_state').select('id, es:data->examSchool, eg:data->examSchoolG').in('id', ['pt-etc', 'main']).then(function (r) {
+          if (r && !r.error && isArr(r.data)) ex.rows = r.data;
+          range();
+        }, range);
+      } catch (e) { range(); }
+    }
+    function range() {
+      try {
+        sb.rpc('lec_range_staff', {}, { get: true }).then(function (r) {
+          var d = r && !r.error ? r.data : null;
+          if (isObj(d) && d.ok && isArr(d.items)) ex.range = d.items;
+          done();
+        }, done);
+      } catch (e) { done(); }
     }
     page(0);
   }
@@ -303,7 +419,7 @@
       msg('불러오는 중이에요.');
       load(function (r) {
         if (!r) { msg('강의를 열지 못했어요.', true); return; }   /* 못 읽음(권한 오류 포함) · 연결 상태를 말하지 않고 할 일(다시 시도)만 */
-        P = build(L, r.lectures || [], r.classes || [], id);
+        P = build(L, r.lectures || [], r.classes || [], id, r.ex || null);
         if (!P) { msg('강의를 찾을 수 없어요. 지워졌거나 주소가 바뀌었어요.'); return; }
         msg('');
         var sub = $('pvSub'), chip = $('pvChip');
@@ -362,7 +478,7 @@
       return ok({ ok: true, me: { name: '미리 보기' }, consent: { choice: 'agree', ver: L0.CONSENT_VER, at: nowIso() }, consent_ver: L0.CONSENT_VER, lectures: json(P.lectures) });
     };
     A.att = function () { return ok(null); };
-    A.rngMe = function () { return ok(null); };
+    A.rngMe = function () { return ok(P.rng ? json(P.rng) : null); };   /* D1(11-19): 미리 보기 반 학생의 시험 카드 자료(바깥이 만들어 둠 · 없으면 카드 없음) */
     A.paper = function () { return ok(json(P.paper)); };
     A.pdf = function () { return ok(json(P.pdf)); };
     A.qna = function () { return ok({ ok: true, items: [] }); };
