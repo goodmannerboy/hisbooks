@@ -907,6 +907,8 @@
     if (x.ev === 'due') {
       a = str(q.a);
       ok = q.f === 'c' ? Lec.setNorm(v) === Lec.setNorm(a) : !!Lec.setMatch(v, a);
+      /* V2-15 규칙이 틀리면 문항의 켜진 인정 답 a2(⑤ · 서버 lec__v2_ok2id 와 같은 셈 · 쓰기 w · r 만) */
+      if (!ok && (q.f === 'w' || q.f === 'r') && q.a2 && typeof Lec.setOk2V2 === 'function') ok = !!Lec.setOk2V2(v, q.a2, q.kd);
       j = Lec.v2Add(k, t.id, row(q, v, ok));
       if (j && x.dm) {
         o = { id: j.id, i: j.i, v: str(v).slice(0, 400), h: false, t: Date.now(), f: str(q.f), pr: ok };

@@ -3898,6 +3898,7 @@ window.__lecStart = function () {
     if (t.ph === 'aq') { /* 끝 한 번 더: 받은 정답과 맞춤(Lec.setNorm · setMatch) · 서버 안 부름 · 카드 안 바뀜 */
       idx = tIdx(t); q = t.q[idx] || {}; a = (t.ans[idx] && t.ans[idx].a) || '';
       ok = q.f === 'c' ? L.setNorm(v) === L.setNorm(a) : !!L.setMatch(v, a);
+      if (!ok && q.a2 && L.setOk2V2 && (q.f === 'w' || q.f === 'r')) ok = !!L.setOk2V2(v, q.a2, q.kd);   /* V2-15 인정 답 */
       t.ag[0].n += 1; t.lastOk = ok; t.ph = 'as';
       t.fb = { ok: ok, a: a, x: t.ans[idx].x, pt: t.ans[idx].pt, v: v, sel: sel }; t.fbNew = true;
       tDraw(); tAuto();
