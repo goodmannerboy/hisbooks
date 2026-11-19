@@ -1048,7 +1048,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .todo .ti.hd{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-areas:"ic tx tx go" "tn tu . go" "ts ts ts go";align-items:center;column-gap:6px;row-gap:0;padding:12px 14px}
 .k2 .todo .ti.hd .tcx{display:contents}
 .k2 .todo .ti.hd .tic{grid-area:ic;width:auto;height:auto;border-radius:0;background:transparent;color:var(--org)}
-.k2 .todo .ti.hd .tx{grid-area:tx;font-size:13px;line-height:18px;font-weight:600;color:var(--org)}
+.k2 .todo .ti.hd .tx{grid-area:tx;font-size:13px;line-height:18px;font-weight:600;color:#57534A}   /* A3 ④ 카드 제목 짙은 회색 · 아이콘 색 그대로 */
 .k2 .todo .ti.hd .tn{grid-area:tn;font-size:28px;line-height:34px;font-weight:700}
 .k2 .todo .ti.hd .tu{grid-area:tu;align-self:end;margin:0 0 5px;font-size:13px;line-height:18px;color:var(--t2)}
 .k2 .todo .ti.hd .ts{grid-area:ts;margin-top:2px}
@@ -1304,7 +1304,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .sx-of .sx-on{flex:none;font-size:13px;line-height:18px;font-weight:600;color:var(--org)}
 /* 8 오늘(노트 0-3 · ① 2): 카드 머리 셋 = 큰 수 · 질문별 줄 · 덜 본 학생 줄(이름 먼저 · 강의별 작은 링) · 셋 + «N개 더» · 확인할 것 · 이번 주 강의 */
 .k2 .todo .ti.hd.bandn{margin:0;font-size:15px}
-.k2 .todo .ti.hd.trh .tic,.k2 .todo .ti.hd.trh .tx{color:var(--acc)}
+.k2 .todo .ti.hd.trh .tic{color:var(--acc)}
 .k2 .todo .tsr{position:relative;display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 14px;border:0;border-radius:0;background:transparent;text-align:left;color:var(--t1);font:inherit;cursor:pointer}
 .k2 .todo .tsr:hover,.k2 .todo .tmore:hover{background:var(--group-hover)}
 .k2 .todo .tsr:focus-visible,.k2 .todo .tmore:focus-visible{outline:2px solid var(--focus);outline-offset:-3px}
@@ -1331,6 +1331,17 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   .k2 .todo .tw.two>.tw-a{grid-column:1;grid-row:1}
   .k2 .todo .tw.two .tchk{grid-template-columns:minmax(0,1fr)}
 }
+/* A3 ⑤ 1800 넘으면 카드 셋과 아래 칸을 한 격자로(«확인할 것» = 셋째 카드 아래 같은 세로선) · 1600~1799 그대로 */
+@media (min-width:1800px){
+  .k2 .todo .tw.two{grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px}
+  .k2 .todo .tw.two>.tw-a{grid-column:1/span 2}
+  .k2 .todo .tw.two>.tw-b{grid-column:3}
+  .k2 .todo .tcards{align-items:stretch}
+}
+/* A3 ③ 다가오는 시험 줄: «D-9» 13/600 + 나머지 13/400 */
+.k2 .todo .ti.tsoon .tic{display:none}
+.k2 .todo .ti.tsoon .ts{color:var(--t2);font-weight:400}
+.k2 .todo .ti.tsoon .ts .tdd{font-weight:600;color:var(--t1)}
 .k2 .todo .twh{display:flex;align-items:baseline;gap:10px}
 .k2 .todo .twm{margin-left:auto;font-size:13px;line-height:18px;font-weight:600;color:var(--acc);text-decoration:none}
 .k2 .todo .twm:hover{text-decoration:underline}
@@ -1893,6 +1904,35 @@ window.__lecAdminStart = function () {
     return null;
   }
   function rngRow(g) { var x = D && D.rg && g ? D.rg.rows[gkey(g)] : null; return x && !x.off ? x : null; }
+  /* A3 ③: 범위를 저장한 시험 가운데 시험 중 · D-14 안(가까운 차례) · 범위 강의를 덜 본 학생 수(볼 학교 아닌 학생 · 그만둔 학생 뺌) */
+  function rngSoon() {
+    var a = D && D.rg ? D.rg.mine : [], out = [], i, g, row, dd;
+    for (i = 0; i < a.length; i += 1) {
+      g = a[i]; row = rngRow(g);
+      if (!row) continue;
+      dd = L.ddayOf(g.exam_on, g.end_on, D.rg.today);
+      if (!dd || (!dd.during && dd.n > 14)) continue;
+      out.push({ g: g, dd: dd, n: rngBehindN(g, row) });
+    }
+    out.sort(function (x, y) { return x.dd.n - y.dd.n || cmpKo(rngLabel(x.g), rngLabel(y.g)); });
+    return out;
+  }
+  function rngBehindN(g, row) {
+    var ids = isArr(row.lecture_ids) ? row.lecture_ids : [], ls = [], i, j, k, l, r, cl, n = 0, hit;
+    for (i = 0; i < ids.length; i += 1) { l = D.lmap[ids[i]]; if (l && !l.hidden && isPosted(l)) ls.push(l); }
+    for (i = 0; i < D.roster.length; i += 1) {
+      r = D.roster[i];
+      if (!started(r) || (g.rids.indexOf(r.rid) < 0 && g.rids.indexOf(r.skey) < 0)) continue;
+      for (j = 0, hit = false; j < ls.length && !hit; j += 1) {
+        l = ls[j]; cl = l.class_ids || [];
+        for (k = 0; k < r.cls.length && !hit; k += 1) {
+          if ((cl.indexOf('*') >= 0 || cl.indexOf(r.cls[k]) >= 0) && schIn(l, r.skey) && isBehind(stat(l, r.skey))) hit = true;
+        }
+      }
+      if (hit) n += 1;
+    }
+    return n;
+  }
   /* 띠 · 칩 · 서랍 머리 = 짧은 학교 이름(«바다고 1학년 기말») · 긴 이름은 title 에만(C2 검수 L1) */
   function rngLabel(g) { return L.rngName ? L.rngName(g) : str(g.school_nm || g.k) + ' ' + str(g.g) + '학년 ' + str(g.kind || g.name); }
   function rngDd(g) { var x = L.ddayOf(g.exam_on, g.end_on, D.rg.today); return x ? x.val : ''; }
@@ -2252,9 +2292,9 @@ window.__lecAdminStart = function () {
   function sideHtml() {
     var who = S.me.admin ? S.me.name + ' 원장님' : S.me.name + ' 선생님', wn = waitCount(), sn = S.set && S.set.unheard > 0 ? S.set.unheard : 0;
     /* 쪽 이름 + 수: 글은 «질문 2» · «세트 2» 그대로(수는 오른쪽 끝 · 답 기다림은 주황) */
-    function t(k, ic, label, n, warn) {
+    function t(k, ic, label, n, warn, al) {
       var on = curTab() === k;
-      return '<button type="button" class="tab ni' + (on ? ' on' : '') + '"' + (on ? ' aria-current="page"' : '') + ' data-act="tab" data-v="' + k + '">' + nIcon(ic) +
+      return '<button type="button" class="tab ni' + (on ? ' on' : '') + '"' + (on ? ' aria-current="page"' : '') + (al ? ' aria-label="' + esc(al) + '"' : '') + ' data-act="tab" data-v="' + k + '">' + nIcon(ic) +
         '<span class="ni-t' + (n != null ? ' j' : '') + '">' + label + (n != null ? ' <span class="bdg' + (warn ? ' warn' : '') + '">' + n + '</span>' : '') + '</span></button>';
     }
     var hb = window.__hcBackHtml ? window.__hcBackHtml() : '';
@@ -2262,7 +2302,7 @@ window.__lecAdminStart = function () {
       '<p class="brand"><img class="logo" src="his_fish_green.png" alt="히즈어학원" width="40" height="20"><span class="sr">히즈클래스 관리</span>' + WM_SVG +
       '<span class="brand-sub" aria-hidden="true">관리</span></p>' +
       '<nav class="tabs" aria-label="화면">' + t('today', 'today', '오늘') + t('lec', 'lecture', '강의') + t('stat', 'watch', '시청 현황') + t('qna', 'qna', '질문', wn, wn > 0) +
-      (sxOn() ? t('set', 'sets', '세트', sn > 0 ? sn : null) : '') + '</nav>' +
+      (sxOn() ? t('set', 'sets', '세트', sn > 0 ? sn : null, sn > 0, sn > 0 ? '세트 · 새 녹음 ' + sn : '') : '')   /* A3 ② */ + '</nav>' +
       '<p class="side-sec">학생 앱</p><button type="button" class="ni" data-act="copyAddr">' + nIcon('link') + '<span class="ni-t">학생용 주소 복사</span></button>' +
       (S.addrShow ? '<div class="addr side-url"><label for="addr-in">학생용 주소</label><input id="addr-in" type="text" readonly value="' + esc(STU_URL) + '"></div>' : '') +
       '<div class="who"><span class="av" aria-hidden="true">' + esc(who.charAt(0)) + '</span><span class="who-b"><span class="who-n">' + esc(who) + '</span>' +
@@ -2348,7 +2388,8 @@ window.__lecAdminStart = function () {
       copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
       pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9.5 14.5L12 17l2.5-2.5"/>',
       ext: '<path d="M13.5 4.5h6v6"/><path d="M19.5 4.5L11 13"/><path d="M17.5 13.5v4a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h4"/>',
-      bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'
+      bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+      mic: '<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/>'
     };
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">' + (p[n] || '') + '</svg>';
   }
@@ -2411,6 +2452,20 @@ window.__lecAdminStart = function () {
     if (rb.length > rlim) {
       ri.push('<button type="button" class="ti more" data-act="rngBandMore">시험 범위 ' + (rb.length - rlim) + '개 더 고르기</button>');
     }
+    /* A3 ③: 범위를 저장한 D-14 안 시험(가까운 차례 · 셋 + «N개 더») → 카드 맨 위 · 누르면 그 시험 범위 서랍 */
+    var sn3 = rngSoon(), slim = S.open.rngSoon ? sn3.length : 3, si = [];
+    for (i = 0; i < sn3.length && i < slim; i += 1) {
+      b = sn3[i];
+      si.push('<button type="button" class="ti tsoon" data-act="rngSoon" data-s="' + esc(gkey(b.g)) + '" title="' + esc(rngTitle(b.g)) + '"' +
+        ' aria-label="' + esc(rngLabel(b.g) + ' ' + b.dd.val + ' · 범위 강의 덜 본 ' + b.n + '명') + '"><span class="tcx"><span class="tx">' + esc(rngLabel(b.g)) + '</span>' +
+        '<span class="ts"><b class="tdd">' + esc(b.dd.val) + '</b> · 범위 강의 덜 본 ' + b.n + '명</span></span><span class="go" aria-hidden="true">›</span></button>');
+    }
+    if (sn3.length > slim) si.push('<button type="button" class="ti more" data-act="rngSoonMore">다가오는 시험 ' + (sn3.length - slim) + '개 더 보기</button>');
+    ri = si.concat(ri);
+    /* A3 ①: 새 녹음(원장님 계정 · 세트는 원장님만) → 누르면 그 세트 녹음 듣기 */
+    var ru = sxOn() && S.set && S.set.unheard > 0 && isArr(S.set.items) ? S.set.items.filter(function (x) { return x && x.cnt && +x.cnt.unheard > 0; }) : [];
+    if (ru.length) ci.push(ti('todoRec', ' data-s="' + esc(ru[0].id) + '"', 't-honey', '새 녹음', '새 녹음 ' + S.set.unheard,
+      { t: '새 녹음', s: str(ru[0].title) + (ru.length > 1 ? ' 외 ' + (ru.length - 1) : ''), n: S.set.unheard, u: '개', ic: 'am', i: 'mic' }));
     var lf = S.me.admin && isArr(t.left) ? t.left : [];
     if (lf.length) ci.push(ti('todoToggle', ' data-v="left" aria-expanded="' + (S.open.left ? 'true' : 'false') + '"', 't-neutral', '기록 정리', '그만둔 학생 기록 ' + lf.length + '명 · 지우기',
       { t: '그만둔 학생 기록', s: '누르면 지울 수 있어요', n: lf.length, u: '명', ic: 'gy', i: 'box' }));
@@ -2423,7 +2478,7 @@ window.__lecAdminStart = function () {
     /* 2차(④): 카드 셋(질문 · 결석한 날 덜 본 학생 · 범위를 고를 시험) + «확인할 것»(기록 정리 · 잠금) · 할 일 단추(.ti)는 그대로 카드 안 줄로 */
     if (qi) cards += '<div class="tcd">' + qi + '</div>';
     if (bi.length) cards += '<div class="tcd">' + bandN + bi.join('') + '</div>';
-    if (ri.length) cards += '<div class="tcd">' + ti('rngHead', '', '', '', '', { t: '범위를 고를 시험', n: rb.length, u: '개', ic: 'gy', i: 'cal', hd: 1, cls: 'trh' }) + ri.join('') + '</div>';
+    if (ri.length) cards += '<div class="tcd">' + ti('rngHead', '', '', '', '', { t: '다가오는 시험', n: rb.length + sn3.length, u: '개', ic: 'gy', i: 'cal', hd: 1, cls: 'trh' }) + ri.join('') + '</div>';
     /* 2차(8 · 노트 ① 2): 카드 셋 아래 «확인할 것» · «이번 주 강의» 3줄(1600 넘으면 «확인할 것»이 오른쪽 360 열) */
     var wk = weekHtml(), chk = ci.length ? '<div class="tw-b"><h3 class="tsec">확인할 것</h3><div class="tchk">' + ci.join('') + '</div>' + subs + '</div>' : '';
     return head + (cards ? '<div class="tcards">' + cards + '</div>' : '') + (chk || wk ? '<div class="tw' + (chk && wk ? ' two' : '') + '">' + chk + wk + '</div>' : '') + '</section>';
@@ -4868,6 +4923,7 @@ window.__lecAdminStart = function () {
     if (S.setStErr === id) S.setStErr = '';
     Promise.resolve().then(function () { return L.setStaff(DA.rpc, id); }).then(function (r) {
       if (my !== sxGen) return;
+      if (S.recWant === id && !(r && r.ok)) S.recWant = '';
       if (r && r.ok) { S.setSt = { id: id, r: r }; sxNone = ''; }
       else if (r && r.err === 'old') { S.setOld = true; S.set = null; }
       else if (r && r.err === 'none' && sxNone !== id) { sxNone = id; sxReload(); return; }
@@ -4876,9 +4932,10 @@ window.__lecAdminStart = function () {
         S.setStErr = id;
       }
       render();
+      if (S.recWant === id) { S.recWant = ''; if (S.setSt && S.setSt.id === id) rvOpen(id); }   /* A3 ① */
     }, function () {
       if (my !== sxGen) return;
-      S.setStErr = id;
+      S.setStErr = id; S.recWant = '';
       render();
     });
   }
@@ -6996,6 +7053,7 @@ window.__lecAdminStart = function () {
       case 'todoLec': S.tab = 'lec'; render(); openRow(l); break;   /* 2차(8): «이번 주 강의» 줄 → 그 강의 인스펙터 */
       case 'rngBandMore': S.open.rngBand = true; render(); break;
       /* C2 시험 범위 */
+      case 'rngSoon':   /* A3 ③ 다가오는 시험 줄 = 같은 범위 서랍 */
       case 'rngPick': openDrawer({ t: 'rng', s: s }, false); break;
       case 'rngHead':   /* 2차(8): «범위를 고를 시험» 카드 머리 = «시험 범위» 단추와 같음 */
       case 'rngOpen': openDrawer({ t: 'rng', s: '' }, false); break;
@@ -7091,6 +7149,12 @@ window.__lecAdminStart = function () {
           if (t) { try { t.focus({ preventScroll: true }); } catch (e) { try { t.focus(); } catch (e2) {} } }
         }
         break;
+      case 'todoRec':   /* A3 ①: 그 세트 고름 → 결과 표를 읽은 뒤 녹음 듣기 */
+        S.tab = 'set';
+        if (S.setSel !== s) { S.setSel = s; S.setSt = null; S.setStErr = ''; S.pp = null; S.setAsk = ''; }
+        S.recWant = s; render(); scrollMain(); sxStaff(true);
+        break;
+      case 'rngSoonMore': S.open.rngSoon = true; render(); break;
       case 'toastGo': toastOff(); closeDrawer(); S.tab = v || 'today'; S.qFocus = ''; render(); scrollMain(); break;   /* A1 토스트 [‹ 오늘] */
       case 'answer':
         t = trim(S.inputs['ans:' + q]);
