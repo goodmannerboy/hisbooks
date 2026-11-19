@@ -1507,7 +1507,8 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 (function () {
   'use strict';
   var demo = /[?&]demo=1(?:&|$)/.test(location.search);
-  var list = demo ? ['class-mock.js', 'class-api.js', 'class-v2.js'] : ['class-api.js', 'class-v2.js', 'vendor-supabase-2.49.4.js'];   /* ①b class-v2.js = 운영 숫자(못 읽어도 그대로 엶) */
+  /* class-put.js = 세트 붙여 넣기 읽기(관리 화면만 · class-api.js 바로 다음 · 11-20) */
+  var list = demo ? ['class-mock.js', 'class-api.js', 'class-put.js', 'class-v2.js'] : ['class-api.js', 'class-put.js', 'class-v2.js', 'vendor-supabase-2.49.4.js'];   /* ①b class-v2.js = 운영 숫자(못 읽어도 그대로 엶) */
   function next() {
     if (!list.length) { if (window.__lecAdminStart) window.__lecAdminStart(); return; }
     var s = document.createElement('script'), f = list.shift();
