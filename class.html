@@ -662,6 +662,9 @@ a.row:focus-visible{outline-offset:-2px}
   .row{grid-template-columns:max(128px,calc((100vw - 32px) * .382)) minmax(0,1fr)}
   .sth{width:100%;height:auto;aspect-ratio:16/9}
   a.row .tt,div.row .tt{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  /* §8-232(11-19): 썸네일이 커져 글 칸이 390에서 176 → 167이 되자 «● 새 강의 ● 결석한 날 학습 전»이 두 줄로 꺾임 → 폰에서만 상태 점 글 사이 12 → 7
+     (390 여유 5.4 · 393 7.4 · 바꾸기 전 390 여유 4.1 · 375 이하는 바꾸기 전에도 두 줄 · 위아래 2 · 점 · 글 크기 그대로) */
+  .row .rs{column-gap:7px}
 }
 .ring{display:block;width:36px;height:36px}
 .ring .rgT{stroke:var(--track)}
