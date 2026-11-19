@@ -38,7 +38,7 @@ a{color:#0C4631}
 .btn.sm{min-height:32px;padding:5px 11px;font-size:13px}
 .btn.wide{width:100%}
 .btn[disabled]{opacity:.55;cursor:default}
-.btn:focus-visible,.chip:focus-visible,.tab:focus-visible,.ti:focus-visible,.lnk:focus-visible,.cell:focus-visible,.colh:focus-visible,.crp:focus-visible,.llb:focus-visible,.x:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.mx:focus-visible{outline:2px solid #C9A227;outline-offset:2px}
+.btn:focus-visible,.chip:focus-visible,.tab:focus-visible,.ti:focus-visible,.lnk:focus-visible,.cell:focus-visible,.colh:focus-visible,.crp:focus-visible,.llb:focus-visible,.x:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.mx:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .lnk{background:none;border:0;padding:0;color:#0C4631;font-weight:700;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:#C9C1A4;text-underline-offset:3px}
 .lnk:hover{text-decoration-color:#0C4631}
 .x{width:36px;height:36px;flex:0 0 auto;border-radius:10px;border:1px solid #D9CFAF;background:#FAFAF5;font-size:20px;line-height:1;cursor:pointer;color:#0C4631}
@@ -339,7 +339,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .btn.fill:hover{border-color:#0F5A3F}
 .btn.txt:hover{border-color:transparent}
 .x{border-color:#E6DCBF;background:#FFFDF7}
-.btn:focus-visible,.chip:focus-visible,.tab:focus-visible,.ti:focus-visible,.lnk:focus-visible,.cell:focus-visible,.colh:focus-visible,.crp:focus-visible,.llb:focus-visible,.x:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.mx:focus-visible{outline-color:#9E7C14}
+.btn:focus-visible,.chip:focus-visible,.tab:focus-visible,.ti:focus-visible,.lnk:focus-visible,.cell:focus-visible,.colh:focus-visible,.crp:focus-visible,.llb:focus-visible,.x:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.mx:focus-visible{outline-color:var(--focus)}
 .lnk{text-decoration-color:#CBBF9A}
 .chip{min-height:36px;padding:4px 12px;font-size:14px;border-color:#E6DCBF;background:#FFFDF7;color:#5F6256}
 .chip.on{background:#0C4631;border-color:#0C4631;color:#FFFDF7;font-weight:700}
@@ -455,7 +455,7 @@ b,strong,.bandn strong{font-weight:700}
 .pdc svg{width:16px;height:16px;flex:none;display:block;color:#7A5410}
 .pdc .nm{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#0C4631;text-decoration:none}
 .pdc a.nm:hover{text-decoration:underline}
-.pdc a.nm:focus-visible{outline:2px solid #C9A227;outline-offset:2px}
+.pdc a.nm:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .pdc .sz{flex:none;white-space:nowrap;color:#5F6256}
 /* 빈 칸 · 뺀 칸: 이름(«필기 PDF» · «필기 PDF를 뺐어요»)은 그대로 · 긴 설명이 줄어 두 줄로(폰 390 에서 이름이 «…»로 잘리던 것) */
 .pdc.empty .nm,.pdc.off .nm{flex:none}
@@ -619,7 +619,7 @@ html.tvon,html.tvon body{overflow:hidden}
 .sx-it{display:block;width:100%;text-align:left;background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:#2B2A26;transition:border-color .16s}
 .sx-it:hover{border-color:#CBBF9A}
 .sx-it.on{border-color:#0C4631;box-shadow:inset 0 0 0 1px #0C4631}
-.sx-it:focus-visible,.sx-star:focus-visible{outline:2px solid #9E7C14;outline-offset:2px}
+.sx-it:focus-visible,.sx-star:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .sx-it .t{display:block;font-size:14px;font-weight:700;line-height:1.4}
 .sx-it .m,.sx-it .s{display:block;margin-top:2px;font-size:13px;line-height:1.4;color:#5F6256}
 .sx-it .s.g{color:#0C4631;font-weight:700}
@@ -725,7 +725,7 @@ html.tvon,html.tvon body{overflow:hidden}
 @font-face{font-family:"Pretendard";font-style:normal;font-weight:700;font-display:swap;src:url(assets/pretendard-700.woff) format("woff")}
 :root{--bg:#FDFAF2;--side:#F4ECD7;--side-sel:rgba(12,70,49,.11);--group:#F6EFDD;--group-hover:#F0E7D0;
   --t1:#1F1D18;--t2:#524F46;--t3:#635F55;--sep:rgba(60,45,10,.11);--line:rgba(60,45,10,.19);--fill:rgba(60,45,10,.04);--fill2:rgba(60,45,10,.07);
-  --acc:#0C4631;--acc-hover:#093624;--acc-tint:rgba(12,70,49,.09);--acc-line:rgba(12,70,49,.32);--focus:rgba(12,70,49,.40);
+  --acc:#0C4631;--acc-hover:#093624;--acc-tint:rgba(12,70,49,.09);--acc-line:rgba(12,70,49,.32);--focus:#0C4631;
   --org:#9A5300;--org-dot:#C26A00;--org-track:rgba(194,106,0,.24);--org-tint:rgba(194,106,0,.12);
   --grn-dot:#2E8B57;--grn-tint:rgba(46,139,87,.10);--gray-dot:#8E8E93;--ring-track:rgba(60,45,10,.12);--red:#B3261E;--blu:#1D5FB8;
   --th-bg:#F7F2E4;--th-ink:#0B3D2E;--th-line:rgba(70,52,12,.14);--pop-bg:#FFFDF7;--shadow:0 18px 48px rgba(0,0,0,.16);--side-w:220px;--ins-w:330px}
@@ -745,7 +745,7 @@ a{color:var(--acc)}
 .hc-back{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;flex:none;height:36px;margin:0;padding:0 8px;border-radius:8px;color:#0C4631;font-size:14px;line-height:20px;font-weight:400;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .hc-back svg{display:block;width:8px;height:14px;flex:none}
 @media (hover:hover){.hc-back:hover{background:var(--fill2);color:#0C4631}}
-.hc-back:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.hc-back:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 html.hc-going .hc-back{opacity:.5;pointer-events:none}
 .login.hb{position:relative;padding-top:52px}
 .login .hc-back{position:absolute;top:14px;left:10px}
@@ -797,7 +797,7 @@ html.hc-going .hc-back{opacity:.5;pointer-events:none}
 /* 내용 칸: 상자 테두리 없이(묶음은 옅은 크림 면 · 줄은 머리카락 선) */
 #main>.card{background:transparent;border:0;border-radius:0;padding:0;margin:0 0 22px}
 :focus-visible{outline-color:var(--focus)}
-.k2 .btn:focus-visible,.k2 .ni:focus-visible,.ibtn:focus-visible,.who-out:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.k2 .btn:focus-visible,.k2 .ni:focus-visible,.ibtn:focus-visible,.who-out:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 /* 860 아래(태블릿 · 폰): 사이드바가 위로 쌓임(이름 자리 · 쪽 줄 · 학생 앱 · 이름) */
 @media (max-width:860px){
   .frame{display:block;min-height:0}
@@ -853,7 +853,7 @@ html.hc-going .hc-back{opacity:.5;pointer-events:none}
 .k2 .lt .ttl-a{display:block;max-width:100%;padding:0;border:0;background:none;color:var(--t1);font-weight:600;font-size:15px;line-height:20px;text-decoration:none;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;cursor:pointer}
 .k2 .lt .ttl-a:hover{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
-.k2 .lt .ttl-a:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.k2 .lt .ttl-a:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
 .k2 .lt .sub{display:block;max-width:100%;margin:0;padding:0;border:0;font-size:13px;line-height:18px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .k2 .lt .dt,.k2 .lt .len{display:flex;flex-direction:column;font-size:13px;line-height:18px;color:var(--t2);white-space:nowrap}
 .k2 .lt .l2{font-size:12px;line-height:16px;color:var(--t3)}
@@ -866,7 +866,7 @@ html.hc-going .hc-back{opacity:.5;pointer-events:none}
 .k2 .lt .rb{display:inline-flex;align-items:center;gap:8px;min-height:40px;margin-left:-6px;padding:2px 6px;border:0;border-radius:8px;background:none;color:var(--t1);text-align:left;cursor:pointer}
 .k2 .lt span.rb{cursor:default}
 .k2 .lt button.rb:hover{background:var(--fill2)}
-.k2 .lt .rb:focus-visible,.k2 .lt .qc:focus-visible,.k2 .stu:focus-visible,.k2 .more:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.k2 .lt .rb:focus-visible,.k2 .lt .qc:focus-visible,.k2 .stu:focus-visible,.k2 .more:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .k2 .lt .cq b{font-weight:400;font-size:13px;line-height:18px;white-space:nowrap}
 .k2 .lt .cq small{font-size:12px;line-height:16px;color:var(--t3);white-space:nowrap}
 .k2 .lt .rb.mut .cq b,.k2 .lt span.rb{color:var(--t2)}
@@ -992,7 +992,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .grp{border-radius:10px;background:var(--group);overflow:hidden}
 .gi{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;margin:0;padding:8px 12px 8px 14px;border:0;background:transparent;color:var(--t1);font:inherit;text-align:left;cursor:pointer}
 .gi:hover{background:var(--group-hover)}
-.gi:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.gi:focus-visible{outline:2px solid var(--focus);outline-offset:-3px}
 .gi .i{width:18px;height:18px;flex:none;color:var(--t2)}
 .gi>.i:last-child{width:16px;height:16px;margin-left:auto;color:var(--t3)}
 .gi-t{display:flex;flex-direction:column;flex:1 1 auto;min-width:0}
@@ -1030,7 +1030,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .todo .bandn strong{font-weight:700}
 .k2 .todo .ti{position:relative;gap:10px;min-height:56px;padding:10px 14px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--t1);font-size:15px}
 .k2 .todo .ti:hover{background:var(--group-hover)}
-.k2 .todo .ti:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.k2 .todo .ti:focus-visible{outline:2px solid var(--focus);outline-offset:-3px}
 .k2 .todo .tcd .ti+.ti::before,.k2 .todo .tch+.ti::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
 .k2 .todo .ti .tic{width:28px;height:28px;border-radius:7px}
 .k2 .todo .ti .tic svg{width:16px;height:16px}
@@ -1166,7 +1166,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 #sd .lp-sr.no{color:var(--t2)}
 #sd .lp-sr .lp-nm{flex:1 1 64px;min-width:0;padding:8px 0;border:0;background:transparent;font:inherit;font-weight:600;color:var(--t1);text-align:left;cursor:pointer}
 #sd .lp-sr.no .lp-nm{font-weight:400;color:var(--t2);cursor:default}
-#sd .lp-sr .lp-nm:focus-visible{outline:3px solid var(--focus);outline-offset:1px;border-radius:4px}
+#sd .lp-sr .lp-nm:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
 #sd .lp-fb{font-size:12px;font-weight:400;color:var(--t2)}
 #sd .lp-sr .lp-c{font-size:12px;color:var(--t2)}
 #sd .lp-sr .lp-n{min-width:52px;text-align:right}
@@ -1208,7 +1208,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .qn .qi:hover{background:var(--fill)}
 .k2 .qn .qi.on{background:var(--acc-tint)}
 .k2 .qn .qi.on::before,.k2 .qn .qi:hover::before,.k2 .qn .qlist>[role=listitem]:has(.qi.on)+[role=listitem] .qi::before,.k2 .qn .qlist>[role=listitem]:has(.qi:hover)+[role=listitem] .qi::before{opacity:0}
-.k2 .qn .qi:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.k2 .qn .qi:focus-visible{outline:2px solid var(--focus);outline-offset:-3px}
 .k2 .qn .qi-d{width:8px;height:8px;margin-top:12px;border-radius:50%;flex:none}
 .k2 .qn .qi-d.w{background:var(--org-dot)}
 .k2 .qn .qi .av{margin-top:2px}
@@ -1226,7 +1226,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   #ed.k2 .eg>.fld+.fld::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
   #ed.k2 .eg>.fld>label:first-child,#ed.k2 .eg>.fld>.fl:first-child{grid-column:1;align-self:center;margin:0;font-size:13px;line-height:18px;font-weight:600;color:var(--t2)}
   #ed.k2 .eg>.fld>:not(:first-child){grid-column:2;min-width:0}
-  #ed.k2 .eg>.fld:focus-within{box-shadow:inset 0 0 0 2px var(--focus);border-radius:10px}
+  #ed.k2 .eg>.fld:has(:focus-visible){box-shadow:inset 0 0 0 2px var(--focus);border-radius:10px}
   #ed.k2 .eg>.fld>input[type=text]{height:34px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;outline:none;font-size:15px;color:var(--t1)}
   #ed.k2 .eg>.fld>input[type=date]{justify-self:start;width:auto;height:32px;padding:0 10px;border:0;border-radius:8px;background:var(--fill2)}
   #ed.k2 .eg>.fld .msg:empty{margin:0}
@@ -1236,7 +1236,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 }
 .k2 .hsw{margin-top:12px}
 .k2 .kvb{width:100%;min-height:44px;border:0;background:transparent;color:var(--t1);font:inherit;font-size:13px;text-align:left;cursor:pointer}
-.k2 .kvb:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;border-radius:12px}
+.k2 .kvb:focus-visible{outline:2px solid var(--focus);outline-offset:-3px;border-radius:12px}
 .k2 .sw{position:relative;flex:none;width:40px;height:24px;border-radius:12px;background:var(--fill2);box-shadow:inset 0 0 0 1px var(--line);transition:background .15s}
 .k2 .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .15s}
 .k2 .sw.on{background:var(--acc);box-shadow:none}
@@ -1246,7 +1246,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .stbar .stqi{position:absolute;left:10px;top:50%;width:16px;height:16px;margin-top:-8px;fill:none;stroke:var(--t3);stroke-width:2;stroke-linecap:round;pointer-events:none}
 .k2 .stbar .stq{width:200px;height:34px;padding:0 12px 0 32px;border:0;border-radius:9px;background:var(--fill2);font:inherit;font-size:13px;color:var(--t1)}
 .k2 .stbar .stq::placeholder{color:var(--t3);opacity:1}
-.k2 .stbar .stq:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.k2 .stbar .stq:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .k2 .stbar .stqw+.mxm{margin-left:0}
 @media (max-width:760px){.k2 .stbar .stqw{width:100%;margin-left:0}.k2 .stbar .stq{width:100%;height:44px}}
 .k2 .mt .nmw{display:flex;align-items:center;gap:10px}
@@ -1302,7 +1302,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .todo .ti.hd.trh .tic,.k2 .todo .ti.hd.trh .tx{color:var(--acc)}
 .k2 .todo .tsr{position:relative;display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 14px;border:0;border-radius:0;background:transparent;text-align:left;color:var(--t1);font:inherit;cursor:pointer}
 .k2 .todo .tsr:hover,.k2 .todo .tmore:hover{background:var(--group-hover)}
-.k2 .todo .tsr:focus-visible,.k2 .todo .tmore:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.k2 .todo .tsr:focus-visible,.k2 .todo .tmore:focus-visible{outline:2px solid var(--focus);outline-offset:-3px}
 .k2 .todo .ti+.tsr::before,.k2 .todo .tsr+.tsr::before,.k2 .todo .tsr+.tmore::before,.k2 .todo .ti+.tmore::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
 .k2 .todo .tsx{display:flex;flex-direction:column;flex:1;min-width:0}
 .k2 .todo .tsn{display:flex;align-items:baseline;gap:6px;min-width:0}
@@ -1351,6 +1351,16 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .schn{margin:6px 0 0;font-size:13px;line-height:18px;font-weight:600;color:var(--t2)}
 .edaud{flex:none;font-size:13px;line-height:18px;font-weight:600;color:var(--t2);white-space:nowrap}
 .cell.c-na{cursor:default;color:var(--t3);background:transparent;border-color:transparent}
+/* J17 서랍 머리 보조 줄: 양쪽 정렬 안 받는 div · 조각마다 한 줄 · 사이 6px */
+.dh .dh-m{display:flex;flex-wrap:wrap;column-gap:6px;margin:2px 0 0;font-size:13px;line-height:18px;color:var(--t2)}
+.dh .dh-m>span{white-space:nowrap;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+/* J23 좁은 표 둘째 줄의 공개 글: 넓을 때 긴 글 · 좁을 때(서랍 열림 · 좁은 창) 짧은 글 · 폰은 줄바꿈이라 긴 글 */
+.k2 .lt .subc .pu-s{display:none}
+@container (max-width:980px){.k2 .lt .subc .pu-l{display:none}.k2 .lt .subc .pu-s{display:inline}}
+@media (max-width:760px){.k2 .lt .subc .pu-l{display:inline}.k2 .lt .subc .pu-s{display:none}}
+/* J06 같은 영상: 저장 줄 한 줄(13/400 주황) + 단추 둘 */
+#ed .edfoot .msg.dup{font-size:13px;line-height:18px;font-weight:400;color:var(--org)}
+#ed .edfoot .msg.dup .dupb{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -2481,12 +2491,14 @@ window.__lecAdminStart = function () {
 
   /* ---------------------------------------------------------------- 강의 탭 */
   /* 2차(11-18): 공개 상태 = 작은 점 + 글(알약 없음) · 공개 예정 = 파랑 시계 · 공개 끝 = 빈 점 · 숨김 = 눈 감음 */
-  function pubHtml(l) {
+  /* J23: sh = 좁은 표 둘째 줄(.subc) · 긴 글(.pu-l)과 짧은 글(.pu-s)을 같이 두고 CSS 가 좁을 때만 짧은 글을 보임 */
+  function pubHtml(l, sh) {
     if (l.hidden) return '<span class="stx t3">' + nIcon('eyeoff') + '숨김</span>';
-    if (!isPosted(l)) return '<span class="stx blu">' + nIcon('clock') + '공개 예정 ' + esc(L.fmtDay(l.posted_on)) + '</span>';
+    if (!isPosted(l)) return '<span class="stx blu">' + nIcon('clock') + (sh ? '<span class="pu-l">공개 예정 ' + esc(L.fmtDay(l.posted_on)) + '</span><span class="pu-s">' + esc(L.fmtMD(l.posted_on)) + ' 공개</span>' : '공개 예정 ' + esc(L.fmtDay(l.posted_on))) + '</span>';
     if (isEnded(l)) return '<span class="stx t3"><svg class="sd" viewBox="0 0 10 10" aria-hidden="true" focusable="false"><circle cx="5" cy="5" r="3.6" fill="none" stroke="var(--gray-dot)" stroke-width="1.4"/></svg>공개 끝</span>';
-    return '<span class="stx"><svg class="sd" viewBox="0 0 10 10" aria-hidden="true" focusable="false"><circle cx="5" cy="5" r="4" fill="var(--grn-dot)"/></svg>공개' +
-      (l.until ? '<span class="t2"> · ' + esc(L.fmtMD(l.until)) + '까지</span>' : '') + '</span>';
+    return '<span class="stx"><svg class="sd" viewBox="0 0 10 10" aria-hidden="true" focusable="false"><circle cx="5" cy="5" r="4" fill="var(--grn-dot)"/></svg>' +
+      (l.until && sh ? '<span class="pu-l">공개<span class="t2"> · ' + esc(L.fmtMD(l.until)) + '까지</span></span><span class="pu-s">' + esc(L.fmtMD(l.until)) + '까지</span>' :
+        '공개' + (l.until ? '<span class="t2"> · ' + esc(L.fmtMD(l.until)) + '까지</span>' : '')) + '</span>';
   }
   /* 썸네일 이름표(학생 앱 단원 타일과 같은 셈 · 맨 앞 번호 + 회 · 강 · 과 · 번) · 없으면 제목 앞 네 글자 */
   var UNIT_RE = /^(\d{1,3}(?:\s*·\s*\d{1,3})*)\s*(회|강|과|단원|차시)/,
@@ -2553,7 +2565,7 @@ window.__lecAdminStart = function () {
       '<td data-l="제목" class="ttl">' + (sk.length ? '<span class="ttr">' : '') + '<button type="button" class="lnk ttl-a" data-act="editLec" data-l="' + lid + '" title="' + esc(title) + '">' + esc(title) + '</button>' +
         (sk.length ? '<span class="sch-t" title="' + esc('볼 학교 ' + schNames(sk)) + '">' + esc(schNames(sk)) + '</span></span>' : '') +   /* K1 캡슐 */
         '<span class="sub">' + esc((l.book || '–') + ' · ' + cn) + '</span>' +
-        '<span class="subc" aria-hidden="true">' + esc(day + (more ? ' ' + more : '') + ' · ' + cn) + ' · ' + pubHtml(l) + '</span></td>' +
+        '<span class="subc" aria-hidden="true">' + esc(day + (more ? ' ' + more : '') + ' · ' + cn) + ' · ' + pubHtml(l, true) + '</span></td>' +
       '<td data-l="교재" class="bk">' + esc(l.book || '–') + '</td>' +
       '<td data-l="반" class="cl">' + esc(cn) + '</td>' +
       '<td data-l="수업일" class="dt">' + esc(day) + (more ? '<span class="l2"> ' + esc(more) + '</span>' : '') + '</td>' +
@@ -2561,8 +2573,8 @@ window.__lecAdminStart = function () {
       '<td data-l="공개 상태" class="pub">' + pubHtml(l) + '</td>' +
       '<td data-l="완료" class="cqc">' + (dc ? '<button type="button" class="rb' + (c.known ? ' cqb' : '') + '" data-act="colOpen" data-l="' + lid + '" data-c="' + esc(dc) + '">' + complRing(c) + complCell(c) + '</button>' :
         '<span class="rb mut">' + complRing(c) + complCell(c) + '</span>') + '</td>' +
-      '<td data-l="질문" class="qcc">' + (q.all ? '<button type="button" class="qc' + (q.wait ? ' wait' : '') + '" data-act="qLec" data-l="' + lid + '" title="이 강의 질문 ' + q.all + (q.wait ? ' · 답 기다림 ' + q.wait : '') + '">' +
-        nIcon('qna') + (q.wait ? '<span class="qd" aria-hidden="true"></span>' : '') + '<span aria-hidden="true">' + q.all + '</span><span class="sr">질문 ' + q.all + (q.wait ? ' · 답 기다림 ' + q.wait : '') + '</span></button>' :
+      '<td data-l="질문" class="qcc">' + (q.all ? '<button type="button" class="qc' + (q.wait ? ' wait' : '') + '" data-act="qLec" data-l="' + lid + '" title="이 강의 질문 ' + q.all + (q.wait ? ' · 답변 대기 ' + q.wait : '') + '">' +
+        nIcon('qna') + (q.wait ? '<span class="qd" aria-hidden="true"></span>' : '') + '<span aria-hidden="true">' + q.all + '</span><span class="sr">질문 ' + q.all + (q.wait ? ' · 답변 대기 ' + q.wait : '') + '</span></button>' :
         '<span class="sr">질문 0</span>') + '</td>' +
       '<td class="vb">' + stvLink(l) + '</td>' +
       '<td class="mo"><button type="button" class="ibtn more" data-act="rowMenu" data-l="' + lid + '" aria-haspopup="menu" aria-expanded="' + (on ? 'true' : 'false') + '" aria-label="' + esc(title) + ' 더 보기">' +
@@ -2642,7 +2654,7 @@ window.__lecAdminStart = function () {
     h += '<p class="in-s">학생별 진도</p>' + (dc ? '<div class="grp"><button type="button" class="gi" data-act="iaCol" data-l="' + lid + '" data-c="' + esc(dc) + '">' + complRing(c) +
       '<span class="gi-t"><b>' + esc(c.big) + '</b>' + (c.known ? '<span>' + esc(c.small) + '</span>' : '') + '</span>' + nIcon('chev') + '</button></div>' :
       '<p class="in-none">이 강의를 보는 내 반이 없어요.</p>');
-    h += '<p class="in-s">질문<span>' + (q.all ? q.all + '개' + (q.wait ? ' · <b class="org">답 기다림 ' + q.wait + '</b>' : '') : '없음') + '</span></p>' +
+    h += '<p class="in-s">질문<span>' + (q.all ? q.all + '개' + (q.wait ? ' · <b class="org">답변 대기 ' + q.wait + '</b>' : '') : '없음') + '</span></p>' +
       (q.all ? '<div class="grp"><button type="button" class="gi" data-act="iaQ" data-l="' + lid + '">' + nIcon('qna') + '<span class="gi-t"><b>이 강의 질문 보기</b></span>' + nIcon('chev') + '</button></div>' : '');
     h += '<p class="in-s">정보</p><div class="grp kvs">' +
       '<div class="kv"><span>수업일</span><span>' + esc((L.fmtDay(dayOf(l)) || '–') + (l.lesson_on && n > 1 ? ' 외 ' + (n - 1) + '일' : '')) + '</span></div>' +
@@ -2883,11 +2895,16 @@ window.__lecAdminStart = function () {
     openDrawer({ t: 'col', l: id, c: dc, f: 'all' });
   }
   /* sub = 글 하나 또는 덩어리 목록(덩어리 안에서는 줄을 안 바꾸고 « · »로 이음 · 폰 열 서랍 «복습 / 3명» 갈림 · 검수 2차 B L5) */
+  /* J17: 보조 줄 = div.dh-m(flex · 줄바꿈 · 사이 6px) · 조각마다 한 줄(span) · 글 «A · B · C» 는 그대로(점은 다음 조각 앞) */
+  function dhSub(sub) {
+    var a = isArr(sub) ? sub : (sub ? String(sub).split(' · ') : []);
+    a = a.filter(function (x) { return !!x; });
+    return a.map(function (x, i) { return '<span>' + (i ? ' · ' : '') + esc(x) + '</span>'; }).join('');
+  }
   function dHead(title, sub, pre) {
-    if (isArr(sub)) sub = sub.filter(function (x) { return !!x; }).map(function (x) { return '<span class="nw">' + esc(x) + '</span>'; }).join(' · ');
-    else sub = sub ? esc(sub) : '';
+    sub = dhSub(sub);
     return '<div class="dh">' + (S.stack.length ? '<button type="button" class="btn sm txt" data-act="dBack">← 뒤로</button>' : '') + (pre || '') +
-      '<div class="dt"><h2 id="dw-t">' + esc(title) + '</h2>' + (sub ? '<p class="mut">' + sub + '</p>' : '') + '</div>' +
+      '<div class="dt"><h2 id="dw-t">' + esc(title) + '</h2>' + (sub ? '<div class="mut dh-m">' + sub + '</div>' : '') + '</div>' +
       '<button type="button" class="x" data-act="dClose" aria-label="닫기">×</button></div>';
   }
 
@@ -3535,7 +3552,7 @@ window.__lecAdminStart = function () {
   function edHtml(l) {
     var dis = S.ed.can ? '' : ' disabled', h;
     h = '<div class="dh"><div class="dt"><h2 id="ed-t">' + (l ? (S.ed.can ? '강의 고치기' : '강의 보기') : '새 강의') + '</h2>' +
-      (l ? '<p class="mut">' + esc('올린 사람 ' + (l.created_by || '모름') + (l.created_at ? ' · ' + whenFull(l.created_at) : '')) + '</p>' : '') +
+      (l ? '<div class="mut dh-m">' + dhSub(['올린 사람 ' + (l.created_by || '모름'), l.created_at ? whenFull(l.created_at) : '']) + '</div>' : '') +
       '</div><button type="button" class="x" data-act="edClose" aria-label="닫기">×</button></div><div class="db">';
     if (!S.ed.can) h += '<p class="box neutral">올린 선생님과 원장님만 고칠 수 있어요.</p>';
     if (S.ed.can) {
@@ -4224,6 +4241,50 @@ window.__lecAdminStart = function () {
     if (!p || !L.pdfOk(p) || !DA || !DA.pdfDel || pdfUsed(p, exceptId)) return;
     DA.pdfDel([p]).then(null, function () { if (!quiet) toast('강의는 지웠어요 · 필기 PDF 파일은 저장 곳에 남았어요'); });
   }
+  /* J06 같은 영상: 같은 yt 강의 가운데 가장 늦게 올린 것 */
+  function dupLec(yt) {
+    var a = D.lectures || [], i, l, best = null;
+    if (!yt) return null;
+    for (i = 0; i < a.length; i += 1) {
+      l = a[i];
+      if (!l || (str(l.yt) !== yt && L.ytId(str(l.yt)) !== yt)) continue;
+      if (!best || str(l.created_at) > str(best.created_at)) best = l;
+    }
+    return best;
+  }
+  function roJosa(w) {
+    var s = trim(w), c, ch;
+    if (!s) return '로';
+    ch = s.charAt(s.length - 1); c = s.charCodeAt(s.length - 1);
+    if (c >= 0xAC00 && c <= 0xD7A3) { c = (c - 0xAC00) % 28; return c === 0 || c === 8 ? '로' : '으로'; }
+    if (c >= 48 && c <= 57) return '036'.indexOf(ch) >= 0 ? '으로' : '로';
+    return '로';
+  }
+  function dupShow(l) {
+    var el = $('ed-msg'), t = str(l.title) || '(제목 없음)', d = L.fmtDay(dayOf(l)), can = canEditLec(l);
+    if (!el) return;
+    el.className = 'msg dup';
+    el.innerHTML = esc('이 영상은 ' + (d ? d + ' ' : '') + '«' + t + '»' + roJosa(t) + ' 이미 올렸어요') +
+      '<span class="dupb"><button type="button" class="btn sm" data-act="edDupDay" data-l="' + esc(l.id) + '">' + (can ? '그 강의에 수업일 더하기' : '그 강의 보기') + '</button>' +
+      '<button type="button" class="btn sm" data-act="edDupGo">그래도 새로 올리기</button></span>';
+  }
+  /* J06 [그 강의에 수업일 더하기] = 그 강의 고치기 칸을 열고 «수업일 더하기»(edDayAdd)와 같이 수업일 한 줄을 더함(새 칸에 적은 수업일을 넣어 둠) · 저장은 선생님이 */
+  function edDupDay(id) {
+    var l = D.lmap[id], nd = '', r;
+    if (!l || !S.ed) return;
+    readDays();
+    nd = cleanDays()[0] || '';
+    edDropIfNew();
+    closeEditor();
+    openEditor(id);
+    if (!S.ed || !S.ed.can || !$('ed-days')) return;
+    if (nd && S.ed.days.indexOf(nd) >= 0) nd = '';
+    if (!S.ed.days.length && !nd) S.ed.days.push('');
+    S.ed.days.push(nd);
+    $('ed-days').innerHTML = edDaysHtml();
+    r = $('ed-days').querySelector('[data-di="' + (S.ed.days.length - 1) + '"]');
+    if (r) { try { r.scrollIntoView({ block: 'center' }); } catch (e0) {} try { r.focus({ preventScroll: true }); } catch (e) { r.focus(); } }
+  }
   function edSave(btn) {
     if (!S.ed || !S.ed.can || S.busy.ed) return;
     if (pdfUp()) { setMsg('ed-msg', '필기 PDF를 올리는 중이에요. 다 올라가면 저장해 주세요', 'bad'); return; }
@@ -4268,6 +4329,11 @@ window.__lecAdminStart = function () {
         try { fe.focus({ preventScroll: true }); } catch (e) { try { fe.focus(); } catch (e2) {} }
       }
       return;
+    }
+    /* J06: 새 강의인데 같은 영상이 이미 있으면(숨김 · 공개 끝 포함) 저장을 멈추고 저장 줄에 한 줄 + 단추 둘 · «그래도 새로 올리기»를 누르면 저장 */
+    if (!S.ed.id && S.ed.dupOk !== yt) {
+      var dupL = dupLec(yt);
+      if (dupL) { dupShow(dupL); return; }
     }
     setMsg('ed-msg', '', '');
     var row = {
@@ -4901,7 +4967,7 @@ window.__lecAdminStart = function () {
     if (!rows.length) h += '<tr><td colspan="' + cols.length + '" class="mut">이 반에 학생이 없어요.</td></tr>';
     for (i = 0; i < rows.length; i += 1) h += sxTr(k, rows[i], n, pk);
     h += '</tbody></table>';
-    if (k === 'gu') return h + '<p class="sx-ft">녹음은 30일 뒤 저절로 지워져요</p>';
+    if (k === 'gu') return h + '<p class="sx-ft">녹음은 30일이 지나면 지워져요(세트 탭을 열 때 정리해요)</p>';
     often = [];
     a = isArr(st.often) ? st.often : [];
     /* 단어 또는 문제 앞 40자(서버가 자름 → 끝에 …) · 하나씩 알약(문제 안의 « / »와 섞이지 않게) */
@@ -5723,7 +5789,7 @@ window.__lecAdminStart = function () {
     if (!p && all.length) { p = all[0]; sd.pick = p.sid; sd.sel = 0; }
     h += '<div class="lp-sl">';
     if (!list.length) h += '<p class="lp-none">이 반에 학생이 없어요.</p>';
-    else if (!all.length) h += '<p class="lp-none" role="status">쌓인 오답이 있는 학생이 없어요(모두 다른 날 두 번 맞혀 빠졌어요)</p>';
+    else if (!all.length) h += '<p class="lp-none" role="status">쌓인 오답이 있는 학생이 없어요. 틀린 문항은 다른 날 두 번 맞히면 빠져요.</p>';
     for (i = 0; i < list.length; i += 1) {
       x = list[i];
       if (!x.R) { h += '<div class="lp-sr no"><span class="lp-sp"></span><span class="lp-nm">' + esc(x.name) + '</span><span>오답 없음 · 인쇄 안 함</span></div>'; continue; }
@@ -5766,7 +5832,7 @@ window.__lecAdminStart = function () {
     if (!sd || sd.t !== 'lp2' || sd.loading || sd.err || !LP || !sd.rows) return;
     list = lp2Calc(sd); cd = sd.cache.code;
     for (i = 0; i < list.length; i += 1) { if (list[i].R) { all.push(list[i]); if (!sd.off[list[i].sid]) ls.push(list[i]); } }
-    if (!all.length) { toast('쌓인 오답이 있는 학생이 없어요(모두 다른 날 두 번 맞혀 빠졌어요)'); return; }
+    if (!all.length) { toast('쌓인 오답이 있는 학생이 없어요. 틀린 문항은 다른 날 두 번 맞히면 빠져요.'); return; }
     if (!ls.length) { ls = all; note = '체크한 학생이 없어 오답이 있는 학생 ' + all.length + '명을 모두 담았어요'; }
     for (i = 0; i < ls.length; i += 1) rows.push({ nm: ls[i].nm, R: ls[i].R });
     ws = LP.wrongSheets(ls.map(function (y) { return y.R; }), sd.duplex);
@@ -6786,9 +6852,10 @@ window.__lecAdminStart = function () {
   }
   function loginErr(err) {
     var m = String((err && err.message) || ''), st = +(err && err.status) || 0;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return '인터넷 연결을 확인해 주세요.';   /* J13 */
     if (/not confirmed|confirm/i.test(m)) return '이메일 확인이 필요한 계정이에요. 원장님이 Supabase에서 «Confirm email»을 끄거나 해당 계정을 확인 처리해야 합니다.';
     if (/invalid login credentials/i.test(m)) return '아이디 또는 비밀번호가 올바르지 않습니다.';
-    if (st >= 500 || /database|unexpected|schema cache|timed? ?out|fetch|network/i.test(m)) return '지금 클라우드 서버가 응답하지 않아 로그인할 수 없습니다 (인터넷·비밀번호 문제가 아닙니다). 잠시 뒤 다시 시도해 주세요.';
+    if (st >= 500 || /database|unexpected|schema cache|timed? ?out|fetch|network/i.test(m)) return '지금 서버에 닿지 않아 로그인하지 못했어요. 잠시 뒤 다시 해 주세요.';
     return '로그인 실패: ' + m;
   }
   function doLogin(ev) {
@@ -6999,6 +7066,8 @@ window.__lecAdminStart = function () {
       /* 편집 칸 */
       case 'edClose': edDropIfNew(); closeEditor(); break;
       case 'edSave': edSave(el); break;
+      case 'edDupDay': edDupDay(l); break;
+      case 'edDupGo': if (S.ed) { S.ed.dupOk = L.ytId(trim(edVal('ed-yt'))); edSave(($('ed') || document).querySelector('[data-act=edSave]')); } break;
       case 'edDelAsk': if (S.ed) { S.ed.delAsk = true; $('ed-foot').innerHTML = edFootHtml(); } break;
       case 'edDelNo': if (S.ed) { S.ed.delAsk = false; $('ed-foot').innerHTML = edFootHtml(); } break;
       case 'edDelYes': edDelete(el); break;

@@ -149,7 +149,7 @@
     '.pvst{position:fixed;left:0;right:0;top:44px;bottom:0;overflow:hidden;background:#E6E2D7}' +
     '.pvd{position:absolute;left:0;top:0;transform-origin:0 0;background:#141614;box-shadow:0 18px 48px rgba(20,22,20,.22)}' +
     '.pvf{position:absolute;left:0;top:0;border:0;margin:0;display:block;transform-origin:0 0;background:#F4ECD7}' +
-    '.pvcap{position:absolute;left:0;right:0;margin:0;text-align:center;font-size:12px;line-height:18px;color:#6B6A62}' +
+    '.pvcap{position:absolute;left:0;right:0;margin:0;text-align:center;font-size:12px;line-height:18px;color:#57534A}' +
     '.pvm{position:absolute;left:16px;right:16px;top:38%;text-align:center;font-size:15px;line-height:22px;color:#3A3F3B}' +
     '.pvm button{margin-top:14px;min-height:44px;padding:0 20px;border:1px solid #CBBF9A;border-radius:12px;background:#FFFDF7;color:#0C4631;font:inherit;font-weight:700;cursor:pointer}' +
     '[hidden]{display:none !important}';
