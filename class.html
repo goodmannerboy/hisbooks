@@ -411,7 +411,8 @@
 @font-face{font-family:"Pretendard";font-style:normal;font-weight:700;font-display:swap;src:url(assets/pretendard-700.woff) format("woff")}
 /* 결론안 K(11-16) · 밝은 토큰 = 목록·들어오기 · 무대 토큰 = 보기 화면(html.stg) · 다크 모드 폰도 목록·들어오기는 크림(11-16 원장님)
    2차(11-18): 바탕 크림 #FAF6EC(결론안 §9 «크림 연하게») · 카드 흰색 + 테 .10 · 글 #1A1A18 · 딥그린은 --acc(강조 · 단추 · 진도) */
-:root{color-scheme:light;color-scheme:only light;--bg:#FAF6EC;--card:#FFFFFF;--edge:rgba(70,52,12,.10);--line:rgba(70,52,12,.13);--dash:#CBBF9A;--ink:#1A1A18;--ink2:#57534A;--acc:#0C4631;--accB:#E3EBDD;--track:rgba(12,70,49,.15);--tile:#E9F0EC;--tileT:#0C4631;--done:#1B6A43;--focus:#0C4631;--rv:#8A8D80;--fillB:#0C4631;--fillT:#FFFFFF;--fill:#EAE1C8;--press:#F3EEE2;--inL:#E6DCBF;--sl:#CBBF9A;--gold:#7A5410;--cur:#F4EEDB;--seen:#0C4631;--gB:#DDF0E5;--gT:#1B6A43;--aB:#FBF0C9;--aT:#98480A;--sB:#DFEAF8;--sT:#1B5499;--nB:#EFEDE5;--nT:#57534A;--cB:#FBE9E3;--cT:#B3302A;--art:#F7F2E4;--artT:#0B3D2E;--artL:rgba(70,52,12,.14);--e-out:cubic-bezier(.2,.8,.2,1);--e-soft:cubic-bezier(.3,.7,.2,1)}
+:root{color-scheme:light;color-scheme:only light;--bg:#FAF6EC;--card:#FFFFFF;--edge:rgba(70,52,12,.10);--line:rgba(70,52,12,.13);--dash:#CBBF9A;--ink:#1A1A18;--ink2:#57534A;--acc:#0C4631;--accB:#E3EBDD;--track:rgba(12,70,49,.15);--tile:#E9F0EC;--tileT:#0C4631;--done:#1B6A43;--focus:#0C4631;--rv:#8A8D80;--fillB:#0C4631;--fillT:#FFFFFF;--fill:#EAE1C8;--press:#F3EEE2;--inL:#E6DCBF;--sl:#CBBF9A;--gold:var(--brass);--cur:#F4EEDB;--seen:#0C4631;--gB:#DDF0E5;--gT:var(--done);--aB:#FBF0C9;--aT:var(--warn);--sB:#DFEAF8;--sT:var(--new);--nB:var(--mute-bg);--nT:var(--mute);--cB:#FBE9E3;--cT:var(--err);--art:#F7F2E4;--artT:#0B3D2E;--artL:rgba(70,52,12,.14);--e-out:cubic-bezier(.2,.8,.2,1);--e-soft:cubic-bezier(.3,.7,.2,1);--t1:120ms;--t2:240ms;--t3:420ms;--t4:700ms;--bg-s:#FAF6EC;--bg-a:#FDFAF2;--side:#F4ECD7;--ink3:#6F6B62;--done-dot:#2E8B57;--warn:#98480A;--warn-dot:#C26A00;--new:#1B5499;--err:#B3302A;--mute-bg:#EFEDE5;--mute:#57534A;--brass:#7A5410;--gold-line:#C9A227;--dd-ring:#D9546D;--stg-bg:#0D241A;--stg-ink:#F3F1EA;--stg-ink2:#B9C2BB;--stg-ink3:#9DA9A0;--stg-hi:#8FD0AE}
+/* C1 · C2(11-19 · 결론안 J 값 그대로 · 두 앱 한 벌): 움직임 --e-out · --e-soft · --t1~--t4 · 색 = B §3 기준표 이름(관리와 같은 값) · 상태 색 옛 이름(--gT · --aT · --sT · --cT · --nB · --nT · --gold)은 새 이름을 가리킴(값 그대로 · 무대 html.stg 는 옛 이름을 따로 덮음) */
 html.stg{color-scheme:dark;--bg:#0D241A;--card:rgba(255,255,255,.07);--edge:rgba(255,255,255,.10);--acc:#8FD0AE;--accB:rgba(255,255,255,.11);--line:rgba(255,255,255,.10);--dash:#5A7A6A;--ink:#F3F1EA;--ink2:#B9C2BB;--ink3:#9DA9A0;--track:rgba(255,255,255,.2);--tile:rgba(255,255,255,.11);--tileT:#F3F1EA;--done:#8FD0AE;--focus:#8FD0AE;--rv:#9DA9A0;--fillB:#F3F1EA;--fillT:#0C4631;--press:rgba(255,255,255,.11);--inL:rgba(255,255,255,.14);--sl:rgba(255,255,255,.14);--gold:#8FD0AE;--cur:rgba(255,255,255,.07);--seen:#F3F1EA;--gB:rgba(143,208,174,.16);--gT:#8FD0AE;--aB:rgba(240,178,107,.16);--aT:#F0B26B;--sB:rgba(169,205,232,.16);--sT:#A9CDE8;--nB:rgba(255,255,255,.11);--nT:#B9C2BB;--cB:rgba(242,184,172,.16);--cT:#F2B8AC;--glass:rgba(255,255,255,.11);--sel:rgba(255,255,255,.15)}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}
@@ -513,7 +514,7 @@ html.pwon,html.pwon body{overflow:hidden}
 .pwc .pwol .no{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:24px;height:24px;margin-top:2px;border-radius:50%;background:var(--fillB);color:var(--fillT);font-size:13px;font-weight:700;line-height:1}
 .pwc .pwol .tx{flex:1 1 auto;min-width:0;text-align:justify}
 .pwc .pwol small{display:block;margin-top:1px;font-size:13px;line-height:1.5;color:var(--ink2)}
-.ky{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:26px;min-width:26px;margin:0 2px;padding:0 7px;border-radius:8px;background:#EFE6CF;color:#0C4631;font-size:14px;font-weight:400;line-height:1;vertical-align:middle;white-space:nowrap}
+.ky{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:26px;min-width:26px;margin:0 2px;padding:0 7px;border-radius:8px;background:#EFE6CF;color:var(--acc);font-size:14px;font-weight:400;line-height:1;vertical-align:middle;white-space:nowrap}
 .ky svg{display:block}
 html.stg .ky{background:#1A3B2C;color:#F4ECD7}
 .kyw{white-space:nowrap}
@@ -595,7 +596,7 @@ html.stg .ky{background:#1A3B2C;color:#F4ECD7}
    (woff 5.5KB · data: 주소라 바깥 요청 0 · 깜빡임 0 · 이 글꼴에는 tnum 이 없고 lang=ko 숫자가 원래 같은 폭)
    «시험 중»(.sm) 11.5px/900 은 «13px 이하 굵기 600»(결론안 §4)의 예외: 원장님이 고른 대안 A 값이고, 이 부분 글꼴은 900 하나뿐 */
 @font-face{font-family:"Noto Serif KR DD";font-style:normal;font-weight:900;font-display:block;src:url(data:font/woff;base64,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) format("woff")}
-.rg56{position:relative;flex:0 0 auto;width:56px;height:56px;--ddB:#FCE6EA;--ddT:#F5CBD3;--ddP:#D9546D;--ddI:#B32D47}
+.rg56{position:relative;flex:0 0 auto;width:56px;height:56px;--ddB:#FCE6EA;--ddT:#F5CBD3;--ddP:var(--dd-ring);--ddI:#B32D47}
 .rg56 svg{display:block}
 .rg56 .rgB{fill:var(--ddB)}
 .rg56 .rgT{stroke:var(--ddT)}
@@ -649,8 +650,8 @@ a.row:focus-visible{outline-offset:-2px}
 .row.flash{background:var(--aB)}
 /* J03(11-19): 줄 전체 .55 대신 글은 짙게(7.66 · 5.31) · 썸네일만 흐리게 */
 .row.off{cursor:default}
-.row.off .tt{color:#57534A}
-.row.off .mt{color:#6F6B62}
+.row.off .tt{color:var(--ink2)}
+.row.off .mt{color:var(--ink3)}
 .row.off .sth{opacity:.55}
 .row .tag.end{margin-top:6px}
 .ring{display:block;width:36px;height:36px}
@@ -699,7 +700,7 @@ a.row:focus-visible{outline-offset:-2px}
 .nx .btn-fill span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nx .nxw{margin:6px 0 0;font-size:13px;line-height:18px;font-weight:600;color:var(--ink2);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nx .nx2{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin:4px 0 0;padding:0 12px;border:0;background:none;color:var(--ink2);font-size:15px;font-weight:600}
-.nx.in{animation:nxIn 240ms var(--e-out) both}
+.nx.in{animation:nxIn var(--t2) var(--e-out) both}
 @keyframes nxIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .band{display:flex;gap:3px;margin:8px 0 0;-webkit-user-select:none;user-select:none}
 .band button{position:relative;flex:1 1 0;min-width:0;height:44px;margin:0;padding:0;border:0;background:none;color:var(--ink2);font-size:12px;line-height:1;font-variant-numeric:tabular-nums}
@@ -765,7 +766,7 @@ a.row:focus-visible{outline-offset:-2px}
 .chk i{position:relative;flex:0 0 auto;width:34px;height:20px;border-radius:999px;background:var(--track);transition:background-color .16s}
 .chk i:after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#F4ECD7;transition:transform .16s}
 .chk input:checked + i{background:var(--fillB)}
-.chk input:checked + i:after{background:#0C4631;transform:translateX(14px)}
+.chk input:checked + i:after{background:var(--acc);transform:translateX(14px)}
 .chk input:focus-visible + i{outline:2px solid var(--focus);outline-offset:2px}
 .qrow .go{flex:0 0 auto;min-height:44px;padding:0 16px;border:0;border-radius:12px;background:var(--fillB);color:var(--fillT);font-size:15px;font-weight:700}
 .qrow .go[disabled]{opacity:.55;cursor:default}
@@ -915,7 +916,7 @@ html.stg .tabs button.on{background-color:var(--sel);color:var(--ink);font-weigh
 html.stg .tabs,html.stg .spd{position:relative}
 html.stg .tabs{--n:2;--i:0}
 html.stg .spd{--n:5;--i:1}
-html.stg .tabs::before,html.stg .spd::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/var(--n));border-radius:10px;background:rgba(255,255,255,.30);transform:translateX(calc(var(--i)*100%));transition:transform 240ms var(--e-out)}
+html.stg .tabs::before,html.stg .spd::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/var(--n));border-radius:10px;background:rgba(255,255,255,.30);transform:translateX(calc(var(--i)*100%));transition:transform var(--t2) var(--e-out)}
 html.stg .tabs.nomo::before,html.stg .spd.nomo::before{transition:none}
 html.stg .spd.nosel::before{visibility:hidden}
 html.stg .tabs button,html.stg .spd button{position:relative;font-weight:600;color:var(--ink2)}
@@ -962,9 +963,9 @@ html.stg .btn-fill{border-radius:22px}
 html.stg .qf{padding:14px;border:0;border-radius:16px;background:var(--card)}
 html.stg .kc,html.stg .scn{border:0;border-radius:22px;background:var(--glass);color:var(--ink);font-size:15px;font-weight:600}
 /* J01(11-19): 안 고름 = 흰 테 1px · 고름 = 크림 채움(«올리기»와 같은 --fillB) · 글 9.60:1 · 두 칩 11.85:1 */
-html.stg .kc{background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.24);color:#B9C2BB}
-html.stg .kc.on{background:#F3F1EA;box-shadow:none;color:#0C4631}
-html.stg .kc{transition:background-color 120ms var(--e-out),box-shadow 120ms var(--e-out),color 120ms var(--e-out)}
+html.stg .kc{background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.24);color:var(--ink2)}
+html.stg .kc.on{background:var(--fillB);box-shadow:none;color:var(--fillT)}
+html.stg .kc{transition:background-color var(--t1) var(--e-out),box-shadow var(--t1) var(--e-out),color var(--t1) var(--e-out)}
 html.stg .scn.off{border:1px dashed var(--sl);background:none;color:var(--ink2)}
 html.stg .qf textarea,html.stg .rf textarea{border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(0,0,0,.18);font-size:17px;line-height:24px}
 html.stg .qf textarea:focus,html.stg .rf textarea:focus{outline:2px solid var(--acc);outline-offset:0;border-color:transparent;box-shadow:none}
@@ -1025,7 +1026,7 @@ button.s1t:active{background:var(--press)}
 .shd{display:flex;align-items:center;gap:8px;min-height:48px}
 .shd .sc{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .sbar{height:4px;margin:0 0 14px;border-radius:2px;background:var(--track);overflow:hidden}
-.sbar b{display:block;height:100%;background:var(--acc);transition:width 240ms var(--e-out)} /* S5(11-19) 이전 폭에서 새 폭으로(barSlide) */
+.sbar b{display:block;height:100%;background:var(--acc);transition:width var(--t2) var(--e-out)} /* S5(11-19) 이전 폭에서 새 폭으로(barSlide) */
 .sload{min-height:240px}
 .sh1{margin:4px 0 0;font-size:20px;font-weight:700;line-height:1.3;letter-spacing:-.02em}
 .sh2{margin:4px 0 6px;font-size:16px;font-weight:700;line-height:1.35}
@@ -1042,7 +1043,7 @@ button.s1t:active{background:var(--press)}
 /* S5(11-19) 단어 카드가 가운데 축으로 420ms 에 뒤집힘(겹쳐 바뀌던 .18초 없앰) · 뒷면은 backface 로 숨김
    보이기(visibility)는 바꾸는 순간 없이 90°를 지나는 때(var(--e-soft) 로 79ms ≈ 80ms)에 한 번 넘김 = 안 보이는 면은 화면 읽기·누름에서 빠짐 */
 .vcard{perspective:1200px}
-.vcard .vf,.vcard .vb{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:52px 20px 28px;text-align:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transition:transform 420ms var(--e-soft),visibility 0s linear 80ms}
+.vcard .vf,.vcard .vb{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:52px 20px 28px;text-align:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transition:transform var(--t3) var(--e-soft),visibility 0s linear 80ms}
 .vcard .vf{transform:rotateY(0)}
 .vcard.on .vf{transform:rotateY(-180deg);visibility:hidden}
 .vcard .vb{transform:rotateY(180deg);visibility:hidden}
@@ -1156,8 +1157,17 @@ button.s1t:active{background:var(--press)}
 .sdr{color:var(--gT);font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
 /* 2차(11-18) 13px 이하 글자는 굵기 600 까지(결론안 §4) */
 .lo,.err,.dchip,.cons .cur,.cons li:before,.qh .who,.pill,.q .scb,.acts .ask,.slab,.vno,.rg64 span,.smsg,.sdl b,.pwc .pwol .no{font-weight:600}
+/* C1(11-19 · J 값 그대로) 누름 반응: 누르는 동안 카드 그림 · 타일 · 채운 단추가 97% 로 90ms(--e-out) · 떼면 220ms 에 아주 작게 튀며 제자리(1.25 위로 안 올림)
+   줄은 흔들지 않고 썸네일만 · transform 만 = 높이 · 자리 0 변화 · 아이폰 :active = touchstart 듣개(pressOn) 이미 있음 · 옛 바탕색 · 투명도 바뀜은 그대로 함께 */
+.tc .art,.row .sth,.k2 .btn{transition:transform 220ms cubic-bezier(.3,1.25,.5,1)}
+button.s1t{transition:background-color .24s,transform 220ms cubic-bezier(.3,1.25,.5,1)}
+.btn-fill{transition:opacity .16s,transform 220ms cubic-bezier(.3,1.25,.5,1)}
+.tc:active .art,.row:active .sth,button.s1t:active,.btn-fill:active,.k2 .btn:active{transform:scale(.97);transition:transform 90ms var(--e-out)}
+button.s1t:active{transition:background-color .24s,transform 90ms var(--e-out)}
+.btn-fill:active{transition:opacity .16s,transform 90ms var(--e-out)}
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{transition:none !important;animation:none !important;scroll-behavior:auto !important}
+  .tc:active .art,.row:active .sth,button.s1t:active,.btn-fill:active,.k2 .btn:active{transform:none}   /* C1 누름도 끔 */
 }
 /* 히즈클래스 «앱으로 가는 문»(A단계 · 11-18) · 값 = 목업 그대로(P\v2\flow\flow.css · P\v2\student\style.css 크림 토큰) · 이름에 dr- 를 붙여 class.html 과 안 겹치게
    목업과 다른 곳(진짜 화면이라서): 폰의 브라우저 줄 그림(.osb)은 안 그림 → 화살표 · 번호는 화면 가장자리에 붙임(아래 줄 = position:fixed · 크롬 위 줄 = 쪽 맨 위 absolute · 브라우저 줄 바로 옆 4px)
@@ -3664,7 +3674,7 @@ window.__lecStart = function () {
     if (W.kind === 'gram') { /* 화면 차례(11-18) = 고르기 먼저 · 쓰기 뒤 */
       for (i = 0; i < t.n; i += 1) { if ((t.q[i] || {}).f === 'c') nc += 1; else nw += 1; }
       return '<p class="snote">' + (nc && nw ? '괄호 고르기가 먼저, 고쳐 쓰기가 뒤에 나와요' : (nc ? '괄호 안에서 알맞은 말을 골라요' : '밑줄 친 말을 바르게 고쳐 써요')) + '<br>' +
-        (t.draw && t.all > t.n ? t.all + '문제 가운데 ' : '') + t.n + '문제 · ' + t.need + '개 맞히면 통과<br>틀리면 바로 정답과 해설이 나와요</p>';
+        (t.draw && t.all > t.n ? t.all + '문제 가운데 ' : '') + t.n + '문제 · ' + t.need + '개 맞히면 통과<br>틀리면 바로 바른 답과 해설이 나와요</p>';
     }
     /* 시험 문항 수(11-18): 뽑아서 낸 판은 볼 때마다 새로 뽑으니 다시 볼 때도 안내 */
     if (t.draw && t.all > t.n) {
