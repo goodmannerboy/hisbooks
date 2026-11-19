@@ -731,7 +731,7 @@ html.tvon,html.tvon body{overflow:hidden}
 :root{/* C2 두 앱 한 벌(B §3 · 학생 앱과 같은 값) */
   --bg-s:#FAF6EC;--bg-a:#FDFAF2;--card:#FFFFFF;--edge:rgba(70,52,12,.10);--ink:#1A1A18;--ink2:#57534A;--ink3:#6F6B62;
   --done:#1B6A43;--done-dot:#2E8B57;--warn:#98480A;--warn-dot:#C26A00;--new:#1B5499;--err:#B3302A;--mute-bg:#EFEDE5;--mute:#57534A;
-  --art:#F7F2E4;--artT:#0B3D2E;--brass:#7A5410;--gold-line:#C9A227;
+  --art:#F7F2E4;--artT:#0B3D2E;--brass:#7A5410;--gold-line:#C9A227;--dd-ring:#D9546D;--stg-bg:#0D241A;--stg-ink:#F3F1EA;--stg-ink2:#B9C2BB;--stg-ink3:#9DA9A0;--stg-hi:#8FD0AE;
   --bg:#FDFAF2;--side:#F4ECD7;--side-sel:rgba(12,70,49,.11);--group:#F6EFDD;--group-hover:#F0E7D0;
   --e-out:cubic-bezier(.2,.8,.2,1);--e-soft:cubic-bezier(.3,.7,.2,1);--t1:120ms;--t2:240ms;--t3:420ms;--t4:700ms;   /* C1 움직임(학생 앱과 같은 값) */
   --sep:rgba(60,45,10,.11);--line:rgba(70,52,12,.13);--fill:rgba(60,45,10,.04);--fill2:rgba(60,45,10,.07);
@@ -1382,7 +1382,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 /* K1(11-18) 강의마다 볼 학교: 표 제목 옆 캡슐(좁힌 강의만 · 12/600 · #EFEDE5/#57534A · 높이 20) · 서랍 학교 줄(숫자 흐리게 var(--ink2)) · 학교 빈칸 안내 13/600 · 저장 옆 «보이는 학생 N명» 13/600 · 시청 현황 대상 아님 «–» */
 .k2 .lt .ttr{display:flex;align-items:center;gap:6px;max-width:100%;min-width:0}
 .k2 .lt .ttr .ttl-a{min-width:0}
-.sch-t{flex:0 0 auto;display:inline-block;max-width:100%;height:20px;padding:0 8px;border-radius:999px;background:#EFEDE5;color:#57534A;font-size:12px;line-height:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sch-t{flex:0 0 auto;display:inline-block;max-width:100%;height:20px;padding:0 8px;border-radius:999px;background:var(--mute-bg);color:var(--mute);font-size:12px;line-height:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* §8-226 «오늘» 이번 주 강의도 제목 줄에 칩(칩을 먼저 두고 제목을 줄임) */
 .k2 .todo .twt .ttr{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%}
 .k2 .todo .twt .ttr .twa{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
