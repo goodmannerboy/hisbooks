@@ -2722,7 +2722,7 @@
 
   /* 엑셀 · 구글 시트 복사 꼴(TSV)로 줄 나누기: 따옴표로 시작하는 칸은 닫는 따옴표(뒤가 탭 · 줄 끝 · 글 끝)까지 줄을 넘어 읽고 "" → " ·
      엑셀이 따옴표로 감싸는 칸(안에 줄바꿈 · 탭 · 따옴표가 있음)만 그렇게 읽음 · 닫는 따옴표가 없거나 뒤에 글이 붙으면 따옴표 그대로(위젯 글)
-     → [{s: 줄 글, c: 칸들 | null(탭도 따옴표 칸도 없는 줄), nl: 칸 안 줄바꿈을 이었음}] */
+     → [{s: 줄 글, c: 칸들 | null(탭도 따옴표 칸도 없는 줄), nl: 칸 안 줄바꿈이 있음}] · 칸 안 줄바꿈은 그 칸에 그대로 둠(이을지는 setParse 가 정함 · 11-20) */
   function tsvLines(text) {
     var t = str(text).replace(/\r\n?/g, '\n'), len = t.length, out = [], p = 0, st, cells, nl, qd, v, j, q, dq, ch;
     while (p <= len) {
@@ -2744,7 +2744,7 @@
               (dq || q.indexOf('\n') >= 0 || q.indexOf('\t') >= 0)) {
             if (q.indexOf('\n') >= 0) nl = true;
             qd = true;
-            v = q.replace(/[ \t]*\n[ \t]*/g, ' ').replace(/\t/g, ' ');
+            v = q.replace(/[ \t]*\n[ \t]*/g, '\n').replace(/\t/g, ' ');
             p = j + 1;
           }
         }
@@ -2763,20 +2763,37 @@
     }
     return out;
   }
+  /* 번호 범위(11-20 붙여 넣기 ②): «41~42» «18-19» «41 ~ 42» · 한글 낱말 찾기(한글 음절 · 자모) */
+  var SET_RNG = '\\d{1,4}\\s*[~\\u301C\\uFF5E\\-\\u2013]\\s*\\d{1,4}';
+  var SET_NUMR = new RegExp('^(' + SET_RNG + ')[.)]?$'),
+    SET_NUMW = new RegExp('^(\\d{1,4}|' + SET_RNG + ')[.)]\\s+(\\S.*)$'),
+    SET_NUMK = new RegExp('^(\\d{1,4}|' + SET_RNG + ')[.)]?\\s+(\\S.*)$'),
+    SET_KO = /[가-힣ㄱ-ㆎ]/,
+    SET_KOW = /\s(?=\S*[가-힣ㄱ-ㆎ])/;
   /* 빈 줄 뺌 · 탭이 있으면 탭(엑셀 따옴표 칸은 tsvLines) · 없으면 빈칸 둘 이상이나 « | » · 칸 trim ·
-     칸이 둘 이상이고 첫 칸이 번호(1~4자리 · «1.» «1)» 꼴도)면 번호 · 첫 칸이 «1. 낱말» 꼴이면 번호를 떼어 냄 · 칸 안 줄바꿈을 이은 줄은 nl: true */
-  function setParse(text) {
-    var out = [], lines = tsvLines(text), i, s, c, n, j, m, r;
+     칸이 둘 이상이고 첫 칸이 번호(1~4자리 · «1.» «1)» 꼴도)면 번호 · 칸이 셋 이상이고 첫 칸이 번호 범위(«41~42» «18-19»)여도 번호 ·
+     첫 칸이 «1. 낱말» 꼴이면 번호를 떼어 냄 · 칸 안 줄바꿈은 빈칸 하나로 잇고 그 줄은 nl: true ·
+     탭도 두 칸 띄움도 없는 줄(PDF 단어장 복사)은 한글이 든 첫 낱말 앞에서만 두 칸으로 나눔(첫 낱말부터 한글이면 안 나눔 · 앞 번호 «001 » 뗌) · 그 줄은 ko: true ·
+     opt.raw = 칸만 나눔(줄바꿈 그대로 · 번호 · 한글 나눔 없음 · 칸 이름 줄 읽기용) */
+  function setParse(text, opt) {
+    var out = [], lines = tsvLines(text), raw = !!(opt && opt.raw), i, s, c, n, j, m, r, ko;
     for (i = 0; i < lines.length; i += 1) {
       s = lines[i].s;
       if (!s.trim()) continue;
       c = lines[i].c ? lines[i].c.slice() : s.split(/ {2,}| \| /);
-      for (j = 0; j < c.length; j += 1) c[j] = c[j].trim();
-      n = '';
-      if (c.length > 1 && (m = /^(\d{1,4})[.)]?$/.exec(c[0]))) { n = m[1]; c.shift(); }
-      else if (c.length > 1 && (m = /^(\d{1,4})[.)]\s+(\S.*)$/.exec(c[0]))) { n = m[1]; c[0] = m[2]; }
+      for (j = 0; j < c.length; j += 1) c[j] = raw ? c[j].trim() : c[j].replace(/[ \t]*\n[ \t]*/g, ' ').trim();
+      n = ''; ko = false;
+      if (!raw && !lines[i].c && c.length === 1 && (m = SET_KOW.exec(c[0])) && !SET_KO.test(c[0].slice(0, m.index))) {
+        c = [c[0].slice(0, m.index).trim(), c[0].slice(m.index + 1).trim()];
+        ko = true;
+      }
+      if (raw) n = '';
+      else if (c.length > 1 && (m = /^(\d{1,4})[.)]?$/.exec(c[0]))) { n = m[1]; c.shift(); }
+      else if (c.length > 2 && (m = SET_NUMR.exec(c[0]))) { n = m[1]; c.shift(); }
+      else if (c.length > 1 && (m = (ko ? SET_NUMK : SET_NUMW).exec(c[0]))) { n = m[1]; c[0] = m[2]; }
       r = { n: n, c: c };
       if (lines[i].nl) r.nl = true;
+      if (ko) r.ko = true;
       out.push(r);
     }
     return out;
@@ -2802,13 +2819,14 @@
   function cell(c, i) { return str(c[i]); }
   /* 저장 전 경고: bad[i] = 'ng'(빼고 저장 · 서버가 받지 않는 줄) | 'am'(그대로 저장 · 주의) · msgs = [{c, t}] */
   function setWarn(kind, rows) {
-    var bad = {}, msgs = [], i, c, n, a, s, o, pg, bk, m, x, lo, seen = {}, key, cnt = {}, ng = 0, am = 0, re;
+    var bad = {}, msgs = [], i, c, n, a, s, o, pg, bk, bs, m, x, lo, seen = {}, key, cnt = {}, ng = 0, am = 0, re;
     rows = isArr(rows) ? rows : [];
     function hit(name) { cnt[name] = (cnt[name] || 0) + 1; }
     for (i = 0; i < rows.length; i += 1) {
       c = cols(rows[i]);
       n = str(rows[i] && rows[i].n);
       if (rows[i] && rows[i].nl) hit('nl');
+      if (rows[i] && rows[i].ko) hit('ko');
       if (kind === 'voc') {
         if (!cell(c, 1)) { bad[i] = 'ng'; hit('vm'); }
         else if (!cell(c, 0)) { bad[i] = 'ng'; hit('vw'); }
@@ -2828,13 +2846,21 @@
         pg = countRe(/[(]([^()]*\/[^()]*)[)]/g, s);
         re = /\[([^\]]*)\]/g;
         bk = countRe(re, s);
-        if (!a || (o && o.indexOf(a) < 0)) { bad[i] = 'ng'; hit('ga'); }
+        bs = countRe(/\[[^\]]*\/[^\]]*\]/g, s);
+        /* 11-20: 문제 칸이 비면 «문제 빈칸» · 고르기 괄호가 여럿인데 답을 괄호 차례로 못 나눈 줄(setGramFix 가 그대로 둔 줄) = 까닭 따로 */
+        if (!s) { bad[i] = 'ng'; hit('gs'); }
+        else if (a && pg + bk > 1 && bs === bk) { bad[i] = 'ng'; hit('gm'); }
+        else if (!a || (o && o.indexOf(a) < 0)) { bad[i] = 'ng'; hit('ga'); }
         else if (pg + bk === 0) { bad[i] = 'ng'; hit('g0'); }
         else if (pg + bk > 1) { bad[i] = 'ng'; hit('g2'); }
         else if (pg === 1 && (o.length < 2 || o.length > 5 || o.indexOf('') >= 0)) { bad[i] = 'ng'; hit('go'); }
         else if (bk === 1 && (m = /\[([^\]]*)\]/.exec(s)) && sp(m[1]) === '') { bad[i] = 'ng'; hit('gb'); }
-        else if (clen(s) > 300 || clen(a) > 100 || clen(x) > 300 || clen(cell(c, 3)) > 40 || clen(n) > 8) { bad[i] = 'ng'; hit('long'); }
-        else if (x.length > 60) { bad[i] = 'am'; hit('gx'); }
+        else if (clen(s) > 300 || clen(a) > 100 || clen(x) > 300 || clen(n) > 8) { bad[i] = 'ng'; hit('long'); }
+        else {
+          /* 포인트 40자 넘음 = 줄은 살리고 그 칸만 40자로(setItemsFrom) · 노란 줄 */
+          if (clen(cell(c, 3)) > 40) { bad[i] = 'am'; hit('pc'); }
+          if (x.length > 60) { bad[i] = 'am'; hit('gx'); }
+        }
       }
     }
     for (lo in bad) {
@@ -2852,19 +2878,28 @@
       msg('ge', 'ng', '문장 빈칸');
     }
     if (kind === 'gram') {
+      msg('gs', 'ng', '문제 빈칸');
       msg('ga', 'ng', '답이 없거나 보기에 없어요');
+      msg('gm', 'ng', '괄호가 여럿이면 답도 괄호 차례로 적어요');
       msg('g0', 'ng', '( / )나 [ ]가 없어요');
       msg('g2', 'ng', '( / )나 [ ]는 한 줄에 하나만');
       msg('go', 'ng', '보기는 둘에서 다섯');
       msg('gb', 'ng', '[ ] 안이 비었어요');
     }
     msg('long', 'ng', '너무 긴 칸');
+    if (kind === 'gram') msg('pc', 'am', '포인트 40자 넘는 칸은 잘랐어요');
     if (kind === 'gram') msg('gx', 'am', '해설이 폰에서 세 줄 넘어요');
     /* 엑셀 칸 안 줄바꿈(Alt+Enter)은 한 칸으로 읽고 빈칸 하나로 이음(줄은 빼지 않음 · 알려만 줌) */
     msg('nl', 'am', '칸 안 줄바꿈은 한 줄로 이었어요');
+    msg('ko', 'am', '탭 없는 줄은 한글 앞에서 나눴어요');
     return { bad: bad, ng: ng, am: am, msgs: msgs };
   }
-  /* 저장할 문항: setWarn 이 'ng' 로 본 줄만 뺌(같은 판정) · 빈 칸은 '' */
+  /* 칸을 n자(코드 포인트)로 자름 · 끝 빈칸 뺌(서버 btrim 과 같게) */
+  function setCut(s, n) {
+    s = str(s);
+    return clen(s) > n ? (Lec.left ? Lec.left(s, n) : s.slice(0, n)).replace(/\s+$/, '') : s;
+  }
+  /* 저장할 문항: setWarn 이 'ng' 로 본 줄만 뺌(같은 판정) · 빈 칸은 '' · 문법 포인트는 40자까지(넘는 글은 자름 · 11-20) */
   function setItemsFrom(kind, rows) {
     var w0 = setWarn(kind, rows), out = [], i, c, n;
     rows = isArr(rows) ? rows : [];
@@ -2874,7 +2909,89 @@
       n = str(rows[i] && rows[i].n);
       if (kind === 'voc') out.push({ n: n, w: cell(c, 0), m: cell(c, 1) });
       else if (kind === 'gu') out.push({ n: n, e: cell(c, 0), t: cell(c, 1), p: cell(c, 2) });
-      else if (kind === 'gram') out.push({ n: n, s: cell(c, 0), a: cell(c, 1), x: cell(c, 2), p: cell(c, 3) });
+      else if (kind === 'gram') out.push({ n: n, s: cell(c, 0), a: cell(c, 1), x: cell(c, 2), p: setCut(cell(c, 3), 40) });
+    }
+    return out;
+  }
+  /* 문법 포인트 이름: 어법 최빈출 목록과 띄어쓰기 · 빗금 · 가운뎃점만 다르면 목록 이름 · 아니면 칸 글 그대로(문장에서 짐작하지 않음) */
+  var SET_PT = ['수일치', '관계사', '분사', '대명사 / 재귀대명사', 'that / those', '대동사', '병렬', '도치', '수동태', '전치사 / 접속사', '형용사 / 부사',
+    '5형식 목적격보어 to부정사', '사역동사 / 지각동사 목적격보어', 'to 전치사 / to부정사', '간접의문문 어순', 'if / whether'];
+  var SET_PT_ALIAS = { '전치사접속사구분': '전치사 / 접속사', '5형식목적격보어의to부정사': '5형식 목적격보어 to부정사', '사역동사지각동사의목적격보어': '사역동사 / 지각동사 목적격보어' };
+  function ptKey(s) { return str(s).toLowerCase().replace(/[\s\/·・,.()]+/g, ''); }
+  function setPt(p) {
+    var k = ptKey(p), i;
+    if (!k) return str(p);
+    for (i = 0; i < SET_PT.length; i += 1) { if (ptKey(SET_PT[i]) === k) return SET_PT[i]; }
+    return has(SET_PT_ALIAS, k) ? SET_PT_ALIAS[k] : str(p);
+  }
+  /* 문제 글의 괄호 묶음: ( / ) = 고르기 · [ ] 안에 / 가 있으면 고르기(워크북 꼴) · [ ] 안에 / 가 없으면 고쳐 쓰기 · / 없는 ( ) 는 보통 글 */
+  function gramGroups(s) {
+    var re = /\(([^()]*)\)|\[([^\]]*)\]/g, out = [], m;
+    while ((m = re.exec(s)) !== null) {
+      if (m[1] != null) { if (m[1].indexOf('/') >= 0) out.push({ i: m.index, e: m.index + m[0].length, b: false, t: m[1], c: true }); }
+      else out.push({ i: m.index, e: m.index + m[0].length, b: true, t: m[2], c: m[2].indexOf('/') >= 0 && !/[()]/.test(m[2]) });
+    }
+    return out;
+  }
+  function gramOpts(t) {
+    var o = str(t).split('/'), i;
+    for (i = 0; i < o.length; i += 1) o[i] = sp(o[i]);
+    return o;
+  }
+  /* 답 칸을 괄호 수대로: «① is ② who» «(A) is (B) who» → 쉼표 → 빗금 → 가운뎃점 · ; · | → 빈칸 · 나눈 답이 그 괄호 보기에 모두 있을 때만 */
+  function gramAns(a, ch) {
+    var seps = [/\s*(?:[①-⑳]|\([A-Ea-e1-9]\))\s*/, /\s*,\s*/, /\s*\/\s*/, /\s*[·;|]\s*/, /\s+/], i, p, j, ok, q;
+    for (i = 0; i < seps.length; i += 1) {
+      p = str(a).split(seps[i]);
+      q = [];
+      for (j = 0; j < p.length; j += 1) { p[j] = sp(p[j].replace(/^(?:\d[.)])\s*/, '')); if (p[j]) q.push(p[j]); }
+      if (q.length !== ch.length) continue;
+      ok = true;
+      for (j = 0; j < q.length; j += 1) { if (gramOpts(ch[j].t).indexOf(q[j]) < 0) { ok = false; break; } }
+      if (ok) return q;
+    }
+    return null;
+  }
+  function rowWith(r, c) {
+    var o = { n: str(r && r.n), c: c };
+    if (r && r.nl) o.nl = true;
+    if (r && r.ko) o.ko = true;
+    return o;
+  }
+  /* 문법 줄 다듬기(11-20 붙여 넣기 ② · 관리 화면이 문법일 때만): 워크북 꼴 «[ A / B ]» = 고르기 «( A / B )»(괄호 글자만 바꿈) ·
+     한 줄에 고르기 괄호가 여럿 = 답(«is, who» · «goes / eats» · «① is ② who»)을 괄호 차례로 나눠 괄호마다 한 줄 · 다른 괄호 자리는 그 답으로 채움 ·
+     답을 괄호 수대로 못 나누면 줄 그대로(setWarn 'gm') · 고쳐 쓰기 [낱말] 이 섞인 줄도 그대로 · 포인트 = setPt ·
+     서버 · SQL 그대로(서버가 이미 읽는 ( / ) 꼴로 바꿔 보냄 · 문항 칸은 n s a x p 그대로) */
+  function setGramFix(rows) {
+    var out = [], i, r, c, s, g, ch, rw, j, k, pos, t, nc, a;
+    rows = isArr(rows) ? rows : [];
+    for (i = 0; i < rows.length; i += 1) {
+      r = rows[i];
+      c = cols(r).slice();
+      if (c.length > 3) c[3] = setPt(c[3]);
+      s = cell(c, 0);
+      g = gramGroups(s);
+      ch = []; rw = 0;
+      for (j = 0; j < g.length; j += 1) { if (g[j].c) ch.push(g[j]); else rw += 1; }
+      if (rw || !ch.length) { out.push(rowWith(r, c)); continue; }
+      if (ch.length === 1) {
+        if (ch[0].b) c[0] = s.slice(0, ch[0].i) + '(' + ch[0].t + ')' + s.slice(ch[0].e);
+        out.push(rowWith(r, c));
+        continue;
+      }
+      a = gramAns(sp(cell(c, 1)), ch);
+      if (!a) { out.push(rowWith(r, c)); continue; }
+      for (j = 0; j < ch.length; j += 1) {
+        t = ''; pos = 0;
+        for (k = 0; k < ch.length; k += 1) {
+          t += s.slice(pos, ch[k].i) + (k === j ? '(' + ch[k].t + ')' : a[k]);
+          pos = ch[k].e;
+        }
+        nc = c.slice();
+        nc[0] = t + s.slice(pos);
+        nc[1] = a[j];
+        out.push(rowWith(r, nc));
+      }
     }
     return out;
   }
@@ -3577,6 +3694,7 @@
     SET_LIM: SET_LIM, REC_MAX_BYTES: REC_MAX_BYTES, REC_MAX_MS: REC_MAX_MS, REC_WHY: REC_WHY,
     SET_RS: SET_RS, SET_ERR: SET_ERR,
     setParse: setParse, setDetect: setDetect, setOpts: setOpts, gramParts: gramParts, setWarn: setWarn, setItemsFrom: setItemsFrom,
+    setGramFix: setGramFix, setPt: setPt, setCut: setCut,
     setKeys: setKeys, setNeed: setNeed, setNorm: setNorm, setVars: setVars, setAlts: setAlts, setMatch: setMatch,
     setFm: setFm, setFirst: setFirst, setRetake: setRetake, setChoices: setChoices, setTq: setTq, setDraw: setDraw,
     setMark: setMark, setMemo: setMemo, setInDue: setInDue, setDueOn: setDueOn, setDeck: setDeck, setNextQ: setNextQ,

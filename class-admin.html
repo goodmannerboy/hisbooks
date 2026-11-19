@@ -4923,9 +4923,10 @@ window.__lecAdminStart = function () {
   function sxRs(k) { return str((L.SET_RS && L.SET_RS[k]) || SX_RS[k]); }
   function sxWhy(i) { return str((isArr(L.REC_WHY) ? L.REC_WHY : SX_WHY)[+i || 0]); }
   function sxUnit(k) { return k === 'gu' ? '문장' : (k === 'gram' ? '문제' : '개'); }
-  /* 단어 한 번에 2000개(11-18 원장님): 새 단어 세트만 · 한 세트는 그대로 300(서버 · SQL 그대로) · 301~2000 = 앞에서부터 300개씩 세트 여럿 */
+  /* 단어 한 번에 2000개(11-18 원장님): 새 단어 세트만 · 한 세트는 그대로 300(서버 · SQL 그대로) · 301~2000 = 앞에서부터 300개씩 세트 여럿 ·
+     구문 30 · 문법 50 을 넘어도 같은 꼴로 나눠 올림(11-20 붙여 넣기 ② · 새 세트만) */
   var SX_MAX = 2000;
-  function sxSplit(k) { return k === 'voc' && !!S.sd && S.sd.t === 'put' && !S.sd.id; }
+  function sxSplit(k) { return (k === 'voc' || k === 'gu' || k === 'gram') && !!S.sd && S.sd.t === 'put' && !S.sd.id; }
   function sxMax(k) { return sxSplit(k) ? SX_MAX : sxLim(k); }
   function sxPill(c, t) { return '<span class="sx-p ' + c + '">' + esc(t) + '</span>'; }
   /* 다시 그린 뒤 누른 자리로 초점(같은 단추 · 같은 세트) */
@@ -6211,19 +6212,100 @@ window.__lecAdminStart = function () {
   function sxHeadRow(a) {
     var r = a[0], c = r && isArr(r.c) ? r.c : [], i, t, n = 0, all = true, num = 0;
     if (!r || str(r.n)) return false;
-    for (i = 0; i < c.length; i += 1) { t = sxHeadWord(c[i]); if (!t) continue; n += 1; if (!SX_HEAD[t]) all = false; }
+    for (i = 0; i < c.length; i += 1) { t = sxHeadWord(c[i]); if (!t) continue; n += 1; if (!SX_HEAD[t] && t.indexOf('유형') < 0) all = false; }
     if (all && n >= 2) return true;
     for (i = 1; i < a.length; i += 1) { if (a[i] && str(a[i].n)) num += 1; }
     return a.length - 1 >= 2 && num >= (a.length - 1) * 0.8;
   }
+  /* 칸 이름대로 읽기(11-20 붙여 넣기 ②): 칸 이름이 모두 아는 낱말이면 칸 차례가 달라도 이름대로 ·
+     n 번호(«문항»은 값이 번호일 때만 · 아니면 문제) · w 단어 · m 뜻 · s 문제 · a 답 · x 해설 · p 포인트(«출처·유형»처럼 «유형»이 든 칸 = 칸 안 끝 줄) · e 영어 · t 해석 ·
+     종류 = 단어 · 뜻 → 어휘 / 문제 · 답 · 해설 → 문법 / 영어 · 해석 → 구문 · 모르는 칸 이름이 있거나 칸 이름보다 긴 줄이 많으면(번호 칸에 이름이 없음) 지금처럼 칸 차례대로 */
+  var SX_ROLE = {};
+  (function (o) { var k, a, i; for (k in o) { if (has(o, k)) { a = o[k].split(' '); for (i = 0; i < a.length; i += 1) SX_ROLE[a[i]] = k; } } })({
+    n: '번호 순번 번 no num number #', w: '단어 어휘 낱말 영단어 word words vocabulary vocab',
+    m: '뜻 의미 우리말 우리말뜻 한글뜻 뜻풀이 meaning meanings definition korean', s: '문제 질문 question questions',
+    a: '답 정답 답안 answer answers', x: '해설 설명 풀이 explanation explanations', p: '포인트 핵심 point points',
+    e: '문장 영어문장 영문 영어 구문 예문 예시 sentence sentences english example examples', t: '해석 번역 translation'
+  });
+  var SX_NUM = /^(\d{1,4}(?:\s*[~〜～\-–]\s*\d{1,4})?)[.)]?$/;
+  var SX_KRO = { voc: '어휘로', gu: '구문으로', gram: '문법으로' };
+  function sxHeadMap(hc, raw) {
+    var roles = [], got = {}, i, j, t, r, v, nn, tot, more = 0, k;
+    for (i = 0; i < hc.length; i += 1) {
+      t = sxHeadWord(hc[i]); r = '';
+      if (!t) r = '';
+      else if (t === '문항') {
+        nn = 0; tot = 0;
+        for (j = 0; j < raw.length; j += 1) { v = trim(str(raw[j].c[i])); if (!v) continue; tot += 1; if (SX_NUM.test(v)) nn += 1; }
+        r = tot && nn >= tot * 0.8 ? 'n' : 's';
+      } else if (t.indexOf('유형') >= 0 || t === 'type') r = 'P';
+      else if (has(SX_ROLE, t)) r = SX_ROLE[t];
+      else if (!SX_HEAD[t]) return null;
+      if (r && got[r === 'P' ? 'p' : r]) r = '';
+      roles.push(r);
+      if (r) got[r === 'P' ? 'p' : r] = 1;
+    }
+    k = got.w || got.m ? 'voc' : (got.s || got.a || got.x ? 'gram' : (got.e || got.t ? 'gu' : ''));
+    if (!k) return null;
+    for (j = 0; j < raw.length; j += 1) {
+      for (i = hc.length; i < raw[j].c.length; i += 1) { if (trim(str(raw[j].c[i]))) { more += 1; break; } }
+    }
+    return more > raw.length * 0.2 ? null : { roles: roles, k: k };
+  }
+  function sxHeadRows(raw, hm, k) {
+    var out = [], j, i, c, v, o, nl, ln, row, m;
+    for (j = 0; j < raw.length; j += 1) {
+      c = raw[j].c; o = {}; nl = false;
+      for (i = 0; i < hm.roles.length; i += 1) {
+        if (!hm.roles[i]) continue;
+        v = str(c[i]);
+        if (hm.roles[i] === 'P') { ln = v.split('\n').map(trim).filter(function (x) { return !!x; }); o.p = ln.length ? ln[ln.length - 1] : ''; continue; }
+        if (v.indexOf('\n') >= 0) { nl = true; v = v.replace(/[ \t]*\n[ \t]*/g, ' '); }
+        o[hm.roles[i]] = trim(v);
+      }
+      v = str(o.n); m = SX_NUM.exec(v);
+      row = { n: m ? m[1] : v, c: k === 'voc' ? [str(o.w), str(o.m)] : (k === 'gu' ? [str(o.e), str(o.t), str(o.p)] : [str(o.s), str(o.a), str(o.x), str(o.p)]) };
+      if (nl) row.nl = true;
+      out.push(row);
+    }
+    return out;
+  }
+  /* 고치기: 이미 있는 문항과 문제 글이 같은 줄은 지금 판 그대로(옛 [ / ] 고쳐 쓰기 문항이 새 문항이 되어 학생 기록을 잃지 않게) · 나머지 줄만 setGramFix */
+  function sxGramFix(rows) {
+    var old = {}, it = S.sd && S.sd.id && S.sd.set && isArr(S.sd.set.items) ? S.sd.set.items : null, out = [], i, j, f;
+    if (!it) return L.setGramFix(rows) || rows;
+    for (i = 0; i < it.length; i += 1) { if (it[i]) old['#' + trim(it[i].s)] = 1; }
+    for (i = 0; i < rows.length; i += 1) {
+      if (has(old, '#' + trim(rows[i] && isArr(rows[i].c) ? rows[i].c[0] : ''))) { out.push(rows[i]); continue; }
+      f = L.setGramFix([rows[i]]) || [rows[i]];
+      for (j = 0; j < f.length; j += 1) out.push(f[j]);
+    }
+    return out;
+  }
+  /* 붙여 넣은 글 읽기(글 · 고른 종류가 같으면 다시 안 읽음): 칸 이름 줄 · 칸 이름대로 · 문법이면 setGramFix(워크북 [ / ] · 괄호 여럿 · 포인트 이름) ·
+     rows.ak = 알아본 종류(칸 이름 줄이 정한 종류 먼저) */
+  var sxPc = null;
+  function sxPcKey() { return str(S.sd && S.sd.forced) + (S.sd && S.sd.id ? '|' + S.sd.id + (S.sd.set ? '+' : '') : ''); }
   function sxParse() {
-    var a, h;
-    try { a = L.setParse(str(S.inputs['sd:txt'])) || []; } catch (e) { a = []; }
+    var txt = str(S.inputs['sd:txt']), fk = str(S.sd && S.sd.forced), a, h, rows, raw, hm = null, head = '', ak = '', k;
+    if (sxPc && sxPc.t === txt && sxPc.f === sxPcKey()) return sxPc.r;
+    try { a = L.setParse(txt) || []; } catch (e) { a = []; }
+    rows = a;
     if (a.length && sxHeadRow(a)) {
       h = (isArr(a[0].c) ? a[0].c : []).filter(function (x) { return !!trim(x); }).join(' · ');
-      return { rows: a.slice(1), head: h.length > 40 ? h.slice(0, 40) + '…' : h };
+      head = h.length > 40 ? h.slice(0, 40) + '…' : h;
+      rows = a.slice(1);
+      try { raw = L.setParse(txt, { raw: true }) || []; } catch (e) { raw = []; }
+      if (raw.length === a.length && raw.length > 1 && isArr(raw[0].c)) hm = sxHeadMap(raw[0].c, raw.slice(1));
+      if (hm) rows = sxHeadRows(raw.slice(1), hm, fk || hm.k);
     }
-    return { rows: a, head: '' };
+    if (hm) ak = hm.k;
+    else { try { ak = rows.length ? str(L.setDetect(rows)) : ''; } catch (e) { ak = ''; } }
+    k = fk || ak || 'voc';
+    if (k === 'gram' && L.setGramFix) { try { rows = sxGramFix(rows); } catch (e) {} }
+    rows.ak = ak;
+    sxPc = { t: txt, f: sxPcKey(), r: { rows: rows, head: head, hm: !!hm } };
+    return sxPc.r;
   }
   function sxRowsNow() { return sxParse().rows; }
   function sxWarn(k, rows) {
@@ -6235,10 +6317,13 @@ window.__lecAdminStart = function () {
   }
   function sxKindOf(rows) {
     var a = '';
-    try { a = rows.length ? L.setDetect(rows) : ''; } catch (e) { a = ''; }
+    if (rows && typeof rows.ak === 'string') a = rows.ak;
+    else { try { a = rows.length ? L.setDetect(rows) : ''; } catch (e) { a = ''; } }
     return { auto: a, k: (S.sd && S.sd.forced) || a || 'voc' };
   }
   function sxGp(s) { var p = null; try { p = L.gramParts ? L.gramParts(str(s)) : null; } catch (e) { p = null; } return p ? str(p.f) : ''; }
+  /* 미리 보기 포인트 = 저장할 글(문법 40자까지) */
+  function sxPt(p) { try { return L.setCut ? str(L.setCut(p, 40)) : str(p); } catch (e) { return str(p); } }
   /* ★ 녹음 문장(구문): 고른 줄(빨간 줄 뺌 · 2개까지) · 안 골랐으면 앞 두 줄 */
   function sxPick(rows, bad) {
     var out = [], a = S.sd && isArr(S.sd.pick) ? S.sd.pick : [], i;
@@ -6275,15 +6360,17 @@ window.__lecAdminStart = function () {
   }
   /* 붙여 넣은 글 → 종류 칩 · 까닭 한 줄 · 경고 · 미리 보기 표(빨간 줄 먼저 · 6줄 · 구문은 ★ 고르기라 모두) */
   function sxAnHtml() {
-    var sp = sxParse(), sd = S.sd, rows = sp.rows, ko = sxKindOf(rows), k = ko.k, ks = ['voc', 'gu', 'gram'], h, i, kk, on, rs, w, bad, msgs, ng, lim, pl, cols, hd, order, pk, shown, r, c, rc, gp;
+    var sp = sxParse(), sd = S.sd, rows = sp.rows, ko = sxKindOf(rows), k = ko.k, ks = ['voc', 'gu', 'gram'], h, i, kk, on, rs, w, bad, msgs, ng, lim, pl, cols, hd, order, pk, shown, r, c, rc, gp, fz, hn;
     h = '<div class="sx-row sx-kd" role="group" aria-label="종류"><span class="lb">종류</span>';
     for (i = 0; i < ks.length; i += 1) {
       kk = ks[i]; on = !!rows.length && kk === k;
       h += '<button type="button" class="chip' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-act="sxKind" data-v="' + kk + '"' +
         (sd.id && kk !== sd.forced ? ' disabled' : '') + '>' + SX_KIND[kk] + '</button>';
     }
-    h += '<span class="mut sm">' + (rows.length ? esc(rows.length + '줄 · ' + sxMax(k) + '개까지') : '') + '</span></div>';
-    rs = !rows.length ? '위에 붙여 넣으면 바로 알아봐요' : (sd.forced && sd.forced !== ko.auto ? sxRs('forced') : sxRs(k));
+    h += '<span class="mut sm">' + (rows.length ? esc(rows.length + '줄 · ' + (sxSplit(k) && k !== 'voc' ? sxLim(k) + sxUnit(k) + '씩' : sxMax(k) + '개까지')) : '') + '</span></div>';
+    fz = !!sd.forced && sd.forced !== ko.auto;
+    hn = !!rows.length && sp.hm && !fz;
+    rs = !rows.length ? '위에 붙여 넣으면 바로 알아봐요' : (fz ? sxRs('forced') : (hn ? '칸 이름대로 ' + SX_KRO[k] + ' 읽었어요' : sxRs(k)));
     if (k === 'gu' && rows.length) rs += ' · ★ 녹음 2문장(안 고르면 앞 두 문장)';
     if (sp.head) rs += ' · 맨 윗줄은 칸 이름으로 보고 뺐어요 «' + sp.head + '»';
     h += '<p class="sx-rs">' + esc(rs) + '</p>';
@@ -6302,7 +6389,7 @@ window.__lecAdminStart = function () {
     pl = sxPlan(k, rows, bad);
     if (pl) h += '<p class="sx-rs" id="sd-split">' + esc(sxPlanText(pl)) + '</p>';
     if (k === 'gu') { cols = ['9%', '39%', '32%', '14%', '6%']; hd = ['번호', '영어 문장', '해석', '포인트', '★']; }
-    else if (k === 'gram') { cols = ['9%', '45%', '15%', '11%', '20%']; hd = ['번호', '문제', '꼴', '답', '해설']; }
+    else if (k === 'gram') { cols = ['8%', '40%', '11%', '10%', '17%', '14%']; hd = ['번호', '문제', '꼴', '답', '해설', '포인트']; }
     else { cols = ['14%', '38%', '48%']; hd = ['번호', '단어', '뜻']; }
     order = [];
     for (i = 0; i < rows.length; i += 1) order.push(i);
@@ -6324,7 +6411,8 @@ window.__lecAdminStart = function () {
             (pk.indexOf(order[i]) >= 0 ? 'true' : 'false') + '" aria-label="' + (order[i] + 1) + '번째 줄 녹음 문장">' + (pk.indexOf(order[i]) >= 0 ? '★' : '☆') + '</button>') + '</td>';
       } else if (k === 'gram') {
         gp = sxGp(c[0]);
-        h += '<td>' + (gp === 'c' ? '고르기' : (gp === 'r' ? '고쳐 쓰기' : '–')) + '</td><td>' + esc(c[1] || '빈칸') + '</td><td title="' + esc(c[2]) + '">' + esc(c[2] || '') + '</td>';
+        h += '<td>' + (gp === 'c' ? '고르기' : (gp === 'r' ? '고쳐 쓰기' : '–')) + '</td><td>' + esc(c[1] || '빈칸') + '</td><td title="' + esc(c[2]) + '">' + esc(c[2] || '') + '</td>' +
+          '<td title="' + esc(sxPt(c[3])) + '">' + esc(sxPt(c[3])) + '</td>';
       } else h += '<td>' + esc(c[1] || '빈칸') + '</td>';
       h += '</tr>';
     }
@@ -6418,13 +6506,13 @@ window.__lecAdminStart = function () {
     tn = k === 'gu' ? { ok: true, v: null } : sxTnVal();
     if (!tn.ok) { sxMsg('시험 문항 수는 1~300 숫자로 적어 주세요(비우면 전부)', 'sd-tn'); return; }
     tn = tn.v;
-    /* 단어 301~2000개(이어서 올릴 때는 300개 이하도) = 300개씩 여러 세트로(시험 문항 수는 만든 세트마다 같은 수) */
+    /* 단어 301~2000개(이어서 올릴 때는 300개 이하도) = 300개씩 여러 세트로(시험 문항 수는 만든 세트마다 같은 수) · 구문 31~ = 30문장씩 · 문법 51~ = 50문제씩(★ 는 고른 문항이 든 세트에) */
     pl = sxPlan(k, rows, w.bad);
-    if (pl && pl.n === items.length) { sxBatch(sd, k, pl, items, map, title, cls, on, tn); return; }
     if (k === 'gu') {
       pk = sxPick(rows, w.bad);
       for (i = 0; i < pk.length; i += 1) { if (map.indexOf(pk[i]) >= 0) pick.push(map.indexOf(pk[i])); }
     }
+    if (pl && pl.n === items.length) { sxBatch(sd, k, pl, items, map, title, cls, on, tn, pick); return; }
     sd.busy = true;
     sxMsg('', null);
     if (btn) btn.disabled = true;
@@ -6475,9 +6563,9 @@ window.__lecAdminStart = function () {
     if (r && r.err === 'input') return '붙여 넣은 글이 너무 길어요. 나눠서 넣어 주세요';
     return sxErr(r);
   }
-  /* 나눠 올리기 계획(새 단어 세트): 빨간 줄 뺀 차례로 앞에서부터 300개씩 · 마지막 = 나머지 ·
-     범위 = 모든 줄에 번호가 있으면 그 세트 첫 줄 ~ 끝 줄 번호(번호가 다시 1부터라 범위가 겹치면 차례 번호), 아니면 차례 번호 ·
-     null = 한 세트로(300개 이하 · 2000개 넘음 · 고치기 · 단어 밖) · 이어서 올릴 때(cont)는 300개 이하도 이름에 범위를 붙임 */
+  /* 나눠 올리기 계획(새 세트 · 단어 300 · 구문 30 · 문법 50): 빨간 줄 뺀 차례로 앞에서부터 한 세트 수만큼씩 · 마지막 = 나머지 ·
+     범위 = 모든 줄에 번호가 있으면 그 세트 첫 줄 ~ 끝 줄 번호(번호가 다시 1부터라 범위가 겹치면 차례 번호 · «41~42» 꼴은 첫 · 끝 번호만), 아니면 차례 번호 ·
+     null = 한 세트로(한 세트 수 이하 · 2000개 넘음 · 고치기) · 이어서 올릴 때(cont)는 한 세트 수 이하도 이름에 범위를 붙임 */
   function sxPlan(k, rows, bad) {
     var lim = sxLim(k), ns = [], num = true, out, i;
     if (!sxSplit(k) || !lim) return null;
@@ -6491,7 +6579,7 @@ window.__lecAdminStart = function () {
       var o = [], seen = {}, s, e, a, b;
       for (s = 0; s < ns.length; s = e) {
         e = Math.min(s + lim, ns.length);
-        a = byNum ? ns[s] : String(s + 1); b = byNum ? ns[e - 1] : String(e);
+        a = byNum ? sxNumEnd(ns[s], false) : String(s + 1); b = byNum ? sxNumEnd(ns[e - 1], true) : String(e);
         if (has(seen, a + '~' + b)) return null;
         seen[a + '~' + b] = 1;
         o.push({ s: s, e: e, a: a, b: b });
@@ -6499,12 +6587,14 @@ window.__lecAdminStart = function () {
       return o;
     }
     out = (num && mk(true)) || mk(false);
-    return { cont: !!S.sd.cont, n: ns.length, ch: out };
+    return { cont: !!S.sd.cont, n: ns.length, ch: out, k: k };
   }
+  /* 번호 범위(«41~42»)가 세트 끝 · 첫 줄이면 이름 범위는 첫 번호 · 끝 번호만 */
+  function sxNumEnd(v, last) { var a = str(v).split(/\s*[~〜～\-–]\s*/); return a.length > 1 ? (last ? a[a.length - 1] : a[0]) : str(v); }
   function sxPlanText(pl) {
-    var r = [], i;
+    var r = [], i, k = pl.k || 'voc';
     for (i = 0; i < pl.ch.length; i += 1) r.push(pl.ch[i].a + '~' + pl.ch[i].b);
-    return (pl.ch.length > 1 ? (pl.cont ? '이어서 ' : '') + sxLim('voc') + '개씩 ' + pl.ch.length + '세트로 나눠 올라가요' : '이어서 올려요') +
+    return (pl.ch.length > 1 ? (pl.cont ? '이어서 ' : '') + sxLim(k) + sxUnit(k) + '씩 ' + pl.ch.length + '세트로 나눠 올라가요' : '이어서 올려요') +
       ' · ' + r.join(' · ') + ' · 세트 이름 끝에 범위가 붙어요';
   }
   /* 세트 이름 = «{입력한 이름} {첫}~{끝}» · 서버 규칙(앞뒤 빈칸 뺀 60자)에 맞게 범위는 두고 이름 쪽을 줄임 */
@@ -6521,19 +6611,25 @@ window.__lecAdminStart = function () {
     b = (isArr(b) ? b.slice() : []).sort();
     return a.join('\n') === b.join('\n');
   }
-  /* 답을 못 받은 세트가 실제로 만들어졌나: 올리기 전 목록(known)에 없던 같은 이름 · 같은 수 · 같은 반 단어 세트 */
-  function sxFound(list, t, n, cls, known) {
+  /* 답을 못 받은 세트가 실제로 만들어졌나: 올리기 전 목록(known)에 없던 같은 이름 · 같은 수 · 같은 반 · 같은 종류 세트 */
+  function sxFound(list, t, n, cls, known, k) {
     var i, it;
     for (i = 0; isArr(list) && i < list.length; i += 1) {
       it = list[i];
-      if (it && it.kind === 'voc' && !known[str(it.id)] && trim(it.title) === t && +it.n === n && sxSameCls(it.class_ids, cls)) return str(it.id);
+      if (it && it.kind === (k || 'voc') && !known[str(it.id)] && trim(it.title) === t && +it.n === n && sxSameCls(it.class_ids, cls)) return str(it.id);
     }
     return '';
   }
   /* 나눠 올리기: 뒤 세트부터 하나씩 만듦(목록은 새로 만든 것이 위라 1~300 이 맨 위) · 올리는 동안 서랍 잠금(닫기 · 다시 누르기 막음) ·
      중간에 막히면 거기서 멈추고 남은 줄만 칸에 남김(다시 «저장» = 이어서) · 답을 못 받은 세트는 목록을 다시 읽어 올라갔는지 봄(겹쳐 만들지 않게) ·
      목록도 못 읽으면 sd.unsure 에 적어 두고 다음 «저장» 때 먼저 확인 */
-  function sxBatch(sd, k, pl, items, map, base, cls, on, tn) {
+  function sxBatch(sd, k, pl, items, map, base, cls, on, tn, pick) {
+    /* ★ 녹음 문장(구문): 고른 문항은 그 문항이 든 세트의 차례로 · 고른 것이 없는 세트 = 빈 것(서버가 앞 두 문장) */
+    function pickOf(c) {
+      var o = [], i;
+      for (i = 0; isArr(pick) && i < pick.length; i += 1) { if (pick[i] >= c.s && pick[i] < c.e) o.push(pick[i] - c.s); }
+      return o;
+    }
     var ch = pl.ch.slice(), all = ch.length, made = 0, top = '', known = {}, tnWarn = '';
     function list() {
       if (!L.setListStaff) return Promise.resolve({ ok: false, err: 'old' });
@@ -6555,7 +6651,7 @@ window.__lecAdminStart = function () {
       c = ch[ch.length - 1]; t = sxTitleOf(base, c); n = c.e - c.s;
       prog();
       return Promise.resolve().then(function () {
-        return L.setPut(DA.rpc, { id: null, kind: k, title: t, cls: cls, on: on || null, items: items.slice(c.s, c.e), pick: [] });
+        return L.setPut(DA.rpc, { id: null, kind: k, title: t, cls: cls, on: on || null, items: items.slice(c.s, c.e), pick: pickOf(c) });
       }).then(null, function () { return { ok: false, err: 'error' }; }).then(function (r) {
         if (r && r.ok && str(r.id)) return ok(str(r.id));
         if (r && (r.err === 'network' || r.err === 'error')) {
@@ -6566,7 +6662,7 @@ window.__lecAdminStart = function () {
               sd.unsure = { t: t, n: n, cls: cls.slice(), known: kn };
               return stop(r, true);
             }
-            f = sxFound(a.items, t, n, cls, known);
+            f = sxFound(a.items, t, n, cls, known, k);
             return f ? ok(f) : stop(r, false);
           });
         }
@@ -6598,6 +6694,8 @@ window.__lecAdminStart = function () {
       if (made) {
         S.inputs['sd:txt'] = items.slice(0, rest).map(function (x) { return sxLine(k, x); }).join('\n');
         sd.cont = true; sd.more = false;
+        /* 남긴 줄 = 저장할 문항 차례 그대로라 ★ 도 문항 차례로 옮김 */
+        sd.pick = (isArr(pick) ? pick : []).filter(function (x) { return x < rest; });
       }
       m = uns ? (c ? '«' + sxTitleOf(base, c) + '» 세트가 올라갔는지 확인하지 못했어요. 인터넷 연결을 확인하고 «저장»을 다시 누르면 먼저 확인하고 이어서 올려요' : sxErr(r))
         : sxPutErr(r, mm);
@@ -6616,7 +6714,7 @@ window.__lecAdminStart = function () {
       for (i = 0; i < a.items.length; i += 1) { if (a.items[i] && a.items[i].id) known[str(a.items[i].id)] = 1; }
       if (u) {
         c = ch[ch.length - 1]; t = sxTitleOf(base, c); n = c.e - c.s;
-        f = u.t === t && u.n === n && sxSameCls(u.cls, cls) ? sxFound(a.items, t, n, cls, u.known || {}) : '';
+        f = u.t === t && u.n === n && sxSameCls(u.cls, cls) ? sxFound(a.items, t, n, cls, u.known || {}, k) : '';
         sd.unsure = null;
         if (f) return ok(f);
       }
