@@ -4,7 +4,7 @@
 -- 1) supabase.com 로그인 → 히즈북스 프로젝트 → 왼쪽 «SQL Editor»
 -- 2) «New query» → 이 파일 전체(Ctrl+A → Ctrl+C)를 붙여 넣고 «Run»
 --    (경고 창이 뜨면 «Run this query»)
--- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 12/12 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림 · 녹음 저장 곳 · 30일 지난 녹음» 표가 나오면 통과입니다.
+-- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 13/13 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림 · 녹음 저장 곳 · 30일 지난 녹음» 표가 나오면 통과입니다.
 --    (스스로 점검 열은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
 --    빨간 오류가 나오면 아무것도 바뀌지 않은 것입니다(통째로 되돌려짐).
 --    «PDF 저장 곳» 칸이 «됨»이 아니면 강의 필기 PDF 저장 곳(Storage)만 못 만든 것입니다 · 강의실은 그대로 씁니다
@@ -10164,6 +10164,7 @@ declare
   v_n    integer := 0;
   v_was  boolean;
   v_kn   integer;
+  v_o2   bigint;  -- V2-5
 begin
   select * into t from public.lec_set_try xt
    where xt.id = p_try and xt.sid = p_sid and xt.kind in ('test', 'drill') for update;
@@ -10179,6 +10180,7 @@ begin
     v_v := v_e ->> 'v';
     v_why := '';
     v_r := null;
+    v_o2 := null;  -- V2-5
     v_q := case when v_i < t.n then t.qs -> v_i end;
     if v_q is null or btrim(v_v) = '' then
       v_why := 'gone';
@@ -10191,6 +10193,11 @@ begin
         v_r := public.lec__set_match(v_v, v_q ->> 'a');
       end if;
       v_r := coalesce(v_r, false) and char_length(v_v) <= 200;
+      -- V2-5: 쓰기 답이 틀렸으면 켜진 인정 답(V2-5 절이 있을 때만)
+      if not v_r and v_q ->> 'f' in ('w', 'r') and to_regprocedure('public.lec__v2_ok2id(uuid,text,text,text)') is not null then
+        v_o2 := public.lec__v2_ok2id(t.set_id, coalesce(v_q ->> 'k', ''), case when t.kind = 'test' then 'voc' else 'gram' end, v_v);
+        v_r := v_o2 is not null;
+      end if;
     end if;
     v_k := coalesce(v_q ->> 'k', '');
     insert into public.lec_set_log (id, sid, cl, b, bk, i, set_id, k, f, v, h, ms, nx, om, pr, sr, ok, src,
@@ -10202,6 +10209,9 @@ begin
     on conflict (id) do nothing;
     if not found or v_why <> '' then
       continue;
+    end if;
+    if v_o2 is not null then  -- V2-5: 채점 때 인정 답으로 맞음 표시(규칙 판정 = 틀림)
+      insert into public.lec_set_fix (ok2, log_id, ok, g) values (v_o2, v_e ->> 'id', true, true);
     end if;
     update public.lec_set_try xt
        set ans = jsonb_set(xt.ans, array[v_i::text], jsonb_build_object('v', v_v, 'r', v_r, 'at', v_ta)),
@@ -10375,6 +10385,7 @@ declare
   v_qs   jsonb;
   v_no   integer;
   v_cnt  integer;
+  v_o2   jsonb;  -- V2-5
 begin
   if not coalesce((public.lec__v2_sw() ->> 'eval')::boolean, false) then
     return jsonb_build_object('ok', false, 'err', 'off');
@@ -10404,6 +10415,13 @@ begin
       insert into public.lec_set_run (sid, set_id, md, no, day, seed)
       values (k.sid, p_set, 'mem', v_no, v_day, hashtext(k.sid || '|' || p_set::text || '|' || v_no::text))
       returning * into rn;
+    end if;
+    -- V2-5: 켜진 인정 답 {열쇠: [맞춤 글]}(있을 때만 · 폰 채점 = 서버 채점)
+    if to_regprocedure('public.lec__v2_ok2s(uuid)') is not null then
+      v_o2 := public.lec__v2_ok2s(p_set);
+      if v_o2 <> '{}'::jsonb then
+        v_r := v_r || jsonb_build_object('ok2', v_o2);
+      end if;
     end if;
     return v_r || public.lec__v2_head(rn);
   end if;
@@ -10448,6 +10466,9 @@ begin
     join public.lec_set xs on xs.id = (q.e ->> 's')::uuid
    cross join lateral (select y.e from jsonb_array_elements(xs.items) as y(e) where y.e ->> 'k' = q.e ->> 'k' limit 1) it
    where public.lec__set_open(xs, k.cls) and not public.lec__set_busy(k.sid, xs.id) and not (rn.shut ? xs.id::text);
+  if to_regprocedure('public.lec__v2_ok2q(jsonb)') is not null then  -- V2-5: 쓰기 문항에 켜진 인정 답 a2(있을 때만)
+    v_r := public.lec__v2_ok2q(v_r);
+  end if;
   return jsonb_build_object('ok', true, 'n', jsonb_array_length(v_r), 'q', v_r, 'title', '쌓인 오답') || public.lec__v2_head(rn);
 end
 $$;
@@ -10488,6 +10509,7 @@ declare
   v_day  date;
   v_sets uuid[] := '{}';
   v_me   jsonb;
+  v_o2   bigint;  -- V2-5
 begin
   select * into k from public.lec_key where kh = public.lec__kh(p_key);
   if not found then
@@ -10604,6 +10626,16 @@ begin
           end if;
         end if;
       end if;
+      -- V2-5: 쓰기 답(단어 sp · 구문 se · 쌓인 오답 w · r)이 틀렸으면 켜진 인정 답(V2-5 절이 있을 때만 · 400자 넘는 답 빼고)
+      v_o2 := null;
+      if v_why = '' and v_sr is false and v_f in ('sp', 'se', 'w', 'r') and not (v_e ->> 'lg')::boolean
+         and to_regprocedure('public.lec__v2_ok2id(uuid,text,text,text)') is not null then
+        v_o2 := public.lec__v2_ok2id(v_set, v_e ->> 'k', s.kind, v_v);
+        if v_o2 is not null then
+          v_sr := true;
+          v_okr := not (v_e ->> 'h')::boolean;
+        end if;
+      end if;
       -- 평가를 연 세트(닫은 뒤 답 · 지금 열린 시험 · 드릴) = 기록만(바른 답 엿보기 막기 · 옛 lec_set_ans 의 testing 과 같은 뜻)
       if v_why = '' and ((rn.shut ? v_set::text and v_ta >= (rn.shut ->> v_set::text)::timestamptz)
                          or public.lec__set_busy(k.sid, v_set)) then
@@ -10617,6 +10649,9 @@ begin
               (v_e ->> 'ago')::bigint, v_ta, (v_ta at time zone 'Asia/Seoul')::date, (v_e ->> 'pt')::bigint, v_e ->> 'st',
               rn.created_at, v_why)
       on conflict (id) do nothing;
+      if found and v_o2 is not null then  -- V2-5: 채점 때 인정 답으로 맞음 표시
+        insert into public.lec_set_fix (ok2, log_id, ok, g) values (v_o2, v_e ->> 'id', true, true);
+      end if;
       if found and v_why = '' then
         v_new := v_new || (v_e ->> 'id');
       end if;
@@ -11436,10 +11471,763 @@ begin
 end
 $$;
 
+-- ---------------------------------------------------------------- V2-5 (11-20) 선생님 현황 · 첫 답 · 인정 답 · 열셋째 스스로 점검
+-- 결론안 v2(11-20) 묶음 ⑤: 결과 표에서 학생 줄 → «첫 답에서 틀린 문항» · 결과 표에 «포인트별 반 첫 답 정답률» · 틀린 쓰기 답 «이 답도 맞음»
+-- 앞 절은 그대로 두고 더하기만(옛 함수 몸 · 표 칸 바꿈 0 · DROP 0 · V2-1 안은 «-- V2-5» 꼬리표 자리만 넓힘):
+--   1) 표 둘(행 보안 · 표로는 아무도 못 읽고 못 씀 · 함수로만): lec_set_ok2(인정 답 · 세트 · 문항 열쇠 · 맞춤 글 · 누가 · 언제 · 되돌림 = 줄 하나 더) ·
+--      lec_set_fix(고침 줄 · 원래 답 줄은 그대로 · 그 판 점수 · 통과 · 쌓인 오답(z)만 다시 셈 · 지난 d · t · w 는 안 건드림)
+--   2) 속 함수: 맞추기 글 · 켜진 인정 답 · 폰에 실을 인정 답 · 규칙 판정(읽을 때) · 첫 답(새 기록 표 lec_set_log 에서) · z 다시 접기 · 다시 셈 ·
+--      켜기 전 기록 다시 매겨 견주기(lec__v2_regrade · 재는 데에만 · 화면 0 · SQL Editor 에서 select public.lec__v2_regrade(null);)
+--   3) 선생님 함수 셋(원장님만 · 결과 표 lec_set_staff 와 같은 권한 · 학생 열쇠로는 못 부름): lec_set_staff_v2(결과 표 + 포인트별 반 첫 답 정답률 +
+--      인정 답으로 맞은 첫 답이 5% 넘는 문항) · lec_set_wrong1_v2(학생 하나 · 첫 답에서 틀린 문항) · lec_set_ok2_v2(이 답도 맞음 · 되돌리기)
+--   4) 열셋째 스스로 점검(가짜 세트 · 열쇠 · 스위치 · 끝에 모두 되돌림)
+-- 인정 답 맞추기: 단어 · 문법 = lec__set_norm 이 같음(«/» 로 나누지 않음 · 1~200 글자) · 구문 = lec__set_snorm_v2 가 같음(1~400 글자) · 고르기 문항은 없음
+-- 옛 채점 lec_set_ans 는 그대로(인정 답을 안 읽음 · 옛 판 답은 넣을 때 다시 셈) · v2 채점(lec__v2_ev · lec_set_log_v2)과 폰 채점이 인정 답을 읽음
+-- 운영에 넣은 뒤 확인(바꾸는 것 없음):
+--   select count(*) from public.lec_set_ok2;              -- 0
+--   select public.lec__v2_regrade(null);                   -- {"n": 옛 판 쓰기 칸 수, "same": …, "up": 0, "fixed": 0, "sets": […]}
+
+create table if not exists public.lec_set_ok2 (
+  id      bigserial primary key,
+  set_id  uuid not null references public.lec_set (id) on delete cascade,
+  k       text not null,
+  m       text not null,
+  nm      text not null,
+  who     text not null default '',
+  at      timestamptz not null default now(),
+  undo    boolean not null default false,
+  constraint lec_set_ok2_k_ok check (char_length(k) between 1 and 40),
+  constraint lec_set_ok2_m_ok check (char_length(m) between 1 and 400 and nm <> '')
+);
+create index if not exists lec_set_ok2_sk on public.lec_set_ok2 (set_id, k, nm, id);
+
+-- 고침 줄: 옛 판 시험 칸(try_id · i) 또는 v2 줄(log_id) 하나의 지금 맞음(ok) · g = 채점 때 인정 답으로 맞음(규칙으로는 틀림) ·
+--   ch = 이 고침이 바꾼 통과(pa · 되돌릴 때 같은 때면 지움) · 줄이 지워지면(동의 지움 · 세트 지움) 같이 지움
+create table if not exists public.lec_set_fix (
+  id      bigserial primary key,
+  ok2     bigint not null references public.lec_set_ok2 (id) on delete cascade,
+  try_id  uuid references public.lec_set_try (id) on delete cascade,
+  i       integer,
+  log_id  text references public.lec_set_log (id) on delete cascade,
+  ok      boolean not null,
+  g       boolean not null default false,
+  ch      jsonb not null default '{}'::jsonb,
+  at      timestamptz not null default now(),
+  constraint lec_set_fix_ref_ok check ((try_id is null) <> (log_id is null) and (try_id is null) = (i is null)),
+  constraint lec_set_fix_ch_ok  check (jsonb_typeof(ch) = 'object')
+);
+create index if not exists lec_set_fix_try on public.lec_set_fix (try_id, i, id) where try_id is not null;
+create index if not exists lec_set_fix_log on public.lec_set_fix (log_id, id) where log_id is not null;
+create index if not exists lec_set_fix_ok2 on public.lec_set_fix (ok2);
+
+revoke all on public.lec_set_ok2, public.lec_set_fix from public, anon, authenticated;
+revoke all on sequence public.lec_set_ok2_id_seq, public.lec_set_fix_id_seq from public, anon, authenticated;
+alter table public.lec_set_ok2 enable row level security;
+alter table public.lec_set_fix enable row level security;
+
+-- 인정 답 맞추기 글(class-api.js Lec.setOk2NmV2 와 같은 셈): 단어 · 문법 = lec__set_norm(1~200 글자) · 구문 = lec__set_snorm_v2(1~400 글자) · 꼴이 틀리면 ''
+create or replace function public.lec__v2_ok2nm(p_kd text, p_v text) returns text
+language sql immutable set search_path = public as $$
+  select case when p_kd = 'gu'
+              then case when coalesce(char_length(p_v) between 1 and 400, false) then public.lec__set_snorm_v2(p_v) else '' end
+              else case when coalesce(char_length(p_v) between 1 and 200, false) then public.lec__set_norm(p_v) else '' end end
+$$;
+
+-- 이 답과 맞는 켜진 인정 답 id(그 맞추기 글의 마지막 줄이 되돌림이 아님) · 없으면 null
+create or replace function public.lec__v2_ok2id(p_set uuid, p_k text, p_kd text, p_v text) returns bigint
+language sql stable set search_path = public as $$
+  select y.id
+    from (select o.id, o.undo from public.lec_set_ok2 o
+           where o.set_id = p_set and o.k = p_k and o.nm = public.lec__v2_ok2nm(p_kd, p_v) and o.nm <> ''
+           order by o.id desc limit 1) y
+   where not y.undo
+$$;
+
+-- 세트의 켜진 인정 답 {열쇠: [맞춤 글 …]}(폰 채점용 · 넣은 차례)
+create or replace function public.lec__v2_ok2s(p_set uuid) returns jsonb
+language sql stable set search_path = public as $$
+  select coalesce(jsonb_object_agg(z.k, z.ms), '{}'::jsonb)
+    from (select y.k, jsonb_agg(y.m order by y.id) as ms
+            from (select distinct on (o.k, o.nm) o.k, o.nm, o.m, o.id, o.undo
+                    from public.lec_set_ok2 o
+                   where o.set_id = p_set
+                   order by o.k, o.nm, o.id desc) y
+           where not y.undo
+           group by y.k) z
+$$;
+
+-- 쌓인 오답 판 문항(lec_set_open_v2 의 q)에 인정 답 a2 를 실음(쓰기 문항 w · r 만 · 있을 때만 · 차례 그대로)
+create or replace function public.lec__v2_ok2q(p_q jsonb) returns jsonb
+language sql stable set search_path = public as $$
+  select coalesce(jsonb_agg(case when z.a2 is null then z.e else z.e || jsonb_build_object('a2', z.a2) end order by z.o), '[]'::jsonb)
+    from (select q.e, q.o,
+                 case when q.e ->> 'f' in ('w', 'r') then
+                   (select jsonb_agg(y.m order by y.id)
+                      from (select distinct on (x2.nm) x2.nm, x2.m, x2.id, x2.undo
+                              from public.lec_set_ok2 x2
+                             where x2.set_id::text = q.e ->> 's' and x2.k = q.e ->> 'k'
+                             order by x2.nm, x2.id desc) y
+                     where not y.undo)
+                 end as a2
+            from jsonb_array_elements(case when jsonb_typeof(p_q) = 'array' then p_q else '[]'::jsonb end) with ordinality as q(e, o)) z
+$$;
+
+-- 규칙 판정(읽을 때 · 인정 답 없이 · 서버가 매기지 않은 «기록만» 줄용): 단어 쓰기 sp = lec__set_spell_v2 · 구문 쓰기 se = lec__set_sent_v2 ·
+--   고르기 c = lec__set_norm 같음 · 쓰기 w · r = lec__set_match(200 글자까지)
+create or replace function public.lec__v2_r0(p_kd text, p_items jsonb, p_k text, p_f text, p_v text) returns boolean
+language sql stable set search_path = public as $$
+  select coalesce(case
+           when p_f = 'sp' and p_kd = 'voc' then public.lec__set_spell_v2(p_v, p_items, p_k)
+           when p_f = 'se' and p_kd = 'gu' then public.lec__set_sent_v2(p_v, it.e ->> 'e')
+           when p_f = 'c' and p_kd = 'gram' then public.lec__set_norm(p_v) = public.lec__set_norm(it.e ->> 'a')
+           when p_f in ('w', 'r') and p_kd in ('voc', 'gram')
+             then public.lec__set_match(p_v, case when p_kd = 'voc' then it.e ->> 'w' else it.e ->> 'a' end) and char_length(p_v) <= 200
+         end, false)
+    from (select (select y.e from jsonb_array_elements(case when jsonb_typeof(p_items) = 'array' then p_items else '[]'::jsonb end) as y(e)
+                   where y.e ->> 'k' = p_k limit 1) as e) it
+$$;
+
+-- 첫 답(새 기록 표 lec_set_log 에서 · 학생 · 문항마다 답한 때 차례 첫 줄): 스스로 확인(k) · 문항 없음(gone) · 이미 찬 칸(done) · 빈 답 뺌 ·
+--   b0 = 규칙 판정(채점 때 인정 답으로 맞은 줄 = 틀림 · 힌트 본 연습 답 = 틀림) · o2 = 지금 켜진 인정 답(쓰기 답만) · ok = b0 또는 o2 ·
+--   rno = 그 학생이 이 세트에 줄을 남긴 판을 판 연 때 차례로 센 번호
+create or replace function public.lec__v2_first(p_set uuid)
+returns table (sid text, k text, f text, v text, bk text, h boolean, b0 boolean, o2 bigint, ok boolean, rno integer, ta timestamptz)
+language sql stable set search_path = public as $$
+  with s as (select xs.id, xs.kind, xs.items from public.lec_set xs where xs.id = p_set),
+  rn as (select xl.sid, xl.b, row_number() over (partition by xl.sid order by min(xl.bo), xl.b)::integer as rno
+           from public.lec_set_log xl
+          where xl.set_id = p_set
+          group by xl.sid, xl.b),
+  fa as (select distinct on (xl.sid, xl.k) xl.id, xl.sid, xl.k, xl.f, xl.v, xl.bk, xl.h, xl.sr, xl.b, xl.ta
+           from public.lec_set_log xl
+          where xl.set_id = p_set and xl.k <> '' and xl.why not in ('gone', 'done')
+            and xl.f in ('sp', 'se', 'w', 'r', 'c') and btrim(xl.v) <> ''
+          order by xl.sid, xl.k, xl.ta, xl.bo, xl.b, xl.i, xl.id)
+  select fa.sid, fa.k, fa.f, fa.v, fa.bk, fa.h, x.b0, x.o2, x.b0 or x.o2 is not null, rn.rno, fa.ta
+    from fa
+    join s on true
+    join rn on rn.sid = fa.sid and rn.b = fa.b
+   cross join lateral (select (case when fa.sr is null then public.lec__v2_r0(s.kind, s.items, fa.k, fa.f, fa.v)
+                                    else fa.sr and not exists (select 1 from public.lec_set_fix fx where fx.log_id = fa.id and fx.g) end)
+                              and not (fa.h and fa.bk <> 'ev') as b0,
+                              case when fa.f in ('sp', 'se', 'w', 'r') and not (fa.h and fa.bk <> 'ev')
+                                   then public.lec__v2_ok2id(p_set, fa.k, s.kind, fa.v) end as o2) x
+$$;
+
+-- 쌓인 오답 z · y 다시 접기(lec__set_mark 의 z · y 셈 · 날짜 차례 · 같은 날 하나라도 틀리면 z = 그날 · y 지움 ·
+--   다 맞고 z 뒤 날이면 y 에 더함 · 두 날이면 z · y 지움): p_es = lec__v2_fix 의 줄 · p_f = 'cur'(고치기 전) 또는 'tg'(고친 뒤)
+create or replace function public.lec__v2_zy(p_es jsonb, p_sid text, p_f text) returns jsonb
+language plpgsql immutable set search_path = public as $$
+declare
+  v_x  record;
+  v_z  text := '';
+  v_y  text[] := '{}';
+begin
+  for v_x in
+    select e.v ->> 'day' as day, bool_and((e.v ->> p_f)::boolean) as ok
+      from jsonb_array_elements(p_es) as e(v)
+     where e.v ->> 'sid' = p_sid and (e.v ->> 'cd')::boolean
+     group by e.v ->> 'day'
+     order by 1
+  loop
+    if not v_x.ok then
+      v_z := v_x.day;
+      v_y := '{}';
+    elsif v_z <> '' and v_x.day > v_z then
+      if cardinality(v_y) >= 1 then
+        v_z := '';
+        v_y := '{}';
+      else
+        v_y := array[v_x.day];
+      end if;
+    end if;
+  end loop;
+  return jsonb_build_object('z', v_z, 'y', to_jsonb(v_y));
+end
+$$;
+
+-- 다시 셈(이 답도 맞음 · 되돌리기 뒤 · 그 세트 · 문항만): 쓰기 답 줄 = 옛 판 시험 칸(t · 옛 lec_set_ans) · v2 평가 줄(l · ev · 그 판 칸) ·
+--   v2 쌓인 오답 줄(l · due · 카드에 반영한 줄) · 지금 맞음(마지막 고침 줄 · 없으면 원래 판정) ≠ (규칙 또는 켜진 인정 답)이면 고침 줄 + 그 판 점수 ±1
+--   학생마다: kn(단어 시험 · 그 문항 마지막 답) · z · y(날짜 차례 다시 접기 · 지금 카드 = 고치기 전 접기일 때만) · 첫 판 f1 · 마지막 판 last_sc(고치기 전 값과 같을 때만) ·
+--   통과(없으면 넣고 ch.pa · 되돌려 조건이 깨지면 같은 때 넣은 것만 지움) · d · t · w · best · last_at 은 그대로 · 돌려줌 = 고친 줄 수
+create or replace function public.lec__v2_fix(p_set uuid, p_k text, p_ok2 bigint) returns integer
+language plpgsql volatile set search_path = public as $$
+declare
+  s      public.lec_set;
+  p      public.lec_set_prog;
+  v_e    record;
+  v_x    record;
+  v_cur  boolean;
+  v_tg   boolean;
+  v_id   bigint;
+  v_es   jsonb := '[]'::jsonb;
+  v_sids text[] := '{}';
+  v_sid  text;
+  v_n    integer := 0;
+  v_a    jsonb;
+  v_b    jsonb;
+  v_c    jsonb;
+  v_c0   jsonb;
+  v_kn   integer;
+  v_ok   boolean;
+  v_pa   text;
+  v_ch   jsonb;
+begin
+  select * into s from public.lec_set xs where xs.id = p_set;
+  if not found then
+    return 0;
+  end if;
+  -- 1) 이 문항의 쓰기 답 줄(학생 · 날 · 때 차례)
+  for v_e in
+    select z.* from (
+      select 't'::text as src, xt.id as tid, (u.o - 1)::integer as ix, null::text as lid, xt.sid, xt.kind as tk,
+             (xt.ans -> (u.o - 1)::integer ->> 'at')::timestamptz as at,
+             ((xt.ans -> (u.o - 1)::integer ->> 'at')::timestamptz at time zone 'Asia/Seoul')::date as day,
+             coalesce((xt.ans -> (u.o - 1)::integer ->> 'r')::boolean, false) as st,
+             coalesce((xt.ans -> (u.o - 1)::integer ->> 'r')::boolean, false) as b0,
+             false as hh, xt.ans -> (u.o - 1)::integer ->> 'v' as v, true as cd
+        from public.lec_set_try xt
+       cross join lateral jsonb_array_elements(xt.qs) with ordinality as u(q, o)
+       where ((xt.kind in ('test', 'drill') and xt.set_id = p_set) or (xt.kind = 'due' and u.q ->> 's' = p_set::text))
+         and u.q ->> 'k' = p_k and u.q ->> 'f' in ('w', 'r')
+         and jsonb_typeof(xt.ans -> (u.o - 1)::integer) = 'object'
+         and not exists (select 1 from public.lec_set_log y
+                          where y.b = xt.id and y.bk = 'ev' and y.i = u.o and y.why in ('', 'late'))
+      union all
+      select 'l', case when xl.bk = 'ev' then xl.b end, case when xl.bk = 'ev' then xl.i - 1 end, xl.id, xl.sid, xl.src,
+             xl.ta, xl.day,
+             case when xl.bk = 'ev' then coalesce(xl.sr, false) else xl.ok end,
+             coalesce(xl.sr, false) and not (xl.h and xl.bk <> 'ev')
+               and not exists (select 1 from public.lec_set_fix fx where fx.log_id = xl.id and fx.g),
+             xl.h and xl.bk <> 'ev', xl.v, xl.done
+        from public.lec_set_log xl
+       where xl.set_id = p_set and xl.k = p_k and xl.f in ('w', 'r')
+         and ((xl.bk = 'ev' and xl.why in ('', 'late')) or (xl.bk = 'due' and xl.done))
+    ) z
+    order by z.sid, z.day, z.at, z.src, z.lid
+  loop
+    if v_e.src = 't' then
+      select fx.ok into v_cur from public.lec_set_fix fx where fx.try_id = v_e.tid and fx.i = v_e.ix order by fx.id desc limit 1;
+    else
+      select fx.ok into v_cur from public.lec_set_fix fx where fx.log_id = v_e.lid order by fx.id desc limit 1;
+    end if;
+    if not found then
+      v_cur := v_e.st;
+    end if;
+    v_tg := v_e.b0 or (not v_e.hh and public.lec__v2_ok2id(p_set, p_k, s.kind, v_e.v) is not null);
+    v_id := null;
+    if v_cur is distinct from v_tg then
+      insert into public.lec_set_fix (ok2, try_id, i, log_id, ok)
+      values (p_ok2, case when v_e.src = 't' then v_e.tid end, case when v_e.src = 't' then v_e.ix end,
+              case when v_e.src = 'l' then v_e.lid end, v_tg)
+      returning id into v_id;
+      if v_e.tid is not null then
+        update public.lec_set_try xt set sc = xt.sc + case when v_tg then 1 else -1 end where xt.id = v_e.tid;
+      end if;
+      if not (v_e.sid = any (v_sids)) then
+        v_sids := v_sids || v_e.sid;
+      end if;
+      v_n := v_n + 1;
+    end if;
+    v_es := v_es || jsonb_build_object('sid', v_e.sid, 'tid', v_e.tid, 'tk', v_e.tk, 'day', v_e.day, 'at', v_e.at,
+                                       'cur', v_cur, 'tg', v_tg, 'cd', v_e.cd, 'fid', v_id);
+  end loop;
+  -- 2) 고친 줄이 있는 학생마다
+  foreach v_sid in array v_sids loop
+    v_ch := '{}'::jsonb;
+    select * into p from public.lec_set_prog xp where xp.sid = v_sid and xp.set_id = p_set for update;
+    if not found then
+      continue;
+    end if;
+    -- kn: 단어 시험에서 이 문항 마지막 답(뒤에 고르기 답이 있으면 그대로)
+    select e.v into v_a from jsonb_array_elements(v_es) as e(v)
+     where e.v ->> 'sid' = v_sid and e.v ->> 'tk' = 'test'
+     order by (e.v ->> 'at')::timestamptz desc limit 1;
+    if v_a is not null and (v_a ->> 'cur') is distinct from (v_a ->> 'tg') and (p_k = any (p.kn)) = (v_a ->> 'cur')::boolean
+       and not exists (select 1 from public.lec_set_try xt
+                        cross join lateral jsonb_array_elements(xt.qs) with ordinality as u(q, o)
+                        where xt.sid = v_sid and xt.set_id = p_set and xt.kind = 'test' and u.q ->> 'k' = p_k
+                          and jsonb_typeof(xt.ans -> (u.o - 1)::integer) = 'object'
+                          and (xt.ans -> (u.o - 1)::integer ->> 'at')::timestamptz > (v_a ->> 'at')::timestamptz) then
+      update public.lec_set_prog xp
+         set kn = case when (v_a ->> 'tg')::boolean then xp.kn || p_k else array_remove(xp.kn, p_k) end
+       where xp.sid = v_sid and xp.set_id = p_set
+      returning * into p;
+    end if;
+    -- z · y: 지금 카드가 고치기 전 접기와 같을 때만 고친 뒤 접기로(d · t · w 그대로)
+    v_b := public.lec__v2_zy(v_es, v_sid, 'cur');
+    v_c := public.lec__v2_zy(v_es, v_sid, 'tg');
+    v_c0 := case when jsonb_typeof(p.cards -> p_k) = 'object' then p.cards -> p_k else '{}'::jsonb end;
+    if v_b is distinct from v_c and coalesce(v_c0 ->> 'z', '') = v_b ->> 'z'
+       and (case when jsonb_typeof(v_c0 -> 'y') = 'array' then v_c0 -> 'y' else '[]'::jsonb end) = v_b -> 'y' then
+      v_c0 := v_c0 - 'z' - 'y';
+      if v_c ->> 'z' <> '' then
+        v_c0 := v_c0 || jsonb_build_object('z', v_c ->> 'z');
+        if jsonb_array_length(v_c -> 'y') > 0 then
+          v_c0 := v_c0 || jsonb_build_object('y', v_c -> 'y');
+        end if;
+      end if;
+      update public.lec_set_prog xp set cards = jsonb_set(xp.cards, array[p_k], v_c0) where xp.sid = v_sid and xp.set_id = p_set;
+    end if;
+    -- 점수가 바뀐 끝난 시험 · 드릴: 첫 판이면 f1 · 마지막 판이면 last_sc(고치기 전 값과 같을 때만)
+    for v_x in
+      select xt.id, xt.n, xt.sc, xt.done_at, sum(case when (e.v ->> 'tg')::boolean then 1 else -1 end)::integer as dl
+        from jsonb_array_elements(v_es) as e(v)
+        join public.lec_set_try xt on xt.id = (e.v ->> 'tid')::uuid
+       where e.v ->> 'sid' = v_sid and (e.v ->> 'fid') is not null
+         and xt.kind in ('test', 'drill') and xt.done_at is not null
+       group by xt.id, xt.n, xt.sc, xt.done_at
+    loop
+      update public.lec_set_prog xp set f1 = (v_x.sc * 100) / v_x.n
+       where xp.sid = v_sid and xp.set_id = p_set and xp.f1 = ((v_x.sc - v_x.dl) * 100) / v_x.n
+         and not exists (select 1 from public.lec_set_try y
+                          where y.sid = v_sid and y.set_id = p_set and y.kind in ('test', 'drill') and y.done_at is not null
+                            and (y.done_at, y.id) < (v_x.done_at, v_x.id));
+      update public.lec_set_prog xp set last_sc = v_x.sc
+       where xp.sid = v_sid and xp.set_id = p_set and xp.last_sc = v_x.sc - v_x.dl
+         and not exists (select 1 from public.lec_set_try y
+                          where y.sid = v_sid and y.set_id = p_set and y.kind in ('test', 'drill') and y.done_at is not null
+                            and (y.done_at, y.id) > (v_x.done_at, v_x.id));
+    end loop;
+    -- 통과: 끝난 판이 조건을 채우면(단어 시험 = 외운 수 · 드릴 · 뽑은 판 = 그 판 점수) 넣고 · 조건이 깨지면 고침이 넣은 때만 지움
+    select count(*) into v_kn from unnest(p.kn) as y(kk)
+     where y.kk in (select u.e ->> 'k' from jsonb_array_elements(s.items) as u(e));
+    v_ok := exists (select 1 from public.lec_set_try y
+                     where y.sid = v_sid and y.set_id = p_set and y.kind in ('test', 'drill') and y.done_at is not null
+                       and ((y.kind = 'test' and not y.drawn and v_kn >= public.lec__set_need(s.n))
+                            or ((y.kind = 'drill' or y.drawn) and y.sc >= public.lec__set_need(y.n))));
+    if p.pass_at is null and v_ok then
+      v_pa := now()::text;
+      update public.lec_set_prog xp set pass_at = v_pa::timestamptz where xp.sid = v_sid and xp.set_id = p_set;
+      v_ch := jsonb_build_object('pa', v_pa);
+    elsif p.pass_at is not null and not v_ok then
+      select fx.ch ->> 'pa' into v_pa
+        from public.lec_set_fix fx
+        join public.lec_set_ok2 o on o.id = fx.ok2
+       where o.set_id = p_set and fx.ch ? 'pa'
+         and (exists (select 1 from public.lec_set_try y where y.id = fx.try_id and y.sid = v_sid)
+              or exists (select 1 from public.lec_set_log y where y.id = fx.log_id and y.sid = v_sid))
+       order by fx.id desc limit 1;
+      if found and p.pass_at = v_pa::timestamptz then
+        update public.lec_set_prog xp set pass_at = null where xp.sid = v_sid and xp.set_id = p_set;
+      end if;
+    end if;
+    if v_ch <> '{}'::jsonb then
+      update public.lec_set_fix fx set ch = v_ch
+       where fx.id in (select (e.v ->> 'fid')::bigint from jsonb_array_elements(v_es) as e(v)
+                        where e.v ->> 'sid' = v_sid and (e.v ->> 'fid') is not null);
+    end if;
+  end loop;
+  return v_n;
+end
+$$;
+
+-- 켜기 전 기록 다시 매겨 견주기(재는 데에만 · 화면 0 · 밖에서 못 부름 = SQL Editor 에서만): 옛 판 시험 칸(쓰기 답 · v2 평가 줄이 없는 칸) ·
+--   n 칸 수 · same 그대로 · up 지금 인정 답으로 맞음이 될 틀린 답 · fixed 이미 고침 줄이 있는 칸 · sets 세트마다(up 많은 차례) · p_set = null 이면 전부
+create or replace function public.lec__v2_regrade(p_set uuid) returns jsonb
+language sql stable set search_path = public as $$
+  with e as (
+    select xs.id as set_id, xs.kind, xt.id as tid, (u.o - 1)::integer as ix, u.q ->> 'k' as k,
+           coalesce((xt.ans -> (u.o - 1)::integer ->> 'r')::boolean, false) as r,
+           xt.ans -> (u.o - 1)::integer ->> 'v' as v
+      from public.lec_set_try xt
+     cross join lateral jsonb_array_elements(xt.qs) with ordinality as u(q, o)
+      join public.lec_set xs on xs.id = case when xt.kind = 'due' then (u.q ->> 's')::uuid else xt.set_id end
+     where u.q ->> 'f' in ('w', 'r') and jsonb_typeof(xt.ans -> (u.o - 1)::integer) = 'object'
+       and (p_set is null or xs.id = p_set)
+       and not exists (select 1 from public.lec_set_log y where y.b = xt.id and y.bk = 'ev' and y.i = u.o and y.why in ('', 'late'))),
+  g as (
+    select e.set_id, e.r, e.r or public.lec__v2_ok2id(e.set_id, e.k, e.kind, e.v) is not null as r2,
+           exists (select 1 from public.lec_set_fix fx where fx.try_id = e.tid and fx.i = e.ix) as fixd
+      from e)
+  select jsonb_build_object(
+           'n', (select count(*) from g),
+           'same', (select count(*) from g where g.r = g.r2),
+           'up', (select count(*) from g where g.r2 and not g.r),
+           'fixed', (select count(*) from g where g.fixd),
+           'sets', coalesce((select jsonb_agg(jsonb_build_object('set', x.set_id, 'n', x.n, 'up', x.up) order by x.up desc, x.n desc, x.set_id)
+                               from (select g.set_id, count(*) as n, count(*) filter (where g.r2 and not g.r) as up from g group by g.set_id) x),
+                            '[]'::jsonb))
+$$;
+
+-- 선생님(원장님): 결과 표 = lec_set_staff 그대로 + pts(포인트별 반 첫 답 정답률 [{p, r(%) , n 문항 수, st 푼 학생 수}] · 낮은 차례 · 포인트 없는 세트 = []) +
+--   fx(인정 답으로 맞은 첫 답이 그 문항 첫 답의 5% 넘는 문항 [{k, w 문항 앞 40자, n 첫 답 수, f 인정 답으로 맞은 수}] · 문항 차례) · 숫자는 모두 첫 답 기준 · 서버에서 셈
+create or replace function public.lec_set_staff_v2(p_set uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  v_r    jsonb;
+  v_pts  jsonb;
+  v_fx   jsonb;
+begin
+  v_r := public.lec_set_staff(p_set);
+  if (v_r ->> 'ok') is distinct from 'true' then
+    return v_r;
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object('p', z.p, 'r', z.r, 'n', z.n, 'st', z.st) order by z.r, z.st desc, z.p collate "C"), '[]'::jsonb)
+    into v_pts
+    from (select ip.p, ip.n, count(distinct fa.sid)::integer as st,
+                 ((count(*) filter (where fa.ok)) * 100 / count(*))::integer as r
+            from (select btrim(u.e ->> 'p') as p, array_agg(u.e ->> 'k') as ks, count(*)::integer as n
+                    from public.lec_set xs
+                   cross join lateral jsonb_array_elements(xs.items) as u(e)
+                   where xs.id = p_set and xs.kind in ('gu', 'gram') and coalesce(btrim(u.e ->> 'p'), '') <> ''
+                   group by btrim(u.e ->> 'p')) ip
+            join public.lec__v2_first(p_set) fa on fa.k = any (ip.ks)
+           group by ip.p, ip.n) z;
+  select coalesce(jsonb_agg(jsonb_build_object('k', z.k, 'w', z.w, 'n', z.n, 'f', z.f) order by z.o), '[]'::jsonb)
+    into v_fx
+    from (select fa.k, count(*)::integer as n, (count(*) filter (where fa.ok and not fa.b0))::integer as f, min(u.o) as o,
+                 min(left(coalesce(case xs.kind when 'voc' then u.e ->> 'w' when 'gu' then u.e ->> 'e' else u.e ->> 's' end, ''), 40)) as w
+            from public.lec__v2_first(p_set) fa
+            join public.lec_set xs on xs.id = p_set
+           cross join lateral jsonb_array_elements(xs.items) with ordinality as u(e, o)
+           where u.e ->> 'k' = fa.k
+           group by fa.k) z
+   where z.f * 20 > z.n;
+  return v_r || jsonb_build_object('pts', v_pts, 'fx', v_fx);
+end
+$$;
+
+-- 선생님(원장님): 학생 하나가 이 세트에서 첫 답에 틀린 문항(규칙으로 틀린 첫 답 · 인정 답으로 맞게 한 것은 acc true 로 남김 · 문항 차례) ·
+--   k · n 번호 · q 문제(단어 = 뜻 · 구문 = 해석 · 문법 = 문장) · a 바른 답 · v 첫 답 · f 꼴 · no 몇 번째 판 · at 답한 때 · acc · can(이 답도 맞음 단추 · 쓰기 답 · 힌트 안 봄)
+create or replace function public.lec_set_wrong1_v2(p_set uuid, p_sid text)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  s      public.lec_set;
+  v_rows jsonb;
+begin
+  if not public.lec_set_is_admin() then
+    return jsonb_build_object('ok', false, 'err', 'forbidden');
+  end if;
+  select * into s from public.lec_set xs where xs.id = p_set;
+  if not found then
+    return jsonb_build_object('ok', false, 'err', 'none');
+  end if;
+  if coalesce(btrim(p_sid), '') = '' then
+    return jsonb_build_object('ok', false, 'err', 'input');
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'k', fa.k, 'n', coalesce(u.e ->> 'n', ''),
+           'q', case s.kind when 'voc' then u.e ->> 'm' when 'gu' then u.e ->> 't' else u.e ->> 's' end,
+           'a', case s.kind when 'voc' then u.e ->> 'w' when 'gu' then u.e ->> 'e' else u.e ->> 'a' end,
+           'v', fa.v, 'f', fa.f, 'no', fa.rno, 'at', fa.ta, 'acc', fa.o2 is not null,
+           'can', fa.f in ('sp', 'se', 'w', 'r') and not (fa.h and fa.bk <> 'ev')) order by u.o), '[]'::jsonb)
+    into v_rows
+    from public.lec__v2_first(p_set) fa
+   cross join lateral jsonb_array_elements(s.items) with ordinality as u(e, o)
+   where fa.sid = p_sid and not fa.b0 and u.e ->> 'k' = fa.k;
+  return jsonb_build_object('ok', true, 'set', s.id, 'sid', p_sid, 'items', v_rows);
+end
+$$;
+
+-- 선생님(원장님): 이 답도 맞음(p_on true) · 되돌리기(false) = 인정 답 표에 줄 하나 더(문항 칸 · 열쇠 그대로) → 그 세트 · 문항 다시 셈 ·
+--   이미 그 상태면 again(줄 0) · 고르기 문항 · 없는 문항 · 빈 답 = input · 돌려줌 n = 고친 지난 기록 수
+create or replace function public.lec_set_ok2_v2(p_set uuid, p_k text, p_v text, p_on boolean)
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  s      public.lec_set;
+  v_it   jsonb;
+  v_nm   text;
+  v_cur  public.lec_set_ok2;
+  v_id   bigint;
+  v_n    integer;
+  v_who  text;
+begin
+  if not public.lec_set_is_admin() then
+    return jsonb_build_object('ok', false, 'err', 'forbidden');
+  end if;
+  select * into s from public.lec_set xs where xs.id = p_set;
+  if not found then
+    return jsonb_build_object('ok', false, 'err', 'none');
+  end if;
+  select y.e into v_it from jsonb_array_elements(s.items) as y(e) where y.e ->> 'k' = p_k limit 1;
+  v_nm := public.lec__v2_ok2nm(s.kind, p_v);
+  if v_it is null or p_on is null or v_nm = '' or (s.kind = 'gram' and public.lec__set_opts(v_it ->> 's') is not null) then
+    return jsonb_build_object('ok', false, 'err', 'input');
+  end if;
+  perform pg_advisory_xact_lock(hashtext('lec_v2_ok2|' || p_set::text));
+  select * into v_cur from public.lec_set_ok2 o where o.set_id = p_set and o.k = p_k and o.nm = v_nm order by o.id desc limit 1;
+  if (found and not v_cur.undo) = p_on then
+    return jsonb_build_object('ok', true, 'on', p_on, 'n', 0, 'again', true);
+  end if;
+  v_who := lower(btrim(coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'email', '')));
+  insert into public.lec_set_ok2 (set_id, k, m, nm, who, undo)
+  values (p_set, p_k, left(btrim(p_v), 400), v_nm, v_who, not p_on)
+  returning id into v_id;
+  v_n := public.lec__v2_fix(p_set, p_k, v_id);
+  return jsonb_build_object('ok', true, 'on', p_on, 'n', v_n, 'again', false);
+end
+$$;
+
+-- 권한: 속 함수 = 밖에서 못 부름 · 선생님 함수 셋 = 로그인한 사람만(안에서 원장님 확인 · 결과 표 lec_set_staff 와 같음)
+revoke all on function public.lec__v2_ok2nm(text, text), public.lec__v2_ok2id(uuid, text, text, text), public.lec__v2_ok2s(uuid),
+  public.lec__v2_ok2q(jsonb), public.lec__v2_r0(text, jsonb, text, text, text), public.lec__v2_first(uuid),
+  public.lec__v2_zy(jsonb, text, text), public.lec__v2_fix(uuid, text, bigint), public.lec__v2_regrade(uuid)
+  from public, anon, authenticated;
+revoke all on function public.lec_set_staff_v2(uuid), public.lec_set_wrong1_v2(uuid, text), public.lec_set_ok2_v2(uuid, text, text, boolean)
+  from public, anon;
+grant execute on function public.lec_set_staff_v2(uuid), public.lec_set_wrong1_v2(uuid, text), public.lec_set_ok2_v2(uuid, text, text, boolean)
+  to authenticated;
+
+-- 열셋째 스스로 점검(V2-5): 선생님 함수 막기(로그인 없음 · 다른 계정) · 옛 판 단어 시험 틀린 쓰기 답 → 이 답도 맞음 → 그 판 점수 · kn · 통과 · f1 · z 다시 셈 ·
+--   원래 답 줄 · 세트 문항 · 다른 세트 그대로 · 되돌리기 = 처음과 같음(두 번 왕복) · 첫 답은 새 기록 표에서만 · v2 드릴 첫 답 · 포인트별 정답률(낮은 차례) ·
+--   포인트 없는 세트 = 줄 없음 · 5% 표시 · 고르기 문항 = input · 구문 외우기 첫 답(뒤에 맞혀도 남음) · 구문 «/» 안 붙음 · 폰에 실은 인정 답 = 서버 채점 ·
+--   평가 여는 응답에 인정 답 0 · 켜기 전 기록 견주기 · 권한
+-- 넣은 세트 · 열쇠 · 동의 · 줄 · 스위치는 끝에 되돌려 남지 않습니다
+do $$
+declare
+  r       jsonb;
+  r2      jsonb;
+  v_t     text;
+  v_ks    text := replace(gen_random_uuid()::text, '-', '');
+  v_ka    text;
+  v_kb    text;
+  v_sa    text := 'selftest-v5a|점검가';
+  v_sb    text := 'selftest-v5b|점검나';
+  v_cl    text;
+  v_sv    uuid;
+  v_sg    uuid;
+  v_sr    uuid;
+  v_sx    uuid;
+  v_try   uuid;
+  v_trx   uuid;
+  v_b     uuid;
+  v_rows  jsonb;
+  v_snap  jsonb;
+  v_snx   jsonb;
+  v_d     date := public.lec__set_today();
+begin
+  begin
+    -- 1) 준비: 스위치(log · eval 켬) · 학생 둘(기록 동의) · 단어 세트 둘 · 문법(포인트 둘) · 구문(포인트)
+    update public.lec_v2_cfg set log = true, eval = true, lim = 3000 where id = 1;
+    insert into public.lec_v2_cfg (id, log, eval) values (1, true, true) on conflict (id) do nothing;
+    v_cl := 'selftest-v5-' || v_ks;
+    v_ka := 'selftest' || v_ks || 'v5a';
+    v_kb := 'selftest' || v_ks || 'v5b';
+    insert into public.lec_key (kh, sid, rid, pin, sname, cls) values
+      (public.lec__kh(v_ka), v_sa, 'selftest-v5a', '', '점검가', array[v_cl]),
+      (public.lec__kh(v_kb), v_sb, 'selftest-v5b', '', '점검나', array[v_cl]);
+    insert into public.lec_consent (sid, choice, ver) values
+      (v_sa, 'agree', public.lec__consent_ver()), (v_sb, 'agree', public.lec__consent_ver());
+    insert into public.lec_set (kind, title, class_ids, posted_on, items, n) values
+      ('voc', '점검 v5 단어', array[v_cl], v_d - 1, '[{"k": "k1", "n": "1", "w": "colour", "m": "색"}]'::jsonb, 1)
+    returning id into v_sv;
+    insert into public.lec_set (kind, title, class_ids, posted_on, items, n) values
+      ('voc', '점검 v5 다른 단어', array[v_cl], v_d - 1,
+       '[{"k": "k1", "n": "1", "w": "color", "m": "색깔"}, {"k": "k2", "n": "2", "w": "green", "m": "초록"}]'::jsonb, 2)
+    returning id into v_sx;
+    insert into public.lec_set (kind, title, class_ids, posted_on, items, n) values
+      ('gram', '점검 v5 문법', array[v_cl], v_d - 1,
+       '[{"k": "k1", "n": "1", "s": "He (go / goes) home.", "a": "goes", "x": "", "p": "수 일치"},
+         {"k": "k2", "n": "2", "s": "I [is] happy.", "a": "am", "x": "", "p": "be동사"}]'::jsonb, 2)
+    returning id into v_sg;
+    insert into public.lec_set (kind, title, class_ids, posted_on, items, n) values
+      ('gu', '점검 v5 구문', array[v_cl], v_d - 1,
+       '[{"k": "k1", "n": "1", "e": "I / am a boy.", "t": "나는 소년이다.", "p": "be동사"}]'::jsonb, 1)
+    returning id into v_sr;
+
+    -- 2) 선생님 함수 막기: 로그인 없음 · 바깥 사람 · 학생(anon) = forbidden
+    foreach v_t in array array['', '{"role":"authenticated","email":"selftest-outsider@gmail.com"}', '{"role":"anon"}'] loop
+      perform set_config('request.jwt.claims', v_t, true);
+      if (public.lec_set_staff_v2(v_sv) ->> 'err') is distinct from 'forbidden'
+         or (public.lec_set_wrong1_v2(v_sv, v_sa) ->> 'err') is distinct from 'forbidden'
+         or (public.lec_set_ok2_v2(v_sv, 'k1', 'color', true) ->> 'err') is distinct from 'forbidden' then
+        raise exception '점검 실패(V2-5 선생님 함수 막기 «%»)', v_t;
+      end if;
+    end loop;
+    perform set_config('request.jwt.claims', '{"role":"authenticated","email":"benjamin@his.kr"}', true);
+
+    -- 3) 옛 판 단어 시험: 점검가 «color» 틀림 · 점검나 «Colour» 맞음 · 다른 세트에서 점검가 «colr» · «grn» 틀림
+    v_try := (public.lec_set_test(v_ka, v_sv) ->> 'try')::uuid;
+    r := public.lec_set_ans(v_ka, v_try, 0, 'color');
+    r2 := public.lec_set_ans(v_kb, (public.lec_set_test(v_kb, v_sv) ->> 'try')::uuid, 0, 'Colour');
+    if (r ->> 'r') is distinct from 'false' or (r2 ->> 'r') is distinct from 'true' then
+      raise exception '점검 실패(V2-5 준비 · 옛 판 시험): % / %', left(r::text, 300), left(r2::text, 300);
+    end if;
+    v_trx := (public.lec_set_test(v_ka, v_sx) ->> 'try')::uuid;
+    for g in 0 .. 1 loop
+      perform public.lec_set_ans(v_ka, v_trx, g,
+                                 case (select xt.qs -> g ->> 'k' from public.lec_set_try xt where xt.id = v_trx) when 'k1' then 'colr' else 'grn' end);
+    end loop;
+    select jsonb_build_object(
+             't', (select jsonb_agg(to_jsonb(xt) order by xt.id) from public.lec_set_try xt where xt.sid in (v_sa, v_sb)),
+             'p', (select jsonb_agg(to_jsonb(xp) order by xp.sid, xp.set_id) from public.lec_set_prog xp where xp.sid in (v_sa, v_sb)),
+             's', (select jsonb_agg(to_jsonb(xs) order by xs.id) from public.lec_set xs where xs.class_ids = array[v_cl]))
+      into v_snap;
+    select jsonb_build_object(
+             't', (select jsonb_agg(to_jsonb(xt) order by xt.id) from public.lec_set_try xt where xt.set_id = v_sx),
+             'p', (select jsonb_agg(to_jsonb(xp) order by xp.sid) from public.lec_set_prog xp where xp.set_id = v_sx))
+      into v_snx;
+
+    -- 4) 이 답도 맞음(앞뒤 빈칸 · 대문자가 달라도 같은 답): 그 판 점수 1 · kn · 통과 · f1 · last_sc · z 지움(w 그대로 · d · t 안 되살림) ·
+    --    원래 답 줄(r false) · 세트 문항 · 다른 세트 그대로 · 같은 것을 또 누르면 again
+    r := public.lec_set_ok2_v2(v_sv, 'k1', ' COLOR ', true);
+    select to_jsonb(xp) into r2 from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sv;
+    if (r ->> 'ok') is distinct from 'true' or (r ->> 'n') is distinct from '1'
+       or (select xt.sc from public.lec_set_try xt where xt.id = v_try) is distinct from 1
+       or (select xt.ans #>> '{0,r}' from public.lec_set_try xt where xt.id = v_try) is distinct from 'false'
+       or (r2 ->> 'pass_at') is null or (r2 ->> 'f1') is distinct from '100' or (r2 ->> 'last_sc') is distinct from '1'
+       or (r2 -> 'kn') is distinct from '["k1"]'::jsonb or (r2 #> '{cards,k1}') is distinct from '{"w": 1}'::jsonb
+       or (select jsonb_agg(to_jsonb(xs) order by xs.id) from public.lec_set xs where xs.class_ids = array[v_cl]) is distinct from (v_snap -> 's')
+       or jsonb_build_object(
+            't', (select jsonb_agg(to_jsonb(xt) order by xt.id) from public.lec_set_try xt where xt.set_id = v_sx),
+            'p', (select jsonb_agg(to_jsonb(xp) order by xp.sid) from public.lec_set_prog xp where xp.set_id = v_sx)) is distinct from v_snx
+       or (public.lec_set_ok2_v2(v_sv, 'k1', 'color', true) ->> 'again') is distinct from 'true' then
+      raise exception '점검 실패(V2-5 이 답도 맞음 · 다시 셈): % / %', left(r::text, 300), left(r2::text, 600);
+    end if;
+
+    -- 5) 되돌리기 = 처음과 같음 · 두 번 왕복해도 같음 · 되돌림도 줄 하나 더(인정 답 표 넷 · 되돌림 둘)
+    for g in 1 .. 2 loop
+      if g = 2 then
+        perform public.lec_set_ok2_v2(v_sv, 'k1', 'color', true);
+      end if;
+      r := public.lec_set_ok2_v2(v_sv, 'k1', 'Color', false);
+      if (r ->> 'n') is distinct from '1' or jsonb_build_object(
+            't', (select jsonb_agg(to_jsonb(xt) order by xt.id) from public.lec_set_try xt where xt.sid in (v_sa, v_sb)),
+            'p', (select jsonb_agg(to_jsonb(xp) order by xp.sid, xp.set_id) from public.lec_set_prog xp where xp.sid in (v_sa, v_sb)),
+            's', (select jsonb_agg(to_jsonb(xs) order by xs.id) from public.lec_set xs where xs.class_ids = array[v_cl])) is distinct from v_snap then
+        raise exception '점검 실패(V2-5 되돌리기 %번째): %', g, left(r::text, 300);
+      end if;
+    end loop;
+    if (select count(*) from public.lec_set_ok2 o where o.set_id = v_sv) <> 4
+       or (select count(*) from public.lec_set_ok2 o where o.set_id = v_sv and o.undo) <> 2 then
+      raise exception '점검 실패(V2-5 인정 답 줄)';
+    end if;
+
+    -- 6) 첫 답은 새 기록 표에서만(옛 판 답 = 목록 0 · 포인트 없는 단어 세트 = 줄 없음) · v2 드릴: 점검가 k1 «go» · k2 «im» 틀림 · 점검나 둘 다 맞음
+    if (public.lec_set_wrong1_v2(v_sv, v_sa) -> 'items') is distinct from '[]'::jsonb
+       or (public.lec_set_staff_v2(v_sv) -> 'pts') is distinct from '[]'::jsonb then
+      raise exception '점검 실패(V2-5 옛 판 답 · 포인트 없는 세트)';
+    end if;
+    foreach v_t in array array[v_ka, v_kb] loop
+      v_b := (public.lec_set_test_v2(v_t, v_sg) ->> 'try')::uuid;
+      select jsonb_agg(jsonb_build_object('id', md5('v5d' || v_t || u.o), 'b', v_b, 'i', u.o, 'ago', 100,
+                                          'v', case when v_t = v_ka then (case u.q ->> 'k' when 'k1' then 'go' else 'im' end)
+                                                    else (case u.q ->> 'k' when 'k1' then 'goes' else 'am' end) end) order by u.o)
+        into v_rows
+        from public.lec_set_try xt cross join lateral jsonb_array_elements(xt.qs) with ordinality as u(q, o)
+       where xt.id = v_b;
+      r := public.lec_set_send_v2(v_t, v_b, v_rows);
+      if (r ->> 'done') is distinct from 'true' then
+        raise exception '점검 실패(V2-5 준비 · v2 드릴): %', left(r::text, 300);
+      end if;
+      if v_t = v_ka then
+        v_try := v_b;
+      end if;
+    end loop;
+    r := public.lec_set_staff_v2(v_sg);
+    r2 := public.lec_set_wrong1_v2(v_sg, v_sa);
+    if (r ->> 'ok') is distinct from 'true' or not (r ? 'rows')
+       or (r -> 'pts') is distinct from '[{"p": "be동사", "r": 50, "n": 1, "st": 2}, {"p": "수 일치", "r": 50, "n": 1, "st": 2}]'::jsonb
+       or (r -> 'fx') is distinct from '[]'::jsonb or jsonb_array_length(r2 -> 'items') <> 2
+       or (r2 #>> '{items,0,k}') is distinct from 'k1' or (r2 #>> '{items,0,v}') is distinct from 'go' or (r2 #>> '{items,0,can}') is distinct from 'false'
+       or (r2 #>> '{items,1,k}') is distinct from 'k2' or (r2 #>> '{items,1,a}') is distinct from 'am' or (r2 #>> '{items,1,can}') is distinct from 'true'
+       or (r2 #>> '{items,1,no}') is distinct from '1' or (r2 #>> '{items,1,acc}') is distinct from 'false'
+       or (public.lec_set_wrong1_v2(v_sg, v_sb) -> 'items') is distinct from '[]'::jsonb then
+      raise exception '점검 실패(V2-5 첫 답 · 포인트): % / %', left(r::text, 400), left(r2::text, 400);
+    end if;
+
+    -- 7) 문법 쓰기 답 인정 → 그 판 점수 · 첫 답 정답률(낮은 차례) · 5% 표시 · z 지움 → 되돌리면 처음 · 고르기 문항 · 없는 문항 = input
+    r := public.lec_set_ok2_v2(v_sg, 'k2', 'Im', true);
+    r2 := public.lec_set_staff_v2(v_sg);
+    if (r ->> 'n') is distinct from '1' or (select xt.sc from public.lec_set_try xt where xt.id = v_try) is distinct from 1
+       or (r2 -> 'pts') is distinct from '[{"p": "수 일치", "r": 50, "n": 1, "st": 2}, {"p": "be동사", "r": 100, "n": 1, "st": 2}]'::jsonb
+       or (r2 -> 'fx') is distinct from '[{"k": "k2", "w": "I [is] happy.", "n": 2, "f": 1}]'::jsonb
+       or (public.lec_set_wrong1_v2(v_sg, v_sa) #>> '{items,1,acc}') is distinct from 'true'
+       or (select xp.cards -> 'k2' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sg) ? 'z' then
+      raise exception '점검 실패(V2-5 문법 인정): % / %', left(r::text, 300), left(r2::text, 400);
+    end if;
+    r := public.lec_set_ok2_v2(v_sg, 'k2', 'im', false);
+    if (r ->> 'n') is distinct from '1' or (select xt.sc from public.lec_set_try xt where xt.id = v_try) is distinct from 0
+       or (public.lec_set_staff_v2(v_sg) -> 'fx') is distinct from '[]'::jsonb
+       or (select xp.cards #>> '{k2,z}' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sg) is distinct from to_char(v_d, 'YYYY-MM-DD')
+       or (public.lec_set_ok2_v2(v_sg, 'k1', 'go', true) ->> 'err') is distinct from 'input'
+       or (public.lec_set_ok2_v2(v_sg, 'k9', 'x', true) ->> 'err') is distinct from 'input' then
+      raise exception '점검 실패(V2-5 문법 되돌리기 · 고르기)';
+    end if;
+
+    -- 8) 구문 외우기: 점검가 첫 답 «I am boy» 틀림 → 같은 판에서 맞힘 → 목록에 남음 · 인정 → 세트 문장 그대로(«/» 안 붙음) ·
+    --    점검나 판 열기에 인정 답 · 점검나 «i am boy.» = 서버도 맞음(폰 셈 lec__set_snorm_v2 와 같음) · 되돌리면 첫 답 틀림
+    v_b := (public.lec_set_open_v2(v_ka, v_sr, 'mem') ->> 'b')::uuid;
+    r := public.lec_set_log_v2(v_ka, jsonb_build_array(
+           jsonb_build_object('id', md5('v5g1' || v_ks), 'b', v_b, 'i', 1, 'k', 'k1', 'f', 'se', 'v', 'I am boy', 'ago', 2000),
+           jsonb_build_object('id', md5('v5g2' || v_ks), 'b', v_b, 'i', 2, 'k', 'k1', 'f', 'se', 'v', 'I am a boy.', 'ago', 1000)));
+    r2 := public.lec_set_wrong1_v2(v_sr, v_sa);
+    if jsonb_array_length(r -> 'got') <> 2 or jsonb_array_length(r2 -> 'items') <> 1 or (r2 #>> '{items,0,v}') is distinct from 'I am boy'
+       or (r2 #>> '{items,0,a}') is distinct from 'I / am a boy.' or (public.lec_set_open_v2(v_kb, v_sr, 'mem') ? 'ok2') then
+      raise exception '점검 실패(V2-5 구문 첫 답): %', left(r2::text, 400);
+    end if;
+    r := public.lec_set_ok2_v2(v_sr, 'k1', 'I am boy', true);
+    r2 := public.lec_set_open_v2(v_kb, v_sr, 'mem');
+    v_b := (r2 ->> 'b')::uuid;
+    if (r ->> 'n') is distinct from '0' or (r2 -> 'ok2') is distinct from '{"k1": ["I am boy"]}'::jsonb
+       or (select xs.items from public.lec_set xs where xs.id = v_sr)
+          is distinct from '[{"k": "k1", "n": "1", "e": "I / am a boy.", "t": "나는 소년이다.", "p": "be동사"}]'::jsonb
+       or public.lec__set_snorm_v2('i am boy.') is distinct from public.lec__set_snorm_v2('I am boy') then
+      raise exception '점검 실패(V2-5 구문 인정 · 폰에 실음): %', left(r2::text, 400);
+    end if;
+    r := public.lec_set_log_v2(v_kb, jsonb_build_array(
+           jsonb_build_object('id', md5('v5g3' || v_ks), 'b', v_b, 'i', 1, 'k', 'k1', 'f', 'se', 'v', 'i am boy.', 'pr', true, 'ago', 10)));
+    r2 := public.lec_set_staff_v2(v_sr);
+    if (select xl.sr::text || xl.ok::text from public.lec_set_log xl where xl.id = md5('v5g3' || v_ks)) is distinct from 'truetrue'
+       or not exists (select 1 from public.lec_set_fix fx where fx.log_id = md5('v5g3' || v_ks) and fx.g)
+       or (r2 -> 'pts') is distinct from '[{"p": "be동사", "r": 100, "n": 1, "st": 2}]'::jsonb
+       or (r2 #>> '{fx,0,k}') is distinct from 'k1' then
+      raise exception '점검 실패(V2-5 구문 인정 뒤 채점): % / %', left(r::text, 300), left(r2::text, 400);
+    end if;
+    perform public.lec_set_ok2_v2(v_sr, 'k1', 'i am boy', false);
+    if (public.lec_set_staff_v2(v_sr) -> 'pts') is distinct from '[{"p": "be동사", "r": 0, "n": 1, "st": 2}]'::jsonb then
+      raise exception '점검 실패(V2-5 구문 되돌리기)';
+    end if;
+
+    -- 9) 다른 세트 인정(점검가 «colr») = 그 세트만(앞 세트 진도 그대로) · 다시 연 평가 응답에 인정 답 0 · 켜기 전 기록 견주기(맞음이 될 것 1 · 이미 고친 것 1)
+    r := public.lec_set_ok2_v2(v_sx, 'k1', 'colr', true);
+    r2 := public.lec_set_test_v2(v_ka, v_sx);
+    if (r ->> 'n') is distinct from '1' or (r2 ->> 'ok') is distinct from 'true'
+       or jsonb_path_exists(r2, '$.**.a2') or r2 ? 'ok2' or r2::text like '%colr%'
+       or (public.lec__v2_regrade(v_sx) ->> 'up') is distinct from '1' or (public.lec__v2_regrade(v_sx) ->> 'fixed') is distinct from '1'
+       or not exists (select 1 from jsonb_array_elements(v_snap -> 'p') as e(v)
+                       where e.v = (select to_jsonb(xp) from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sv)) then
+      raise exception '점검 실패(V2-5 다른 세트 · 평가 응답 · 견주기): % / %', left(r::text, 300), left(r2::text, 300);
+    end if;
+
+    -- 10) 권한: 선생님 함수 셋 = 로그인한 사람만 · 표 둘 = 아무도 · 속 함수 = 밖에서 못 부름
+    if has_function_privilege('anon', 'public.lec_set_staff_v2(uuid)', 'execute')
+       or has_function_privilege('anon', 'public.lec_set_wrong1_v2(uuid, text)', 'execute')
+       or has_function_privilege('anon', 'public.lec_set_ok2_v2(uuid, text, text, boolean)', 'execute')
+       or not has_function_privilege('authenticated', 'public.lec_set_staff_v2(uuid)', 'execute')
+       or not has_function_privilege('authenticated', 'public.lec_set_wrong1_v2(uuid, text)', 'execute')
+       or not has_function_privilege('authenticated', 'public.lec_set_ok2_v2(uuid, text, text, boolean)', 'execute')
+       or has_function_privilege('authenticated', 'public.lec__v2_fix(uuid, text, bigint)', 'execute')
+       or has_function_privilege('authenticated', 'public.lec__v2_regrade(uuid)', 'execute')
+       or has_function_privilege('anon', 'public.lec__v2_first(uuid)', 'execute') then
+      raise exception '점검 실패(V2-5 권한)';
+    end if;
+    select string_agg(c.relname || ' ' || u.rl, ', ') into v_t
+      from pg_class c
+     cross join unnest(array['anon', 'authenticated']) as u(rl)
+     where c.relnamespace = 'public'::regnamespace
+       and c.relname in ('lec_set_ok2', 'lec_set_fix')
+       and (has_table_privilege(u.rl, c.oid, 'select,insert,update,delete') or not c.relrowsecurity);
+    if v_t is not null then
+      raise exception '점검 실패(V2-5 표 권한): %', v_t;
+    end if;
+    perform set_config('request.jwt.claims', '', true);
+
+    raise exception 'LEC_SELFTEST_OK';
+  exception when others then
+    if sqlerrm <> 'LEC_SELFTEST_OK' then raise; end if;
+  end;
+end
+$$;
+
 notify pgrst, 'reload schema';
 
 select '강의실 준비 끝' as "결과",
-       '점검 12/12 통과' as "점검",
+       '점검 13/13 통과' as "점검",
        (select count(*) from public.lec__roster()) as "학생 수",
        (select count(*) from public.lec_lecture) as "강의 수",
        public.lec__pdf_store() as "PDF 저장 곳",

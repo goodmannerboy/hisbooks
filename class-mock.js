@@ -4635,6 +4635,7 @@
   /* lec__v2_ev: 평가 판 빈 칸만 채우기 · 채점은 lec_set_ans 와 같음 */
   function v2Ev(d, sid, cl, tryId, rows) {
     var X = L(), t = null, i, e, vi, ta, v, why, r, q, kk, p, was, n = 0, s, kn, bo, now;
+    var o2 = null;   /* V2-5 */
     for (i = 0; i < d.stry.length; i += 1) {
       if (d.stry[i].id === tryId && d.stry[i].sid === sid && (d.stry[i].kind === 'test' || d.stry[i].kind === 'drill')) t = d.stry[i];
     }
@@ -4649,18 +4650,25 @@
       v = e.v;
       why = '';
       r = null;
+      o2 = null;   /* V2-5 */
       q = vi < t.n ? t.qs[vi] : null;
       if (!q || sp(v) === '') why = 'gone';
       else if (isObj(t.ans[vi]) || t.done_at != null) why = 'done';
       else {
         r = q.f === 'c' ? X.setNorm(v) === X.setNorm(q.a) : X.setMatch(v, q.a);
         r = !!r && cps(v) <= 200;
+        /* V2-5: 쓰기 답이 틀렸으면 켜진 인정 답 */
+        if (!r && (q.f === 'w' || q.f === 'r')) {
+          o2 = v5Id(d, t.set_id, str(q.k), t.kind === 'test' ? 'voc' : 'gram', v);
+          r = o2 !== null;
+        }
       }
       kk = q ? str(q.k) : '';
       if (!v2Put(d, { id: e.id, sid: sid, cl: cl, b: t.id, bk: 'ev', i: vi + 1, n: null, set_id: t.set_id, k: kk, f: q ? str(q.f) : '',
                       v: v, h: e.h, ms: e.ms, nx: e.nx, om: e.om, pr: e.pr, sr: r, ok: !!r, src: t.kind, v1: false, ago: e.ago,
                       ta: ta, day: L().isoDay(ta), pt: e.pt, st: e.st, bo: bo, why: why })) continue;
       if (why !== '') continue;
+      if (o2 !== null) v5G(d, o2, e.id);   /* V2-5: 채점 때 인정 답으로 맞음 표시 */
       now = sNow();
       t.ans[vi] = { v: v, r: r, at: pgts(ta) };
       t.got += 1;
@@ -4793,6 +4801,8 @@
         no += 1;
         rn = v2NewRun(d, k.sid, a.p_set, 'mem', no, [], v2Seed(k.sid + '|' + a.p_set + '|' + no));
       }
+      o = v5Map(d, a.p_set);   /* V2-5: 켜진 인정 답(있을 때만) */
+      if (!v2Empty(o)) r.ok2 = o;
       return v2Merge(r, v2Head(rn));
     }
     rn = v2Run(d, k.sid, function (y) { return y.md === 'due' && y.day === day && y.end_n == null && v2Empty(y.shut); });
@@ -4836,6 +4846,7 @@
                a: s.kind === 'voc' ? str(it.w) : str(it.a), x: s.kind === 'voc' ? '' : str(it.x),
                pt: s.kind === 'voc' ? '' : str(it.p) });
     }
+    q = v5Q(d, q);   /* V2-5: 쓰기 문항에 켜진 인정 답 a2(있을 때만) */
     return v2Merge({ ok: true, n: q.length, q: q, title: '쌓인 오답' }, v2Head(rn));
   }
 
@@ -4843,6 +4854,7 @@
     v2Gone(); v2Tabs(d);
     var X = L(), k, rows = a.p_rows, cl, lim, sp2, bs = [], i, j, b, rn, tr, rws, e, s, it, q, ta, why, sr, okr, src, v1, f, v,
         setId, nw = [], news, lday = null, lcnt = 0, sets = [], me = {}, mi, mn, bo, x;
+    var o2 = null, pu;   /* V2-5 */
     k = findKey(d, a.p_key);
     if (!k) return { ok: false, err: 'key' };
     if (!agreed(d, k.sid)) return { ok: false, err: 'consent' };
@@ -4929,11 +4941,19 @@
             }
           }
         }
+        /* V2-5: 쓰기 답(sp · se · w · r)이 틀렸으면 켜진 인정 답(400자 넘는 답 빼고) */
+        o2 = null;
+        if (why === '' && sr === false && (f === 'sp' || f === 'se' || f === 'w' || f === 'r') && !e.lg) {
+          o2 = v5Id(d, setId, e.k, s.kind, v);
+          if (o2 !== null) { sr = true; okr = !e.h; }
+        }
         /* 평가를 연 세트(닫은 뒤 답 · 지금 열린 시험 · 드릴) = 기록만 */
         if (why === '' && setId != null && ((has(rn.shut, setId) && ta >= tms(rn.shut[setId])) || sBusy(d, k.sid, setId))) why = 'shut';
-        if (v2Put(d, { id: e.id, sid: k.sid, cl: cl, b: rn.id, bk: rn.md, i: e.i, n: e.n, set_id: setId, k: e.k, f: str(f), v: v, h: e.h,
+        pu = v2Put(d, { id: e.id, sid: k.sid, cl: cl, b: rn.id, bk: rn.md, i: e.i, n: e.n, set_id: setId, k: e.k, f: str(f), v: v, h: e.h,
                        ms: e.ms, nx: e.nx, om: e.om, pr: e.pr, sr: sr, ok: okr, src: src, v1: v1, ago: e.ago, ta: ta,
-                       day: L().isoDay(ta), pt: e.pt, st: e.st, bo: bo, why: why }) && why === '') nw.push(e.id);
+                       day: L().isoDay(ta), pt: e.pt, st: e.st, bo: bo, why: why });   /* V2-5: pu */
+        if (pu && o2 !== null) v5G(d, o2, e.id);   /* V2-5: 채점 때 인정 답으로 맞음 표시 */
+        if (pu && why === '') nw.push(e.id);
       }
       mi = 0;
       mn = null;
@@ -5179,6 +5199,431 @@
     if (clear) V2CALLS.length = 0;
     return o;
   };
+
+  /* ======================================================= V2-5 (11-20) 선생님 현황 · 첫 답 · 인정 답
+     class-setup.sql V2-5 절(lec_set_ok2 · lec_set_fix · lec__v2_* · lec_set_staff_v2 · lec_set_wrong1_v2 · lec_set_ok2_v2)과 같은 규칙 ·
+     둘이 다르면 SQL 이 기준. 표: d.sok2(인정 답 · 되돌림도 줄 하나 더) · d.sfix(고침 줄 · 원래 답은 그대로) · d.v5seq(번호)
+     지운 세트 · 판 · 줄을 따라 지움(SQL on delete cascade)은 선생님 함수를 부를 때 한꺼번에(v5Tabs)
+     시험용 손잡이: LecMock.regradeV2(세트 id | null) = lec__v2_regrade(SQL Editor 에서만 부르는 재기 · 화면 0) */
+  var V5_W = ['sp', 'se', 'w', 'r'];
+  function v5Ensure(d) {
+    if (!isArr(d.sok2)) d.sok2 = [];
+    if (!isArr(d.sfix)) d.sfix = [];
+    if (typeof d.v5seq !== 'number') d.v5seq = 0;
+    return d;
+  }
+  function v5Try(d, id) {
+    var i;
+    for (i = 0; i < d.stry.length; i += 1) { if (d.stry[i].id === id) return d.stry[i]; }
+    return null;
+  }
+  function v5Tabs(d) {
+    var ok = {}, i;
+    v2Tabs(d);
+    v5Ensure(d);
+    d.sok2 = d.sok2.filter(function (o) { return !!sFind(d, o.set_id); });
+    for (i = 0; i < d.sok2.length; i += 1) ok[d.sok2[i].id] = true;
+    d.sfix = d.sfix.filter(function (x) {
+      if (!ok[x.ok2]) return false;
+      return x.try_id != null ? !!v5Try(d, x.try_id) : !!v2Log(d, x.log_id);
+    });
+    return d;
+  }
+  /* lec__v2_ok2nm: 단어 · 문법 = lec__set_norm(1~200 글자) · 구문 = lec__set_snorm_v2(1~400 글자) · 꼴이 틀리면 '' */
+  function v5Nm(kd, v) {
+    var X = L(), n = cps(v);
+    if (kd === 'gu') return n >= 1 && n <= 400 && typeof X.setSNormV2 === 'function' ? X.setSNormV2(str(v)) : '';
+    return n >= 1 && n <= 200 ? X.setNorm(str(v)) : '';
+  }
+  function v5Last(d, setId, k, nm) {
+    var o = null, i, x;
+    for (i = 0; i < d.sok2.length; i += 1) {
+      x = d.sok2[i];
+      if (x.set_id === setId && x.k === k && x.nm === nm && (!o || x.id > o.id)) o = x;
+    }
+    return o;
+  }
+  /* lec__v2_ok2id: 이 답과 맞는 켜진 인정 답 id · 없으면 null */
+  function v5Id(d, setId, k, kd, v) {
+    var nm, o;
+    v5Ensure(d);
+    nm = v5Nm(kd, v);
+    if (nm === '' || setId == null) return null;
+    o = v5Last(d, setId, str(k), nm);
+    return o && !o.undo ? o.id : null;
+  }
+  /* 켜진 인정 답(세트 · 넣은 차례) */
+  function v5Act(d, setId) {
+    var last = {}, out = [], i, x, key;
+    v5Ensure(d);
+    for (i = 0; i < d.sok2.length; i += 1) {
+      x = d.sok2[i];
+      if (x.set_id !== setId) continue;
+      key = JSON.stringify([x.k, x.nm]);
+      if (!has(last, key) || x.id > last[key].id) last[key] = x;
+    }
+    for (key in last) { if (has(last, key) && !last[key].undo) out.push(last[key]); }
+    out.sort(function (p, q) { return p.id - q.id; });
+    return out;
+  }
+  /* lec__v2_ok2s: {열쇠: [맞춤 글 …]} */
+  function v5Map(d, setId) {
+    var a = v5Act(d, setId), o = {}, i;
+    for (i = 0; i < a.length; i += 1) {
+      if (!has(o, a[i].k)) o[a[i].k] = [];
+      o[a[i].k].push(a[i].m);
+    }
+    return o;
+  }
+  /* lec__v2_ok2q: 쌓인 오답 판 쓰기 문항에 a2(있을 때만) */
+  function v5Q(d, q) {
+    var out = [], i, m;
+    for (i = 0; i < q.length; i += 1) {
+      if (q[i].f === 'w' || q[i].f === 'r') {
+        m = v5Map(d, q[i].s);
+        if (has(m, q[i].k)) { out.push(v2Merge(q[i], { a2: m[q[i].k] })); continue; }
+      }
+      out.push(q[i]);
+    }
+    return out;
+  }
+  /* 채점 때 인정 답으로 맞음 표시(g) */
+  function v5G(d, ok2, logId) {
+    v5Ensure(d);
+    d.v5seq += 1;
+    d.sfix.push({ id: d.v5seq, ok2: ok2, try_id: null, i: null, log_id: logId, ok: true, g: true, ch: {}, at: sNow() });
+  }
+  function v5HasG(d, logId) {
+    var i;
+    for (i = 0; i < d.sfix.length; i += 1) { if (d.sfix[i].log_id === logId && d.sfix[i].g) return true; }
+    return false;
+  }
+  /* lec__v2_r0: 규칙 판정(인정 답 없이 · 서버가 매기지 않은 줄) */
+  function v5R0(s, k, f, v) {
+    var X = L(), it;
+    if (f === 'sp' && s.kind === 'voc') return !!v2Spell(v, s.items, k);
+    it = sItem(s, k);
+    if (!it) return false;
+    if (f === 'se' && s.kind === 'gu') return !!v2Sent(v, str(it.e));
+    if (f === 'c' && s.kind === 'gram') return X.setNorm(v) === X.setNorm(str(it.a));
+    if ((f === 'w' || f === 'r') && (s.kind === 'voc' || s.kind === 'gram')) return !!X.setMatch(v, str(s.kind === 'voc' ? it.w : it.a)) && cps(v) <= 200;
+    return false;
+  }
+  /* 줄 차례(답한 때 · 판 연 때 · 판 · 순번 · id) */
+  function v5Before(a, b) {
+    if (a.ta !== b.ta) return a.ta < b.ta;
+    if (a.bo !== b.bo) return a.bo < b.bo;
+    if (a.b !== b.b) return a.b < b.b;
+    if (a.i !== b.i) return a.i < b.i;
+    return a.id < b.id;
+  }
+  /* lec__v2_first: 학생 · 문항마다 첫 답(새 기록 표에서) */
+  function v5First(d, s) {
+    var rows = d.slog.filter(function (x) { return x.set_id === s.id; }), bmin = {}, bl = [], rno = {}, fa = {}, out = [], i, x, key, hh, b0, o2;
+    for (i = 0; i < rows.length; i += 1) {
+      x = rows[i];
+      key = JSON.stringify([x.sid, x.b]);
+      if (!has(bmin, key) || x.bo < bmin[key].bo) bmin[key] = { sid: x.sid, b: x.b, bo: x.bo };
+    }
+    for (key in bmin) { if (has(bmin, key)) bl.push(bmin[key]); }
+    bl.sort(function (p, q) {
+      if (p.sid !== q.sid) return cmpC(p.sid, q.sid);
+      if (p.bo !== q.bo) return p.bo - q.bo;
+      return cmpC(p.b, q.b);
+    });
+    for (i = 0; i < bl.length; i += 1) {
+      rno[JSON.stringify([bl[i].sid, bl[i].b])] = i > 0 && bl[i - 1].sid === bl[i].sid ? rno[JSON.stringify([bl[i - 1].sid, bl[i - 1].b])] + 1 : 1;
+    }
+    for (i = 0; i < rows.length; i += 1) {
+      x = rows[i];
+      if (x.k === '' || x.why === 'gone' || x.why === 'done' || ['sp', 'se', 'w', 'r', 'c'].indexOf(x.f) < 0 || sp(x.v) === '') continue;
+      key = JSON.stringify([x.sid, x.k]);
+      if (!has(fa, key) || v5Before(x, fa[key])) fa[key] = x;
+    }
+    for (key in fa) {
+      if (!has(fa, key)) continue;
+      x = fa[key];
+      hh = !!x.h && x.bk !== 'ev';
+      b0 = (x.sr == null ? v5R0(s, x.k, x.f, x.v) : !!x.sr && !v5HasG(d, x.id)) && !hh;
+      o2 = V5_W.indexOf(x.f) >= 0 && !hh ? v5Id(d, s.id, x.k, s.kind, x.v) : null;
+      out.push({ sid: x.sid, k: x.k, f: x.f, v: x.v, bk: x.bk, h: !!x.h, b0: b0, o2: o2, ok: b0 || o2 !== null,
+                 rno: rno[JSON.stringify([x.sid, x.b])], ta: x.ta, id: x.id });
+    }
+    return out;
+  }
+  /* lec__v2_zy: z · y 다시 접기(날짜 차례) */
+  function v5Zy(es, sid, f) {
+    var days = {}, ds = [], z = '', y = [], i, e;
+    for (i = 0; i < es.length; i += 1) {
+      e = es[i];
+      if (e.sid !== sid || !e.cd) continue;
+      if (!has(days, e.day)) { days[e.day] = true; ds.push(e.day); }
+      days[e.day] = days[e.day] && !!e[f];
+    }
+    ds.sort(cmpC);
+    for (i = 0; i < ds.length; i += 1) {
+      if (!days[ds[i]]) { z = ds[i]; y = []; }
+      else if (z !== '' && ds[i] > z) {
+        if (y.length >= 1) { z = ''; y = []; } else y = [ds[i]];
+      }
+    }
+    return { z: z, y: y };
+  }
+  function v5Cur(d, e) {
+    var o = null, i, x;
+    for (i = 0; i < d.sfix.length; i += 1) {
+      x = d.sfix[i];
+      if ((e.src === 't' ? x.try_id === e.tid && x.i === e.ix : x.log_id === e.lid) && (!o || x.id > o.id)) o = x;
+    }
+    return o ? o.ok : e.st;
+  }
+  function v5Done(t) { return (t.kind === 'test' || t.kind === 'drill') && t.done_at != null; }
+  function v5TOrd(p, q) {   /* (done_at, id) */
+    var a = tms(p.done_at), b = tms(q.done_at);
+    if (a !== b) return a < b ? -1 : 1;
+    return cmpC(p.id, q.id);
+  }
+  /* lec__v2_fix: 다시 셈(그 세트 · 문항만) · 돌려줌 = 고친 줄 수 */
+  function v5Fix(d, s, k, ok2) {
+    var X = L(), es = [], ents = [], sids = [], n = 0, i, j, t, q, an, x, e, cur, tg, fid, sid, p, la, b, c, c0, grp, g, tr,
+        kn, ok, pa, ch, lf, ys;
+    for (i = 0; i < d.stry.length; i += 1) {
+      t = d.stry[i];
+      if (!((t.kind === 'test' || t.kind === 'drill') && t.set_id === s.id) && t.kind !== 'due') continue;
+      for (j = 0; j < t.qs.length; j += 1) {
+        q = t.qs[j];
+        an = t.ans[j];
+        if (str(q.k) !== k || (q.f !== 'w' && q.f !== 'r') || (t.kind === 'due' && q.s !== s.id) || !isObj(an)) continue;
+        if (d.slog.some(function (y) { return y.b === t.id && y.bk === 'ev' && y.i === j + 1 && (y.why === '' || y.why === 'late'); })) continue;
+        ents.push({ src: 't', tid: t.id, ix: j, lid: null, sid: t.sid, tk: t.kind, at: tms(an.at), day: X.isoDay(tms(an.at)),
+                    st: !!an.r, b0: !!an.r, hh: false, v: str(an.v), cd: true });
+      }
+    }
+    for (i = 0; i < d.slog.length; i += 1) {
+      x = d.slog[i];
+      if (x.set_id !== s.id || x.k !== k || (x.f !== 'w' && x.f !== 'r')) continue;
+      if (!((x.bk === 'ev' && (x.why === '' || x.why === 'late')) || (x.bk === 'due' && x.done))) continue;
+      ents.push({ src: 'l', tid: x.bk === 'ev' ? x.b : null, ix: x.bk === 'ev' ? x.i - 1 : null, lid: x.id, sid: x.sid, tk: x.src,
+                  at: x.ta, day: x.day, st: x.bk === 'ev' ? !!x.sr : !!x.ok,
+                  b0: !!x.sr && !(x.h && x.bk !== 'ev') && !v5HasG(d, x.id), hh: !!x.h && x.bk !== 'ev', v: str(x.v), cd: !!x.done });
+    }
+    ents.sort(function (p1, p2) {
+      if (p1.sid !== p2.sid) return cmpC(p1.sid, p2.sid);
+      if (p1.day !== p2.day) return cmpC(p1.day, p2.day);
+      if (p1.at !== p2.at) return p1.at - p2.at;
+      if (p1.src !== p2.src) return cmpC(p1.src, p2.src);
+      return cmpC(str(p1.lid) + str(p1.tid) + ':' + p1.ix, str(p2.lid) + str(p2.tid) + ':' + p2.ix);
+    });
+    for (i = 0; i < ents.length; i += 1) {
+      e = ents[i];
+      cur = v5Cur(d, e);
+      tg = e.b0 || (!e.hh && v5Id(d, s.id, k, s.kind, e.v) !== null);
+      fid = null;
+      if (cur !== tg) {
+        d.v5seq += 1;
+        fid = d.v5seq;
+        d.sfix.push({ id: fid, ok2: ok2, try_id: e.src === 't' ? e.tid : null, i: e.src === 't' ? e.ix : null,
+                      log_id: e.src === 'l' ? e.lid : null, ok: tg, g: false, ch: {}, at: sNow() });
+        if (e.tid != null) { tr = v5Try(d, e.tid); if (tr) tr.sc += tg ? 1 : -1; }
+        if (sids.indexOf(e.sid) < 0) sids.push(e.sid);
+        n += 1;
+      }
+      es.push({ sid: e.sid, tid: e.tid, tk: e.tk, day: e.day, at: e.at, cur: cur, tg: tg, cd: e.cd, fid: fid });
+    }
+    for (i = 0; i < sids.length; i += 1) {
+      sid = sids[i];
+      ch = null;
+      p = sProg(d, sid, s.id);
+      if (!p) continue;
+      /* kn: 단어 시험에서 이 문항 마지막 답(뒤에 고르기 답이 있으면 그대로) */
+      la = null;
+      for (j = 0; j < es.length; j += 1) { if (es[j].sid === sid && es[j].tk === 'test' && (!la || es[j].at > la.at)) la = es[j]; }
+      if (la && la.cur !== la.tg && (p.kn.indexOf(k) >= 0) === la.cur &&
+          !d.stry.some(function (y) {
+            return y.sid === sid && y.set_id === s.id && y.kind === 'test' && y.qs.some(function (yq, yi) {
+              return str(yq.k) === k && isObj(y.ans[yi]) && tms(y.ans[yi].at) > la.at;
+            });
+          })) {
+        if (la.tg) { if (p.kn.indexOf(k) < 0) p.kn.push(k); } else p.kn = p.kn.filter(function (y) { return y !== k; });
+      }
+      /* z · y: 지금 카드가 고치기 전 접기와 같을 때만 */
+      b = v5Zy(es, sid, 'cur');
+      c = v5Zy(es, sid, 'tg');
+      c0 = isObj(sCard(p, k)) ? clone(sCard(p, k)) : {};
+      if (JSON.stringify(b) !== JSON.stringify(c) && str(c0.z) === b.z && JSON.stringify(isArr(c0.y) ? c0.y : []) === JSON.stringify(b.y)) {
+        delete c0.z;
+        delete c0.y;
+        if (c.z !== '') {
+          c0.z = c.z;
+          if (c.y.length) c0.y = c.y;
+        }
+        p.cards = clone(p.cards || {});
+        p.cards[k] = c0;
+      }
+      /* 점수가 바뀐 끝난 시험 · 드릴: 첫 판 f1 · 마지막 판 last_sc(고치기 전 값과 같을 때만) */
+      grp = {};
+      for (j = 0; j < es.length; j += 1) {
+        if (es[j].sid !== sid || es[j].fid == null || es[j].tid == null) continue;
+        if (!has(grp, es[j].tid)) grp[es[j].tid] = 0;
+        grp[es[j].tid] += es[j].tg ? 1 : -1;
+      }
+      ys = d.stry.filter(function (y) { return y.sid === sid && y.set_id === s.id && v5Done(y); });
+      for (g in grp) {
+        if (!has(grp, g)) continue;
+        tr = v5Try(d, g);
+        if (!tr || !v5Done(tr)) continue;
+        if (p.f1 === Math.floor(((tr.sc - grp[g]) * 100) / tr.n) && !ys.some(function (y) { return v5TOrd(y, tr) < 0; })) {
+          p.f1 = Math.floor((tr.sc * 100) / tr.n);
+        }
+        if (p.last_sc === tr.sc - grp[g] && !ys.some(function (y) { return v5TOrd(y, tr) > 0; })) p.last_sc = tr.sc;
+      }
+      /* 통과: 조건을 채우면 넣고 · 깨지면 고침이 넣은 때만 지움 */
+      kn = sKnN(p, sKeys(s));
+      ok = ys.some(function (y) {
+        return (y.kind === 'test' && !y.drawn && kn >= X.setNeed(s.n)) || ((y.kind === 'drill' || y.drawn) && y.sc >= X.setNeed(y.n));
+      });
+      if (p.pass_at == null && ok) {
+        pa = sNow();
+        p.pass_at = pa;
+        ch = { pa: pa };
+      } else if (p.pass_at != null && !ok) {
+        lf = null;
+        for (j = 0; j < d.sfix.length; j += 1) {
+          x = d.sfix[j];
+          if (!isObj(x.ch) || !has(x.ch, 'pa') || (lf && x.id < lf.id)) continue;
+          if (!d.sok2.some(function (o) { return o.id === x.ok2 && o.set_id === s.id; })) continue;
+          tr = x.try_id != null ? v5Try(d, x.try_id) : v2Log(d, x.log_id);
+          if (tr && tr.sid === sid) lf = x;
+        }
+        if (lf && tms(p.pass_at) === tms(lf.ch.pa)) p.pass_at = null;
+      }
+      if (ch) {
+        for (j = 0; j < es.length; j += 1) {
+          if (es[j].sid !== sid || es[j].fid == null) continue;
+          for (g = 0; g < d.sfix.length; g += 1) { if (d.sfix[g].id === es[j].fid) d.sfix[g].ch = clone(ch); }
+        }
+      }
+    }
+    return n;
+  }
+  /* lec__v2_regrade(재는 데에만 · 화면 0) */
+  function v5Regrade(d, setId) {
+    var o = { n: 0, same: 0, up: 0, fixed: 0, sets: [] }, per = {}, i, j, t, q, an, s, r, r2, sid0, key;
+    v5Tabs(d);
+    for (i = 0; i < d.stry.length; i += 1) {
+      t = d.stry[i];
+      for (j = 0; j < t.qs.length; j += 1) {
+        q = t.qs[j];
+        an = t.ans[j];
+        if ((q.f !== 'w' && q.f !== 'r') || !isObj(an)) continue;
+        sid0 = t.kind === 'due' ? q.s : t.set_id;
+        s = sFind(d, sid0);
+        if (!s || (setId != null && s.id !== setId)) continue;
+        if (d.slog.some(function (y) { return y.b === t.id && y.bk === 'ev' && y.i === j + 1 && (y.why === '' || y.why === 'late'); })) continue;
+        r = !!an.r;
+        r2 = r || v5Id(d, s.id, str(q.k), s.kind, str(an.v)) !== null;
+        o.n += 1;
+        if (r === r2) o.same += 1;
+        if (r2 && !r) o.up += 1;
+        if (d.sfix.some(function (x) { return x.try_id === t.id && x.i === j; })) o.fixed += 1;
+        key = s.id;
+        if (!has(per, key)) per[key] = { set: s.id, n: 0, up: 0 };
+        per[key].n += 1;
+        if (r2 && !r) per[key].up += 1;
+      }
+    }
+    for (key in per) { if (has(per, key)) o.sets.push(per[key]); }
+    o.sets.sort(function (p1, p2) { return p2.up - p1.up || p2.n - p1.n || cmpC(p1.set, p2.set); });
+    return o;
+  }
+
+  function lec_set_staff_v2(d, a) {
+    var r = lec_set_staff(d, a), s, fa, g = {}, pts = [], fx = [], i, j, it, p, key, tot, okc, st, f;
+    if (!isObj(r) || r.ok !== true) return r;
+    v5Tabs(d);
+    s = sFind(d, a.p_set);
+    fa = v5First(d, s);
+    if (s.kind === 'gu' || s.kind === 'gram') {
+      for (i = 0; i < s.items.length; i += 1) {
+        it = s.items[i];
+        p = sp(str(it.p));
+        if (p === '') continue;
+        if (!has(g, p)) g[p] = { ks: [], n: 0 };
+        g[p].ks.push(str(it.k));
+        g[p].n += 1;
+      }
+      for (key in g) {
+        if (!has(g, key)) continue;
+        tot = 0; okc = 0; st = [];
+        for (j = 0; j < fa.length; j += 1) {
+          if (g[key].ks.indexOf(fa[j].k) < 0) continue;
+          tot += 1;
+          if (fa[j].ok) okc += 1;
+          if (st.indexOf(fa[j].sid) < 0) st.push(fa[j].sid);
+        }
+        if (tot > 0) pts.push({ p: key, r: Math.floor((okc * 100) / tot), n: g[key].n, st: st.length });
+      }
+      pts.sort(function (x1, x2) { return x1.r - x2.r || x2.st - x1.st || cmpC(x1.p, x2.p); });
+    }
+    for (i = 0; i < s.items.length; i += 1) {
+      key = str(s.items[i].k);
+      tot = 0; f = 0;
+      for (j = 0; j < fa.length; j += 1) {
+        if (fa[j].k !== key) continue;
+        tot += 1;
+        if (fa[j].ok && !fa[j].b0) f += 1;
+      }
+      it = s.items[i];
+      if (tot > 0 && f * 20 > tot) fx.push({ k: key, w: cpLeft(str(pgTxt(s.kind === 'voc' ? it.w : (s.kind === 'gu' ? it.e : it.s))), 40), n: tot, f: f });
+    }
+    return v2Merge(r, { pts: pts, fx: fx });
+  }
+  function lec_set_wrong1_v2(d, a) {
+    sGone(); v5Tabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var s = sFind(d, a.p_set), fa, out = [], i, j, it, x;
+    if (!s) return { ok: false, err: 'none' };
+    if (sp(str(a.p_sid)) === '') return { ok: false, err: 'input' };
+    fa = v5First(d, s).filter(function (y) { return y.sid === a.p_sid && !y.b0; });
+    for (i = 0; i < s.items.length; i += 1) {
+      it = s.items[i];
+      for (j = 0; j < fa.length; j += 1) {
+        x = fa[j];
+        if (x.k !== str(it.k)) continue;
+        out.push({ k: x.k, n: it.n == null ? '' : pgTxt(it.n),
+                   q: pgTxt(s.kind === 'voc' ? it.m : (s.kind === 'gu' ? it.t : it.s)),
+                   a: pgTxt(s.kind === 'voc' ? it.w : (s.kind === 'gu' ? it.e : it.a)),
+                   v: x.v, f: x.f, no: x.rno, at: pgts(x.ta), acc: x.o2 !== null,
+                   can: V5_W.indexOf(x.f) >= 0 && !(x.h && x.bk !== 'ev') });
+      }
+    }
+    return { ok: true, set: s.id, sid: a.p_sid, items: out };
+  }
+  function lec_set_ok2_v2(d, a) {
+    sGone(); v5Tabs(d);
+    if (!sAdmin()) return { ok: false, err: 'forbidden' };
+    var X = L(), s = sFind(d, a.p_set), it, nm, cur, row, n;
+    if (!s) return { ok: false, err: 'none' };
+    it = a.p_k == null ? null : sItem(s, a.p_k);
+    nm = v5Nm(s.kind, a.p_v);
+    if (!it || a.p_on == null || nm === '' || (s.kind === 'gram' && X.setOpts(it.s))) return { ok: false, err: 'input' };
+    cur = v5Last(d, s.id, a.p_k, nm);
+    if ((!!cur && !cur.undo) === a.p_on) return { ok: true, on: a.p_on, n: 0, again: true };
+    d.v5seq += 1;
+    row = { id: d.v5seq, set_id: s.id, k: a.p_k, m: cpLeft(sp(a.p_v), 400), nm: nm, who: ME && ME.admin ? 'benjamin@his.kr' : '',
+            at: sNow(), undo: !a.p_on };
+    d.sok2.push(row);
+    n = v5Fix(d, s, a.p_k, row.id);
+    return { ok: true, on: a.p_on, n: n, again: false };
+  }
+  SIG.lec_set_staff_v2 = { p_set: 'uuid' };
+  SIG.lec_set_wrong1_v2 = { p_set: 'uuid', p_sid: 'text' };
+  SIG.lec_set_ok2_v2 = { p_set: 'uuid', p_k: 'text', p_v: 'text', p_on: 'bool' };
+  STAFF.lec_set_staff_v2 = lec_set_staff_v2;
+  STAFF.lec_set_wrong1_v2 = lec_set_wrong1_v2;
+  STAFF.lec_set_ok2_v2 = lec_set_ok2_v2;
+  w.LecMock.regradeV2 = function (setId) { var d = load(), o = v5Regrade(d, setId == null ? null : setId); save(d); return clone(o); };
+  w.LecMock.v5Dump = function () { var d = load(); v5Tabs(d); return clone({ sok2: d.sok2, sfix: d.sfix }); };
 
   w.LecMock.tone = tone;
   w.LecMock.s1ids = S1ID;

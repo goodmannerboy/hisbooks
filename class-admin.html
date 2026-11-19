@@ -1341,6 +1341,42 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .sx-of .sx-p+.sx-p::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
 .k2 .sx-of .sx-ow{flex:1;min-width:0;overflow-wrap:anywhere}
 .k2 .sx-of .sx-on{flex:none;font-size:13px;line-height:18px;font-weight:600;color:var(--org)}
+/* V2-5(11-20): 결과 표 안 · 학생 줄 = 누르면 바로 아래 «첫 답에서 틀린 문항» · 이름 단추 44px · «이 답도 맞음» 44px · 포인트별 첫 답 정답률 · 인정 답이 많은 문항 */
+.k2 .sxt tr.sx-w1r{cursor:pointer}
+.k2 .sxt tr.sx-w1r:hover>td{background:var(--fill)}
+.k2 .sxt tr.sx-w1r.on>td{background:var(--acc-tint)}
+.k2 .sxt .sx-w1b{width:100%;min-height:44px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.k2 .sxt .sx-w1b:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.k2 .sxt .sx-w1b::after{content:"";flex:none;width:7px;height:7px;margin:0 4px 3px auto;border-right:1.5px solid var(--ink3);border-bottom:1.5px solid var(--ink3);transform:rotate(45deg)}
+.k2 .sxt .sx-w1b[aria-expanded="true"]::after{margin-bottom:0;margin-top:3px;transform:rotate(-135deg)}
+.k2 .sxt tr.sx-dr>td{height:auto;padding:4px 10px 14px;background:var(--acc-tint)}
+.k2 .sx-w1 .sx-oh{margin:4px 0 8px;font-size:13px;line-height:18px;font-weight:600;color:var(--ink)}
+.k2 .sx-w1 .mut{margin:4px 0;font-size:13px}
+.k2 .sx-wl{margin:0;padding:0;list-style:none;border-radius:12px;background:var(--card)}
+.k2 .sx-wi{position:relative;display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 14px}
+.k2 .sx-wi+.sx-wi::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
+.k2 .sx-wn{flex:none;min-width:36px;font-size:13px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}
+.k2 .sx-wb{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:14px;line-height:20px}
+.k2 .sx-wq{color:var(--ink2);font-size:13px;line-height:18px;overflow-wrap:anywhere}
+.k2 .sx-wa{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;overflow-wrap:anywhere}
+.k2 .sx-wa .lb{font-size:12px;color:var(--ink2)}
+.k2 .sx-wa b{margin-right:8px;font-weight:600;color:var(--err)}
+.k2 .sx-wm{font-size:12px;line-height:16px;color:var(--ink2)}
+.k2 .sx-wb .tag{align-self:flex-start;margin-top:2px}
+.k2 .sx-wc{flex:none;display:flex;align-items:center;gap:6px}
+.k2 .sx-wc .sx-p{margin:0}
+.k2 .btn.sm.sx-ok2{min-height:44px}
+.k2 .sx-of .sx-pm{flex:none;font-size:12.5px;line-height:18px;color:var(--ink2)}
+.k2 .sx-of .sx-on.hi{color:var(--ink)}
+.k2 .sx-fm{margin:-4px 0 8px;font-size:12.5px;color:var(--ink2)}
+@media (max-width:860px){
+  .k2 .sxt tr.sx-w1r:hover>td,.k2 .sxt tr.sx-w1r.on>td{background:transparent}
+  .k2 .sxt tr.sx-w1r.on{box-shadow:inset 0 0 0 2px var(--acc-line)}
+  .k2 .sxt tr.sx-dr{padding:8px 10px;background:var(--acc-tint)}
+  .k2 .sxt tr.sx-dr>td{padding:0;background:transparent}
+  .k2 .sx-wi{flex-wrap:wrap;gap:6px 12px}
+  .k2 .sx-wc{width:100%;justify-content:flex-end}
+}
 /* 8 오늘(노트 0-3 · ① 2): 카드 머리 셋 = 큰 수 · 질문별 줄 · 덜 본 학생 줄(이름 먼저 · 강의별 작은 링) · 셋 + «N개 더» · 확인할 것 · 이번 주 강의 */
 .k2 .todo .ti.hd.bandn{margin:0;font-size:15px}
 .k2 .todo .ti.hd.trh .tic{color:var(--acc)}
@@ -1585,7 +1621,8 @@ window.__lecAdminStart = function () {
        setInit = 30일 지난 녹음 정리를 한 번 했음 · setSel = 고른 세트 · setSt = 결과 표 답 {id, r} · setFull = 문항까지 받은 세트 ·
        setAsk = 지우기 묻는 세트 · pp = 인쇄 작은 창 · sd = 세트 서랍(붙여 넣기 · 녹음 듣기) */
     set: null, setOld: false, setErr: false, setInit: false, setSel: '', setSt: null, setStErr: '', setFull: {},
-    setAsk: '', pp: null, sd: null, sxDraft: null
+    setAsk: '', pp: null, sd: null, sxDraft: null,
+    sxW1: null   /* V2-5: 결과 표에서 연 학생 줄 {set, sid, r(첫 답에서 틀린 문항 답), err} */
   };
   var D = null;
   var sb = null;
@@ -5048,7 +5085,7 @@ window.__lecAdminStart = function () {
     if (!force && S.setSt && S.setSt.id === id) return;
     my = ++sxGen;
     if (S.setStErr === id) S.setStErr = '';
-    Promise.resolve().then(function () { return L.setStaff(DA.rpc, id); }).then(function (r) {
+    Promise.resolve().then(function () { return L.setStaffV2 ? L.setStaffV2(DA.rpc, id) : L.setStaff(DA.rpc, id); }).then(function (r) {   /* V2-5: 같은 한 번 부름 + 포인트별 첫 답 정답률 · 인정 답 많은 문항 */
       if (my !== sxGen) return;
       if (S.recWant === id && !(r && r.ok)) S.recWant = '';
       if (r && r.ok) { S.setSt = { id: id, r: r }; sxNone = ''; }
@@ -5058,7 +5095,7 @@ window.__lecAdminStart = function () {
         if (r && r.err === 'none' && S.setSt && S.setSt.id === id) S.setSt = null;   /* 지워진 세트의 옛 표는 내림 */
         S.setStErr = id;
       }
-      render();
+      sxRender();
       if (S.recWant === id) { S.recWant = ''; if (S.setSt && S.setSt.id === id) rvOpen(id); }   /* A3 ① */
     }, function () {
       if (my !== sxGen) return;
@@ -5182,8 +5219,14 @@ window.__lecAdminStart = function () {
     for (i = 0; i < cols.length; i += 1) h += '<th scope="col">' + esc(cols[i][0]) + '</th>';
     h += '</tr></thead><tbody>';
     if (!rows.length) h += '<tr><td colspan="' + cols.length + '" class="mut">이 반에 학생이 없어요.</td></tr>';
-    for (i = 0; i < rows.length; i += 1) h += sxTr(k, rows[i], n, pk);
+    /* V2-5: 기록이 있는 학생 줄을 누르면 바로 아래 줄에 «첫 답에서 틀린 문항»(v2 서버 = 응답에 pts 가 있을 때만) */
+    for (i = 0; i < rows.length; i += 1) {
+      d = sxW1Can(st) && !!rows[i].x;
+      h += sxTr(k, rows[i], n, pk, d ? it.id : '');
+      if (d && S.sxW1 && S.sxW1.set === it.id && S.sxW1.sid === rows[i].sid) h += '<tr class="sx-dr"><td colspan="' + cols.length + '">' + sxW1Html(it, st) + '</td></tr>';
+    }
     h += '</tbody></table>';
+    h += sxPtsHtml(st) + sxFxHtml(st);   /* V2-5: 포인트별 첫 답 정답률 · 인정 답이 많은 문항(같은 응답 · 누름 0) */
     if (k === 'gu') return h + '<p class="sx-ft">녹음은 30일이 지나면 지워져요(세트 탭을 열 때 정리해요)</p>';
     often = [];
     a = isArr(st.often) ? st.often : [];
@@ -5255,10 +5298,14 @@ window.__lecAdminStart = function () {
     h += k === 'gu' ? n3(o.nw, '새 녹음', 'g') : n3(o.did - o.pass, '아직', 'o') + n3(o.T - o.did, '안 함', 'o');
     return h + '</span><span class="sr">' + esc(sxSumText(k, rows, pk)) + '</span></div>';
   }
-  function sxTr(k, w, n, pk) {
-    var d = w.x ? w.x[k] : null, h;
-    h = '<tr><td data-l="학생" class="nm"><span class="nmw"><span class="av" data-i="' + esc((w.name || '학생').charAt(0)) + '" aria-hidden="true"></span><span class="nmt"><b>' + esc(w.name) + '</b>' +
-      (!w.mine ? '<span class="tag t-line">지금 반 밖</span>' : (w.r ? stuTags(w.r) : '')) + '</span></span></td>';   /* 2차(8): 학생 머리 동그라미(목업 s-sets) */
+  function sxTr(k, w, n, pk, w1) {
+    var d = w.x ? w.x[k] : null, h, on = !!w1 && !!S.sxW1 && S.sxW1.set === w1 && S.sxW1.sid === w.sid,
+      a1 = w1 ? ' data-act="sxW1" data-s="' + esc(w1) + '" data-c="' + esc(w.sid) + '"' : '';
+    /* V2-5: w1 = 세트 id(누를 수 있는 줄) · 줄 어디를 눌러도 열고 닫음 · 이름 = 단추(키보드 · 44px) */
+    h = '<tr' + (w1 ? ' class="sx-w1r' + (on ? ' on' : '') + '"' + a1 : '') + '><td data-l="학생" class="nm">' +
+      (w1 ? '<button type="button" class="nmw sx-w1b"' + a1 + ' aria-expanded="' + (on ? 'true' : 'false') + '">' : '<span class="nmw">') +
+      '<span class="av" data-i="' + esc((w.name || '학생').charAt(0)) + '" aria-hidden="true"></span><span class="nmt"><b>' + esc(w.name) + '</b>' +
+      (!w.mine ? '<span class="tag t-line">지금 반 밖</span>' : (w.r ? stuTags(w.r) : '')) + '</span>' + (w1 ? '</button>' : '</span>') + '</td>';   /* 2차(8): 학생 머리 동그라미(목업 s-sets) */
     if (k === 'voc') {
       h += '<td data-l="외움" class="num">' + (d ? esc((+d.known || 0) + ' / ' + n) : '–') + '</td><td data-l="시험">' + sxTest(k, d) + '</td>' +
         '<td data-l="쌓인 오답" class="num">' + (d ? esc(String(+d.due || 0)) : '–') + '</td>';
@@ -5305,6 +5352,118 @@ window.__lecAdminStart = function () {
       else h += sxPill('nw', s + '새 녹음');
     }
     return h;
+  }
+
+  /* ---- V2-5 (11-20) 첫 답 · 인정 답: 결과 표 안에서만(새 서랍 · 새 탭 0 · 숫자는 서버가 «첫 답»으로 셈)
+     학생 줄 → 바로 아래 «첫 답에서 틀린 문항»(문항 · 첫 답 · 바른 답 · 몇 번째 판) · 쓰기 답 옆 «이 답도 맞음» → 그 자리 «맞음으로 했어요 · 되돌리기»(묻지 않음 · 되돌리기 = 줄 하나 더) */
+  var sxW1Gen = 0, SX_W1F = ['sp', 'se', 'w', 'r'];
+  function sxW1Can(st) { return !!st && isArr(st.pts) && !!L.setWrong1V2 && !!L.setOk2PutV2; }
+  /* 다시 그려도 누르던 단추(학생 줄 · 이 답도 맞음)에 초점 그대로 */
+  function sxRender() {
+    var a = document.activeElement, act = a && a.getAttribute ? str(a.getAttribute('data-act')) : '', c = act ? str(a.getAttribute('data-c')) : '';
+    render();
+    if (act === 'sxW1' || act === 'sxOk2') sxFocusQ(act, c);
+  }
+  function sxFocusQ(act, c) {
+    var a = document.querySelectorAll('button[data-act="' + act + '"]'), i;
+    for (i = 0; i < a.length; i += 1) { if (a[i].getAttribute('data-c') === c) { try { a[i].focus(); } catch (e) {} return; } }
+  }
+  /* 학생 줄 누름: 열기 · 같은 줄 = 닫기(못 불러온 줄은 다시 불러옴) */
+  function sxW1Tap(set, sid) {
+    var o = S.sxW1;
+    if (o && o.set === set && o.sid === sid && !o.err) { S.sxW1 = null; render(); sxFocusQ('sxW1', sid); return; }
+    S.sxW1 = { set: set, sid: sid, r: null, err: '' };
+    render();
+    sxFocusQ('sxW1', sid);
+    sxW1Load(set, sid);
+  }
+  function sxW1Load(set, sid) {
+    var my = ++sxW1Gen;
+    function mine() { return my === sxW1Gen && !!S.sxW1 && S.sxW1.set === set && S.sxW1.sid === sid; }
+    return Promise.resolve().then(function () { return L.setWrong1V2(DA.rpc, set, sid); }).then(function (r) {
+      if (!mine()) return;
+      if (r && r.ok) { S.sxW1.r = r; S.sxW1.err = ''; }
+      else if (!S.sxW1.r) S.sxW1.err = str(r && r.err) || 'error';
+      sxRender();
+    }, function () {
+      if (!mine()) return;
+      if (!S.sxW1.r) S.sxW1.err = 'error';
+      sxRender();
+    });
+  }
+  function sxW1Html(it, st) {
+    var o = S.sxW1, r = o ? o.r : null, a, i, x, h, fx = {}, f = isArr(st.fx) ? st.fx : [], nb, wr, b;
+    if (!r) {
+      return '<div class="sx-w1"><p class="mut">' + (o && o.err ? (o.err === 'forbidden' || o.err === 'network' ? sxErr({ err: o.err }) : '첫 답을 불러오지 못했어요. 학생 줄을 다시 눌러 주세요') : '첫 답을 불러오는 중이에요') + '</p></div>';
+    }
+    for (i = 0; i < f.length; i += 1) { if (f[i] && f[i].k != null) fx[str(f[i].k)] = 1; }
+    a = isArr(r.items) ? r.items : [];
+    h = '<div class="sx-w1" role="group" aria-label="첫 답에서 틀린 문항"><h3 class="sx-oh">첫 답에서 틀린 문항 ' + a.length + '</h3>';
+    if (!a.length) return h + '<p class="mut">첫 답에서 틀린 문항이 없어요</p></div>';
+    h += '<ul class="sx-wl">';
+    for (i = 0; i < a.length; i += 1) {
+      x = a[i];
+      if (!x) continue;
+      nb = trim(str(x.n));
+      wr = SX_W1F.indexOf(str(x.f)) >= 0;
+      b = '<button type="button" class="btn sm sx-ok2" data-act="sxOk2" data-s="' + esc(it.id) + '" data-c="' + esc(str(x.k)) + '" data-q="' + esc(str(x.v)) + '" data-v="';
+      h += '<li class="sx-wi"><span class="sx-wn">' + esc(nb ? nb + '번' : String(i + 1)) + '</span><span class="sx-wb">' +
+        (trim(str(x.q)) ? '<span class="sx-wq">' + esc(str(x.q)) + '</span>' : '') +
+        '<span class="sx-wa"><span class="lb">첫 답</span><b>' + esc(str(x.v)) + '</b><span class="lb">바른 답</span><span>' + esc(str(x.a)) + '</span></span>' +
+        '<span class="sx-wm">' + esc(+x.no > 1 ? (+x.no) + '번째 판' : '첫 판') + (wr && !x.can && !x.acc ? ' · 힌트 보고 낸 답' : '') + '</span>' +
+        (fx[str(x.k)] ? '<span class="tag t-line">인정 답이 많은 문항</span>' : '') + '</span><span class="sx-wc">' +
+        (x.acc ? '<span class="sx-p ok">맞음으로 했어요</span>' + b + '0">되돌리기</button>' : (x.can ? b + '1">이 답도 맞음</button>' : '')) + '</span></li>';
+    }
+    return h + '</ul></div>';
+  }
+  /* 이 답도 맞음(v '1') · 되돌리기('0'): 끝나면 그 자리 바로 바뀜 → 결과 표 · 포인트 · 표시는 뒤에서 다시 읽음 */
+  function sxOk2(el, set, k, val, on) {
+    var key = 'sxOk2';
+    if (S.busy[key]) return;
+    S.busy[key] = 1;
+    el.disabled = true;
+    Promise.resolve().then(function () { return L.setOk2PutV2(DA.rpc, set, k, val, on); }).then(function (r) {
+      var a, i, n;
+      S.busy[key] = 0;
+      el.disabled = false;
+      if (!r || !r.ok) { toast(sxErr(r), true); sxFocusQ('sxOk2', k); return; }
+      a = S.sxW1 && S.sxW1.set === set && S.sxW1.r && isArr(S.sxW1.r.items) ? S.sxW1.r.items : [];
+      for (i = 0; i < a.length; i += 1) { if (a[i] && str(a[i].k) === k && str(a[i].v) === val) a[i].acc = !!on; }
+      n = +r.n || 0;
+      render();
+      sxFocusQ('sxOk2', k);   /* 누른 자리(같은 문항)의 새 단추로 · 누르는 동안 막아 둔 단추는 초점을 잃음 */
+      toast((on ? '맞음으로 했어요' : '되돌렸어요') + (n ? ' · 지난 기록 ' + n + '개를 다시 셌어요' : ''));
+      if (S.sxW1 && S.sxW1.set === set) sxW1Load(set, S.sxW1.sid);
+      if (S.setSel === set) sxStaff(true);
+    }, function (e) {
+      S.busy[key] = 0;
+      el.disabled = false;
+      toast('하지 못했어요. ' + errText(e), true);
+      sxFocusQ('sxOk2', k);
+    });
+  }
+  /* 포인트별 반 첫 답 정답률(낮은 차례 · 서버 pts) · 포인트 없는 세트 = 안 보임 */
+  function sxPtsHtml(st) {
+    var a = st && isArr(st.pts) ? st.pts : [], h = '', i, x, r;
+    for (i = 0; i < a.length; i += 1) {
+      x = a[i];
+      if (!x || !trim(str(x.p))) continue;
+      r = +x.r || 0;
+      h += '<li class="sx-p no"><span class="sx-ow">' + esc(str(x.p)) + '</span><span class="sx-pm">문항 ' + esc(String(+x.n || 0)) + ' · 푼 학생 ' + esc(String(+x.st || 0)) + '명</span>' +
+        '<span class="sx-on' + (r >= 60 ? ' hi' : '') + '">' + esc(r + '%') + '</span></li>';
+    }
+    return h ? '<div class="sx-ft sx-of sx-pt"><h3 class="sx-oh">포인트별 첫 답 정답률</h3><ul class="sx-ol">' + h + '</ul></div>' : '';
+  }
+  /* 인정 답이 많은 문항(«이 답도 맞음»으로 맞은 첫 답이 그 문항 첫 답의 5% 넘음 · 서버 fx) */
+  function sxFxHtml(st) {
+    var a = st && isArr(st.fx) ? st.fx : [], h = '', i, x, w;
+    for (i = 0; i < a.length; i += 1) {
+      x = a[i];
+      if (!x) continue;
+      w = trim(str(x.w));   /* 문항 앞 40자(서버가 자름 → 끝에 … · 자주 틀린 문제와 같은 꼴) */
+      h += '<li class="sx-p no"><span class="sx-ow">' + esc(w ? w + (w.length >= 40 ? '…' : '') : '문항') + '</span><span class="sx-on">첫 답 ' + esc(String(+x.n || 0)) + '개 가운데 ' + esc(String(+x.f || 0)) + '개</span></li>';
+    }
+    return h ? '<div class="sx-ft sx-of sx-fx"><h3 class="sx-oh">인정 답이 많은 문항</h3><p class="sx-fm">첫 답의 5%가 넘게 «이 답도 맞음»으로 맞았어요</p><ul class="sx-ol">' + h + '</ul></div>' : '';
   }
 
   /* ---- 시험지 인쇄 작은 창(단추 아래): 형식 · 번호(전부 · 범위) · 문항 수(비우면 전부 · 숫자면 그만큼 무작위) · 순서(섞기) →
@@ -7513,6 +7672,8 @@ window.__lecAdminStart = function () {
       case 'sxPmix': if (S.pp) { S.pp.seed = sxSeed(S.pp.id, true); sxPpMark(); toast('새로 섞었어요 · 시험 코드 ' + sxPcode()); } break;
       case 'sxPx': r = S.pp ? S.pp.id : ''; S.pp = null; render(); if (r) sxFocus('sxPrint', r); break;
       case 'sxRec': rvOpen(s); break;
+      case 'sxW1': if (s && c) sxW1Tap(s, c); break;   /* V2-5 */
+      case 'sxOk2': if (s && c) sxOk2(el, s, c, q, v === '1'); break;   /* V2-5 */
       case 'sdClose': sxClose(); break;
       case 'sxKind':
         if (!S.sd || S.sd.t !== 'put' || S.sd.id || S.sd.batch) break;

@@ -1,3 +1,80 @@
+/* ===================================================================== V2-5 (11-20) 선생님 현황 · 첫 답 · 인정 답(묶음 ⑤)
+   서버 = class-setup.sql V2-5 절 · 연습 = class-mock.js V2-5 절 · 화면 = class-admin.html 결과 표(sxRes*)
+   불러올 때 다른 IIFE 에 기대지 않음(Lec.setNorm · Lec.setSNormV2 · Lec.setStaff · Lec.rngGoneErr 는 부를 때 찾음)
+   선생님: setStaffV2(call, set) = 결과 표 + pts(포인트별 반 첫 답 정답률) + fx(인정 답으로 맞은 첫 답이 5% 넘는 문항) · v2 없는 서버 = 옛 결과 표 그대로 ·
+     setWrong1V2(call, set, sid) = 학생 하나 · 첫 답에서 틀린 문항 · setOk2PutV2(call, set, k, v, on) = 이 답도 맞음(on true) · 되돌리기(false)
+   폰 채점: 외우기 판 응답 ok2 = {열쇠: [맞춤 글]} · 쌓인 오답 판 문항 a2 = [맞춤 글](있을 때만) →
+     규칙(setSpellV2 · setSentV2 · setMatch)이 틀리면 setOk2V2(답, 목록, 세트 종류 voc | gu | gram)로 한 번 더(= 서버 lec__v2_ok2id) */
+(function (w) {
+  'use strict';
+
+  var Lec = w.Lec;
+  if (!Lec) return;
+
+  function str(v) { return v == null ? '' : String(v); }
+  function isArr(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+  function isObj(v) { return !!v && typeof v === 'object' && !isArr(v); }
+  function clen(s) { return typeof Lec.clen === 'function' ? Lec.clen(str(s)) : str(s).length; }
+
+  /* 인정 답 맞추기 글(SQL lec__v2_ok2nm): 단어 · 문법 = setNorm(1~200 글자) · 구문 = setSNormV2(1~400 글자) · 꼴이 틀리면 '' */
+  function setOk2NmV2(kd, v) {
+    var n;
+    if (v == null) return '';
+    n = clen(v);
+    if (kd === 'gu') return n >= 1 && n <= 400 && typeof Lec.setSNormV2 === 'function' ? Lec.setSNormV2(str(v)) : '';
+    return n >= 1 && n <= 200 && typeof Lec.setNorm === 'function' ? Lec.setNorm(str(v)) : '';
+  }
+  /* 폰 채점: 답이 켜진 인정 답 가운데 하나와 같음 */
+  function setOk2V2(v, list, kd) {
+    var a = setOk2NmV2(kd, v), i;
+    if (a === '' || !isArr(list)) return false;
+    for (i = 0; i < list.length; i += 1) { if (setOk2NmV2(kd, list[i]) === a) return true; }
+    return false;
+  }
+
+  function gone(e) {
+    if (typeof Lec.rngGoneErr === 'function') return Lec.rngGoneErr(e);
+    return !!e && (e.status === 404 || e.code === 'PGRST202' || e.code === 'PGRST205' || e.code === '42883' || e.code === '42P01');
+  }
+  /* 선생님 화면 서버 부르기(옛 staffCall 과 같은 꼴) · 늘 {ok, …} · 실패 = 'old' | 'network' | 'error' | 'forbidden' … */
+  function call5(call, fn, args) {
+    var p;
+    if (typeof call !== 'function') return Promise.resolve({ ok: false, err: 'network' });
+    try { p = call(fn, args); } catch (e0) { return Promise.resolve(gone(e0) ? { ok: false, err: 'old' } : { ok: false, err: 'error' }); }
+    return Promise.resolve(p).then(function (r) {
+      return isObj(r) ? r : { ok: false, err: 'error' };
+    }, function (e) {
+      if (gone(e)) return { ok: false, err: 'old' };
+      return { ok: false, err: e && e.message === 'network' ? 'network' : 'error' };
+    }).then(null, function () { return { ok: false, err: 'error' }; });
+  }
+  /* 결과 표(한 번 부름): v2 없는 서버(함수 없음 'old')면 옛 lec_set_staff 그대로(pts · fx 없음) · 한 번 'old' 면 이 화면에서는 옛 것만 부름(부름이 늘지 않게) */
+  var staffOld = false;
+  function setStaffV2(call, id) {
+    if (staffOld && typeof Lec.setStaff === 'function') return Lec.setStaff(call, id);
+    return call5(call, 'lec_set_staff_v2', { p_set: id || null }).then(function (r) {
+      if (!r.ok && r.err === 'old' && typeof Lec.setStaff === 'function') { staffOld = true; return Lec.setStaff(call, id); }
+      if (r.ok && (!isArr(r.pts) || !isArr(r.fx))) { r.pts = isArr(r.pts) ? r.pts : []; r.fx = isArr(r.fx) ? r.fx : []; }
+      return r;
+    });
+  }
+  /* 학생 하나 · 첫 답에서 틀린 문항 items = [{k, n, q, a, v, f, no, at, acc, can}] */
+  function setWrong1V2(call, set, sid) {
+    return call5(call, 'lec_set_wrong1_v2', { p_set: set || null, p_sid: str(sid) }).then(function (r) {
+      return r.ok && !isArr(r.items) ? { ok: false, err: 'error' } : r;
+    });
+  }
+  /* 이 답도 맞음(on true) · 되돌리기(on false) → {ok, on, n(다시 센 지난 기록 수), again} */
+  function setOk2PutV2(call, set, k, v, on) {
+    return call5(call, 'lec_set_ok2_v2', { p_set: set || null, p_k: str(k), p_v: str(v), p_on: !!on });
+  }
+
+  var api = {
+    setOk2NmV2: setOk2NmV2, setOk2V2: setOk2V2, setStaffV2: setStaffV2, setWrong1V2: setWrong1V2, setOk2PutV2: setOk2PutV2
+  };
+  for (var name in api) { if (Object.prototype.hasOwnProperty.call(api, name)) Lec[name] = api[name]; }
+})(window);
+
 /* ===================================================================== V2-1 (11-20) 세트 학습 v2: 폰 보관함 · 보내기 · 서버 함수 감싸기(묶음 ①a)
    서버 = class-setup.sql V2-1 절 · 연습 = class-mock.js V2-1 절 · 화면(class.html)은 이 파일을 늦게 읽어 아래 V2-UI 로 부름(①b · class-api.js 옛 함수는 그대로)
    보관함: localStorage 'lec-v2b:' + 열쇠 지문(8) + ':' + 판 id 한 칸 = {b, md, st, hide, rows: [{id, i, s, k, f, v, h, ms, nx, om, pr, t, n}]}
