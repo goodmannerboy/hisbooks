@@ -1345,7 +1345,10 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 /* K1(11-18) 강의마다 볼 학교: 표 제목 옆 캡슐(좁힌 강의만 · 12/600 · #EFEDE5/#57534A · 높이 20) · 서랍 학교 줄(숫자 흐리게 var(--t3)) · 학교 빈칸 안내 13/600 · 저장 옆 «보이는 학생 N명» 13/600 · 시청 현황 대상 아님 «–» */
 .k2 .lt .ttr{display:flex;align-items:center;gap:6px;max-width:100%;min-width:0}
 .k2 .lt .ttr .ttl-a{min-width:0}
-.sch-t{flex:none;display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;background:#EFEDE5;color:#57534A;font-size:12px;line-height:20px;font-weight:600;white-space:nowrap}
+.sch-t{flex:0 0 auto;display:inline-block;max-width:100%;height:20px;padding:0 8px;border-radius:999px;background:#EFEDE5;color:#57534A;font-size:12px;line-height:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* §8-226 «오늘» 이번 주 강의도 제목 줄에 칩(칩을 먼저 두고 제목을 줄임) */
+.k2 .todo .twt .ttr{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%}
+.k2 .todo .twt .ttr .twa{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #ed-schf[hidden],#ed-aud[hidden]{display:none!important}
 #ed-sch .chip:not(.on) .cnt{color:var(--t3)}
 .schn{margin:6px 0 0;font-size:13px;line-height:18px;font-weight:600;color:var(--t2)}
@@ -2445,13 +2448,14 @@ window.__lecAdminStart = function () {
   }
   /* «오늘» 아래 «이번 주 강의» 3줄(강의 쪽 표와 다른 짜임 · 줄 누름 = 그 강의 인스펙터) */
   function weekHtml() {
-    var list = D.vis.slice().sort(lecSort).filter(function (l) { return grpOf(l) === '이번 주'; }).slice(0, 3), h, i, l, c, dc, day;
+    var list = D.vis.slice().sort(lecSort).filter(function (l) { return grpOf(l) === '이번 주'; }).slice(0, 3), h, i, l, c, dc, day, sk;
     if (!list.length) return '';
     h = '<div class="tw-a"><h3 class="tsec twh">이번 주 강의<button type="button" class="lnk twm" data-act="tab" data-v="lec">강의 모두 보기</button></h3><div class="twl">';
     for (i = 0; i < list.length; i += 1) {
-      l = list[i]; c = compl(l, ''); dc = defCls(l); day = L.fmtDay(dayOf(l)) || '–';
+      l = list[i]; c = compl(l, ''); dc = defCls(l); day = L.fmtDay(dayOf(l)) || '–'; sk = lecSch(l);
       h += '<div class="twr">' + thumbHtml(l) +
-        '<span class="twt"><button type="button" class="lnk twa" data-act="todoLec" data-l="' + esc(l.id) + '">' + esc(l.title || '(제목 없음)') + '</button>' +
+        '<span class="twt">' + (sk.length ? '<span class="ttr">' : '') + '<button type="button" class="lnk twa" data-act="todoLec" data-l="' + esc(l.id) + '"' + (sk.length ? ' title="' + esc(l.title || '') + '"' : '') + '>' + esc(l.title || '(제목 없음)') + '</button>' +
+        (sk.length ? '<span class="sch-t" title="' + esc('볼 학교 ' + schNames(sk)) + '">' + esc(schNames(sk)) + '</span></span>' : '') +   /* §8-226 */
         '<span class="tws">' + esc((l.book || '–') + ' · ' + (clsNames(l.class_ids) || '–')) + '</span></span>' +
         '<span class="twd">' + esc(day) + '</span><span class="twn num">' + (l.dur > 0 ? esc(L.fmtDur(l.dur)) : '–') + '</span>' +
         '<span class="twp">' + pubHtml(l) + '</span>' +
