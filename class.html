@@ -654,6 +654,13 @@ a.row:focus-visible{outline-offset:-2px}
 .row.off .mt{color:var(--ink3)}
 .row.off .sth{opacity:.55}
 .row .tag.end{margin-top:6px}
+/* §8-230(11-19 원장님 «학생 앱 강의 목록도 같이 확인하고 황금 비율로 레이아웃 키워»): 폰(699 이하) 강의 줄 썸네일 = 목록 폭(화면 − 32)의 38.2%
+   (1/φ² · 바닥 128 · 16:9 · 관리 «강의» 목록 줄과 같은 셈 · 같은 크기 · 390 = 137×77) · 제목 두 줄까지 · 700 넘으면 128×72 그대로 · 글 크기 · 굵기 · 색 그대로 */
+@media (max-width:699px){
+  .row{grid-template-columns:max(128px,calc((100vw - 32px) * .382)) minmax(0,1fr)}
+  .sth{width:100%;height:auto;aspect-ratio:16/9}
+  a.row .tt,div.row .tt{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+}
 .ring{display:block;width:36px;height:36px}
 .ring .rgT{stroke:var(--track)}
 .ring .rgP{stroke:var(--acc)}
