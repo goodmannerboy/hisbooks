@@ -260,7 +260,7 @@ textarea{resize:vertical}
 .edfoot{position:-webkit-sticky;position:sticky;bottom:0;padding:12px 18px;background:#FAFAF5;border-top:1px solid #EAE0C4}
 .edfoot .msg{margin:0 0 8px;font-weight:650}
 .edrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);max-width:calc(100% - 28px);background:#0C4631;color:#FAFAF5;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:650;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:60;text-align:center}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);max-width:calc(100% - 28px);background:#0C4631;color:#FAFAF5;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:650;opacity:0;pointer-events:none;transition:opacity var(--t2) var(--e-out),transform var(--t2) var(--e-out);z-index:60;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .toast.bad{background:#7C2F25}
 /* A1 토스트 단추(‹ 오늘) · 같은 색 안에서 */
@@ -356,8 +356,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .msg{font-size:13px}
 input[type=text],input[type=date],input[type=password],input:not([type]),textarea,select{border-color:#E6DCBF;background:#F4ECD7;font-size:14px;padding:8px 12px}
 input[disabled],textarea[disabled]{background:#EFEDE5;color:var(--ink2)}
-.btn,.chip,.ti,.cell,.colh,.tab,.crp,.llb,.x,input,textarea,select{transition:border-color .16s,background-color .16s,color .16s}
-.toast{transition:opacity .24s,transform .24s;font-weight:400}
+.btn,.chip,.ti,.cell,.colh,.tab,.crp,.llb,.x,input,textarea,select{transition:border-color var(--t1) var(--e-out),background-color var(--t1) var(--e-out),color var(--t1) var(--e-out)}
+.toast{transition:opacity var(--t2) var(--e-out),transform var(--t2) var(--e-out);font-weight:400}
 /* 머리 · 탭 */
 .brand h1{font-size:18px}
 .tabs{gap:4px;margin:20px 0 12px;border-bottom:1px solid #E6DCBF}
@@ -582,7 +582,7 @@ html.tvon,html.tvon body{overflow:hidden}
   .rgl .t{padding:4.5px 0}
   .rgl .b{white-space:normal;min-width:0}
 }
-@media (prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}.k2 .btn:active{transform:none!important}}
 </style>
 <style id="k-oth">
 /* 다른 선생님 수업(11-17 · 선생님 화면만 · 보기만): 표(.lo)는 강의 표(.lt)와 같은 모양 · 보기 = 새 탭 «학생 화면» 미리 보기(옛 보기 서랍은 뺌)
@@ -621,7 +621,7 @@ html.tvon,html.tvon body{overflow:hidden}
 /* 한글은 낱말 가운데서 끊지 않음(WebKit «지웁니/다» 끊김) · 양쪽 정렬은 그대로 */
 .sx,#sd,.sx-pp{word-break:keep-all;overflow-wrap:break-word}
 .sx-l{display:flex;flex-direction:column;gap:8px;min-width:0}
-.sx-it{display:block;width:100%;text-align:left;background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:#2B2A26;transition:border-color .16s}
+.sx-it{display:block;width:100%;text-align:left;background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:#2B2A26;transition:border-color var(--t1) var(--e-out)}
 .sx-it:hover{border-color:#CBBF9A}
 .sx-it.on{border-color:#0C4631;box-shadow:inset 0 0 0 1px #0C4631}
 .sx-it:focus-visible,.sx-star:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -733,7 +733,8 @@ html.tvon,html.tvon body{overflow:hidden}
   --done:#1B6A43;--done-dot:#2E8B57;--warn:#98480A;--warn-dot:#C26A00;--new:#1B5499;--err:#B3302A;--mute-bg:#EFEDE5;--mute:#57534A;
   --art:#F7F2E4;--artT:#0B3D2E;--brass:#7A5410;--gold-line:#C9A227;
   --bg:#FDFAF2;--side:#F4ECD7;--side-sel:rgba(12,70,49,.11);--group:#F6EFDD;--group-hover:#F0E7D0;
-  --t1:var(--ink);--t2:var(--ink2);--t3:var(--ink2);--sep:rgba(60,45,10,.11);--line:rgba(70,52,12,.13);--fill:rgba(60,45,10,.04);--fill2:rgba(60,45,10,.07);
+  --e-out:cubic-bezier(.2,.8,.2,1);--e-soft:cubic-bezier(.3,.7,.2,1);--t1:120ms;--t2:240ms;--t3:420ms;--t4:700ms;   /* C1 움직임(학생 앱과 같은 값) */
+  --sep:rgba(60,45,10,.11);--line:rgba(70,52,12,.13);--fill:rgba(60,45,10,.04);--fill2:rgba(60,45,10,.07);
   --acc:#0C4631;--acc-hover:#093624;--acc-tint:rgba(12,70,49,.09);--acc-line:rgba(12,70,49,.32);--focus:#0C4631;
   --org:var(--warn);--org-dot:var(--warn-dot);--org-track:rgba(194,106,0,.24);--org-tint:rgba(194,106,0,.12);
   --grn-dot:var(--done-dot);--grn-tint:rgba(46,139,87,.10);--gray-dot:#8E8E93;--ring-track:rgba(60,45,10,.12);--red:var(--err);--blu:var(--new);
@@ -795,6 +796,9 @@ html.hc-going .hc-back{opacity:.5;pointer-events:none}
 .ibtn:hover{background:var(--fill2);color:var(--ink)}
 /* 단추: 높이 32 · 모서리 8 · 13/600 · 주요 단추 = 딥그린 캡슐 */
 .k2 .btn{min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-weight:600;font-size:13px;line-height:18px}
+/* C1 누름: 누르는 동안 97%(90ms) · 떼면 220ms 에 아주 작게 튀며 제자리 · 높이 · 자리 그대로 */
+.k2 .btn{transition:border-color var(--t1) var(--e-out),background-color var(--t1) var(--e-out),color var(--t1) var(--e-out),transform 220ms cubic-bezier(.3,1.25,.5,1)}
+.k2 .btn:active{transform:scale(.97);transition:transform 90ms var(--e-out)}
 .k2 .btn:hover{background:var(--fill);border-color:var(--line)}
 .k2 .btn .i{width:16px;height:16px;color:var(--ink2)}
 .k2 .btn.sm{min-height:28px;padding:0 10px}
@@ -1259,8 +1263,8 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .hsw{margin-top:12px}
 .k2 .kvb{width:100%;min-height:44px;border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer}
 .k2 .kvb:focus-visible{outline:2px solid var(--focus);outline-offset:-3px;border-radius:12px}
-.k2 .sw{position:relative;flex:none;width:40px;height:24px;border-radius:12px;background:var(--fill2);box-shadow:inset 0 0 0 1px var(--line);transition:background .15s}
-.k2 .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .15s}
+.k2 .sw{position:relative;flex:none;width:40px;height:24px;border-radius:12px;background:var(--fill2);box-shadow:inset 0 0 0 1px var(--line);transition:background var(--t1) var(--e-out)}
+.k2 .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform var(--t1) var(--e-out)}
 .k2 .sw.on{background:var(--acc);box-shadow:none}
 .k2 .sw.on::after{transform:translateX(16px)}
 /* 8-4 시청 현황(목업 s-watch): 칸 = 바탕 없이 점 · 고리 + 글 · 학생 = 머리 동그라미 + 이름 · 꼬리표 · 학생 찾기 칸 */
@@ -7590,6 +7594,7 @@ window.__lecAdminStart = function () {
     var t = ev.target;
     if (S.sd && S.sd.t === 'rec' && t && t.tagName === 'BUTTON' && rvKeyOf(ev) === ' ') ev.preventDefault();
   });
+  document.addEventListener('touchstart', function () {}, { passive: true });   /* C1: 아이폰 사파리 :active(누름) 켜기 */
   document.addEventListener('dragover', function (ev) { if (edDropOk(ev)) { ev.preventDefault(); edDragMark(true); } else if (pageDropOk(ev)) ev.preventDefault(); });
   document.addEventListener('dragleave', function (ev) { if (!ev.relatedTarget || !inEd(ev.relatedTarget)) edDragMark(false); });
   document.addEventListener('drop', function (ev) {
