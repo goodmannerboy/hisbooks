@@ -3944,7 +3944,7 @@ window.__lecAdminStart = function () {
     if (n < 10) ytPoll = setTimeout(function () { pollDur(my, n + 1); }, 500);
     else setMsg('ed-ytmsg', '영상은 열렸어요. 길이는 직접 적어 주세요', '');
   }
-  function txtApply(text) {
+  function txtApply(text, mv) {
     if (!S.ed || !S.ed.can) return;
     var r = L.parseRunner(text), o = L.parseOnline(text), got = [], i, last, pd, pc, cands = [];
     if (r.title) { setEl('ed-title', r.title); got.push('제목'); }
@@ -4015,6 +4015,18 @@ window.__lecAdminStart = function () {
     txtFold(true, r.chapters.length ? '목차 ' + r.chapters.length + '줄' : got.join(' · '),
       r.chapters.length > 0 && !o.has && !/^\s*\[\s*(제\s*목|설\s*명)\s*\]/m.test(str(text)));
     chLive();
+    if (mv) txtNext();
+  }
+  /* A2 ③: txt 를 읽은 뒤 다음 빈칸 = 링크가 비면 링크 칸 → 반을 안 골랐으면 첫 반 칩 → 다 찼으면 «강의 올리기» */
+  function txtNext() {
+    var e = null;
+    if (!S.ed || !S.ed.can) return;
+    if (!trim(edVal('ed-yt'))) e = $('ed-yt');
+    else if (!edPicked()) e = ($('ed-cls') || document).querySelector('[data-act=edCls]:not([disabled])');
+    else e = ($('ed') || document).querySelector('[data-act=edSave]');
+    if (!e) return;
+    try { e.scrollIntoView({ block: 'nearest' }); } catch (e0) {}
+    try { e.focus({ preventScroll: true }); } catch (e1) { try { e.focus(); } catch (e2) {} }
   }
   /* 볼 반을 하나라도 골랐나(다른 선생님 반 포함) */
   function edPicked() {
@@ -4042,7 +4054,7 @@ window.__lecAdminStart = function () {
     if (!file || !S.ed) return;
     if (file.size > 300000) { setMsg('ed-txtmsg', '파일이 너무 커요. «수업 영상 만들기»가 만든 txt를 골라 주세요', 'bad'); return; }
     var fr = new FileReader();
-    fr.onload = function () { var t = str(fr.result); setEl('ed-txt', t); txtApply(t); };
+    fr.onload = function () { var t = str(fr.result); setEl('ed-txt', t); txtApply(t, true); };
     fr.onerror = function () { setMsg('ed-txtmsg', '파일을 읽지 못했어요', 'bad'); };
     fr.readAsText(file, 'utf-8');
   }
@@ -7428,6 +7440,15 @@ window.__lecAdminStart = function () {
     }
   }
   function inTxt(ev) { var t = ev.target; return !!(t && t.id === 'ed-txt'); }
+  /* A2: 쪽에서 새 강의를 바로 여는 곳 = «오늘» · «강의» · 서랍 · 시트 · 칸이 없을 때 */
+  function pageNewOk() { return !!(S.me && D && !S.ed && !S.drawer && !S.sd && !S.pp && !S.menu && (curTab() === 'today' || curTab() === 'lec')); }
+  /* 끌어 놓기는 «쪽 어디에나»(J ②): 새 강의 칸이 닫혀 있고 시트 · 인쇄 칸이 없을 때 · 서랍은 openEditor 가 닫음 */
+  function pageDropOk(ev) { return !!(S.me && D && !S.ed && !S.sd && !S.pp) && ev.dataTransfer && ev.dataTransfer.types && String(ev.dataTransfer.types).indexOf('Files') >= 0; }
+  function ytTok(v) {
+    var a = str(v).split(/\s+/), i;
+    for (i = 0; i < a.length; i += 1) { if (/youtu\.?be/i.test(a[i]) && L.ytId(a[i])) return a[i]; }
+    return '';
+  }
   /* K: 서랍(새 강의 · 고치기) 안이면 어디에 끌어 놓아도 txt 를 읽음 */
   function inEd(t) { var e = $('ed'); return !!(e && !e.hidden && t && t.nodeType === 1 && e.contains(t)); }
   function edDropOk(ev) { return S.ed && S.ed.can && (inTxt(ev) || inEd(ev.target)) && ev.dataTransfer && ev.dataTransfer.types && String(ev.dataTransfer.types).indexOf('Files') >= 0; }
@@ -7469,10 +7490,16 @@ window.__lecAdminStart = function () {
     var t = ev.target;
     if (S.sd && S.sd.t === 'rec' && t && t.tagName === 'BUTTON' && rvKeyOf(ev) === ' ') ev.preventDefault();
   });
-  document.addEventListener('dragover', function (ev) { if (edDropOk(ev)) { ev.preventDefault(); edDragMark(true); } });
+  document.addEventListener('dragover', function (ev) { if (edDropOk(ev)) { ev.preventDefault(); edDragMark(true); } else if (pageDropOk(ev)) ev.preventDefault(); });
   document.addEventListener('dragleave', function (ev) { if (!ev.relatedTarget || !inEd(ev.relatedTarget)) edDragMark(false); });
   document.addEventListener('drop', function (ev) {
     edDragMark(false);
+    if (pageDropOk(ev) && ev.dataTransfer.files && ev.dataTransfer.files.length) {   /* A2 ②: 쪽 어디에 놓아도 새 강의 서랍 + 읽기 */
+      ev.preventDefault();
+      openEditor('');
+      edFiles(ev.dataTransfer.files);
+      return;
+    }
     if (!(S.ed && S.ed.can && (inTxt(ev) || inEd(ev.target))) || !ev.dataTransfer || !ev.dataTransfer.files || !ev.dataTransfer.files.length) return;
     ev.preventDefault();
     edFiles(ev.dataTransfer.files);
@@ -7488,12 +7515,24 @@ window.__lecAdminStart = function () {
       }, 0);
       return;
     }
+    /* A2 ①: «오늘» · «강의»에서 글 칸 밖 Ctrl+V 에 유튜브 링크 → 새 강의 서랍(링크 · 길이 채움) */
+    if (d && pageNewOk() && !(t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable))) {
+      v = ytTok(d.getData('text'));
+      if (v) {
+        ev.preventDefault();
+        openEditor('');
+        setEl('ed-yt', v);
+        ytCheck();
+        toast('새 강의로 열었어요 · Esc 닫기', false, { ms: 2400 });
+        return;
+      }
+    }
     if (!S.ed || !S.ed.can || !inEd(t) || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || !d) return;
     v = str(d.getData('text'));
     if (!/\[\s*(제\s*목|히즈\s*클래스|히즈\s*온라인|온라인\s*클래스|설\s*명)\s*\]/.test(v)) return;
     ev.preventDefault();
     setEl('ed-txt', v);
-    txtApply(v);
+    txtApply(v, true);
   });
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && D && S.me && new Date().getTime() - S.loadedAt > 60000) refresh();
