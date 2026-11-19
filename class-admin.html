@@ -1402,6 +1402,23 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 /* §8-226 «오늘» 이번 주 강의도 제목 줄에 칩(칩을 먼저 두고 제목을 줄임) */
 .k2 .todo .twt .ttr{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%}
 .k2 .todo .twt .ttr .twa{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* §8-233(11-19 원장님 «핸드폰 여기도 썸네일 비율이 안맞네»): 폰(760 이하) «오늘» 아래 «이번 주 강의» 줄도 «강의» 목록(§8-230)과 같은 썸네일
+   = 목록 폭(화면 − 32)의 38.2%(바닥 128 · 16:9 · 그림 칸 안 이름표 · 종이도 «강의» 목록과 같은 값) · 오른쪽 = 제목(두 줄까지 · 학교 칩은 넘치면 다음 줄) / 교재 · 반
+   · 그 아래 = 완료(목록 폭 561 이상일 때만 · 원래대로) · 학생 화면(오른쪽 붙임 · 누르는 곳 44) · 가는 선은 글 칸 왼쪽에서(넓은 화면과 같은 꼴) · 761 이상은 그대로
+   · «강의» 목록처럼 제목 단추 위아래 12 = 누르는 곳 44 · 썸네일 위 12 → 제목 글 윗줄 = 썸네일 윗줄(줄 위 여백 7 → 0) */
+@media (max-width:760px){
+  .k2 .todo .twr{grid-template-columns:max(128px,calc((100vw - 32px) * .382)) minmax(0,1fr) auto;grid-template-rows:auto 1fr;align-items:start;padding-top:0}
+  .k2 .todo .twr+.twr::before{left:calc(22px + max(128px,calc((100vw - 32px) * .382)))}
+  .k2 .todo .twr>.thm{grid-column:1;grid-row:1/span 2;width:100%;height:auto;aspect-ratio:16/9;margin-top:12px}
+  .k2 .todo .twr>.thm .thm-n{left:10px;top:calc(50% - 10px);font-size:15px;line-height:20px;font-weight:700}
+  .k2 .todo .twr>.thm .thm-p{right:6%;top:9%;width:28%;height:80%;border-radius:2px;background-size:50% 1.5px,34% 1.5px;background-position:16% 14%,16% 22%}
+  .k2 .todo .twt{grid-column:2/4;grid-row:1}
+  .k2 .todo .twt .ttr{flex-wrap:wrap}
+  .k2 .todo .twt .twa,.k2 .todo .twt .ttr .twa{padding:12px 0;align-items:flex-start;white-space:normal}
+  .k2 .todo .twa-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}
+  .k2 .todo .twc{grid-column:2;grid-row:2;align-self:end}
+  .k2 .todo .twr>.stu{grid-column:3;grid-row:2;align-self:end;justify-self:end}
+}
 #ed-schf[hidden],#ed-aud[hidden]{display:none!important}
 #ed-sch .chip:not(.on) .cnt{color:var(--ink2)}
 .schn{margin:6px 0 0;font-size:13px;line-height:18px;font-weight:600;color:var(--ink2)}
@@ -2563,7 +2580,7 @@ window.__lecAdminStart = function () {
     for (i = 0; i < list.length; i += 1) {
       l = list[i]; c = compl(l, ''); dc = defCls(l); day = L.fmtDay(dayOf(l)) || '–'; sk = lecSch(l);
       h += '<div class="twr">' + thumbHtml(l) +
-        '<span class="twt">' + (sk.length ? '<span class="ttr">' : '') + '<button type="button" class="lnk twa" data-act="todoLec" data-l="' + esc(l.id) + '"' + (sk.length ? ' title="' + esc(l.title || '') + '"' : '') + '>' + esc(l.title || '(제목 없음)') + '</button>' +
+        '<span class="twt">' + (sk.length ? '<span class="ttr">' : '') + '<button type="button" class="lnk twa" data-act="todoLec" data-l="' + esc(l.id) + '"' + (sk.length ? ' title="' + esc(l.title || '') + '"' : '') + '><span class="twa-t">' + esc(l.title || '(제목 없음)') + '</span></button>' +   /* §8-233 폰 두 줄 자르기용 글 칸 */
         (sk.length ? '<span class="sch-t" title="' + esc('볼 학교 ' + schNames(sk)) + '">' + esc(schNames(sk)) + '</span></span>' : '') +   /* §8-226 */
         '<span class="tws">' + esc((l.book || '–') + ' · ' + (clsNames(l.class_ids) || '–')) + '</span></span>' +
         '<span class="twd">' + esc(day) + '</span><span class="twn num">' + (l.dur > 0 ? esc(L.fmtDur(l.dur)) : '–') + '</span>' +
