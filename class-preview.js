@@ -62,7 +62,12 @@
      sched.me = 그 반(반 없이 «전체»면 모든 반) 명단 학생마다 한 줄(lec__roster 거름 · 볼 학교를 고른 강의면 그 학교 학생만 · 이름은 안 넣음) ·
      sched.rows = main · pt-etc 학교 시험 일정 · items = 그 학생들이 받는 범위 줄(꺼지지 않음 · 끝나지 않음 · 같은 시험 두 줄이면 나중 줄) ·
      줄의 강의 = 범위 강의 + M1(저장 뒤 올린 강의 · 모든 반 아님 · 볼 학교 · 수업일 시험 70일 전 ~ 끝 전날) 중 이 미리 보기 목록에 있는 것(수업일 차례 · done 0) ·
-     saved_at 이 없는 줄은 범위 강의만 · 일정이나 범위를 못 읽었으면 null(카드 없음 · 미리 보기는 그대로) */
+     saved_at 이 없는 줄은 범위 강의만 · 일정이나 범위를 못 읽었으면 null(카드 없음 · 미리 보기는 그대로)
+     D2(11-19 · §8-234): 줄마다 nat(examNat) · sn(suneung) · dd(examDday) · me 줄마다 cid(반 id) = 학생 화면과 같은 히즈북스 D-day 목록
+     (선생님이 읽은 칸 그대로 넘김 · 고등학생 · 내 반 거름은 화면 셈 L.examList 가 함) */
+  function rowOf(id, r) {
+    return { id: id, es: r ? nz(r.es) : null, eg: r ? nz(r.eg) : null, nat: r ? nz(r.nat) : null, sn: r ? nz(r.sn) : null, dd: r ? nz(r.dd) : null };
+  }
   function rngOf(L, t, classes, cid, sch, pick, ex) {
     if (!ex || !isArr(ex.rows) || !isArr(ex.range) || !L.examMine) return null;
     var me = [], who = {}, rm = null, re = null, by = {}, order = [], items = [], i, j, c, s, rid, nn, g, en, exo, rr, hit, key, cur, ids, sv, ls, l, d, ld;
@@ -76,7 +81,7 @@
         nn = L.norm(L.jtext(s.name));
         if (rid == null || rid === '' || nn === '' || L.truthy(s.withdrawn) || L.truthy(s.pending)) continue;
         if (sch.length && L.schoolKey(L.stuSchool(s)) !== sch[0]) continue;
-        me.push({ g: nz(s.grade), ig: isObj(s.intake) ? nz(s.intake.grade) : null, s: nz(s.school), is: isObj(s.intake) ? nz(s.intake.school) : null, cn: nz(c.name) });
+        me.push({ g: nz(s.grade), ig: isObj(s.intake) ? nz(s.intake.grade) : null, s: nz(s.school), is: isObj(s.intake) ? nz(s.intake.school) : null, cn: nz(c.name), cid: nz(c.id) });
         who['#' + rid] = 1;
         who['#' + rid + '|' + nn] = 1;
       }
@@ -120,7 +125,7 @@
     return {
       ok: true, today: t, items: items,
       sched: {
-        rows: [{ id: 'main', es: rm ? nz(rm.es) : null, eg: rm ? nz(rm.eg) : null }, { id: 'pt-etc', es: re ? nz(re.es) : null, eg: re ? nz(re.eg) : null }],
+        rows: [rowOf('main', rm), rowOf('pt-etc', re)],
         me: me
       }
     };
@@ -243,8 +248,10 @@
       if (!db) { plain(); return; }
       shell(id, true, function (cb) {
         var ap = isObj(db.app) ? db.app : {}, rows = [];
-        if (isObj(ap.main)) rows.push({ id: 'main', es: nz(ap.main.examSchool), eg: nz(ap.main.examSchoolG) });
-        if (isObj(ap['pt-etc'])) rows.push({ id: 'pt-etc', es: nz(ap['pt-etc'].examSchool), eg: nz(ap['pt-etc'].examSchoolG) });
+        ['main', 'pt-etc'].forEach(function (k) {
+          var a = ap[k];
+          if (isObj(a)) rows.push({ id: k, es: nz(a.examSchool), eg: nz(a.examSchoolG), nat: nz(a.examNat), sn: nz(a.suneung), dd: nz(a.examDday) });
+        });
         cb({ lectures: db.lecture || [], classes: db.classes || [], ex: { rows: rows, range: isArr(db.range) ? db.range : [] } });
       });
       return;
@@ -293,7 +300,8 @@
     }
     function exams() {
       try {
-        sb.from('app_state').select('id, es:data->examSchool, eg:data->examSchoolG').in('id', ['pt-etc', 'main']).then(function (r) {
+        sb.from('app_state').select('id, es:data->examSchool, eg:data->examSchoolG, nat:data->examNat, sn:data->suneung, dd:data->examDday')
+          .in('id', ['pt-etc', 'main']).then(function (r) {
           if (r && !r.error && isArr(r.data)) ex.rows = r.data;
           range();
         }, range);

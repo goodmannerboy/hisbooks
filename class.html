@@ -2807,7 +2807,7 @@ window.__lecStart = function () {
     }
     return out;
   }
-  /* 범위 줄과 내 학교 시험(sc · L.examMine)이 같은 시험인가: 날짜가 겹침(범위 exam_on~end_on · 일정 date~end) */
+  /* 범위 줄과 시험 하나(sc · L.examList 의 한 칸)가 같은 시험인가: 날짜가 겹침(범위 exam_on~end_on · 일정 date~end) */
   function rngTie(it, sc) {
     var a = L.isoOf(it.exam_on), b = L.isoOf(it.end_on) || a;
     if (!a || !sc) return false;
@@ -2815,20 +2815,29 @@ window.__lecStart = function () {
     return a <= sc.end_on && sc.exam_on <= b;
   }
   /* 카드에 띄울 시험 → {it, c:{title, sub, n, during, total, done}, ls, only} · 없으면 null
-     D1(11-19): 보이는 때 = 히즈북스 학생 칩과 같음(L.examMine · 켬이면 날짜 없이 · 끔이면 20일 전부터 · 시험 중 · 끝나면 없음) ·
+     D1(11-19): 보이는 때 = 히즈북스와 같음(켬이면 날짜 없이 · 끔이면 20일 전부터 · 시험 중 · 끝나면 없음) ·
      범위를 저장했고 그 시험과 날짜가 겹치면 범위 카드(링 진도 · 범위 n편) · 범위가 없으면 일정만 카드(only · 누를 곳 아님) ·
-     일정에 안 묶인 범위 줄 = 예전 규칙(show_on 부터 · 시험 중이거나 20일 안) · 옛 서버(sched 없음) = 범위 카드만(지금과 같음) */
+     일정에 안 묶인 범위 줄 = 예전 규칙(show_on 부터 · 시험 중이거나 20일 안) · 옛 서버(sched 없음) = 범위 카드만(지금과 같음)
+     D2(11-19 · §8-234): 시험 = 히즈북스 D-day 목록(L.examList · 학교 시험 · 모의고사 · 수능 · 반 D-day · 3개까지) ·
+     범위 줄은 목록 어느 것과든 날짜가 겹치면 묶음 · 카드 = 목록 첫째(시험 중 먼저 · 가까운 것) · 묶인 범위가 있으면 범위 카드 · 없으면 일정만 카드 ·
+     둘째 · 셋째 시험은 화면에 더하지 않음 */
   function examTop(rec) {
-    var r = S.rng, today = L.isoDay(), items = [], i, it, ls, n, j, best, c, sc, tie = false, dd, bd;
+    var r = S.rng, today = L.isoDay(), items = [], i, it, ls, n, j, best, c, sc, tie = false, dd, bd, lst = [], k, tl;
     if (!r || Object.prototype.toString.call(r.items) !== '[object Array]') return null;
-    try { sc = L.examMine ? L.examMine(r.sched, today) : null; } catch (e0) { sc = null; }   /* D1: sched 꼴이 틀려도 홈은 그대로(범위 카드 규칙) */
+    try {   /* D1: sched 꼴이 틀려도 홈은 그대로(범위 카드 규칙) */
+      if (L.examList) lst = L.examList(r.sched, today);
+      else if (L.examMine) { sc = L.examMine(r.sched, today); lst = sc ? [sc] : []; }
+      if (Object.prototype.toString.call(lst) !== '[object Array]') lst = [];
+    } catch (e0) { lst = []; }
+    sc = lst.length ? lst[0] : null;
     for (i = 0; i < r.items.length; i += 1) {
       it = r.items[i];
       if (!it || typeof it !== 'object') continue;
       ls = rngLecs(it);
       if (!ls.length) continue;
+      for (tl = false, k = 0; k < lst.length; k += 1) { if (rngTie(it, lst[k])) tl = true; }
       if (rngTie(it, sc)) tie = true;
-      else {
+      if (!tl) {
         if (it.show_on && L.isoOf(it.show_on) && today < L.isoOf(it.show_on)) continue;
         dd = L.ddayOf(it.exam_on, it.end_on, today);
         if (!dd || (!dd.during && dd.n > 20)) continue;

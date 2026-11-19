@@ -4,7 +4,7 @@
 -- 1) supabase.com 로그인 → 히즈북스 프로젝트 → 왼쪽 «SQL Editor»
 -- 2) «New query» → 이 파일 전체(Ctrl+A → Ctrl+C)를 붙여 넣고 «Run»
 --    (경고 창이 뜨면 «Run this query»)
--- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 10/10 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림 · 녹음 저장 곳 · 30일 지난 녹음» 표가 나오면 통과입니다.
+-- 3) 빨간 오류 없이 맨 아래 결과 칸에 «강의실 준비 끝 · 점검 11/11 통과 · 학생 수 · 강의 수 · PDF 저장 곳 · 새 영상 알림 · 녹음 저장 곳 · 30일 지난 녹음» 표가 나오면 통과입니다.
 --    (스스로 점검 열은 통과하면 아무것도 안 보이고, 하나라도 틀리면 그 자리에서 빨간 오류로 멈춥니다)
 --    빨간 오류가 나오면 아무것도 바뀌지 않은 것입니다(통째로 되돌려짐).
 --    «PDF 저장 곳» 칸이 «됨»이 아니면 강의 필기 PDF 저장 곳(Storage)만 못 만든 것입니다 · 강의실은 그대로 씁니다
@@ -9635,10 +9635,238 @@ begin
 end
 $$;
 
+-- ---------------------------------------------------------------- D2 (11-19) 학생 홈 시험 D-day = 히즈북스 D-day 목록(모의고사 · 수능 · 반 D-day) · 열한째 스스로 점검
+-- 원장님(11-19) «모의고사나 직접 넣은 D-day도 들어가도록 해 히즈북스랑 똑같이» → 학생 홈 시험 카드의 시험 = 히즈북스 _examDdayList 의 첫째
+--   (학교 시험 · 모의고사 · 수능 · 반 D-day · 셈은 앱 class-api.js examList)
+-- 앞 절은 그대로 두고 이 절에서만 덧댐(운영에 따로 넣을 때도 이 절 글만 · CLAUDE.md §8-234):
+--   1) 속 함수 lec__sched 다시 정의(D1 정의를 글자 그대로 옮기고 정한 곳만 바꿈): 줄마다 nat(모의고사 examNat) · sn(옛 수능 칸 suneung) ·
+--      dd(반 D-day examDday 중 내 반 칸만) 더함 · me 줄마다 cid(반 id) 더함
+--      nat · sn 은 내 반 줄에 고등학교(학교 열쇠 끝 «고»)가 있을 때만 · 지운 모의고사 · 반 D-day 는 del · t 만(합칠 때 고른 차례에만 씀) ·
+--      칸 값 = label · date · end · g · on · t 만(by · memo 따위는 안 줌) · 칸 값이 묶음이 아니면 참 = true · 거짓 = null ·
+--      sn = date · on · del 만 · 묶음이 아닌 값은 false(앱처럼 main 값이 있으면 pt-etc 를 안 봄 · 수능 없음)
+--   2) lec_range_me 는 그대로(답의 sched = 이 함수 값)
+--      옛 화면 + 이 서버 = 옛 화면은 nat · sn · dd · cid 를 안 읽음(화면 그대로) · 새 화면 + D1 서버 = 학교 시험만(D1 과 같음)
+--   3) 열한째 스스로 점검(가짜 main · pt-etc · 가짜 열쇠 · 끝에 모두 되돌림 · app_state 는 안 바꿈)
+-- 운영에 넣은 뒤 확인(SQL Editor 에서 · 바꾸는 것 없음):
+--   select has_function_privilege('anon', 'public.lec__sched(jsonb, jsonb, text)', 'execute') as "속 함수 밖에서 부름(false)";
+--   select public.lec_range_me('selftest-wrong-key');   -- {"ok": false, "err": "key"}
+
+-- 내 시험 일정: p_main · p_etc = app_state main · pt-etc 의 data · p_sid = 학생 열쇠(rid|맞춘 이름)
+--   → {rows:[{id:'main', es, eg, nat, sn, dd}, {id:'pt-etc', es, eg, nat, sn, dd}], me:[{g, ig, s, is, cn, cid}]}
+--   es · eg · me 의 g · ig · s · is · cn = D1 과 같음 · cid = 반 id(적힌 그대로)
+--   nat = examNat 칸 전부(고등학교 학생만) · sn = suneung(고등학교 학생만) · dd = examDday 중 내 반 id 칸만 · 고른 칸이 없으면 null
+create or replace function public.lec__sched(p_main jsonb, p_etc jsonb, p_sid text)
+returns jsonb
+language sql immutable set search_path = public as $$
+  with me as (
+    select c.ci, s.si, c.v as cls, s.v as stu
+      from jsonb_array_elements(case when jsonb_typeof(p_main -> 'classes') = 'array' then p_main -> 'classes' else '[]'::jsonb end)
+           with ordinality as c(v, ci)
+     cross join lateral jsonb_array_elements(case when jsonb_typeof(c.v -> 'students') = 'array' then c.v -> 'students' else '[]'::jsonb end)
+           with ordinality as s(v, si)
+     where jsonb_typeof(s.v) = 'object'
+       and coalesce(s.v ->> 'id', '') <> ''
+       and public.lec__norm(s.v ->> 'name') <> ''
+       and not public.lec__truthy(s.v -> 'withdrawn')
+       and not public.lec__truthy(s.v -> 'pending')
+       and (s.v ->> 'id') || '|' || public.lec__norm(s.v ->> 'name') = p_sid
+  ),
+  ks as (
+    select distinct public.lec__skey(public.lec__stu_school(me.stu)) as k from me
+  ),
+  hs as (
+    select exists (select 1 from ks where right(ks.k, 1) = '고') as y
+  ),
+  mc as (
+    select distinct me.cls ->> 'id' as id from me where coalesce(me.cls ->> 'id', '') <> ''
+  ),
+  src (id, o, d) as (
+    values ('main', 1, p_main), ('pt-etc', 2, p_etc)
+  ),
+  rw as (
+    select src.o, jsonb_build_object('id', src.id, 'es', es.v, 'eg', eg.v, 'nat', nat.v, 'sn', sn.v, 'dd', dd.v) as r
+      from src
+     cross join lateral (
+       select jsonb_object_agg(e.key, case when jsonb_typeof(e.value) = 'object' then jsonb_strip_nulls(jsonb_build_object(
+                'label', e.value -> 'label', 'date', e.value -> 'date', 'end', e.value -> 'end',
+                'del', e.value -> 'del', 'on', e.value -> 'on', 't', e.value -> 't')) else 'null'::jsonb end) as v
+         from jsonb_each(case when jsonb_typeof(src.d -> 'examSchool') = 'object' then src.d -> 'examSchool' else '{}'::jsonb end) as e
+        where e.key in (select ks.k from ks where ks.k <> '')) es
+     cross join lateral (
+       select jsonb_object_agg(e.key, case when jsonb_typeof(e.value) = 'object' then jsonb_strip_nulls(jsonb_build_object(
+                'label', e.value -> 'label', 'date', e.value -> 'date', 'end', e.value -> 'end',
+                'del', e.value -> 'del', 'on', e.value -> 'on', 't', e.value -> 't')) else 'null'::jsonb end) as v
+         from jsonb_each(case when jsonb_typeof(src.d -> 'examSchoolG') = 'object' then src.d -> 'examSchoolG' else '{}'::jsonb end) as e
+        where exists (select 1 from ks where ks.k <> '' and left(e.key, char_length(ks.k) + 1) = ks.k || '|')) eg
+     cross join lateral (
+       select jsonb_object_agg(e.key, case
+                when jsonb_typeof(e.value) = 'object' and public.lec__truthy(e.value -> 'del')
+                  then jsonb_strip_nulls(jsonb_build_object('del', true, 't', e.value -> 't'))
+                when jsonb_typeof(e.value) = 'object' then jsonb_strip_nulls(jsonb_build_object(
+                  'label', e.value -> 'label', 'date', e.value -> 'date', 'end', e.value -> 'end',
+                  'g', e.value -> 'g', 'on', e.value -> 'on', 't', e.value -> 't'))
+                when public.lec__truthy(e.value) then 'true'::jsonb else 'null'::jsonb end) as v
+         from jsonb_each(case when jsonb_typeof(src.d -> 'examNat') = 'object' then src.d -> 'examNat' else '{}'::jsonb end) as e
+        where (select hs.y from hs)) nat
+     cross join lateral (
+       select case when not (select hs.y from hs) then null
+                   when jsonb_typeof(src.d -> 'suneung') = 'object' then jsonb_strip_nulls(jsonb_build_object(
+                     'date', src.d #> '{suneung,date}', 'on', src.d #> '{suneung,on}', 'del', src.d #> '{suneung,del}'))
+                   when jsonb_typeof(src.d -> 'suneung') in ('string', 'number', 'boolean', 'array') then 'false'::jsonb
+                   else null end as v) sn
+     cross join lateral (
+       select jsonb_object_agg(e.key, case
+                when jsonb_typeof(e.value) = 'object' and public.lec__truthy(e.value -> 'del')
+                  then jsonb_strip_nulls(jsonb_build_object('del', true, 't', e.value -> 't'))
+                when jsonb_typeof(e.value) = 'object' then jsonb_strip_nulls(jsonb_build_object(
+                  'label', e.value -> 'label', 'date', e.value -> 'date', 'end', e.value -> 'end',
+                  'on', e.value -> 'on', 't', e.value -> 't'))
+                when public.lec__truthy(e.value) then 'true'::jsonb else 'null'::jsonb end) as v
+         from jsonb_each(case when jsonb_typeof(src.d -> 'examDday') = 'object' then src.d -> 'examDday' else '{}'::jsonb end) as e
+        where e.key in (select mc.id from mc)) dd
+  )
+  select jsonb_build_object(
+    'rows', (select jsonb_agg(rw.r order by rw.o) from rw),
+    'me', coalesce((select jsonb_agg(jsonb_build_object(
+                             'g', me.stu -> 'grade', 'ig', me.stu #> '{intake,grade}',
+                             's', me.stu -> 'school', 'is', me.stu #> '{intake,school}', 'cn', me.cls -> 'name',
+                             'cid', me.cls -> 'id') order by me.ci, me.si)
+                      from me), '[]'::jsonb))
+$$;
+
+revoke all on function public.lec__sched(jsonb, jsonb, text) from public, anon, authenticated;
+
+-- 스스로 점검(D2): 모의고사(고등학교 학생만 · 지운 칸 = del · t 만 · 글자 칸 = true · 거짓 칸 = null) · 옛 수능 칸(묶음 아님 = false) ·
+--   반 D-day(내 반 칸만 · 남의 반 · pt-etc 의 남의 반 안 줌) · me 의 cid · 중학생 = nat · sn 없음 · 학생 함수 답의 sched 칸 · 권한
+--   비교는 모두 «is distinct from»(빈 값이면 실패) · 점검용으로 넣은 것은 끝에 되돌려 남지 않습니다(app_state 는 읽기만)
+do $$
+declare
+  r       jsonb;
+  v_t     text;
+  v_m     jsonb;
+  v_e     jsonb;
+  v_dk    text := 'selftest' || replace(gen_random_uuid()::text, '-', '');
+  v_cls   text := 'c-selftest-d2' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
+begin
+  begin
+    -- 1) 고등학생(두 반): 모의고사 · 수능 · 내 반 D-day · 학교 일정(D1 그대로)
+    v_m := '{"classes": [
+       {"id": "c-d2a", "name": "고3 A반", "students": [
+         {"id": "d2-s1", "name": "점검가", "school": "포항대동고등학교", "grade": "3"}]},
+       {"id": "c-d2b", "name": "고3 B반", "students": [
+         {"id": "d2-s1", "name": "점검가", "school": "포항대동고등학교", "grade": "3"},
+         {"id": "d2-s1", "name": "점검가", "withdrawn": true, "school": "포항이동고"}]},
+       {"id": "c-d2c", "name": "중3 C반", "students": [
+         {"id": "d2-s2", "name": "중학생", "school": "포항제철중학교", "grade": "3"}]}],
+     "examSchool": {"포항대동고": {"label": "2학기 기말", "date": "2026.12.01", "by": "점검 선생님"}},
+     "examNat": {
+       "m11": {"label": "11월 모의고사", "date": "2026.11.20", "g": "1,2", "on": true, "t": 3, "by": "점검 선생님"},
+       "m12": {"label": "지운 모의", "date": "2026.12.10", "del": true, "t": 7, "by": "점검 선생님"},
+       "csat": {"label": "수능", "date": "2026.11.19", "end": null, "t": 2},
+       "x": "글자", "z": 0},
+     "suneung": {"date": "2026.11.19", "on": true, "t": 4, "by": "점검 선생님"},
+     "examDday": {
+       "c-d2a": {"label": "반 시험", "date": "2026.12.01", "on": 1, "t": 1, "memo": "점검"},
+       "c-d2b": {"label": "지운 반 시험", "date": "2026.12.02", "del": 1},
+       "c-d2c": {"label": "다른 반 시험", "date": "2026.12.03"}}}'::jsonb;
+    v_e := '{"examNat": {"m11": {"label": "11월 모의 고침", "date": "2026.11.21", "t": 5}},
+             "suneung": "글자",
+             "examDday": {"c-d2a": {"label": "반 시험 고침", "date": "2026.12.05", "t": 9},
+                          "c-zz": {"label": "남의 반", "date": "2026.12.06"}}}'::jsonb;
+    r := public.lec__sched(v_m, v_e, 'd2-s1|점검가');
+    if (r -> 'rows') is distinct from jsonb_build_array(
+         jsonb_build_object('id', 'main',
+           'es', '{"포항대동고": {"label": "2학기 기말", "date": "2026.12.01"}}'::jsonb, 'eg', 'null'::jsonb,
+           'nat', '{"m11": {"label": "11월 모의고사", "date": "2026.11.20", "g": "1,2", "on": true, "t": 3},
+                    "m12": {"del": true, "t": 7}, "csat": {"label": "수능", "date": "2026.11.19", "t": 2},
+                    "x": true, "z": null}'::jsonb,
+           'sn', '{"date": "2026.11.19", "on": true}'::jsonb,
+           'dd', '{"c-d2a": {"label": "반 시험", "date": "2026.12.01", "on": 1, "t": 1}, "c-d2b": {"del": true}}'::jsonb),
+         jsonb_build_object('id', 'pt-etc', 'es', 'null'::jsonb, 'eg', 'null'::jsonb,
+           'nat', '{"m11": {"label": "11월 모의 고침", "date": "2026.11.21", "t": 5}}'::jsonb,
+           'sn', 'false'::jsonb,
+           'dd', '{"c-d2a": {"label": "반 시험 고침", "date": "2026.12.05", "t": 9}}'::jsonb)) then
+      raise exception '점검 실패(D2 · 모의고사 · 수능 · 내 반 D-day 칸): %', left(r::text, 900);
+    end if;
+    if (r -> 'me') is distinct from '[{"g": "3", "ig": null, "s": "포항대동고등학교", "is": null, "cn": "고3 A반", "cid": "c-d2a"},
+                                     {"g": "3", "ig": null, "s": "포항대동고등학교", "is": null, "cn": "고3 B반", "cid": "c-d2b"}]'::jsonb then
+      raise exception '점검 실패(D2 · 내 반 줄의 cid): %', left(r::text, 900);
+    end if;
+    if r::text like '%점검 선생님%' or r::text like '%"memo"%' or r::text like '%"by"%' or r::text like '%지운 모의%'
+       or r::text like '%지운 반 시험%' or r::text like '%다른 반 시험%' or r::text like '%남의 반%' then
+      raise exception '점검 실패(D2 · 남의 칸이 나감): %', left(r::text, 900);
+    end if;
+    -- 2) 중학생 = 모의고사 · 수능 없음 · 제 반 D-day 만
+    r := public.lec__sched(v_m, v_e, 'd2-s2|중학생');
+    if (r -> 'rows') is distinct from jsonb_build_array(
+         jsonb_build_object('id', 'main', 'es', 'null'::jsonb, 'eg', 'null'::jsonb, 'nat', 'null'::jsonb, 'sn', 'null'::jsonb,
+           'dd', '{"c-d2c": {"label": "다른 반 시험", "date": "2026.12.03"}}'::jsonb),
+         jsonb_build_object('id', 'pt-etc', 'es', 'null'::jsonb, 'eg', 'null'::jsonb, 'nat', 'null'::jsonb, 'sn', 'null'::jsonb,
+           'dd', 'null'::jsonb))
+       or (r -> 'me') is distinct from '[{"g": "3", "ig": null, "s": "포항제철중학교", "is": null, "cn": "중3 C반", "cid": "c-d2c"}]'::jsonb then
+      raise exception '점검 실패(D2 · 중학생): %', left(r::text, 900);
+    end if;
+    -- 명단에 없음 · 빈 자료 = 두 줄(id 만) · 반 줄 없음 · 수능 칸이 숫자 · 배열이면 false · 비었으면 null
+    v_t := '{"rows": [{"id": "main", "es": null, "eg": null, "nat": null, "sn": null, "dd": null},
+                      {"id": "pt-etc", "es": null, "eg": null, "nat": null, "sn": null, "dd": null}], "me": []}';
+    if public.lec__sched(v_m, v_e, 'd2-none|없음') is distinct from v_t::jsonb
+       or public.lec__sched(null, null, 'd2-s1|점검가') is distinct from v_t::jsonb
+       or public.lec__sched('[]'::jsonb, '"x"'::jsonb, null) is distinct from v_t::jsonb then
+      raise exception '점검 실패(D2 · 명단에 없음 · 빈 자료)';
+    end if;
+    r := public.lec__sched(v_m - 'suneung' || '{"suneung": 0}'::jsonb, '{"suneung": [1]}'::jsonb, 'd2-s1|점검가');
+    if (r #> '{rows,0,sn}') is distinct from 'false'::jsonb or (r #> '{rows,1,sn}') is distinct from 'false'::jsonb then
+      raise exception '점검 실패(D2 · 수능 칸이 묶음이 아님): %', left(r::text, 900);
+    end if;
+    r := public.lec__sched(v_m - 'suneung' - 'examNat' || '{"suneung": null}'::jsonb, '{}'::jsonb, 'd2-s1|점검가');
+    if (r #> '{rows,0,sn}') is distinct from 'null'::jsonb or (r #> '{rows,0,nat}') is distinct from 'null'::jsonb then
+      raise exception '점검 실패(D2 · 수능 · 모의고사 칸 없음): %', left(r::text, 900);
+    end if;
+
+    -- 3) 학생 함수: 답의 sched 두 줄마다 nat · sn · dd 칸(명단에 없는 열쇠 = 모두 null · 남의 모의고사 · 반 D-day 안 나감)
+    insert into public.lec_key (kh, sid, rid, pin, sname, cls)
+    values (public.lec__kh(v_dk), 'selftest-d2|점검', 'selftest-d2', '1234', '점검', array[v_cls]);
+    r := public.lec_range_me(v_dk);
+    if (r ->> 'ok') is distinct from 'true'
+       or jsonb_typeof(r #> '{sched,rows,0}') is distinct from 'object' or jsonb_typeof(r #> '{sched,rows,1}') is distinct from 'object'
+       or not ((r #> '{sched,rows,0}') ?& array['id', 'es', 'eg', 'nat', 'sn', 'dd'])
+       or not ((r #> '{sched,rows,1}') ?& array['id', 'es', 'eg', 'nat', 'sn', 'dd'])
+       or (r #> '{sched,rows,0,nat}') is distinct from 'null'::jsonb or (r #> '{sched,rows,1,nat}') is distinct from 'null'::jsonb
+       or (r #> '{sched,rows,0,sn}') is distinct from 'null'::jsonb or (r #> '{sched,rows,1,sn}') is distinct from 'null'::jsonb
+       or (r #> '{sched,rows,0,dd}') is distinct from 'null'::jsonb or (r #> '{sched,rows,1,dd}') is distinct from 'null'::jsonb
+       or (r #> '{sched,me}') is distinct from '[]'::jsonb then
+      raise exception '점검 실패(D2 · 답의 sched): %', left(r::text, 900);
+    end if;
+
+    -- 4) 권한: 학생 함수는 누구나(열쇠로 확인) · 다시 정의한 속 함수와 속 함수 전부는 밖에서 못 부름
+    if has_function_privilege('anon', 'public.lec__sched(jsonb, jsonb, text)', 'execute')
+       or has_function_privilege('authenticated', 'public.lec__sched(jsonb, jsonb, text)', 'execute')
+       or not has_function_privilege('anon', 'public.lec_range_me(text)', 'execute')
+       or not has_function_privilege('authenticated', 'public.lec_range_me(text)', 'execute') then
+      raise exception '점검 실패(D2 권한)';
+    end if;
+    select string_agg(p.oid::regprocedure::text, ', ' order by p.oid::regprocedure::text) into v_t
+      from pg_proc p
+     where p.pronamespace = 'public'::regnamespace
+       and left(p.proname, 5) = 'lec__'
+       and p.proname <> 'lec__is_staff'
+       and p.prorettype <> 'trigger'::regtype
+       and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'));
+    if v_t is not null then
+      raise exception '점검 실패(D2 · 속 함수를 밖에서 부를 수 있음): %', v_t;
+    end if;
+
+    raise exception 'LEC_SELFTEST_OK';
+  exception when others then
+    if sqlerrm <> 'LEC_SELFTEST_OK' then raise; end if;
+  end;
+end
+$$;
+
 notify pgrst, 'reload schema';
 
 select '강의실 준비 끝' as "결과",
-       '점검 10/10 통과' as "점검",
+       '점검 11/11 통과' as "점검",
        (select count(*) from public.lec__roster()) as "학생 수",
        (select count(*) from public.lec_lecture) as "강의 수",
        public.lec__pdf_store() as "PDF 저장 곳",

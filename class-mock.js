@@ -2389,11 +2389,15 @@
        새솔고 2학년(한겨울) = «기말고사» D+25 · 범위 저장됨(Dana · L3 L4) → 아직 D-20 밖이라 카드 없음
        한빛여고 2학년(윤가람) = 학년 예외 D+26(켬) · 저장 안 됨 → 선생님 띠(D-30 안)
      'pt-etc' 줄의 급여 · 금전 칸은 학생 쪽으로 새지 않는지 보려는 가짜 값
-     ?manyexams=1 = 위에 더해 시험 다섯(c2Many · 띠가 여럿일 때) · 그냥 ?demo=1 은 위 그대로 */
+     ?manyexams=1 = 위에 더해 시험 다섯(c2Many · 띠가 여럿일 때) · 그냥 ?demo=1 은 위 그대로
+     D2(11-19): ?nod2=1 또는 LecMock.noD2(true) = lec__sched 가 D1 판인 서버(모의고사 · 수능 · 반 D-day · cid 없음) ·
+     시연 자료에 모의고사 · 반 D-day 는 넣지 않음(시연 학생 카드 그대로 · 검사가 저장소에 넣고 되돌림) */
   var NORANGE = false;
   try { NORANGE = /[?&]norange=1(&|$)/.test(w.location.search); } catch (e) { NORANGE = false; }
   var NOSCHED = false;   /* D1(11-19): lec_range_me 를 D1 앞 판으로(?nosched=1 · LecMock.noSched) */
   try { NOSCHED = /[?&]nosched=1(&|$)/.test(w.location.search); } catch (e) { NOSCHED = false; }
+  var NOD2 = false;   /* D2(11-19): lec__sched 를 D2 앞 판(D1)으로(?nod2=1 · LecMock.noD2 · nat · sn · dd · cid 없음) */
+  try { NOD2 = /[?&]nod2=1(&|$)/.test(w.location.search); } catch (e) { NOD2 = false; }
   var C2ID = {
     R1: '5eedc2a0-0000-4000-8000-000000000001',
     R2: '5eedc2a0-0000-4000-8000-000000000002'
@@ -2638,27 +2642,60 @@
   }
 
   /* D1(11-19) lec__sched 와 같음: 내 반 줄(명단 거름 = rosterFrom · 나 = id|맞춘 이름) · 내 학교 열쇠 칸만(examSchool · «열쇠|» 로 시작하는 examSchoolG) ·
-     칸 값 = label · date · end · del · on · t 만(빈 칸 뺌) · 묶음이 아니면 null · 고른 칸이 없으면 null · rows 는 늘 두 줄 */
+     칸 값 = label · date · end · del · on · t 만(빈 칸 뺌) · 묶음이 아니면 null · 고른 칸이 없으면 null · rows 는 늘 두 줄
+     D2(11-19 · §8-234): 줄마다 nat(examNat · 고등학교 학생만) · sn(suneung · 고등학교 학생만 · 묶음이 아니면 false) · dd(examDday 중 내 반 칸만) ·
+     지운 칸 = del · t 만 · 묶음이 아닌 칸 = 참이면 true · 아니면 null · me 줄마다 cid · NOD2 = D1 서버(이 넷 없음) */
   function schedOf(d, sid) {
-    var X = L(), me = [], ks = [], app = d.app && typeof d.app === 'object' ? d.app : {}, F = ['label', 'date', 'end', 'del', 'on', 't'];
+    var X = L(), me = [], ks = [], mc = [], app = d.app && typeof d.app === 'object' ? d.app : {}, F = ['label', 'date', 'end', 'del', 'on', 't'], hs = false;
     function nz(v) { return v === undefined ? null : v; }
     function obj(v) { return !!v && typeof v === 'object' && !isArr(v); }
     (isArr(d.classes) ? d.classes : []).forEach(function (c) {
       (c && isArr(c.students) ? c.students : []).forEach(function (s) {
-        var rid, nn, k;
+        var rid, nn, k, row, ct;
         if (!obj(s)) return;
         rid = X.jtext(s.id);
         nn = X.norm(X.jtext(s.name));
         if (rid == null || rid === '' || nn === '' || X.truthy(s.withdrawn) || X.truthy(s.pending) || rid + '|' + nn !== sid) return;
-        me.push({ g: nz(s.grade), ig: obj(s.intake) ? nz(s.intake.grade) : null, s: nz(s.school), is: obj(s.intake) ? nz(s.intake.school) : null, cn: nz(c.name) });
+        row = { g: nz(s.grade), ig: obj(s.intake) ? nz(s.intake.grade) : null, s: nz(s.school), is: obj(s.intake) ? nz(s.intake.school) : null, cn: nz(c.name) };
+        if (!NOD2) row.cid = nz(c.id);
+        me.push(row);
         k = X.schoolKey(X.stuSchool(s));
         if (k && ks.indexOf(k) < 0) ks.push(k);
+        if (k && k.charAt(k.length - 1) === '고') hs = true;
+        ct = X.jtext(c.id);
+        if (ct != null && ct !== '' && mc.indexOf(ct) < 0) mc.push(ct);
       });
     });
     function val(v) {
       var o = {}, i;
       if (!obj(v)) return null;
       for (i = 0; i < F.length; i += 1) { if (has(v, F[i]) && v[F[i]] != null) o[F[i]] = v[F[i]]; }
+      return o;
+    }
+    function val2(v, f) {   /* D2 모의고사 · 반 D-day 칸 */
+      var o = {}, i;
+      if (obj(v) && X.truthy(v.del)) { o.del = true; if (has(v, 't') && v.t != null) o.t = v.t; return o; }
+      if (!obj(v)) return X.truthy(v) ? true : null;
+      for (i = 0; i < f.length; i += 1) { if (has(v, f[i]) && v[f[i]] != null) o[f[i]] = v[f[i]]; }
+      return o;
+    }
+    function map2(m, keep, f) {
+      var out = {}, n = 0, key;
+      if (!obj(m)) return null;
+      for (key in m) {
+        if (!has(m, key) || !keep(key)) continue;
+        out[key] = val2(m[key], f);
+        n += 1;
+      }
+      return n ? out : null;
+    }
+    function sn2(v) {
+      var o = {};
+      if (!hs || v === undefined || v === null) return null;
+      if (!obj(v)) return false;
+      if (has(v, 'date') && v.date != null) o.date = v.date;
+      if (has(v, 'on') && v.on != null) o.on = v.on;
+      if (has(v, 'del') && v.del != null) o.del = v.del;
       return o;
     }
     function pickOf(m, g) {
@@ -2674,8 +2711,12 @@
     }
     return {
       rows: ['main', 'pt-etc'].map(function (id) {
-        var r = obj(app[id]) ? app[id] : {};
-        return { id: id, es: pickOf(r.examSchool, false), eg: pickOf(r.examSchoolG, true) };
+        var r = obj(app[id]) ? app[id] : {}, o = { id: id, es: pickOf(r.examSchool, false), eg: pickOf(r.examSchoolG, true) };
+        if (NOD2) return o;
+        o.nat = hs ? map2(r.examNat, function () { return true; }, ['label', 'date', 'end', 'g', 'on', 't']) : null;
+        o.sn = sn2(r.suneung);
+        o.dd = map2(r.examDday, function (key) { return mc.indexOf(key) >= 0; }, ['label', 'date', 'end', 'on', 't']);
+        return o;
       }),
       me: me
     };
@@ -2850,7 +2891,11 @@
         out.push({
           id: ids[i],
           es: r.examSchool === undefined ? null : r.examSchool,
-          eg: r.examSchoolG === undefined ? null : r.examSchoolG
+          eg: r.examSchoolG === undefined ? null : r.examSchoolG,
+          /* D2(11-19): 관리 화면 범위 서랍 안내 글(모의고사 · 수능 · 반 D-day) */
+          nat: r.examNat === undefined ? null : r.examNat,
+          sn: r.suneung === undefined ? null : r.suneung,
+          dd: r.examDday === undefined ? null : r.examDday
         });
       }
       return out;
@@ -2860,6 +2905,7 @@
   /* 시험용: C2 함수만 없는 서버 켜기·끄기 */
   w.LecMock.noRange = function (on) { if (on !== undefined) NORANGE = !!on; return NORANGE; };
   w.LecMock.noSched = function (on) { if (on !== undefined) NOSCHED = !!on; return NOSCHED; };
+  w.LecMock.noD2 = function (on) { if (on !== undefined) NOD2 = !!on; return NOD2; };
 
   /* ======================================================= N1 (11-17) 새 영상 알림(CLAUDE.md §8-205)
      class-setup.sql N1 절(lec_push_cfg · lec_push_sub · lec_push_queue · 트리거 lec__push_mark · lec_push_on · lec_push_save ·

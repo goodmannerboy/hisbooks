@@ -1342,7 +1342,9 @@
    - RNG_VER = 시험 이름(examName) · 학교 키 · 시험 고르기 · 묶기 규칙의 판 · 규칙을 바꾸면 올림 → 서버는 더 낮은 판 화면의 고침을 받지 않음
    - 범위 줄 = 학교 · 학년 · 시험(term = 학년도-학기-종류) 하나 · 받는 학생 = 명단 학생 id(같은 id 를 두 학생이 쓰면 학생 열쇠)
    - 서버 함수: lec_range_me(학생) · lec_range_staff · lec_range_save · lec_range_sync(선생님) — class-setup.sql C2 절
-     서버에 아직 없으면(옛 SQL · 404 · PGRST202) 조용히 넘어감 · 감싼 함수는 모두 실패해도 거절하지 않고 값으로 돌려줌 */
+     서버에 아직 없으면(옛 SQL · 404 · PGRST202) 조용히 넘어감 · 감싼 함수는 모두 실패해도 거절하지 않고 값으로 돌려줌
+   - D2(11-19 · CLAUDE.md §8-234) 학생 홈 시험 카드 = 히즈북스 D-day 목록(_examDdayList)과 같은 셈: examList(학교 시험 · 모의고사 · 수능 ·
+     반 D-day · 3개까지) · examMine = 그 첫째 · 앱 _natMap · _natG · _natLabel · _hsGrade · _natFor 를 옮김(class_c2test.js 가 앱과 견줌) */
 (function (w) {
   'use strict';
 
@@ -1603,8 +1605,14 @@
     if (mv === undefined || mv === null) return isObj(val) ? val : {};
     return mapMerge(isObj(mv) ? mv : {}, isObj(val) ? val : {});
   }
-  /* rows = [{id:'main'|'pt-etc', es: data->examSchool, eg: data->examSchoolG}] → {es, eg}
-     두 줄을 다 읽었을 때만 합침 · 한 줄이라도 못 읽었으면 null(모름 · 조용히 맞추기를 하지 않음) */
+  /* D2(11-19) 앱 _ptJoin 의 suneung('v' 칸 · mergeAppData 가 따로 합치지 않음): main 값이 있으면(null 아님) main · 없으면 pt-etc */
+  function joinSn(mv, val) {
+    if (mv !== undefined && mv !== null) return mv;
+    return val === undefined ? null : val;
+  }
+  /* rows = [{id:'main'|'pt-etc', es: data->examSchool, eg: data->examSchoolG, nat: data->examNat, sn: data->suneung, dd: data->examDday}]
+     → {es, eg, nat, sn, dd} · 두 줄을 다 읽었을 때만 합침 · 한 줄이라도 못 읽었으면 null(모름 · 조용히 맞추기를 하지 않음)
+     D2: nat · dd 는 examSchool 과 같은 칸마다 합침 · sn 은 joinSn · 옛 서버(nat · sn · dd 없음) = 빈 것(학교 시험만) */
   function examMerge(rows) {
     var m = null, e = null, i;
     if (!isArr(rows)) return null;
@@ -1614,7 +1622,10 @@
       else if (rows[i].id === 'pt-etc') e = rows[i];
     }
     if (!m || !e) return null;
-    return { es: joinV(m ? m.es : undefined, e ? e.es : undefined), eg: joinV(m ? m.eg : undefined, e ? e.eg : undefined) };
+    return {
+      es: joinV(m.es, e.es), eg: joinV(m.eg, e.eg),
+      nat: joinV(m.nat, e.nat), sn: joinSn(m.sn, e.sn), dd: joinV(m.dd, e.dd)
+    };
   }
 
   /* 날짜 글자 → 'YYYY-MM-DD'(아니면 '') */
@@ -1776,40 +1787,178 @@
     return out;
   }
 
-  /* D1(11-19) 학생 홈 시험 카드의 시험 = 히즈북스 학생 칩(_examChipRaw)과 같은 셈
-     sched = 서버 lec_range_me 의 sched {rows:[{id:'main', es, eg}, {id:'pt-etc', es, eg}], me:[{g, ig, s, is, cn}]}(내 학교 칸만)
-     me 줄(내가 든 반)마다 학교 key = schoolKey(stuSchool) · 학년 = stuGrade(반 이름) → examPick → examCalc(켬이면 날짜 없이 · 끔이면 20일 전부터 ·
-     시험 중 보임 · 끝나면 없음) · 보이는 것 중 시험 중 먼저 · 다음 가까운 것
-     → {k, g, src, on, name, label, exam_on, end_on, n, during}(날짜 'YYYY-MM-DD') · 없음 · 옛 서버(sched 없음) · 두 줄 못 읽음 = null */
-  function examMine(sched, today) {
-    var td = tdDot(today), m, me, i, o, stu, k, g, pk, c, x, nm, best = null, cand;
-    if (!td || !isObj(sched) || !isArr(sched.me)) return null;
-    m = examMerge(sched.rows);
-    if (!m) return null;
-    me = sched.me;
-    for (i = 0; i < me.length; i += 1) {
-      o = me[i];
-      if (!isObj(o)) continue;
-      stu = { grade: o.g, school: o.s, intake: { grade: o.ig, school: o.is } };
-      k = schoolKey(stuSchool(stu));
-      if (!k) continue;
-      g = stuGrade(stu, { name: o.cn });
-      pk = examPick(m.es, m.eg, k, g, td);
-      if (!pk) continue;
-      c = examCalc(pk.rec, td);
-      if (!c) continue;
-      x = recDays(pk.rec);
-      nm = examName(pk.rec.label, x.d);
-      cand = {
-        k: k, g: g, src: pk.src, on: !!pk.rec.on, name: nm ? nm.name : '', label: str(pk.rec.label).trim(),
-        exam_on: x.d.split('.').join('-'), end_on: x.d2.split('.').join('-'), n: c.n, during: !!c.during
-      };
-      if (!best || (cand.during && !best.during) || (cand.during === best.during && (cand.n < best.n ||
-          (cand.n === best.n && (cmpS(cand.end_on, best.end_on) || cmpS(cand.k, best.k) || cmpS(cand.g, best.g)) < 0)))) {
-        best = cand;
+  /* ------------------------------------------------ D2(11-19) 히즈북스 D-day 목록(_examDdayList) 옮김
+     원장님(11-19) «모의고사나 직접 넣은 D-day도 들어가도록 해 히즈북스랑 똑같이» · 앱 함수를 글자 그대로 옮기고 앱 this.today() 대신 td 인자 */
+
+  /* 앱 _natMap: examNat(합친 것) + 수능(examNat.csat 가 없을 때만 옛 suneung 칸으로 · 3학년) */
+  function natMap(nat, sn) {
+    var m = {}, k, s9;
+    try {
+      if (isObj(nat)) { for (k in nat) { if (has(nat, k)) m[k] = nat[k]; } }
+      if (!m.csat) {
+        s9 = sn || {};
+        if (!s9.del && (s9.date || s9.on)) m.csat = { label: '대학수학능력시험', date: (s9.date || ''), on: (s9.on ? 1 : 0), g: '3', t: (s9.t || 0) };
+      }
+      return m;
+    } catch (e) { return {}; }
+  }
+  /* 앱 _natG: 모의고사를 보는 학년(수능 = 3학년만 · 빈 칸이면 1~3학년) */
+  function natG(rec, key) {
+    try {
+      if (key === 'csat') return ['3'];
+      var g = String((rec && rec.g) || '1,2,3').split(',').filter(function (x) { return (x === '1' || x === '2' || x === '3'); });
+      return (g.length ? g : ['1', '2', '3']);
+    } catch (e) { return ['1', '2', '3']; }
+  }
+  /* 앱 _natLabel: 수능 = «대학수학능력시험» · 적은 이름 · 없으면 «N월 모의고사» */
+  function natLabel(rec, key) {
+    try {
+      if (key === 'csat') return '대학수학능력시험';
+      var l = String((rec && rec.label) || '').trim();
+      if (l) return l;
+      var d = examNorm(rec && rec.date);
+      if (d) return (parseInt(d.split('.')[1], 10) + '월 모의고사');
+      return '모의고사';
+    } catch (e) { return '모의고사'; }
+  }
+  /* 앱 _hsGrade: 고등학교 학생의 학년('1'~'3') · 아니면 '' */
+  function hsGrade(stu, cls) {
+    try {
+      var k = schoolKey(stuSchool(stu));
+      if (!k || k.charAt(k.length - 1) !== '고') return '';
+      var g = String(stuGrade(stu, cls) || '');
+      return ((g === '1' || g === '2' || g === '3') ? g : '');
+    } catch (e) { return ''; }
+  }
+  function cp(o, add) {
+    var out = {}, k;
+    if (o && typeof o === 'object') { for (k in o) { if (has(o, k)) out[k] = o[k]; } }
+    for (k in add) { if (has(add, k)) out[k] = add[k]; }
+    return out;
+  }
+  /* 앱 _natFor: 내 학년이 보는 모의고사 · 수능 → [셈 + nat] */
+  function natFor(nm, stu, cls, td) {
+    var out = [];
+    try {
+      var g = hsGrade(stu, cls);
+      if (!g) return [];
+      Object.keys(nm).forEach(function (k) {
+        var r = nm[k];
+        if (!r || r.del || !examNorm(r.date)) return;
+        if (natG(r, k).indexOf(g) < 0) return;
+        var c = examCalc(cp(r, { label: natLabel(r, k) }), td);
+        if (c) out.push({ c: c, src: 'nat', nat: k, g: g, rec: r });
+      });
+      return out;
+    } catch (e) { return []; }
+  }
+  function ddSort(u) {   /* 앱과 같음: 시험 중 먼저 · 가까운 것(같으면 넣은 차례 · 안정 정렬) */
+    var i;
+    for (i = 0; i < u.length; i += 1) u[i].ix = i;
+    u.sort(function (a, b) { return ((a.c.during ? 0 : 1) - (b.c.during ? 0 : 1)) || (a.c.n - b.c.n) || (a.ix - b.ix); });
+    return u;
+  }
+  function ddUniq(out) {   /* 앱과 같음: 같은 이름 · 날짜는 한 번(앞의 것) */
+    var seen = {}, u = [], i, kk;
+    for (i = 0; i < out.length; i += 1) {
+      kk = '#' + out[i].c.label + '|' + out[i].c.date;
+      if (seen[kk]) continue;
+      seen[kk] = 1;
+      u.push(out[i]);
+    }
+    return u;
+  }
+  /* 앱 _examDdayListRaw(반 하나): 학교 시험(학년 예외가 보이면 그것 · 아니면 학교 일정) + 모의고사 · 수능 + (둘 다 없으면) 반 D-day
+     → 같은 이름 · 날짜 한 번 → 시험 중 먼저 · 가까운 차례 → 3개까지 */
+  function ddOne(m, o, td) {
+    var out = [], sch = null, stu, cls, k, g, rg, rec, cg, cc, lg, cid;
+    stu = { grade: o.g, school: o.s, intake: { grade: o.ig, school: o.is } };
+    cid = (o.cid === undefined || o.cid === null) ? null : String(o.cid);
+    cls = { id: cid, name: o.cn };
+    k = schoolKey(stuSchool(stu));
+    if (k) {
+      try {
+        g = stuGrade(stu, cls);
+        if (g) {
+          rg = has(m.eg, k + '|' + g) ? m.eg[k + '|' + g] : undefined;
+          if (rg && !rg.del && examNorm(rg.date)) { cg = examCalc(rg, td); if (cg) sch = { c: cg, src: 'school', pick: 'G', k: k, g: g, rec: rg }; }
+        }
+      } catch (e0) { /* 앱과 같음 */ }
+      if (!sch) {
+        rec = has(m.es, k) ? m.es[k] : undefined;
+        if (rec && !rec.del && examNorm(rec.date)) { cc = examCalc(rec, td); if (cc) sch = { c: cc, src: 'school', pick: 'S', k: k, g: g || '', rec: rec }; }
       }
     }
-    return best;
+    if (sch) out.push(sch);
+    natFor(natMap(m.nat, m.sn), stu, cls, td).forEach(function (x) { out.push(x); });
+    if (!out.length && cid !== null && has(m.dd, cid)) {
+      lg = examCalc(m.dd[cid], td);
+      if (lg) out.push({ c: lg, src: 'class', rec: m.dd[cid] });
+    }
+    out.forEach(function (x) { x.cid = cid; });
+    return ddSort(ddUniq(out)).slice(0, 3);
+  }
+  /* 목록 한 칸(화면 · 관리 화면이 씀) · label = 앱 D-day 글(학교 시험 = 적은 이름 · 없으면 «학교 시험» · 모의고사 = _natLabel · 반 = 적은 이름) ·
+     name = 카드 이름(학교 시험 = examName 의 «2학기 기말» 꼴 · 모의고사 · 수능 · 반 D-day = label · 20자) */
+  function ddItem(x) {
+    var nm = x.src === 'school' ? examName(x.rec.label, x.c.date) : null;
+    return {
+      src: x.src, k: x.k || '', g: x.g || '', pick: x.pick || null, nat: x.nat || null, cid: x.cid,
+      on: !!(x.rec && x.rec.on), name: nm ? nm.name : Lec.left(x.c.label, 20), label: x.c.label,
+      exam_on: x.c.date.split('.').join('-'), end_on: x.c.end.split('.').join('-'), n: x.c.n, during: !!x.c.during
+    };
+  }
+  /* m = examMerge 결과 · me = 내 반 줄 [{g, ig, s, is, cn, cid}](반마다 앱 목록 → 합쳐 같은 이름 · 날짜 한 번 · 같은 차례 · 3개까지)
+     → [{src:'school'|'nat'|'class', k, g, pick:'S'|'G'|null, nat, cid, on, name, label, exam_on, end_on, n, during}](날짜 'YYYY-MM-DD') */
+  function examListOf(m, me, today) {
+    var td = tdDot(today), all = [], i;
+    if (!td || !isObj(m) || !isArr(me)) return [];
+    m = { es: isObj(m.es) ? m.es : {}, eg: isObj(m.eg) ? m.eg : {}, nat: m.nat, sn: m.sn, dd: isObj(m.dd) ? m.dd : {} };
+    for (i = 0; i < me.length; i += 1) {
+      if (!isObj(me[i])) continue;
+      all = all.concat(ddOne(m, me[i], td));
+    }
+    return ddSort(ddUniq(all)).slice(0, 3).map(ddItem);
+  }
+  /* 학생 홈 시험 카드의 시험 목록 = 히즈북스 D-day 목록(_examDdayList)과 같은 셈(3개까지)
+     sched = 서버 lec_range_me 의 sched {rows:[{id:'main', es, eg, nat, sn, dd}, {id:'pt-etc', …}], me:[{g, ig, s, is, cn, cid}]}
+     없음 · 옛 서버(sched 없음) · 두 줄 못 읽음 = [] · D1 서버(nat · sn · dd · cid 없음) = 학교 시험만 */
+  function examList(sched, today) {
+    var m;
+    if (!tdDot(today) || !isObj(sched) || !isArr(sched.me)) return [];
+    m = examMerge(sched.rows);
+    if (!m) return [];
+    return examListOf(m, sched.me, today);
+  }
+  /* D1 이름 그대로: 목록의 첫째(시험 중 먼저 · 가까운 것) · 없으면 null
+     칸 = {k, g, src, on, name, label, exam_on, end_on, n, during} + pick · nat · cid(src 는 D2 부터 'school'|'nat'|'class' · 학교 시험의 S/G = pick) */
+  function examMine(sched, today) {
+    var l = examList(sched, today);
+    return l.length ? l[0] : null;
+  }
+  /* 관리 화면용: 반 목록에서 학생 열쇠(rid|맞춘 이름)의 반 줄(서버 lec__sched 의 me 와 같은 거름 · 같은 꼴) */
+  function examSeats(classes, skey) {
+    var out = [], i, j, c, s, rid, nn;
+    if (!isArr(classes)) return out;
+    for (i = 0; i < classes.length; i += 1) {
+      c = classes[i];
+      if (!isObj(c) || !isArr(c.students)) continue;
+      for (j = 0; j < c.students.length; j += 1) {
+        s = c.students[j];
+        if (!isObj(s)) continue;
+        rid = Lec.jtext(s.id);
+        if (rid === null || rid === '') continue;
+        nn = Lec.norm(Lec.jtext(s.name));
+        if (nn === '' || Lec.truthy(s.withdrawn) || Lec.truthy(s.pending)) continue;
+        if (rid + '|' + nn !== skey) continue;
+        out.push({
+          g: s.grade === undefined ? null : s.grade, ig: isObj(s.intake) && s.intake.grade !== undefined ? s.intake.grade : null,
+          s: s.school === undefined ? null : s.school, is: isObj(s.intake) && s.intake.school !== undefined ? s.intake.school : null,
+          cn: c.name === undefined ? null : c.name, cid: c.id === undefined ? null : c.id
+        });
+      }
+    }
+    return out;
   }
 
   /* 강의의 수업일(가장 늦은 수업일 · 없으면 올린 날) */
@@ -2127,6 +2276,7 @@
     gradeFromClass: gradeFromClass, stuGrade: stuGrade,
     RNG_VER: RNG_VER, grpT: grpT,
     examMerge: examMerge, examPick: examPick, examName: examName, examGroups: examGroups, examMine: examMine, isoOf: isoOf, addDays: addDays,
+    examList: examList, examListOf: examListOf, examSeats: examSeats, natMap: natMap, natG: natG, natLabel: natLabel, hsGrade: hsGrade,
     rngCands: rngCands, rngBase: rngBase, rngName: rngName, rngBand: rngBand, rngBandText: rngBandText, rngSyncRows: rngSyncRows,
     ddayOf: ddayOf, rngPickItem: rngPickItem, rngCard: rngCard,
     rngGoneErr: rngGoneErr, rngMe: rngMe, rngStaff: rngStaff, rngSave: rngSave, rngSeen: rngSeen, rngSync: rngSync, rngReset: rngReset

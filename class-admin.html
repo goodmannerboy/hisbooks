@@ -1831,9 +1831,10 @@ window.__lecAdminStart = function () {
       qdelete: function (id) { return rq(sb.from('lec_qna').update({ deleted: true }).eq('id', id)); },
       makeLink: function (skey) { return rq(sb.rpc('lec_link', { p_skey: skey })).then(linkKey); },
       logoutAll: function (sid) { return rq(sb.rpc('lec_logout_all', { p_skey: sid })).then(outCount); },
-      /* C2: 히즈북스 학교 시험 일정(두 줄 · 그 두 칸만) */
+      /* C2: 히즈북스 학교 시험 일정(두 줄 · 그 두 칸만) · D2(11-19): + 모의고사(examNat) · 옛 수능 칸(suneung) · 반 D-day(examDday) = 서랍 안내 글 */
       exams: function () {
-        return rq(sb.from('app_state').select('id, es:data->examSchool, eg:data->examSchoolG').in('id', ['pt-etc', 'main']));
+        return rq(sb.from('app_state').select('id, es:data->examSchool, eg:data->examSchoolG, nat:data->examNat, sn:data->suneung, dd:data->examDday')
+          .in('id', ['pt-etc', 'main']));
       },
       /* P1 필기 PDF: 버킷 lec-pdf · 덮어쓰기 없음(같은 이름 = 같은 내용 · «이미 있음»은 부르는 쪽이 성공으로 셈) */
       pdfPut: function (key, file) { return rq(sb.storage.from('lec-pdf').upload(key, file, { upsert: false, contentType: 'application/pdf' })); },
@@ -1986,6 +1987,31 @@ window.__lecAdminStart = function () {
       if (hit) n += 1;
     }
     return n;
+  }
+  /* D2(11-19 · §8-234): 받는 학생의 히즈북스 D-day 목록(L.examListOf)에 이 시험과 날짜가 겹치는 모의고사 · 수능 · 반 D-day 가 있으면 그 종류
+     ('nat' · 'csat' · 'class' · 없으면 '') · 학생 화면은 그 D-day 와 범위를 묶어 보이기 시작한 날 전에도 범위 카드를 띄움 */
+  function rngTieSrc(g) {
+    var rg = D && D.rg, out = '', a, b, i, j, r, l;
+    if (!rg || !rg.ex || !L.examListOf || !L.examSeats || !isArr(D.rosterAll)) return '';
+    a = str(g.exam_on); b = str(g.end_on) || a;
+    for (i = 0; i < D.rosterAll.length && !out; i += 1) {
+      r = D.rosterAll[i];
+      if (g.rids.indexOf(r.rid) < 0 && g.rids.indexOf(r.skey) < 0) continue;
+      try { l = L.examListOf(rg.ex, L.examSeats(D.classes, r.skey), rg.today); } catch (e) { l = []; }
+      for (j = 0; j < l.length && !out; j += 1) {
+        if (l[j].src === 'school' || !(a <= l[j].end_on && l[j].exam_on <= b)) continue;
+        out = l[j].src === 'nat' ? (l[j].nat === 'csat' ? 'csat' : 'nat') : 'class';
+      }
+    }
+    return out;
+  }
+  /* 서랍 «학생 화면에 …» 한 줄: D1 켬 = 지금 보임 · D2 모의고사 · 수능 · 반 D-day 와 묶임 = 지금 보임 · 아니면 보이기 시작하는 날(시험 20일 전) */
+  function rngShowLine(g, row) {
+    var so = row && row.show_on ? row.show_on : g.show_on, early = str(D.rg.today) < str(so), ts = '';
+    if (early && g.on) return '<p class="rgi mut">학생 화면에 지금 보여요(히즈북스 D-day 켬).</p>';
+    if (early) { try { ts = rngTieSrc(g); } catch (e) { ts = ''; } }
+    if (ts) return '<p class="rgi mut">학생 화면에 지금 보여요(히즈북스 ' + (ts === 'nat' ? '모의고사' : ts === 'csat' ? '수능' : '반') + ' D-day).</p>';
+    return '<p class="rgi mut">학생 화면에는 ' + esc(L.fmtDay(so)) + '부터 보여요(시험 20일 전).</p>';
   }
   /* 띠 · 칩 · 서랍 머리 = 짧은 학교 이름(«바다고 1학년 기말») · 긴 이름은 title 에만(C2 검수 L1) */
   function rngLabel(g) { return L.rngName ? L.rngName(g) : str(g.school_nm || g.k) + ' ' + str(g.g) + '학년 ' + str(g.kind || g.name); }
@@ -3084,8 +3110,7 @@ window.__lecAdminStart = function () {
       }
       h += '</div>';
     }
-    h += '<p class="rgi">시험 ' + esc(rngWhen(g)) + ' · 받는 학생 ' + g.rids.length + '명</p>' +
-      (g.on && str(D.rg.today) < str(row && row.show_on ? row.show_on : g.show_on) ? '<p class="rgi mut">학생 화면에 지금 보여요(히즈북스 D-day 켬).</p>' : '<p class="rgi mut">학생 화면에는 ' + esc(L.fmtDay(row && row.show_on ? row.show_on : g.show_on)) + '부터 보여요(시험 20일 전).</p>');
+    h += '<p class="rgi">시험 ' + esc(rngWhen(g)) + ' · 받는 학생 ' + g.rids.length + '명</p>' + rngShowLine(g, row);
     u = rg.unknown[g.k] || 0;
     if (u) h += '<p class="rgi mut">이 학교에서 학년을 모르는 학생 ' + u + '명은 받는 학생에서 빠져요. 히즈북스에서 학년을 적어 주세요.</p>';
     if (row) h += '<p class="rgi mut">저장됨 · ' + esc(row.saved_by || '모름') + (row.saved_at ? ' · ' + esc(whenFull(row.saved_at)) : '') + '</p>';
