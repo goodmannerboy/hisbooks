@@ -12694,7 +12694,8 @@ $$;
 --   v2 쌓인 오답 줄(l · due · 카드에 반영한 줄) · 지금 맞음(마지막 고침 줄 · 없으면 원래 판정) ≠ (규칙 또는 켜진 인정 답)이면 고침 줄 + 그 판 점수 ±1
 --   V2-35: V2-3 새 판(spell · guw · gram · review)의 쌓인 오답 문항 줄(src due · 카드에 반영한 줄 · 단어 sp · 문법 r)도 l 로 셈 · card · say 줄(d · g 만)은 안 셈
 --   학생마다: kn(단어 시험 · 그 문항 마지막 답) · z · y(날짜 차례 다시 접기 · 지금 카드 = 고치기 전 접기일 때만) · 첫 판 f1 · 마지막 판 last_sc(고치기 전 값과 같을 때만) ·
---   통과(없으면 넣고 ch.pa · 되돌려 조건이 깨지면 같은 때 넣은 것만 지움) · d · t · w · best · last_at 은 그대로 · 돌려줌 = 고친 줄 수
+--   통과(없으면 넣고 ch.pa · 되돌려 조건이 깨지면 같은 때 넣은 것만 지움) · d · t · best · last_at 은 그대로 · 돌려줌 = 고친 줄 수
+--   덧고침(11-20): w(옛 lec_set_staff «자주 틀린 문제»가 세는 틀린 수)도 z · y 와 같은 지킴 = 지금 카드 w 가 고치기 전 틀린 수와 같을 때만 고친 뒤 수로(0 이면 뺌)
 create or replace function public.lec__v2_fix(p_set uuid, p_k text, p_ok2 bigint) returns integer
 language plpgsql volatile set search_path = public as $$
 declare
@@ -12717,6 +12718,8 @@ declare
   v_ok   boolean;
   v_pa   text;
   v_ch   jsonb;
+  v_w0   integer;
+  v_w1   integer;
 begin
   select * into s from public.lec_set xs where xs.id = p_set;
   if not found then
@@ -12800,7 +12803,7 @@ begin
        where xp.sid = v_sid and xp.set_id = p_set
       returning * into p;
     end if;
-    -- z · y: 지금 카드가 고치기 전 접기와 같을 때만 고친 뒤 접기로(d · t · w 그대로)
+    -- z · y: 지금 카드가 고치기 전 접기와 같을 때만 고친 뒤 접기로(d · t 그대로 · w 는 아래)
     v_b := public.lec__v2_zy(v_es, v_sid, 'cur');
     v_c := public.lec__v2_zy(v_es, v_sid, 'tg');
     v_c0 := case when jsonb_typeof(p.cards -> p_k) = 'object' then p.cards -> p_k else '{}'::jsonb end;
@@ -12814,6 +12817,23 @@ begin
         end if;
       end if;
       update public.lec_set_prog xp set cards = jsonb_set(xp.cards, array[p_k], v_c0) where xp.sid = v_sid and xp.set_id = p_set;
+    end if;
+    -- w(덧고침 11-20 · «자주 틀린 문제» = 카드에 w 가 있는 학생 수): 카드에 반영한 줄의 고치기 전 틀린 수 ≠ 고친 뒤 틀린 수이고 지금 카드 w(없으면 0)가
+    --   고치기 전 틀린 수와 같을 때만 고친 뒤 수로(0 이면 w 뺌) · 다르면(v2 기록 앞 옛 틀림 · 고르기 틀림이 섞임) 그대로 · 되돌리기도 같은 길(반대로)
+    select count(*) filter (where not (e.v ->> 'cur')::boolean)::integer, count(*) filter (where not (e.v ->> 'tg')::boolean)::integer
+      into v_w0, v_w1
+      from jsonb_array_elements(v_es) as e(v)
+     where e.v ->> 'sid' = v_sid and (e.v ->> 'cd')::boolean;
+    if v_w0 <> v_w1 then
+      select case when jsonb_typeof(xp.cards -> p_k) = 'object' then xp.cards -> p_k else '{}'::jsonb end into v_c0
+        from public.lec_set_prog xp where xp.sid = v_sid and xp.set_id = p_set;
+      if (case when jsonb_typeof(v_c0 -> 'w') = 'number' then (v_c0 ->> 'w')::integer else 0 end) = v_w0 then
+        v_c0 := v_c0 - 'w';
+        if v_w1 > 0 then
+          v_c0 := v_c0 || jsonb_build_object('w', v_w1);
+        end if;
+        update public.lec_set_prog xp set cards = jsonb_set(xp.cards, array[p_k], v_c0) where xp.sid = v_sid and xp.set_id = p_set;
+      end if;
     end if;
     -- 점수가 바뀐 끝난 시험 · 드릴: 첫 판이면 f1 · 마지막 판이면 last_sc(고치기 전 값과 같을 때만)
     for v_x in
@@ -13022,7 +13042,7 @@ grant execute on function public.lec_set_staff_v2(uuid), public.lec_set_wrong1_v
 -- 열넷째 스스로 점검(V2-5): 선생님 함수 막기(로그인 없음 · 다른 계정) · 옛 판 단어 시험 틀린 쓰기 답 → 이 답도 맞음 → 그 판 점수 · kn · 통과 · f1 · z 다시 셈 ·
 --   원래 답 줄 · 세트 문항 · 다른 세트 그대로 · 되돌리기 = 처음과 같음(두 번 왕복) · 첫 답은 새 기록 표에서만 · v2 드릴 첫 답 · 포인트별 정답률(낮은 차례) ·
 --   포인트 없는 세트 = 줄 없음 · 5% 표시 · 고르기 문항 = input · 구문 외우기 첫 답(뒤에 맞혀도 남음) · 구문 «/» 안 붙음 · 폰에 실은 인정 답 = 서버 채점 ·
---   평가 여는 응답에 인정 답 0 · 켜기 전 기록 견주기 · 권한
+--   평가 여는 응답에 인정 답 0 · 켜기 전 기록 견주기 · 권한 · 덧고침(11-20): 인정 → 자주 틀린 문제(w)에서 빠짐 · 되돌리기 → 돌아옴 · 옛 틀림 섞인 카드 = 그대로
 -- 넣은 세트 · 열쇠 · 동의 · 줄 · 스위치는 끝에 되돌려 남지 않습니다
 do $$
 declare
@@ -13109,15 +13129,19 @@ begin
              'p', (select jsonb_agg(to_jsonb(xp) order by xp.sid) from public.lec_set_prog xp where xp.set_id = v_sx))
       into v_snx;
 
-    -- 4) 이 답도 맞음(앞뒤 빈칸 · 대문자가 달라도 같은 답): 그 판 점수 1 · kn · 통과 · f1 · last_sc · z 지움(w 그대로 · d · t 안 되살림) ·
-    --    원래 답 줄(r false) · 세트 문항 · 다른 세트 그대로 · 같은 것을 또 누르면 again
+    -- 4) 이 답도 맞음(앞뒤 빈칸 · 대문자가 달라도 같은 답): 그 판 점수 1 · kn · 통과 · f1 · last_sc · z 지움 · w 지움(덧고침 11-20 · «자주 틀린 문제»에서 빠짐 ·
+    --    d · t 안 되살림) · 원래 답 줄(r false) · 세트 문항 · 다른 세트 그대로 · 같은 것을 또 누르면 again
+    if (public.lec_set_staff(v_sv) -> 'often') is distinct from '[{"k": "k1", "w": "colour", "n": 1}]'::jsonb then
+      raise exception '점검 실패(V2-5 준비 · 자주 틀린 문제): %', left((public.lec_set_staff(v_sv) -> 'often')::text, 300);
+    end if;
     r := public.lec_set_ok2_v2(v_sv, 'k1', ' COLOR ', true);
     select to_jsonb(xp) into r2 from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sv;
     if (r ->> 'ok') is distinct from 'true' or (r ->> 'n') is distinct from '1'
        or (select xt.sc from public.lec_set_try xt where xt.id = v_try) is distinct from 1
        or (select xt.ans #>> '{0,r}' from public.lec_set_try xt where xt.id = v_try) is distinct from 'false'
        or (r2 ->> 'pass_at') is null or (r2 ->> 'f1') is distinct from '100' or (r2 ->> 'last_sc') is distinct from '1'
-       or (r2 -> 'kn') is distinct from '["k1"]'::jsonb or (r2 #> '{cards,k1}') is distinct from '{"w": 1}'::jsonb
+       or (r2 -> 'kn') is distinct from '["k1"]'::jsonb or (r2 #> '{cards,k1}') is distinct from '{}'::jsonb
+       or (public.lec_set_staff(v_sv) -> 'often') is distinct from '[]'::jsonb
        or (select jsonb_agg(to_jsonb(xs) order by xs.id) from public.lec_set xs where xs.class_ids = array[v_cl]) is distinct from (v_snap -> 's')
        or jsonb_build_object(
             't', (select jsonb_agg(to_jsonb(xt) order by xt.id) from public.lec_set_try xt where xt.set_id = v_sx),
@@ -13132,7 +13156,9 @@ begin
         perform public.lec_set_ok2_v2(v_sv, 'k1', 'color', true);
       end if;
       r := public.lec_set_ok2_v2(v_sv, 'k1', 'Color', false);
-      if (r ->> 'n') is distinct from '1' or jsonb_build_object(
+      if (r ->> 'n') is distinct from '1'
+         or (public.lec_set_staff(v_sv) -> 'often') is distinct from '[{"k": "k1", "w": "colour", "n": 1}]'::jsonb   -- 덧고침: 자주 틀린 문제에 돌아옴
+         or jsonb_build_object(
             't', (select jsonb_agg(to_jsonb(xt) order by xt.id) from public.lec_set_try xt where xt.sid in (v_sa, v_sb)),
             'p', (select jsonb_agg(to_jsonb(xp) order by xp.sid, xp.set_id) from public.lec_set_prog xp where xp.sid in (v_sa, v_sb)),
             's', (select jsonb_agg(to_jsonb(xs) order by xs.id) from public.lec_set xs where xs.class_ids = array[v_cl])) is distinct from v_snap then
@@ -13185,13 +13211,17 @@ begin
        or (r2 -> 'pts') is distinct from '[{"p": "수 일치", "r": 50, "n": 1, "st": 2}, {"p": "be동사", "r": 100, "n": 1, "st": 2}]'::jsonb
        or (r2 -> 'fx') is distinct from '[{"k": "k2", "w": "I [is] happy.", "n": 2, "f": 1}]'::jsonb
        or (public.lec_set_wrong1_v2(v_sg, v_sa) #>> '{items,1,acc}') is distinct from 'true'
-       or (select xp.cards -> 'k2' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sg) ? 'z' then
+       or (select xp.cards -> 'k2' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sg) ?| array['z', 'w']   -- 덧고침: w 도
+       or jsonb_typeof(r2 -> 'often') is distinct from 'array'
+       or exists (select 1 from jsonb_array_elements(r2 -> 'often') as o(e) where o.e ->> 'k' = 'k2') then
       raise exception '점검 실패(V2-5 문법 인정): % / %', left(r::text, 300), left(r2::text, 400);
     end if;
     r := public.lec_set_ok2_v2(v_sg, 'k2', 'im', false);
     if (r ->> 'n') is distinct from '1' or (select xt.sc from public.lec_set_try xt where xt.id = v_try) is distinct from 0
        or (public.lec_set_staff_v2(v_sg) -> 'fx') is distinct from '[]'::jsonb
        or (select xp.cards #>> '{k2,z}' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sg) is distinct from to_char(v_d, 'YYYY-MM-DD')
+       or (select xp.cards #>> '{k2,w}' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sg) is distinct from '1'
+       or not exists (select 1 from jsonb_array_elements(public.lec_set_staff(v_sg) -> 'often') as o(e) where o.e ->> 'k' = 'k2')
        or (public.lec_set_ok2_v2(v_sg, 'k1', 'go', true) ->> 'err') is distinct from 'input'
        or (public.lec_set_ok2_v2(v_sg, 'k9', 'x', true) ->> 'err') is distinct from 'input' then
       raise exception '점검 실패(V2-5 문법 되돌리기 · 고르기)';
@@ -13231,10 +13261,15 @@ begin
       raise exception '점검 실패(V2-5 구문 되돌리기)';
     end if;
 
-    -- 9) 다른 세트 인정(점검가 «colr») = 그 세트만(앞 세트 진도 그대로) · 다시 연 평가 응답에 인정 답 0 · 켜기 전 기록 견주기(맞음이 될 것 1 · 이미 고친 것 1)
+    -- 9) 다른 세트 인정(점검가 «colr») = 그 세트만(앞 세트 진도 그대로) · 다시 연 평가 응답에 인정 답 0 · 켜기 전 기록 견주기(맞음이 될 것 1 · 이미 고친 것 1) ·
+    --    덧고침: 옛 틀림 섞인 카드(기록 앞 틀림 하나를 w 에 더해 둠 · w 2 ≠ 고치기 전 틀린 수 1) = w 그대로 · 자주 틀린 문제에 남음
+    update public.lec_set_prog xp set cards = jsonb_set(xp.cards, '{k1,w}', to_jsonb((xp.cards #>> '{k1,w}')::integer + 1))
+     where xp.sid = v_sa and xp.set_id = v_sx and xp.cards #>> '{k1,w}' = '1';
     r := public.lec_set_ok2_v2(v_sx, 'k1', 'colr', true);
     r2 := public.lec_set_test_v2(v_ka, v_sx);
     if (r ->> 'n') is distinct from '1' or (r2 ->> 'ok') is distinct from 'true'
+       or (select xp.cards #>> '{k1,w}' from public.lec_set_prog xp where xp.sid = v_sa and xp.set_id = v_sx) is distinct from '2'
+       or not exists (select 1 from jsonb_array_elements(public.lec_set_staff(v_sx) -> 'often') as o(e) where o.e ->> 'k' = 'k1' and o.e ->> 'n' = '1')
        or jsonb_path_exists(r2, '$.**.a2') or r2 ? 'ok2' or r2::text like '%colr%'
        or (public.lec__v2_regrade(v_sx) ->> 'up') is distinct from '1' or (public.lec__v2_regrade(v_sx) ->> 'fixed') is distinct from '1'
        or not exists (select 1 from jsonb_array_elements(v_snap -> 'p') as e(v)

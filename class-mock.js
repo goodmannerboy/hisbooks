@@ -5771,7 +5771,7 @@
   /* lec__v2_fix: 다시 셈(그 세트 · 문항만) · 돌려줌 = 고친 줄 수 */
   function v5Fix(d, s, k, ok2) {
     var X = L(), es = [], ents = [], sids = [], n = 0, i, j, t, q, an, x, e, cur, tg, fid, sid, p, la, b, c, c0, grp, g, tr,
-        kn, ok, pa, ch, lf, ys;
+        kn, ok, pa, ch, lf, ys, w0, w1, wc, wk;
     for (i = 0; i < d.stry.length; i += 1) {
       t = d.stry[i];
       if (!((t.kind === 'test' || t.kind === 'drill') && t.set_id === s.id) && t.kind !== 'due') continue;
@@ -5845,6 +5845,30 @@
         }
         p.cards = clone(p.cards || {});
         p.cards[k] = c0;
+      }
+      /* w(덧고침 11-20 · «자주 틀린 문제»): 카드에 반영한 줄의 고치기 전 틀린 수 ≠ 고친 뒤 틀린 수이고 지금 카드 w(없으면 0)가
+         고치기 전 틀린 수와 같을 때만 고친 뒤 수로(0 이면 뺌) · 다르면 그대로 */
+      w0 = 0;
+      w1 = 0;
+      for (j = 0; j < es.length; j += 1) {
+        if (es[j].sid !== sid || !es[j].cd) continue;
+        if (!es[j].cur) w0 += 1;
+        if (!es[j].tg) w1 += 1;
+      }
+      if (w0 !== w1) {
+        c0 = isObj(sCard(p, k)) ? clone(sCard(p, k)) : {};
+        if ((typeof c0.w === 'number' ? c0.w : 0) === w0) {
+          if (w1 <= 0) delete c0.w;
+          else if (has(c0, 'w')) c0.w = w1;
+          else {   /* 흉내 열쇠 차례(진도 JSON 견줌)를 setMark 와 같게: w 는 z 앞(SQL jsonb 는 차례 없음) */
+            wc = {};
+            for (wk in c0) { if (has(c0, wk)) { if (wk === 'z') wc.w = w1; wc[wk] = c0[wk]; } }
+            if (!has(wc, 'w')) wc.w = w1;
+            c0 = wc;
+          }
+          p.cards = clone(p.cards || {});
+          p.cards[k] = c0;
+        }
       }
       /* 점수가 바뀐 끝난 시험 · 드릴: 첫 판 f1 · 마지막 판 last_sc(고치기 전 값과 같을 때만) */
       grp = {};
