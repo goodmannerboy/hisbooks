@@ -11,6 +11,50 @@
 <link rel="icon" type="image/png" sizes="32x32" href="app-icon-32.png">
 <link rel="icon" href="app-favicon.ico">
 <link rel="apple-touch-icon" href="app-icon-180.png">
+<script>
+/* 새 배포 지킴(11-20 · §8-237 · class.html · class-admin.html 머리 맨 앞 같은 글): 뒤로 올 때 브라우저가 저장해 둔 옛 판을 확인 없이 꺼내는 일 막음
+   __hcV = 이 문서의 배포 시각(GitHub Pages 는 한 배포 파일 시각이 거의 같음) → 우리 class-*.js 주소 끝 ?v= = 같은 배포 판만 읽음
+   열고 8초 안에 서버 판이 이 문서보다 새것이면 한 번만 새로 읽음(배포마다 한 번 · 미리 보기 안쪽 in=1 은 안 봄) · 무엇이든 실패하면 그대로
+   __hcHeal(주소) = 그 주소로 저장된 판이 옛 배포면 새로 받아 둠(주소를 바꾼 뒤 · 뒤로 갈 쪽) */
+(function () {
+  'use strict';
+  var docT = 0;
+  try { docT = Date.parse(document.lastModified) || 0; } catch (e) { docT = 0; }
+  window.__hcV = docT ? Math.floor(docT / 1000).toString(36) : '';
+  window.__hcHeal = function (u) {
+    try {
+      if (!docT || !window.fetch || !u) return;
+      /* HEAD + force-cache = 저장된 판이 있으면 그 머리만(서버에 안 물음) · 없으면 서버 판 머리(본문 없음)
+         only-if-cached 는 저장된 것이 없을 때 콘솔에 ERR_CACHE_MISS 를 남겨서 안 씀 */
+      fetch(u, { method: 'HEAD', cache: 'force-cache', credentials: 'same-origin' }).then(function (r) {
+        var t = Date.parse((r && r.headers.get('last-modified')) || '');
+        if (!t || docT - t < 60000) return;         /* 같은 배포(파일마다 1~2초 차이) · 저장된 것 없음(서버 판) · 모름 */
+        return fetch(u, { cache: 'reload', credentials: 'same-origin' });
+      }).catch(function () {});                     /* 못 읽음 = 그대로 */
+    } catch (e) {}
+  };
+  try {
+    if (!docT || !window.fetch || /[?&]in=1(?:&|$)/.test(location.search)) return;
+    fetch(location.pathname + location.search, { method: 'HEAD', cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
+      var lm = (r && r.headers.get('last-modified')) || '', t = Date.parse(lm), ss, ne, nt = '';
+      if (!t || t - docT < 1000) return;            /* 같은 배포 · 더 옛것 */
+      if (window.performance && performance.now() > 8000) return;   /* 벌써 쓰는 중 = 건드리지 않음 */
+      try {
+        ss = window.sessionStorage;
+        if (ss.getItem('his-fresh:' + location.pathname) === lm) return;   /* 이 배포로 한 번 새로 읽었음(되풀이 없음) */
+        ss.setItem('his-fresh:' + location.pathname, lm);
+      } catch (e1) { return; }
+      try {
+        ne = performance.getEntriesByType ? performance.getEntriesByType('navigation') : null;
+        nt = ne && ne[0] ? String(ne[0].type || '') : (performance.navigation && performance.navigation.type === 2 ? 'back_forward' : 'navigate');
+        ss.setItem('his-fresh-nt:' + location.pathname, nt);   /* 처음 들어온 길(관리 = 미리 보기 «닫기» 뒤 보던 자리) */
+      } catch (e2) { /* 없음 */ }
+      if (typeof window.__hcBeforeFresh === 'function') { try { window.__hcBeforeFresh(); } catch (e3) { /* 없음 */ } }
+      location.reload();
+    }).catch(function () {});
+  } catch (e4) { /* 그대로 */ }
+})();
+</script>
 <style>
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -1487,7 +1531,9 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 <noscript><p style="padding:24px">자바스크립트를 켜야 쓸 수 있어요.</p></noscript>
 <script>
 /* «‹ 히즈어학원» 돌아가는 길(11-18): 어디서 왔는지 = ?w=1 같은 창 · ?w=t 새 탭 · 없으면 이 기록(history.state.hcVia) · 그다음 적어 둔 값 · 그것도 없으면 바로 연 것
-   주소에서 w 만 지우고 그 기록에 hcVia 를 얹음(다른 state 는 그대로 · «앞으로»로 다시 와도 되살아남) · 링크 글은 window.__hcBackHtml() · 누르면 한 번만(흐리게 · pageshow 로 되돌림) */
+   주소는 받은 그대로 두고(w 도) 그 기록에 hcVia 만 얹음(다른 state 는 그대로 · «앞으로»로 다시 와도 되살아남) · 링크 글은 window.__hcBackHtml() · 누르면 한 번만(흐리게 · pageshow 로 되돌림)
+   11-20 · §8-237: 예전엔 w 를 주소에서 지웠는데 «학생 화면» 닫기(뒤로)로 올 때 크롬이 그 바뀐 주소로 저장해 둔 옛 판을 확인 없이 꺼내 썸네일 없는 옛 화면이 떴음
+   → 주소를 안 바꿈 · 옛 판이 남긴 맨주소 기록은 __hcHeal 로 새 판을 받아 둠 */
 (function () {
   'use strict';
   var K = '__hc_via', via = '', busy = false, tm = 0, m, rest;
@@ -1506,7 +1552,8 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
     via = m[1] === '1' ? 'same' : 'tab';
     ssSet(via);
     rest = location.search.replace(/^\?/, '').split('&').filter(function (x) { return x && !/^w=/.test(x); }).join('&');
-    try { history.replaceState(stWith(via), '', location.pathname + (rest ? '?' + rest : '') + location.hash); } catch (e) { /* 없음 */ }
+    try { history.replaceState(stWith(via), '', location.href); } catch (e) { /* 없음 */ }
+    if (window.__hcHeal) window.__hcHeal(location.pathname + (rest ? '?' + rest : ''));   /* 옛 판이 w 를 지워 남긴 맨주소(11-20 · §8-237) */
   } else via = stGet() || ssGet();
   if (via !== 'same' && via !== 'tab') via = 'direct';
   function mm(q) { try { return !!(window.matchMedia && window.matchMedia(q).matches); } catch (e) { return false; } }
@@ -1549,7 +1596,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
   function next() {
     if (!list.length) { if (window.__lecAdminStart) window.__lecAdminStart(); return; }
     var s = document.createElement('script'), f = list.shift();
-    s.src = f;
+    s.src = f + (window.__hcV && /^class-/.test(f) ? '?v=' + window.__hcV : '');   /* 이 문서와 같은 배포 판(11-20 · §8-237 · 바깥 파일 이름은 그대로) */
     s.onload = next;
     s.onerror = function () {
       if (f === 'class-v2.js') { next(); return; }   /* ①b */
@@ -5771,7 +5818,7 @@ window.__lecAdminStart = function () {
     if (lpReq) return lpReq;
     lpReq = new Promise(function (ok, no) {
       var s = document.createElement('script');
-      s.src = 'class-print.js';
+      s.src = 'class-print.js' + (window.__hcV ? '?v=' + window.__hcV : '');   /* 같은 배포 판(11-20 · §8-237) */
       s.onload = function () {
         if (window.LecPrint) { window.LecPrint.ensureCss(); ok(window.LecPrint); return; }
         lpReq = null; no(new Error('print'));
@@ -8160,16 +8207,20 @@ window.__lecAdminStart = function () {
     }
     try { window.sessionStorage.setItem(PV_BACK, JSON.stringify(o)); } catch (e) { /* 막히면 그대로 감(돌아오면 «오늘») */ }
   }
+  /* 새 배포 지킴이 새로 읽기 직전(11-20 · §8-237 · 머리 맨 앞 스크립트): 되살린 뒤면 지금 보던 자리를 다시 적음 → 새로 읽어도 그대로 */
+  window.__hcBeforeFresh = function () { if (pvDone && D && S.me) pvSave(); };
   function pvBackOnce() {
-    var o = null, nt = '', ne, y, dw, st, i, k;
+    var o = null, nt = '', fnt = '', ne, y, dw, st, i, k;
     if (pvDone) return false;
     pvDone = true;
+    try { fnt = window.sessionStorage.getItem('his-fresh-nt:' + location.pathname) || ''; window.sessionStorage.removeItem('his-fresh-nt:' + location.pathname); } catch (e0) { fnt = ''; }
     try { o = JSON.parse(window.sessionStorage.getItem(PV_BACK) || 'null'); window.sessionStorage.removeItem(PV_BACK); } catch (e) { o = null; }
     if (!o || !S.me || !D || o.u !== S.me.name || !(new Date().getTime() - (+o.at || 0) < 7200000)) return false;
     try {
       ne = window.performance && window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation') : null;
       nt = ne && ne[0] ? str(ne[0].type) : (window.performance && window.performance.navigation ? (window.performance.navigation.type === 2 ? 'back_forward' : 'other') : '');
     } catch (e1) { nt = ''; }
+    if (nt === 'reload' && fnt) nt = fnt;   /* 새 배포 지킴이 새로 읽음 = 처음 들어온 길로 셈(11-20 · §8-237) */
     /* 뒤로(미리 보기 «닫기») · 미리 보기가 선생님 화면으로 보낸 때만(그 밖에 새로 연 때 · 새로 고침은 «오늘» 그대로) */
     if (nt === 'reload' || (nt && nt !== 'back_forward' && !/\/class\.html(?:[?#]|$)/.test(str(document.referrer)))) return false;
     st = o.st || {};

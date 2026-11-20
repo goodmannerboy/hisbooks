@@ -28,6 +28,50 @@
 <meta name="apple-mobile-web-app-title" content="히즈클래스">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
+/* 새 배포 지킴(11-20 · §8-237 · class.html · class-admin.html 머리 맨 앞 같은 글): 뒤로 올 때 브라우저가 저장해 둔 옛 판을 확인 없이 꺼내는 일 막음
+   __hcV = 이 문서의 배포 시각(GitHub Pages 는 한 배포 파일 시각이 거의 같음) → 우리 class-*.js 주소 끝 ?v= = 같은 배포 판만 읽음
+   열고 8초 안에 서버 판이 이 문서보다 새것이면 한 번만 새로 읽음(배포마다 한 번 · 미리 보기 안쪽 in=1 은 안 봄) · 무엇이든 실패하면 그대로
+   __hcHeal(주소) = 그 주소로 저장된 판이 옛 배포면 새로 받아 둠(주소를 바꾼 뒤 · 뒤로 갈 쪽) */
+(function () {
+  'use strict';
+  var docT = 0;
+  try { docT = Date.parse(document.lastModified) || 0; } catch (e) { docT = 0; }
+  window.__hcV = docT ? Math.floor(docT / 1000).toString(36) : '';
+  window.__hcHeal = function (u) {
+    try {
+      if (!docT || !window.fetch || !u) return;
+      /* HEAD + force-cache = 저장된 판이 있으면 그 머리만(서버에 안 물음) · 없으면 서버 판 머리(본문 없음)
+         only-if-cached 는 저장된 것이 없을 때 콘솔에 ERR_CACHE_MISS 를 남겨서 안 씀 */
+      fetch(u, { method: 'HEAD', cache: 'force-cache', credentials: 'same-origin' }).then(function (r) {
+        var t = Date.parse((r && r.headers.get('last-modified')) || '');
+        if (!t || docT - t < 60000) return;         /* 같은 배포(파일마다 1~2초 차이) · 저장된 것 없음(서버 판) · 모름 */
+        return fetch(u, { cache: 'reload', credentials: 'same-origin' });
+      }).catch(function () {});                     /* 못 읽음 = 그대로 */
+    } catch (e) {}
+  };
+  try {
+    if (!docT || !window.fetch || /[?&]in=1(?:&|$)/.test(location.search)) return;
+    fetch(location.pathname + location.search, { method: 'HEAD', cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
+      var lm = (r && r.headers.get('last-modified')) || '', t = Date.parse(lm), ss, ne, nt = '';
+      if (!t || t - docT < 1000) return;            /* 같은 배포 · 더 옛것 */
+      if (window.performance && performance.now() > 8000) return;   /* 벌써 쓰는 중 = 건드리지 않음 */
+      try {
+        ss = window.sessionStorage;
+        if (ss.getItem('his-fresh:' + location.pathname) === lm) return;   /* 이 배포로 한 번 새로 읽었음(되풀이 없음) */
+        ss.setItem('his-fresh:' + location.pathname, lm);
+      } catch (e1) { return; }
+      try {
+        ne = performance.getEntriesByType ? performance.getEntriesByType('navigation') : null;
+        nt = ne && ne[0] ? String(ne[0].type || '') : (performance.navigation && performance.navigation.type === 2 ? 'back_forward' : 'navigate');
+        ss.setItem('his-fresh-nt:' + location.pathname, nt);   /* 처음 들어온 길(관리 = 미리 보기 «닫기» 뒤 보던 자리) */
+      } catch (e2) { /* 없음 */ }
+      if (typeof window.__hcBeforeFresh === 'function') { try { window.__hcBeforeFresh(); } catch (e3) { /* 없음 */ } }
+      location.reload();
+    }).catch(function () {});
+  } catch (e4) { /* 그대로 */ }
+})();
+</script>
+<script>
 /* 홈 화면 앱(PWA · 11-16): 설치 이벤트를 맨 앞에서 받아 둠(크롬 기본 띠는 막고 «설치하기» 단추로 띄움) · 화면 코드는 window.__hisPwa 를 봄 */
 (function () {
   var P = window.__hisPwa = { e: null, done: false, cb: null };
@@ -114,6 +158,7 @@
     if (v) lsSet(K_TEST, v);
     if (b.length !== a.length) {
       try { history.replaceState(history.state, '', location.pathname + (b.length ? '?' + b.join('&') : '') + location.hash); } catch (e) { /* 없음 */ }
+      if (window.__hcHeal) window.__hcHeal(location.pathname + (b.length ? '?' + b.join('&') : ''));   /* 바뀐 주소로 저장된 옛 판(11-20 · §8-237) */
     }
   })();
   /* 개인 링크 #k= → 이 브라우저는 문 건너뜀 · 그 순간 문이 켜져 있을 때만 남김(켜기 전에 들어온 학생이 켠 뒤 문을 피하지 않게 · 열쇠는 class.html 이 따로 저장) */
@@ -1386,7 +1431,13 @@ html.dr-open,html.dr-open body{background:#FAF6EC}
       var q = Q.replace(/^\?/, '').split('&'), o = [], j;
       for (j = 0; j < q.length; j += 1) { if (q[j] && !/^(preview|in|same)=/.test(q[j])) o.push(q[j]); }   /* same = 폰에서 같은 창(11-18 · §8-220) */
       try { history.replaceState(null, '', location.pathname + (o.length ? '?' + o.join('&') : '') + location.hash); } catch (e3) { /* 없음 */ }
+      if (window.__hcHeal) window.__hcHeal(location.pathname + (o.length ? '?' + o.join('&') : ''));   /* 바뀐 주소로 저장된 옛 판(11-20 · §8-237) */
     }
+  }
+  /* 같은 창 미리 보기(11-20 · §8-237): «닫기»(뒤로)로 갈 선생님 화면 기록이 옛 배포로 저장돼 있으면 미리 받아 둠(옛 판 탭은 w 를 지운 맨주소 기록) */
+  if (pv && !inner && /[?&]same=1(?:&|$)/.test(Q) && window.__hcHeal) {
+    var rf = String(document.referrer || '');
+    if (rf.indexOf(location.origin + '/') === 0 && /\/class-admin\.html(?:[?#]|$)/.test(rf)) window.__hcHeal(rf.split('#')[0]);
   }
   var list = demo ? ['class-mock.js', 'class-api.js'] : ['class-api.js'];
   if (pv) list = inner ? ['class-api.js', 'class-preview.js'] :
@@ -1397,8 +1448,8 @@ html.dr-open,html.dr-open body{background:#FAF6EC}
       else if (window.__lecStart) window.__lecStart();
       return;
     }
-    var s = document.createElement('script');
-    s.src = list.shift();
+    var s = document.createElement('script'), f = list.shift();
+    s.src = f + (window.__hcV && /^class-/.test(f) ? '?v=' + window.__hcV : '');   /* 이 문서와 같은 배포 판(11-20 · §8-237 · 바깥 파일 이름은 그대로) */
     s.onload = next;
     s.onerror = function () {
       var a = document.getElementById('app');
@@ -1532,6 +1583,7 @@ window.__lecStart = function () {
     }
     if (b.length !== a.length) {
       try { history.replaceState(history.state, '', location.pathname + (b.length ? '?' + b.join('&') : '') + location.hash); } catch (e) { /* 없음 */ }
+      if (window.__hcHeal) window.__hcHeal(location.pathname + (b.length ? '?' + b.join('&') : ''));   /* 바뀐 주소로 저장된 옛 판(11-20 · §8-237) */
     }
     pwa.auto = on && !pwaStandalone();
   })();
@@ -3076,7 +3128,7 @@ window.__lecStart = function () {
     if (V2.s) return;
     V2.s = 1;
     el = document.createElement('script');
-    el.src = 'class-v2.js';
+    el.src = 'class-v2.js' + (window.__hcV ? '?v=' + window.__hcV : '');   /* 같은 배포 판(11-20 · §8-237) */
     el.onload = el.onerror = function () {
       var a = V2.cb, i;
       V2.s = L.v2u ? 2 : 0; V2.cb = [];
@@ -3093,7 +3145,7 @@ window.__lecStart = function () {
     if (LN || !v || !v['eval'] || !(v.spell || v.guw || v.gram || v.review)) return r;
     LNP = LNP || new Promise(function (ok) {
       el = document.createElement('script');
-      el.src = 'class-learn.js';
+      el.src = 'class-learn.js' + (window.__hcV ? '?v=' + window.__hcV : '');   /* 같은 배포 판(11-20 · §8-237) */
       el.onload = el.onerror = function () {
         if (L.v2l) {
           LN = L.v2l;

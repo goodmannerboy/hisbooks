@@ -28,6 +28,7 @@
     var q = String(w.location.search || '').replace(/^\?/, '').split('&'), out = [], i;
     for (i = 0; i < q.length; i += 1) { if (q[i] && !/^(preview|in|same)=/.test(q[i])) out.push(q[i]); }
     try { w.history.replaceState(null, '', w.location.pathname + (out.length ? '?' + out.join('&') : '') + w.location.hash); } catch (e) { /* 없음 */ }
+    if (w.__hcHeal) w.__hcHeal(w.location.pathname + (out.length ? '?' + out.join('&') : ''));   /* 바뀐 주소로 저장된 옛 판(11-20 · §8-237) */
   }
   function plain() { strip(); if (w.__lecStart) w.__lecStart(); }
   function css(id, t) {
