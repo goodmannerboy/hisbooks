@@ -9977,12 +9977,17 @@ alter table public.lec_set_log enable row level security;
 alter table public.lec_v2_box  enable row level security;
 
 -- 트리거: 학생 열쇠 · 동의 줄의 sid 가 바뀌면 v2 줄도 옮김 · 동의 줄이 지워지면 v2 줄도 지움(lec__set_mv · lec__set_gone 과 같은 때)
+--   log · run = lec_set_try 처럼 모두 옮김(id 기본 키 · sid 고유 없음 = 겹침 0) ·
+--   box(sid 한 줄) = lec_rec_ok 처럼 새 sid 에 이미 있으면 새 것을 두고 옛 줄 지움 · 없으면 옮김(on conflict = 같이 들어와도 겹침 오류 0)
 create or replace function public.lec__v2_mv() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if old.sid is distinct from new.sid and coalesce(old.sid, '') <> '' and coalesce(new.sid, '') <> '' then
     update public.lec_set_log xl set sid = new.sid where xl.sid = old.sid;
     update public.lec_set_run xr set sid = new.sid where xr.sid = old.sid;
+    insert into public.lec_v2_box (sid, n, age, at)
+    select new.sid, xb.n, xb.age, xb.at from public.lec_v2_box xb where xb.sid = old.sid
+    on conflict (sid) do nothing;
     delete from public.lec_v2_box xb where xb.sid = old.sid;
   end if;
   return null;
@@ -12460,12 +12465,14 @@ begin
     if exists (select 1 from public.lec_set_log xl where xl.sid = v_sa) or exists (select 1 from public.lec_set_run xr where xr.sid = v_sa)
        or exists (select 1 from public.lec_v2_box xb where xb.sid = v_sa)
        or not exists (select 1 from public.lec_set_log xl where xl.sid = 'selftest-v2b|점검가')
-       or not exists (select 1 from public.lec_set_run xr where xr.sid = 'selftest-v2b|점검가') then
+       or not exists (select 1 from public.lec_set_run xr where xr.sid = 'selftest-v2b|점검가')
+       or (select xb.n from public.lec_v2_box xb where xb.sid = 'selftest-v2b|점검가') is distinct from 2 then
       raise exception '점검 실패(V2 이름 바뀜)';
     end if;
     delete from public.lec_consent where sid = 'selftest-v2b|점검가';
     if exists (select 1 from public.lec_set_log xl where xl.sid = 'selftest-v2b|점검가')
-       or exists (select 1 from public.lec_set_run xr where xr.sid = 'selftest-v2b|점검가') then
+       or exists (select 1 from public.lec_set_run xr where xr.sid = 'selftest-v2b|점검가')
+       or exists (select 1 from public.lec_v2_box xb where xb.sid = 'selftest-v2b|점검가') then
       raise exception '점검 실패(V2 지움)';
     end if;
 

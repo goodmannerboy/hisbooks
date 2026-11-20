@@ -5516,7 +5516,9 @@
     v2Tabs(d);
     for (i = 0; i < d.slog.length; i += 1) { if (d.slog[i].sid === oldSid) d.slog[i].sid = newSid; }
     for (i = 0; i < d.srun.length; i += 1) { if (d.srun[i].sid === oldSid) d.srun[i].sid = newSid; }
-    d.sbox = d.sbox.filter(function (x) { return x.sid !== oldSid; });
+    /* box(sid 한 줄) = 새 sid 에 이미 있으면 새 것을 두고 옛 줄 지움 · 없으면 옮김(SQL on conflict do nothing) */
+    if (d.sbox.some(function (x) { return x.sid === newSid; })) d.sbox = d.sbox.filter(function (x) { return x.sid !== oldSid; });
+    else { for (i = 0; i < d.sbox.length; i += 1) { if (d.sbox[i].sid === oldSid) d.sbox[i].sid = newSid; } }
   }
   function v2Drop(d, sid) {
     v2Tabs(d);
