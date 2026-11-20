@@ -3068,7 +3068,7 @@ window.__lecStart = function () {
   function wT(f, ms) { var my = WRUN; return setTimeout(function () { if (my === WRUN && W) f(); }, ms); }
 
   /* ①b class-v2.js 늦게 읽기 · 한 번만 · 못 읽음 · 미리 보기 · v2 없는 서버(12시간) = cb(false) 옛 길 */
-  var V2 = { s: 0, cb: [] };
+  var V2 = { s: 0, cb: [] }, V2B, LN = null, LNP = null;
   function v2Get(cb) {
     var el;
     if (V2.s === 2 || setPv() || +L.lsGet('lec-v2-old', 0) > Date.now() - 432e5) { cb(V2.s === 2); return; }
@@ -3080,13 +3080,32 @@ window.__lecStart = function () {
     el.onload = el.onerror = function () {
       var a = V2.cb, i;
       V2.s = L.v2u ? 2 : 0; V2.cb = [];
-      if (V2.s) L.v2u.init({ W: function () { return W; }, S: S, my: function () { return WRUN; }, pv: setPv, draw: tDraw, after: tAfter, res: tResult, auto: tAuto,
+      if (V2.s) L.v2u.init(V2B = { W: function () { return W; }, S: S, my: function () { return WRUN; }, pv: setPv, draw: tDraw, after: tAfter, res: tResult, auto: tAuto,
         page: setPage, head: setHead, info: setInfo, gone: setGoneBy, tx: setTx, diff: tDiffHTML, xbox: xBoxHTML, gram: tGram, gesc: gEsc });
       for (i = 0; i < a.length; i += 1) a[i](!!V2.s);
     };
     document.head.appendChild(el);
   }
-  function setHomeX(k) { return V2.s === 2 ? L.v2u.home(k) : L.setHome(k); }
+  function setHomeX(k) { return V2.s === 2 ? L.v2u.home(k).then(lnGet) : L.setHome(k); }
+  /* ③b class-learn.js: 홈 _v2 의 ③ 스위치가 켜졌을 때만 · 한 번만 · 3초 넘거나 못 읽으면 지금 길 */
+  function lnGet(r) {
+    var v = r && r.ok && r.v2, el;
+    if (LN || !v || !v['eval'] || !(v.spell || v.guw || v.gram || v.review)) return r;
+    LNP = LNP || new Promise(function (ok) {
+      el = document.createElement('script');
+      el.src = 'class-learn.js';
+      el.onload = el.onerror = function () {
+        if (L.v2l) {
+          LN = L.v2l;
+          LN.init(V2B, { back: setBack, open: setOpen, kb: kbFit, touch: tTouch, icon: icon, rows: setRows, done: setDone, s2: s2Draw, gs: guSave, mk: MK_SVG, sn: sayNone,
+            hush: function () { sayStop(); audStop(); recStop(); if (W && W.g) spkKill(W.g); }, say: function (t) { if (!sayNone()) { sayStop(); sayOne(t, null); } } });
+        } else LNP = null;
+        ok();
+      };
+      document.head.appendChild(el);
+    });
+    return Promise.race([LNP, new Promise(function (ok) { setTimeout(ok, 3e3); })]).then(function () { return r; });
+  }
   (function () {
     var i, n = 0;
     try { n = localStorage.length; for (i = 0; i < n; i += 1) { if (String(localStorage.key(i)).indexOf('lec-v2b:') === 0) break; } } catch (e) { return; }
@@ -3138,11 +3157,12 @@ window.__lecStart = function () {
     return o.concat(d);
   }
   function setGrpHTML() {
-    var s = S.set, rows, due, show, h, i;
+    var s = S.set, rows, due, show, h, i, x = null;
     if (setPv() || !s || !s.ok) return '';
     rows = setRows();
     due = s.due && +s.due.n > 0 ? s.due : null;
-    if (!rows.length && !due) return '';
+    if (LN) x = LN.row(s, due);   /* ③b 오늘 볼 것 */
+    if (!rows.length && !due && !x) return '';
     h = '<section class="sgrp" id="setGrp" aria-labelledby="setGrpT"><h2 class="sec" id="setGrpT">단어 · 구문 · 문법</h2>';
     show = S.setMore ? rows.length : Math.min(3, rows.length);
     if (show) {
@@ -3150,7 +3170,8 @@ window.__lecStart = function () {
       for (i = 0; i < show; i += 1) h += setRowHTML(rows[i]);
       h += '</div>';
     }
-    if (due) {
+    if (x !== null) h += x;
+    else if (due) {
       h += +due.now > 0 ?
         '<button class="absln sdue" type="button" data-act="s1due"><span class="k am">쌓인 오답 ' + (+due.n) + '개</span><span class="v">두 번 맞히면 빠져요</span></button>' :
         '<div class="absln sdue off"><span class="k am">쌓인 오답 ' + (+due.n) + '개</span><span class="v">내일부터 나와요</span></div>';
@@ -3250,7 +3271,7 @@ window.__lecStart = function () {
     /* 따라 말하기 도중 = 그 문장 처음으로(«듣기»를 다시 누를 수 있게 · 쉼 타이머도 끊음) */
     if (g && W.mode === 'gu' && g.busy) { g.run += 1; g.busy = false; g.wait = false; g.hl = -1; g.cue = ''; guDraw(); }
   }
-  function setPage(h) { app.innerHTML = '<div class="wrap"><div class="sw">' + h + '</div></div>'; barSlide(); }
+  function setPage(h) { if (LN) h = LN.pg(h); app.innerHTML = '<div class="wrap"><div class="sw">' + h + '</div></div>'; barSlide(); }
   /* S5(11-19) 진행 막대: 지난 폭으로 그린 뒤 두 프레임 뒤 새 폭(240ms var(--e-out)) · 같은 판 안에서만(W.barW) · 줄임 설정이면 바로 */
   function barSlide() {
     var b = app.querySelector('.sbar b'), w, o;
@@ -3289,6 +3310,7 @@ window.__lecStart = function () {
     W = { id: s ? s.id : '', kind: s ? s.kind : 'due', s: s, mode: '', busy: false };
     S.view = 'set';
     try { window.scrollTo(0, 0); } catch (e) { /* 없음 */ }
+    if (LN && LN.open(s)) return;   /* ③b */
     if (!s) tStart();
     else if (s.kind === 'voc') s2Draw('');
     else if (s.kind === 'gram') tStart();
@@ -3330,6 +3352,7 @@ window.__lecStart = function () {
   }
   function setClick(a, el) {
     var g, it;
+    if (a.charAt(0) === 'L') { if (LN) LN.click(a.slice(1), el); return; }   /* ③b */
     if (a === 'open') { setOpen(attr(el, 'data-id')); return; }
     if (a === 'due') { setOpen(null); return; }
     if (a === 'more') { S.setMore = true; showList(); return; }
@@ -3936,6 +3959,7 @@ window.__lecStart = function () {
   function tAuto() {
     var t = W.t, fb = t.fb, q = t.q[tIdx(t)] || {}, ms = 0, n = t.step;
     if (!fb) return;
+    if (W.ev === 'due') kbFit();   /* ③b */
     if (fb.ok) ms = 800;
     else if (q.f === 'c' && !tGram(t, q)) ms = 1600;
     if (!ms) return;
@@ -6118,17 +6142,18 @@ window.__lecStart = function () {
   });
   /* S1 쓰기(11-18): 쓰기 칸에 자판이 열린 채 «확인» · «다음»을 눌러도 focus 를 옮기지 않음(자판이 닫혔다 열리지 않게) · 자판이 화면을 가리면 쓰기 칸을 가운데로 */
   document.addEventListener('mousedown', function (e) {
-    var b = e.target && e.target.closest ? e.target.closest('[data-act=s1chk],[data-act=s1next]') : null, a = document.activeElement;
-    if (b && W && W.mode === 't' && a && a.id === 'sIn' && tTouch()) e.preventDefault();
+    var b = e.target && e.target.closest ? e.target.closest('[data-act=s1chk],[data-act=s1next],[data-kb]') : null, a = document.activeElement;
+    if (b && W && a && ((W.mode === 't' && a.id === 'sIn') || a.id === 'lIn') && tTouch()) e.preventDefault();
   });
+  /* ③b(class-learn.js 를 읽은 때만): 피드백 뒤 «다음» 아래 끝 = 자판 위 8px(data-kbend · 쌓인 오답 «다음») · 그 밖 = 칸 가운데(지금대로) */
+  function kbFit(vr) {
+    var i = document.activeElement, v = window.visualViewport, b;
+    if (!W || !i || !(i.id === 'lIn' || (i.id === 'sIn' && W.mode === 't'))) return;
+    b = app.querySelector('[data-kbend]') || (LN && W.ev === 'due' && W.t && W.t.fb ? app.querySelector('[data-act=s1next]') : null);
+    try { if (b && v) window.scrollBy(0, b.getBoundingClientRect().bottom - v.offsetTop - v.height + 8); else if (vr) i.scrollIntoView({ block: 'center' }); } catch (e) { /* 없음 */ }
+  }
   try {
-    if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
-      window.visualViewport.addEventListener('resize', function () {
-        var i = $('sIn');
-        if (!W || W.mode !== 't' || !i || document.activeElement !== i) return;
-        try { i.scrollIntoView({ block: 'center' }); } catch (e) { /* 없음 */ }
-      });
-    }
+    if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') window.visualViewport.addEventListener('resize', function () { kbFit(1); });
   } catch (eVv) { /* 없음 */ }
   /* 붙여 넣기 · 자르기 · 폰 자판 글자도 막음(취소되지 않는 한글 조합 등은 input 에서 되돌림) */
   document.addEventListener('beforeinput', function (e) {
