@@ -4914,6 +4914,18 @@ window.__lecStart = function () {
      ⚠️ 유튜브 개발자 정책은 플레이어의 기본 링크 · 기능을 막지 말라고 함 — 원장님께 말씀드렸고 원장님이 넣기로 정함(11-20). */
   var YT_HOST = 'https://www.youtube-nocookie.com';
   var YT_SANDBOX = 'allow-scripts allow-same-origin allow-presentation allow-orientation-lock';
+  /* 11-21 §8-238: 브라우저가 모르는 허락은 빼고 붙인다. 웹킷(아이폰 · 맥 사파리)은 발표 · 화면 방향 잠금을 몰라 재생기를 열 때마다
+     콘솔 오류 한 줄을 남겼다(아는 둘은 그대로 먹어 막는 동작은 같았음). 스크립트 · 같은 출처는 늘 붙이고, 나머지는 그 틀의
+     sandbox.supports 가 «안다»고 할 때만 붙인다(supports 가 없거나 오류면 예전처럼 붙임). 크롬 · 삼성 인터넷 = 넷 그대로 · 웹킷 = 둘. */
+  function ytSandbox(f) {
+    var t = YT_SANDBOX.split(' '), out = [], sb = f && f.sandbox, i, ok;
+    for (i = 0; i < t.length; i++) {
+      ok = t[i] === 'allow-scripts' || t[i] === 'allow-same-origin';
+      if (!ok) { try { ok = !sb || typeof sb.supports !== 'function' || sb.supports(t[i]); } catch (e) { ok = true; } }
+      if (ok) out.push(t[i]);
+    }
+    return out.join(' ');
+  }
   function YTP(box, vid, start, cb) {
     var s = this;
     s.p = null; s.ok = false; s.dead = false;
@@ -4926,7 +4938,7 @@ window.__lecStart = function () {
       function nm() { try { var f = s.p && s.p.getIframe && s.p.getIframe(); if (f && f.setAttribute) f.setAttribute('title', '강의 영상'); } catch (e0) { /* 없음 */ } }
       try {
         f = document.createElement('iframe');
-        f.setAttribute('sandbox', YT_SANDBOX);
+        f.setAttribute('sandbox', ytSandbox(f));
         if (box.id) f.id = box.id;
         f.setAttribute('title', '강의 영상');
         f.setAttribute('width', '100%');
