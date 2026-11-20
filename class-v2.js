@@ -786,25 +786,36 @@
   if (!Lec || typeof Lec.v2Add !== 'function') return;
 
   var OLD_K = 'lec-v2-old', OLD_MS = 43200000;   /* v2 없는 서버를 이 폰에 기억(12시간 · 그동안 홈 _v2 · 이 파일을 안 부름) */
+  /* 디자인 회의 1차(11-20 · 결론안1 3절): send 앱이 모르는 말 뺌 · 결과 차례 «한 번 더 → 결과 → 다시 보기»(원장님께 여쭘) = aq 는 결과 카드 주 단추 · wsub 는 그 아래 한 줄 ·
+     re 원래 주 단추를 글자 단추로 내릴 때 앞말 · last 평가 마지막 쓰기 문항 «확인» */
   var TX = {
-    send: '다 풀었어요. 답은 모두 남아 있어요. 조금 뒤 다시 열어 봐요.',
+    send: '다 풀었어요. 조금 뒤 다시 열어 봐요.',
     note: '다 풀면 바른 답을 한 번에 보여 줘요',
     noteG: '다 풀면 바른 답과 해설을 한 번에 보여 줘요',
     wrong: '틀린 문제 ',
-    wsub: '한 번 더 풀어도 점수에는 안 들어가요',
-    aq: '틀린 것 한 번 더 풀기',
+    wsub: '여기서 풀면 점수에는 안 들어가요',
+    aq: ['틀린 ', '개 한 번 더 풀기'],
+    re: '바로 ',
+    last: '확인하고 결과 보기',
+    back: '목록으로',
     mine: '내 답', right: '바른 답'
   };
+  /* 디자인 1차: A1 .v2e(평가 처음 풀기 · 피드백 자리 0 → 칸과 «확인» 틈 12) · A4 .sq 초점 테 0(누르는 칸 아님) · B1 들여쓰기 28(번호 칸 24+4) · B2 고르기 줄 밑줄 0 ·
+     B3 문법 규칙 = 꼬리표 + 글(회색 상자 0) · B5 카드 끝 «목록으로» · .v2a 주 단추 아래 한 줄(.nx .nxw 값) */
   var CSS = '.v2w{margin:12px 0 0;padding:16px 16px 6px;border:1px solid var(--line);border-radius:16px;background:var(--card)}' +
     '.v2h{margin:0;font-size:15px;font-weight:700;line-height:1.4}' +
-    '.v2u{margin:2px 0 0;font-size:13px;font-weight:600;line-height:1.5;color:var(--ink2)}' +
-    '.v2w>.btn-line{margin:12px 0 4px}' +
+    '.v2a{margin:6px 0 0;font-size:13px;line-height:18px;font-weight:600;color:var(--ink2);text-align:center}' +
     '.v2l{margin:0;padding:0;list-style:none}' +
     '.v2i{padding:12px 0;border-top:1px solid var(--line);font-size:15px;line-height:1.55}' +
     '.v2q{margin:0 0 4px;text-align:justify;word-break:keep-all;overflow-wrap:break-word}' +
     '.v2n{display:inline-block;min-width:24px;margin-right:4px;font-size:13px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}' +
     '.v2s{display:inline-block;min-width:36px;padding:0 6px;border:1.5px dashed var(--dash);border-radius:6px;line-height:1.4;text-align:center;color:var(--ink2)}' +
-    '.v2i .sx{margin-top:8px}';
+    '.v2i .sdf,.v2i .sx{margin-left:28px}' +
+    '.v2c .sdm,.v2c .sdr{text-decoration:none}' +
+    '.v2i .sx{margin-top:6px;padding:0;background:none}' +
+    '.v2w>.stxt{display:flex;width:fit-content;margin:2px auto 4px}' +
+    '.sfb.v2e{min-height:0;margin-top:0}' +
+    '.sq[tabindex]:focus{outline:0}';
   var B = null;
 
   function str(v) { return v == null ? '' : String(v); }
@@ -932,6 +943,7 @@
     o.end = !left;
     Lec.v2Add(k, t.id, o);
     t.ans[idx] = { v: v, r: false, a: '', x: '', pt: '' };
+    t.v2p = 1;   /* 디자인 1차 A4: 다음 고르기 문항을 그리면 문항 칸으로 초점(fq) */
     B.S.setDirty = true;
     j = t.pos + 1;
     while (j < t.n && t.ans[t.ord[j]]) j += 1;
@@ -968,7 +980,7 @@
     if (t.sending) return;
     t.sending = 1;
     x.mode = 'tsend';
-    B.page(B.head('목록') + '<div class="sload"></div>');
+    B.page(B.head('목록') + '<div class="sload" aria-busy="true"></div>');
     Lec.setSendV2(k, t.id).then(function (r) {
       var i, a, j, m;
       t.sending = 0;
@@ -1007,7 +1019,8 @@
     if (due && due.n != null) s.due = due;
     B.S.setDirty = false;
   }
-  /* 결과 아래: 틀린 것 전부 펼침(화면 차례) · 쓰기 = 다른 글자 밑줄(tDiffHTML) · 고르기 = 두 줄 · 문법 = 해설 · 포인트 + «한 번 더»(점수 0 · 서버 0) */
+  /* 결과 아래: 틀린 것 전부 펼침(화면 차례) · 쓰기 = 다른 글자 밑줄(tDiffHTML) · 고르기 = 두 줄(밑줄 0) · 문법 = 해설 · 포인트 · 끝 «목록으로»
+     (디자인 1차: «한 번 더»는 결과 카드 주 단추(res) · 카드 안 단추 0 · 이름 = 제목 h2) */
   function wrong(t) {
     var h = '', n = 0, j, i, q, a, gp, p, g;
     for (j = 0; j < t.n; j += 1) {
@@ -1019,14 +1032,69 @@
         gp = Lec.gramParts(str(q.p)) || {};
         p = B.gesc(gp.pre, 1) + (q.f === 'c' ? '<span class="v2s">?</span>' : '<span class="sund">' + esc(gp.mid) + '</span>') + B.gesc(gp.post, 0);
       } else p = esc(q.p);
-      h += '<li class="v2i"><p class="v2q"><span class="v2n">' + (j + 1) + '</span>' + p + '</p>' +
+      h += '<li class="v2i' + (q.f === 'c' ? ' v2c' : '') + '"><p class="v2q"><span class="v2n">' + (j + 1) + '</span>' + p + '</p>' +
         (q.f === 'c' ? '<span class="sdf"><span class="sdl"><b>' + TX.mine + '</b> <span class="sdm">' + esc(a.v) + '</span></span>' +
           '<span class="sdl"><b>' + TX.right + '</b> <span class="sdr">' + esc(a.a) + '</span></span></span>' : B.diff(a.v, a.a)) +
         (g ? B.xbox(a.pt, a.x) : '') + '</li>';
     }
     if (!n) return '';
-    return '<section class="v2w" aria-label="' + TX.wrong + n + '개"><h2 class="v2h">' + TX.wrong + n + '개</h2><p class="v2u">' + TX.wsub + '</p>' +
-      '<button class="btn-line" type="button" data-act="s1aq">' + TX.aq + '</button><ol class="v2l">' + h + '</ol></section>';
+    return '<section class="v2w" aria-labelledby="v2wh"><h2 class="v2h" id="v2wh">' + TX.wrong + n + '개</h2><ol class="v2l">' + h + '</ol>' +
+      '<button class="stxt" type="button" data-act="s1back">' + TX.back + '</button></section>';
+  }
+  function nwr(t) {
+    var n = 0, j, a;
+    for (j = 0; j < t.n; j += 1) { a = t.ans[t.ord[j]]; if (a && !a.r) n += 1; }
+    return n;
+  }
+  /* 결과 카드 단추(디자인 1차 · 원장님께 여쭘 1 · 2 = 원안 차례 «한 번 더 → 결과 → 다시 보기»): 틀린 것이 있고 이 판에서 «한 번 더»를 아직 안 했으면(t.agN 0)
+     주 단추 = «틀린 n개 한 번 더 풀기»(점수 0 · 서버 0 · s1aq) + 아래 한 줄 · 원래 단추는 글자 단추로(다시 보기 = «바로 다시 보기 · m문제» · 통과 다음 = 그 글 · 목록으로)
+     한 번 하면(tAfter 가 t.agN 을 채움 · 그만으로 나와도) 원래 그대로 · 틀린 것 0 = 그대로 · h = class.html tResult 의 카드 글(닫는 </div> 앞) */
+  function res(t, h) {
+    var n = nwr(t), s0 = h.indexOf('<div class="sres"'), i, el, x, b, bs, k;
+    if (!n || t.agN || s0 < 0) return h;
+    i = h.slice(s0).search(/<button|<div class="nx/);   /* 카드 안 첫 단추부터(머리 줄 «목록» 단추는 그대로) */
+    if (i < 0) return h;
+    i += s0;
+    el = w.document.createElement('div');
+    el.innerHTML = h.slice(i);
+    x = el.querySelector('.nx');
+    if (x) {
+      b = x.querySelector('.btn-fill');
+      if (b) b.textContent = b.textContent;
+      b = x.querySelector('.nxw');
+      if (b) b.parentNode.removeChild(b);
+      while (x.firstChild) x.parentNode.insertBefore(x.firstChild, x);
+      x.parentNode.removeChild(x);
+    }
+    bs = el.querySelectorAll('button');
+    for (k = 0; k < bs.length; k += 1) {
+      b = bs[k];
+      if (/(^| )(btn-fill|nx2)( |$)/.test(b.className)) b.className = 'stxt';
+      if (b.getAttribute('data-act') === 's1retake') b.textContent = TX.re + b.textContent.replace(/^틀린 \d+개 /, '');
+    }
+    return h.slice(0, i) + '<button class="btn-fill" type="button" data-act="s1aq">' + TX.aq[0] + n + TX.aq[1] + '</button><p class="v2a">' + TX.wsub + '</p>' + el.innerHTML;
+  }
+  /* 평가 처음 풀기 «확인» 글(디자인 1차 A2): 남은 빈 문항이 이 문항뿐이면 «확인하고 결과 보기»(확인 창 0 · 누르면 바로 내기) */
+  function chk(t) {
+    var j;
+    if (W().ev !== 'ev' || t.ph !== 'q') return '확인';
+    for (j = 0; j < t.n; j += 1) { if (j !== t.i && !t.ans[j]) return '확인'; }
+    return TX.last;
+  }
+  /* 평가 첫 안내를 그릴 문항(디자인 1차 A3): 이번에 연 뒤 처음 그리는 문항(이어 풀기 포함 · t.v2n) · 그 문항에 답하면 끝 */
+  function first(t) {
+    if (t.v2n == null) t.v2n = t.i;
+    return t.v2n === t.i && !t.ans[t.i];
+  }
+  /* 답한 뒤 그린 고르기 문항(디자인 1차 A4): 문항 칸에 초점(화면 읽기가 새 문항을 읽음 · 테 0 · 굴림 0) */
+  function fq(t) {
+    var e;
+    if (!t.v2p) return;
+    t.v2p = 0;
+    e = w.document.querySelector('#app .sq');
+    if (!e) return;
+    e.setAttribute('tabindex', '-1');
+    try { e.focus({ preventScroll: true }); } catch (x) { /* 없음 */ }
   }
   /* 평가 첫 문항 위 안내(tNote · 자리 글) */
   function note(t) {
@@ -1091,5 +1159,6 @@
     }
   }
 
-  Lec.v2u = { init: init, on: on, home: home, open: open, ans: ans, after: after, wrong: wrong, note: note, mem: mem, again: again, mark: mark, end: end };
+  Lec.v2u = { init: init, on: on, home: home, open: open, ans: ans, after: after, wrong: wrong, note: note, mem: mem, again: again, mark: mark, end: end,
+              res: res, chk: chk, first: first, fq: fq };
 })(window);

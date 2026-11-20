@@ -622,7 +622,7 @@ html.tvon,html.tvon body{overflow:hidden}
 .sx,#sd,.sx-pp{word-break:keep-all;overflow-wrap:break-word}
 .sx-l{display:flex;flex-direction:column;gap:8px;min-width:0}
 .sx-v2{margin:0;padding:2px 2px 8px;border-bottom:1px solid var(--edge);font-size:13px;font-weight:600;line-height:1.5;color:var(--ink2)}
-.sx-v2 span{white-space:nowrap}.sx-v2 .sx-v2t{display:block;color:var(--ink2)}.sx-v2 b{color:var(--ink);font-variant-numeric:tabular-nums}.sx-v2 b.bad{color:var(--err)}
+.sx-v2 span{white-space:nowrap}.sx-v2 .sx-v2t{display:block;color:var(--ink2)}.sx-v2 b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}.sx-v2 b.bad{color:var(--err)}
 .sx-it{display:block;width:100%;text-align:left;background:#FFFDF7;border:1px solid #E3D7B8;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:#2B2A26;transition:border-color var(--t1) var(--e-out)}
 .sx-it:hover{border-color:#CBBF9A}
 .sx-it.on{border-color:#0C4631;box-shadow:inset 0 0 0 1px #0C4631}
@@ -1345,30 +1345,31 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .sxt tr.sx-w1r{cursor:pointer}
 .k2 .sxt tr.sx-w1r:hover>td{background:var(--fill)}
 .k2 .sxt tr.sx-w1r.on>td{background:var(--acc-tint)}
-.k2 .sxt .sx-w1b{width:100%;min-height:44px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.k2 .sxt .sx-w1b{width:100%;min-height:44px;margin:0;padding:0;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .k2 .sxt .sx-w1b:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .k2 .sxt .sx-w1b::after{content:"";flex:none;width:7px;height:7px;margin:0 4px 3px auto;border-right:1.5px solid var(--ink3);border-bottom:1.5px solid var(--ink3);transform:rotate(45deg)}
 .k2 .sxt .sx-w1b[aria-expanded="true"]::after{margin-bottom:0;margin-top:3px;transform:rotate(-135deg)}
 .k2 .sxt tr.sx-dr>td{height:auto;padding:4px 10px 14px;background:var(--acc-tint)}
 .k2 .sx-w1 .sx-oh{margin:4px 0 8px;font-size:13px;line-height:18px;font-weight:600;color:var(--ink)}
-.k2 .sx-w1 .mut{margin:4px 0;font-size:13px}
+.k2 .sx-w1 .mut{margin:4px 0;font-size:13px;font-weight:600}
 .k2 .sx-wl{margin:0;padding:0;list-style:none;border-radius:12px;background:var(--card)}
 .k2 .sx-wi{position:relative;display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 14px}
 .k2 .sx-wi+.sx-wi::before{content:"";position:absolute;left:14px;right:0;top:0;border-top:1px solid var(--sep)}
 .k2 .sx-wn{flex:none;min-width:36px;font-size:13px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}
-.k2 .sx-wb{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:14px;line-height:20px}
-.k2 .sx-wq{color:var(--ink2);font-size:13px;line-height:18px;overflow-wrap:anywhere}
+.k2 .sx-wb{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:15px;line-height:22px;font-weight:400}
+.k2 .sx-wq{color:var(--ink2);font-size:13px;line-height:18px;font-weight:600;overflow-wrap:anywhere}
 .k2 .sx-wa{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;overflow-wrap:anywhere}
-.k2 .sx-wa .lb{font-size:12px;color:var(--ink2)}
-.k2 .sx-wa b{margin-right:8px;font-weight:600;color:var(--err)}
-.k2 .sx-wm{font-size:12px;line-height:16px;color:var(--ink2)}
+.k2 .sx-wa .lb{font-size:12px;font-weight:600;color:var(--ink2)}
+.k2 .sx-wa b{margin-right:8px;font-weight:600;color:var(--ink)}
+.k2 .sx-wm{font-size:12px;line-height:16px;font-weight:600;color:var(--ink2)}
 .k2 .sx-wb .tag{align-self:flex-start;margin-top:2px}
 .k2 .sx-wc{flex:none;display:flex;align-items:center;gap:6px}
 .k2 .sx-wc .sx-p{margin:0}
-.k2 .btn.sm.sx-ok2{min-height:44px}
-.k2 .sx-of .sx-pm{flex:none;font-size:12.5px;line-height:18px;color:var(--ink2)}
+.k2 .sx-ok2{position:relative}
+.k2 .sx-ok2::after{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}
+.k2 .sx-of .sx-pm{flex:none;font-size:12px;line-height:18px;font-weight:600;color:var(--ink2)}
 .k2 .sx-of .sx-on.hi{color:var(--ink)}
-.k2 .sx-fm{margin:-4px 0 8px;font-size:12.5px;color:var(--ink2)}
+.k2 .sx-fm{margin:-4px 0 8px;font-size:12px;font-weight:600;color:var(--ink2)}
 @media (max-width:860px){
   .k2 .sxt tr.sx-w1r:hover>td,.k2 .sxt tr.sx-w1r.on>td{background:transparent}
   .k2 .sxt tr.sx-w1r.on{box-shadow:inset 0 0 0 2px var(--acc-line)}
@@ -5043,7 +5044,8 @@ window.__lecAdminStart = function () {
     }, function () { if (!S.set) S.setErr = true; });
   }
   /* ①b 운영 숫자(원장님 · 세트 탭 왼쪽 · 열면 보임 · 누름 0): 재기 _v2(lec_v2_watch · 14일) · 1분에 한 번까지 · 목록을 기다리지 않음 · 받으면 그 줄만 바꿈
-     잃은 답 · 판정 어긋남(폰 ≠ 서버) · 늦게 옴 = 14일 합 · 오늘 호출 = 반마다 합 · 스위치가 다 꺼져 있고 숫자가 다 0 이면 안 보임 · 옛 서버 · 오류 = 안 보임 */
+     잃은 답 · 채점 어긋남(폰 ≠ 서버) · 늦게 온 답 = 14일 합 · 오늘 호출 = 반마다 합 · 스위치가 다 꺼져 있고 숫자가 다 0 이면 안 보임 · 옛 서버 · 오류 = 안 보임
+     (디자인 1차: 빨강은 «잃은 답» > 0 하나 · 숫자 600) */
   var sxV2At = 0;
   function sxV2() {
     if (!sxOn() || typeof L.v2Watch !== 'function' || Date.now() - sxV2At < 60000) return;
@@ -5063,7 +5065,7 @@ window.__lecAdminStart = function () {
       for (k in w.sw || {}) { if (w.sw.hasOwnProperty(k) && w.sw[k] === true) on = true; }
     }
     if (!w || (!on && !n.lost && !n.diff && !n.late && !n.call)) return '<p class="sx-v2" id="sxV2" hidden></p>';
-    return '<p class="sx-v2" id="sxV2"><span class="sx-v2t">운영 숫자 · 14일</span>' + b('잃은 답', n.lost, 1) + ' · ' + b('판정 어긋남', n.diff, 1) + ' · ' + b('늦게 옴', n.late) + ' · ' + b('오늘 호출', n.call) + '</p>';
+    return '<p class="sx-v2" id="sxV2"><span class="sx-v2t">운영 숫자 · 14일</span>' + b('잃은 답', n.lost, 1) + ' · ' + b('채점 어긋남', n.diff) + ' · ' + b('늦게 온 답', n.late) + ' · ' + b('오늘 호출', n.call) + '</p>';
   }
   /* 처음 한 번: 30일 지난 녹음 정리 · 조용히(실패 · 'old' = 다음 열 때 다시) */
   function sxInit() {
@@ -5394,7 +5396,7 @@ window.__lecAdminStart = function () {
   function sxW1Html(it, st) {
     var o = S.sxW1, r = o ? o.r : null, a, i, x, h, fx = {}, f = isArr(st.fx) ? st.fx : [], nb, wr, b;
     if (!r) {
-      return '<div class="sx-w1"><p class="mut">' + (o && o.err ? (o.err === 'forbidden' || o.err === 'network' ? sxErr({ err: o.err }) : '첫 답을 불러오지 못했어요. 학생 줄을 다시 눌러 주세요') : '첫 답을 불러오는 중이에요') + '</p></div>';
+      return '<div class="sx-w1"><p class="mut">' + (o && o.err ? (o.err === 'forbidden' || o.err === 'network' ? sxErr({ err: o.err }) : '첫 답을 불러오지 못했어요. 학생 줄을 다시 눌러 주세요.') : '첫 답을 불러오는 중이에요') + '</p></div>';
     }
     for (i = 0; i < f.length; i += 1) { if (f[i] && f[i].k != null) fx[str(f[i].k)] = 1; }
     a = isArr(r.items) ? r.items : [];
@@ -5410,11 +5412,18 @@ window.__lecAdminStart = function () {
       h += '<li class="sx-wi"><span class="sx-wn">' + esc(nb ? nb + '번' : String(i + 1)) + '</span><span class="sx-wb">' +
         (trim(str(x.q)) ? '<span class="sx-wq">' + esc(str(x.q)) + '</span>' : '') +
         '<span class="sx-wa"><span class="lb">첫 답</span><b>' + esc(str(x.v)) + '</b><span class="lb">바른 답</span><span>' + esc(str(x.a)) + '</span></span>' +
-        '<span class="sx-wm">' + esc(+x.no > 1 ? (+x.no) + '번째 판' : '첫 판') + (wr && !x.can && !x.acc ? ' · 힌트 보고 낸 답' : '') + '</span>' +
+        sxWm(x, wr) +
         (fx[str(x.k)] ? '<span class="tag t-line">인정 답이 많은 문항</span>' : '') + '</span><span class="sx-wc">' +
         (x.acc ? '<span class="sx-p ok">맞음으로 했어요</span>' + b + '0">되돌리기</button>' : (x.can ? b + '1">이 답도 맞음</button>' : '')) + '</span></li>';
     }
     return h + '</ul></div>';
+  }
+  /* 문항 아래 작은 줄(디자인 1차 F6): «n번째 판»(2 이상) · «힌트 보고 낸 답» 이 있을 때만 · «첫 판» 글 0 · 둘 다 없으면 줄 0 */
+  function sxWm(x, wr) {
+    var a = [];
+    if (+x.no > 1) a.push((+x.no) + '번째 판');
+    if (wr && !x.can && !x.acc) a.push('힌트 보고 낸 답');
+    return a.length ? '<span class="sx-wm">' + esc(a.join(' · ')) + '</span>' : '';
   }
   /* 이 답도 맞음(v '1') · 되돌리기('0'): 끝나면 그 자리 바로 바뀜 → 결과 표 · 포인트 · 표시는 뒤에서 다시 읽음 */
   function sxOk2(el, set, k, val, on) {
@@ -5450,7 +5459,7 @@ window.__lecAdminStart = function () {
       if (!x || !trim(str(x.p))) continue;
       r = +x.r || 0;
       h += '<li class="sx-p no"><span class="sx-ow">' + esc(str(x.p)) + '</span><span class="sx-pm">문항 ' + esc(String(+x.n || 0)) + ' · 푼 학생 ' + esc(String(+x.st || 0)) + '명</span>' +
-        '<span class="sx-on' + (r >= 60 ? ' hi' : '') + '">' + esc(r + '%') + '</span></li>';
+        '<span class="sx-on' + (r >= 90 ? ' hi' : '') + '">' + esc(r + '%') + '</span></li>';   /* 디자인 1차 F8: 통과 = 첫 답 90%(§8-222) · 그 아래 var(--org) */
     }
     return h ? '<div class="sx-ft sx-of sx-pt"><h3 class="sx-oh">포인트별 첫 답 정답률</h3><ul class="sx-ol">' + h + '</ul></div>' : '';
   }
@@ -5461,9 +5470,9 @@ window.__lecAdminStart = function () {
       x = a[i];
       if (!x) continue;
       w = trim(str(x.w));   /* 문항 앞 40자(서버가 자름 → 끝에 … · 자주 틀린 문제와 같은 꼴) */
-      h += '<li class="sx-p no"><span class="sx-ow">' + esc(w ? w + (w.length >= 40 ? '…' : '') : '문항') + '</span><span class="sx-on">첫 답 ' + esc(String(+x.n || 0)) + '개 가운데 ' + esc(String(+x.f || 0)) + '개</span></li>';
+      h += '<li class="sx-p no"><span class="sx-ow">' + esc(w ? w + (w.length >= 40 ? '…' : '') : '문항') + '</span><span class="sx-on">첫 답 ' + esc(String(+x.n || 0)) + '개 가운데 ' + esc(String(+x.f || 0)) + '개 인정</span></li>';
     }
-    return h ? '<div class="sx-ft sx-of sx-fx"><h3 class="sx-oh">인정 답이 많은 문항</h3><p class="sx-fm">첫 답의 5%가 넘게 «이 답도 맞음»으로 맞았어요</p><ul class="sx-ol">' + h + '</ul></div>' : '';
+    return h ? '<div class="sx-ft sx-of sx-fx"><h3 class="sx-oh">인정 답이 많은 문항</h3><p class="sx-fm">첫 답 가운데 5% 넘게 «이 답도 맞음»으로 바꿨어요</p><ul class="sx-ol">' + h + '</ul></div>' : '';
   }
 
   /* ---- 시험지 인쇄 작은 창(단추 아래): 형식 · 번호(전부 · 범위) · 문항 수(비우면 전부 · 숫자면 그만큼 무작위) · 순서(섞기) →
