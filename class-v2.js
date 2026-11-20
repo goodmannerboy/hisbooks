@@ -793,7 +793,7 @@
     note: '다 풀면 바른 답을 한 번에 보여 줘요',
     noteG: '다 풀면 바른 답과 해설을 한 번에 보여 줘요',
     wrong: '틀린 문제 ',
-    wsub: '여기서 풀면 점수에는 안 들어가요',
+    wsub: '점수에는 안 들어가요',   /* 디자인 회의 2차(결론안2 3절): «여기서»가 가리킬 곳 없음 · 원안 .slab 말 */
     aq: ['틀린 ', '개 한 번 더 풀기'],
     re: '바로 ',
     last: '확인하고 결과 보기',
@@ -1011,13 +1011,19 @@
       B.info(t.title, TX.send);
     });
   }
-  /* 받은 목록 숫자를 묶음에 넣음(목록으로 돌아갈 때 다시 받지 않음) · me = {세트 id: me} */
+  /* 받은 목록 숫자를 묶음에 넣음(목록으로 돌아갈 때 다시 받지 않음) · me = {세트 id: me}
+     2차 R1: «오늘 볼 것»(todo · ③ review 켬)이 있는 묶음에서 쌓인 오답 수(n · now)가 바뀌면 목록으로 갈 때 다시 받음(todo 는 여기 응답에 없음)
+     견줄 숫자 = 목록을 받을 때(todo 와 같은 때)의 due(dueL) · 바로 다시 시험처럼 apply 가 두 번이어도 앞에서 바뀐 것을 잃지 않음 */
   function apply(me, due) {
-    var s = B.S.set, a = s && s.sets, i;
+    var s = B.S.set, a = s && s.sets, i, o, ch = false;
     if (!s) return;
     for (i = 0; a && i < a.length; i += 1) { if (a[i] && me && me[a[i].id]) a[i].me = me[a[i].id]; }
-    if (due && due.n != null) s.due = due;
-    B.S.setDirty = false;
+    if (due && due.n != null) {
+      if (!s.hasOwnProperty('dueL')) s.dueL = s.due || null;
+      s.due = due;
+    }
+    if (s.hasOwnProperty('dueL')) { o = s.dueL; ch = !o || (+o.n || 0) !== (+s.due.n || 0) || (+o.now || 0) !== (+s.due.now || 0); }
+    B.S.setDirty = !!(ch && s.todo);
   }
   /* 결과 아래: 틀린 것 전부 펼침(화면 차례) · 쓰기 = 다른 글자 밑줄(tDiffHTML) · 고르기 = 두 줄(밑줄 0) · 문법 = 해설 · 포인트 · 끝 «목록으로»
      (디자인 1차: «한 번 더»는 결과 카드 주 단추(res) · 카드 안 단추 0 · 이름 = 제목 h2) */
@@ -1072,7 +1078,8 @@
       if (/(^| )(btn-fill|nx2)( |$)/.test(b.className)) b.className = 'stxt';
       if (b.getAttribute('data-act') === 's1retake') b.textContent = TX.re + b.textContent.replace(/^틀린 \d+개 /, '');
     }
-    return h.slice(0, i) + '<button class="btn-fill" type="button" data-act="s1aq">' + TX.aq[0] + n + TX.aq[1] + '</button><p class="v2a">' + TX.wsub + '</p>' + el.innerHTML;
+    /* 2차 D1: 아래 한 줄을 주 단추 설명으로 읽음 */
+    return h.slice(0, i) + '<button class="btn-fill" type="button" data-act="s1aq" aria-describedby="v2a">' + TX.aq[0] + n + TX.aq[1] + '</button><p class="v2a" id="v2a">' + TX.wsub + '</p>' + el.innerHTML;
   }
   /* 평가 처음 풀기 «확인» 글(디자인 1차 A2): 남은 빈 문항이 이 문항뿐이면 «확인하고 결과 보기»(확인 창 0 · 누르면 바로 내기) */
   function chk(t) {
