@@ -11330,7 +11330,7 @@ begin
            public.lec__set_due_on(xp.cards -> (u.e ->> 'k'), p_day) as zd,
            case when public.lec__set_due_on(xp.cards -> (u.e ->> 'k'), p_day) then coalesce(xp.cards -> (u.e ->> 'k') ->> 'z', '') else '' end as zz,
            greatest(l.d1, public.lec__date(public.lec__v2_last(xp.cards -> (u.e ->> 'k')))) as ls,
-           (l.d1 is not null or jsonb_typeof(xp.cards -> (u.e ->> 'k')) = 'object') as seen,
+           (l.d1 is not null or coalesce(jsonb_typeof(xp.cards -> (u.e ->> 'k')) = 'object', false)) as seen,  -- 진행 줄이 없으면 NULL → 첫 판이 비던 것 막음(11-20 운영 시험 실행)
            case when public.lec__set_opts(u.e ->> 's') is null then 'r' else 'c' end as f
       from jsonb_array_elements(p_s.items) with ordinality as u(e, o)
       left join public.lec_set_prog xp on xp.sid = p_sid and xp.set_id = p_s.id
@@ -12340,6 +12340,9 @@ begin
       raise exception '점검 실패(V2 쌓인 오답 판 열기): %', left(r::text, 600);
     end if;
     update public.lec_set_run xr set created_at = now() - interval '10 minutes' where xr.id = v_bd;
+    -- 앞 판(#1 · v_b)은 쌓인 오답 판보다 먼저 연 판: 한 거래 안이라 now() 가 같아 판 연 때(bo)를 20분 앞으로(실제 차례와 같게)
+    update public.lec_set_run xr set created_at = now() - interval '20 minutes' where xr.id = v_b;
+    update public.lec_set_log xl set bo = now() - interval '20 minutes' where xl.b = v_b;
     v_b2 := (public.lec_set_open_v2(v_ka, v_sv, 'mem') ->> 'b')::uuid;
     r := public.lec_set_log_v2(v_ka, jsonb_build_array(
            jsonb_build_object('id', md5('v2m4' || v_ks), 'b', v_b2, 'i', 1, 'k', 'k2', 'f', 'k', 'v', '1', 'ago', 100)));
