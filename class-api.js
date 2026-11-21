@@ -887,6 +887,8 @@
     var head = nm + josaNeun(nm) + ' ' + (dd ? dd + ' ' : '') + (o.absent ? '결석한 ' : '') +
                '수업 영상(' + str(o.title) + ')을 ';
     if (o.done || pct >= 90) return head + '끝까지 봤습니다. 다음 수업에서 이어서 확인하겠습니다.';
+    /* F3(11-21): 예전 «기록 안 함» 학생은 기록 없이 봤을 수도 있음 → «열지 않았다»고 지어내지 않고 «본 기록이 없다»(noRec) */
+    if (pct === 0 && o.noRec) return head + '본 기록이 없습니다. 다음 등원 전까지 볼 수 있도록 말씀 부탁드립니다.';
     if (pct === 0) return head + '아직 열지 않았습니다. 다음 등원 전까지 볼 수 있도록 말씀 부탁드립니다.';
     return head + pct + '%까지 봤습니다. 다음 등원 전까지 ' + (o.nextNo ? str(o.nextNo) + '번부터' : '남은 부분을') +
            ' 마저 보도록 말씀 부탁드립니다.';
@@ -913,15 +915,24 @@
     return '영상을 불러오지 못했어요. 다시 열어 보세요';
   }
 
-  /* 선생님 현황의 기록 상태: 동의 표(lec_consent 줄들)에서 그 학생 → 'agree' · 'none'(기록 안 함) · 'pending'(동의 전) */
-  function recOf(rows, skey) {
-    var i, c = null;
+  /* 선생님 현황의 기록 상태: 동의 표(lec_consent 줄들)에서 그 학생 → 'agree' · 'pending'(동의 전)
+     F3(11-21): 예전 «기록 안 함»(none) 줄도 동의 전으로 셈(학생 앱도 동의 판을 다시 띄움 · 동의 전까지 본 기록 0) · 꼬리표는 wasNone */
+  function consentRow(rows, skey) {
+    var i;
     if (isArr(rows)) {
-      for (i = 0; i < rows.length; i += 1) { if (rows[i] && rows[i].sid === skey) { c = rows[i]; break; } }
+      for (i = 0; i < rows.length; i += 1) { if (rows[i] && rows[i].sid === skey) return rows[i]; }
     }
+    return null;
+  }
+  function recOf(rows, skey) {
+    var c = consentRow(rows, skey);
     if (c && c.choice === 'agree' && c.ver === CONSENT_VER) return 'agree';
-    if (c && c.choice === 'none') return 'none';
     return 'pending';
+  }
+  /* 예전에 «기록 안 함»을 고른 학생(관리 화면 꼬리표 «예전에 기록 안 함»만) */
+  function wasNone(rows, skey) {
+    var c = consentRow(rows, skey);
+    return !!(c && c.choice === 'none');
   }
 
   /* 학생 질문 상태(lec_qna_list 항목) */
@@ -945,15 +956,54 @@
 
   /* ------------------------------------------------------------- 서버 부르기 */
 
+  /* F6(11-21): 실패 글의 까닭만 가름(연결 상태 표시가 아님) — 이 폰이 인터넷에 안 붙었을 때만 «인터넷 연결을 확인해 주세요.»
+     그 밖(서버가 멈춤 · 500대 · 시간 초과) = «지금 서버에 닿지 않아요. 잠시 뒤 다시 해 주세요.»(관리 로그인 J13 과 같은 말) · __lecOffline = 연습 화면 시험용 «끊김» */
+  var NET_OFF = '인터넷 연결을 확인해 주세요.', NET_SRV = '지금 서버에 닿지 않아요. 잠시 뒤 다시 해 주세요.';
+  function netMsg() {
+    var off = false;
+    try { off = !!w.__lecOffline || (!!w.navigator && w.navigator.onLine === false); } catch (e) { off = false; }
+    return off ? NET_OFF : NET_SRV;
+  }
+  /* F6: 기다림 끝 — 집 정보 · 로그인 12초 · 나머지 20초 · keepalive(진도 · 나가기)는 안 걸음(페이지가 닫혀도 가야 함)
+     넘으면 지금의 network 실패와 같은 길(이미 있는 «다시 해 보기» 등) · 저절로 다시 하지 않음 · 한 번 끝난 부름에 늦게 온 답은 버림
+     __lecTo = {함수 이름: ms} 연습 화면 시험용(기다림 끝을 짧게) */
+  var RPC_MS = { lec_home: 12000, lec_login: 12000 }, RPC_MS0 = 20000;
+  /* 기다림 끝을 안 거는 쓰기(합친 뒤 11-21): 서버가 실은 받았는데 기다림 끝으로 «실패»가 뜨면 다시 눌러 두 번 들어가는 것 ·
+     질문 · 다시 묻기(lec_ask = 같은 글이 두 줄) · 녹음 보내기(lec_rec_begin = 하루 10번에 셈 · lec_rec_done) ·
+     v2 묶음 저장(lec_set_save_v2 · lec_set_log_v2 = 제 8초 끊기가 따로 있고 요청은 끝까지 감 · 큰 묶음을 도중에 거두지 않음) → 예전처럼 답을 끝까지 기다림 */
+  var RPC_NO_TO = { lec_ask: 1, lec_rec_begin: 1, lec_rec_done: 1, lec_set_save_v2: 1, lec_set_log_v2: 1 };
+  function rpcMs(fn, opt) {
+    var t;
+    if (opt.keepalive) return 0;
+    if (RPC_NO_TO[fn] === 1) return 0;
+    if (Lec.DEMO) { try { t = w.__lecTo && typeof w.__lecTo === 'object' ? w.__lecTo[fn] : null; } catch (e) { t = null; } if (t != null && isFinite(+t)) return Math.max(0, +t); }
+    return RPC_MS[fn] || RPC_MS0;
+  }
+  function rpcTo(p, ms, ac) {
+    if (!(ms > 0)) return p;
+    return new Promise(function (res, rej) {
+      var on = true, tm = setTimeout(function () {
+        if (!on) return;
+        on = false;
+        var x = err('network');
+        x.timeout = true;
+        if (ac) { try { ac.abort(); } catch (e) { /* 없음 */ } }
+        rej(x);
+      }, ms);
+      p.then(function (v) { if (!on) return; on = false; clearTimeout(tm); res(v); }, function (e) { if (!on) return; on = false; clearTimeout(tm); rej(e); });
+    });
+  }
+
   function rpc(fn, args, opt) {
     opt = opt || {};
     args = args || {};
+    var ms = rpcMs(fn, opt), ac = null;   /* F6 기다림 끝 */
     if (w.__lecOffline) return Promise.reject(err('network'));
     if (Lec.DEMO) {
       /* 시험용(연습 화면에서만): window.__lecSlow = {함수 이름: 더 늦출 ms} · 느린 망에서 답이 늦게 오는 것 흉내 */
       var slow = 0;
       try { slow = w.__lecSlow && typeof w.__lecSlow === 'object' ? Math.max(0, Math.min(10000, +w.__lecSlow[fn] || 0)) : 0; } catch (e0) { slow = 0; }
-      return new Promise(function (res, rej) {
+      return rpcTo(new Promise(function (res, rej) {
         setTimeout(function () {
           if (w.__lecOffline) { rej(err('network')); return; }
           var M = w.LecMock, r, x;
@@ -974,7 +1024,7 @@
           }
           res(r === undefined ? null : JSON.parse(JSON.stringify(r)));
         }, 120 + slow);
-      });
+      }), ms, null);
     }
     if (typeof w.fetch !== 'function') return Promise.reject(err('network'));
     var init = {
@@ -984,9 +1034,10 @@
       cache: 'no-store'
     };
     if (opt.keepalive) init.keepalive = true;
+    else if (ms > 0 && typeof w.AbortController === 'function') { try { ac = new w.AbortController(); init.signal = ac.signal; } catch (e5) { ac = null; } }   /* F6: 기다림 끝에 요청도 거둠 */
     var p;
     try { p = w.fetch(SUPA_URL + '/rest/v1/rpc/' + fn, init); } catch (e3) { return Promise.reject(err('network')); }
-    return p.then(function (r) {
+    return rpcTo(p.then(function (r) {
       return r.text().then(function (t) {
         var x;
         if (!r.ok) { x = err('http'); x.status = r.status; x.body = t; throw x; }
@@ -996,7 +1047,7 @@
         if (!r.ok) x.status = r.status;
         throw x;
       });
-    }, function () { throw err('network'); });
+    }, function () { throw err('network'); }), ms, ac);
   }
 
   function toInt(v) {
@@ -1008,7 +1059,27 @@
   function login(name, pin, dev) {
     return rpc('lec_login', { p_name: str(name), p_pin: str(pin), p_dev: dev == null ? devName() : str(dev) });
   }
-  function home(key) { return rpc('lec_home', { p_key: key == null ? null : str(key) }); }
+  /* F1(11-21) 서버 판: lec_home 답 맨 위 정수 srv(R1 을 넣은 서버 = 2) → Lec.srv · 없으면 0(옛 서버 = 진도는 오늘과 같은 lec_beat)
+     이번 실행에서 서버가 실제로 준 답으로만 정함(저장해 둔 지난 목록 · 미리 보기 가짜 home 에서는 안 정함) · Lec.homeN = 이번 실행에서 받은 답 수
+     답이 올 때마다 afterHome 에 건 함수를 한 번씩(답을 그린 뒤 · setTimeout 0) = 밀린 진도 보내기는 서버 판을 안 뒤에(class.html pendFlush) */
+  var homeFns = [];
+  function afterHome(fn) { if (typeof fn === 'function' && homeFns.indexOf(fn) < 0) homeFns.push(fn); }
+  function homeGot(r) {
+    var v, i;
+    if (!r || typeof r !== 'object' || isArr(r)) return;
+    v = +r.srv;
+    Lec.srv = isFinite(v) && v >= 1 ? Math.floor(v) : 0;
+    Lec.homeN += 1;
+    for (i = 0; i < homeFns.length; i += 1) {
+      (function (f) { setTimeout(function () { try { f(r); } catch (e) { /* 없음 */ } }, 0); })(homeFns[i]);
+    }
+  }
+  function home(key) {
+    return rpc('lec_home', { p_key: key == null ? null : str(key) }).then(function (r) {
+      try { homeGot(r); } catch (e) { /* 없음 */ }
+      return r;
+    });
+  }
 
   /* 기록 동의: choice = 'agree'(기록함) · 'none'(기록 없이 보기) · ver 를 안 주면 지금 판 */
   function consent(key, choice, ver) {
@@ -1028,7 +1099,15 @@
 
   /* o = {key, lecture, session, seen, total, pos, from, to, dur, dev, rate, scale} · 늘 keepalive
      total = «이번 보기(session)»에서 실제로 튼 누적 초. 서버는 lec_session.watched 와 견줘 늘어난 만큼만 더함
-     (강의 전체 누적을 보내면 새 보기마다 최대 120 × 배속 + 30초(1배 150초 · 2배 270초)가 더 붙음 · class-setup.sql lec_beat 기준) */
+     (강의 전체 누적을 보내면 새 보기마다 최대 120 × 배속 + 30초(1배 150초 · 2배 270초)가 더 붙음 · class-setup.sql lec_beat 기준)
+     F1 · Q5(11-21): o.late · o.wall · o.via 를 더 받음 — Lec.srv 가 2 이상일 때만 lec_beat2(같은 11개 + p_late · p_wall · p_via) ·
+       late = 밀려 있다가 다시 보내는 줄(class.html pendFlush · 나가기 · 앞 기록이 못 간 보기) · wall = 그 보기에서 흐른 벽시계 초(late 일 때만 · 1 이상)
+       via = 어디서 눌러 시작했나(VIA_RE 꼴만 · 아니면 null)
+     옛 서버(srv 0)는 오늘과 글자 그대로 같은 lec_beat(같은 인자) · lec_beat2 가 없다고 하면(404 · 권한) 이번 실행은 옛 길로 내리고(b2Gone · Lec.srv 는 그대로) 같은 줄을 lec_beat 로 한 번 */
+  var VIA_RE = /^[a-z0-9_]{1,12}$/, b2Gone = false;
+  function noFn(e) {
+    return !!e && (e.status === 404 || e.status === 401 || e.status === 403 || e.code === 'PGRST202' || e.code === '42883');
+  }
   function beat(o) {
     o = o || {};
     var a = {
@@ -1048,7 +1127,17 @@
       var sc = +o.scale;
       a.p_scale = isFinite(sc) && sc > 0 ? sc : 1;
     }
-    return rpc('lec_beat', a, { keepalive: true });
+    if (!(Lec.srv >= 2) || b2Gone) return rpc('lec_beat', a, { keepalive: true });
+    var b = {}, k, wl = toInt(o.wall);
+    for (k in a) { if (has(a, k)) b[k] = a[k]; }
+    b.p_late = !!o.late;
+    b.p_wall = o.late && wl != null && wl > 0 ? wl : null;
+    b.p_via = typeof o.via === 'string' && VIA_RE.test(o.via) ? o.via : null;
+    return rpc('lec_beat2', b, { keepalive: true }).then(null, function (e) {
+      if (!noFn(e)) throw e;
+      b2Gone = true;
+      return rpc('lec_beat', a, { keepalive: true });
+    });
   }
   function qna(key, lecture) {
     return rpc('lec_qna_list', { p_key: key == null ? null : str(key), p_lecture: lecture || null });
@@ -1229,10 +1318,14 @@
     MAX_DUR: 21600,
     CONSENT_VER: CONSENT_VER,
     MEMO_CHIPS: MEMO_CHIPS,
+    srv: 0,     /* F1(11-21) 서버 판(이번 실행 lec_home 답의 srv · 없으면 0) */
+    homeN: 0,   /* 이번 실행에서 받은 lec_home 답 수 */
 
     rpc: rpc,
+    netMsg: netMsg,   /* F6(11-21) 실패 글: 끊김 / 서버 */
     login: login,
     home: home,
+    afterHome: afterHome,
     consent: consent,
     beat: beat,
     rateOf: rateOf,
@@ -1287,6 +1380,7 @@
     lockMsg: lockMsg,
     ytErr: ytErr,
     recOf: recOf,
+    wasNone: wasNone,
     qState: qState,
     untilNote: untilNote,
 
@@ -3206,10 +3300,11 @@
     return { ok: false, err: e && e.message === 'network' ? 'network' : 'error' };
   }
   function pv() { return !!w.__lecPvIn; }
-  function stuCall(fn, args) {
+  /* opt = Lec.rpc 옵션(F5 11-21: 숨을 때 · 화면을 거둘 때 외우기 표시 = {keepalive: true}) */
+  function stuCall(fn, args, opt) {
     var p;
     if (pv()) return Promise.resolve({ ok: false, err: 'preview' }); /* 미리 보기 안쪽 = 부르지 않음 */
-    try { p = Lec.rpc(fn, args); } catch (e0) { return Promise.resolve(failOf(e0)); }
+    try { p = opt ? Lec.rpc(fn, args, opt) : Lec.rpc(fn, args); } catch (e0) { return Promise.resolve(failOf(e0)); }
     return Promise.resolve(p).then(function (r) {
       return isObj(r) ? r : { ok: false, err: 'error' };
     }, failOf).then(null, function () { return { ok: false, err: 'error' }; });
@@ -3232,9 +3327,9 @@
   }
   function setItems(key, id) { return stuCall('lec_set_items', { p_key: k0(key), p_set: id || null }); }
   /* 표시: 0 다시 · 1 알아요 · 2 알아요 + 말해서 확인(구문 · 11-18) → 옛 서버가 2 를 'input' 으로 거절하면 2 → 1 로 바꿔 한 번 다시 보냄 */
-  function setCard(key, id, marks) {
+  function setCard(key, id, marks, opt) {
     var m = isObj(marks) ? marks : {};
-    return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: m }).then(function (r) {
+    return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: m }, opt).then(function (r) {
       var m1 = {}, two = false, k;
       if (!r || r.ok || r.err !== 'input') return r;
       for (k in m) {
@@ -3242,7 +3337,7 @@
         if (m[k] === 2) { two = true; m1[k] = 1; } else m1[k] = m[k];
       }
       if (!two) return r;
-      return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: m1 });
+      return stuCall('lec_set_card', { p_key: k0(key), p_set: id || null, p_marks: m1 }, opt);
     });
   }
   function setTest(key, id) { return stuCall('lec_set_test', { p_key: k0(key), p_set: id || null }); }

@@ -451,9 +451,9 @@
 </script>
 <style>
 /* 2차 디자인(11-18 원장님 «두 앱 넣어»): 글꼴 Pretendard 를 앱에 실음(앱 폴더 assets · 400 · 600 · 700 · 바깥 요청 0) */
-@font-face{font-family:"Pretendard";font-style:normal;font-weight:400;font-display:swap;src:url(assets/pretendard-400.woff) format("woff")}
-@font-face{font-family:"Pretendard";font-style:normal;font-weight:600;font-display:swap;src:url(assets/pretendard-600.woff) format("woff")}
-@font-face{font-family:"Pretendard";font-style:normal;font-weight:700;font-display:swap;src:url(assets/pretendard-700.woff) format("woff")}
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:400;font-display:swap;src:url(assets/pretendard-400.woff2) format("woff2"),url(assets/pretendard-400.woff) format("woff")}
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:600;font-display:swap;src:url(assets/pretendard-600.woff2) format("woff2"),url(assets/pretendard-600.woff) format("woff")}
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:700;font-display:swap;src:url(assets/pretendard-700.woff2) format("woff2"),url(assets/pretendard-700.woff) format("woff")}
 /* 결론안 K(11-16) · 밝은 토큰 = 목록·들어오기 · 무대 토큰 = 보기 화면(html.stg) · 다크 모드 폰도 목록·들어오기는 크림(11-16 원장님)
    2차(11-18): 바탕 크림 #FAF6EC(결론안 §9 «크림 연하게») · 카드 흰색 + 테 .10 · 글 #1A1A18 · 딥그린은 --acc(강조 · 단추 · 진도) */
 :root{color-scheme:light;color-scheme:only light;--bg:#FAF6EC;--card:#FFFFFF;--edge:rgba(70,52,12,.10);--line:rgba(70,52,12,.13);--dash:#CBBF9A;--ink:#1A1A18;--ink2:#57534A;--acc:#0C4631;--accB:#E3EBDD;--track:rgba(12,70,49,.15);--tile:#E9F0EC;--tileT:#0C4631;--done:#1B6A43;--focus:#0C4631;--rv:#8A8D80;--fillB:#0C4631;--fillT:#FFFFFF;--fill:#EAE1C8;--press:#F3EEE2;--inL:#E6DCBF;--sl:#CBBF9A;--gold:var(--brass);--cur:#F4EEDB;--seen:#0C4631;--gB:#DDF0E5;--gT:var(--done);--aB:#FBF0C9;--aT:var(--warn);--sB:#DFEAF8;--sT:var(--new);--nB:var(--mute-bg);--nT:var(--mute);--cB:#FBE9E3;--cT:var(--err);--art:#F7F2E4;--artT:#0B3D2E;--artL:rgba(70,52,12,.14);--e-out:cubic-bezier(.2,.8,.2,1);--e-soft:cubic-bezier(.3,.7,.2,1);--t1:120ms;--t2:240ms;--t3:420ms;--t4:700ms;--bg-s:#FAF6EC;--bg-a:#FDFAF2;--side:#F4ECD7;--ink3:#6F6B62;--done-dot:#2E8B57;--warn:#98480A;--warn-dot:#C26A00;--new:#1B5499;--err:#B3302A;--mute-bg:#EFEDE5;--mute:#57534A;--brass:#7A5410;--gold-line:#C9A227;--dd-ring:#D9546D;--stg-bg:#0D241A;--stg-ink:#F3F1EA;--stg-ink2:#B9C2BB;--stg-ink3:#9DA9A0;--stg-hi:#8FD0AE}
@@ -654,6 +654,10 @@ html.stg .ky{background:#1A3B2C;color:#F4ECD7}
 .exam1::after{content:'\203A';flex:0 0 auto;font-size:20px;line-height:1;color:var(--ink2)}
 /* D1(11-19) 일정만 카드(범위를 저장하지 않은 시험): 겉모양 같음(링 56 · 높이 86) · 첫 줄 하나만 세로 가운데 · 누를 곳 아님(div · 화살표 없음) */
 .exam1.only::after{content:none}
+/* P1(11-21) 시험 카드 안 «다음 · 제목» 줄: 흰 카드 한 장(.card 테 · 둥글기 그대로) 안에 위 = 시험 줄(.exam1 안쪽 여백 그대로) · 아래 = 결석 카드와 같은 줄(.absln 44 · 위 선 · 17 · 끝 «›») */
+.exw{margin:16px 0 0;padding:0}
+.exw .exam1{margin:0}
+.exw .absln{width:auto;margin:0 12px 0 16px}
 .rhead{margin:4px 0 12px}
 .rhead h1{margin:0;font-size:20px;font-weight:700;line-height:1.3;letter-spacing:-.02em}
 .rhead p{margin:4px 0 0;font-size:13px;color:var(--ink2)}
@@ -766,6 +770,8 @@ a.row:focus-visible{outline-offset:-2px}
 .band em{position:absolute;top:2px;width:2px;height:4px;margin-left:-1px;background:var(--ink2)}
 .band .bl{position:absolute;left:50%;top:22px;transform:translateX(-50%);white-space:nowrap}
 .band button.on .bl{color:var(--ink);font-weight:700}
+/* P8(11-21): 지문 사이 틈(3px)도 누를 자리 = 양옆으로 1.5px 씩(이웃과 틈 가운데에서 만남 · 겹침 없음) → 틈을 누르면 가까운 지문 · 보이는 모양은 그대로 */
+.band button:before{content:"";position:absolute;top:0;bottom:0;left:-1.5px;right:-1.5px}
 .nowl{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;margin:4px 0 0}
 .nowl .ch{font-size:15px;font-weight:700;letter-spacing:-.01em}
 .nowl .tm{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -869,6 +875,18 @@ a.row:focus-visible{outline-offset:-2px}
   /* 2차(11-18) 옆 여백 20: 퍼센트는 부모 안쪽 폭(W − 40) 기준 → 40 × 9/16 = 22.5 를 더해야 화면 폭 16:9 */
   .vid{position:-webkit-sticky;position:sticky;top:0;z-index:3;width:auto;margin:0 -20px;padding-top:calc(56.25% + 22.5px);border-radius:0}
   .pgrid.nostk .vid{position:relative}
+}
+/* F4(11-21): 폰 가로(창 높이 500 아래) = 영상 칸을 높이에 맞춤(16:9 · 가운데 · 양옆은 무대 색) · 높이 = 화면 − 머리(44) − 아래 inset
+   → 맨 위에서도 · 위에 붙었을 때도 유튜브 막대 · 전체 화면 단추가 화면 안 · aspect-ratio 없는 옛 브라우저 · 세로 · PC 는 그대로 */
+@supports (aspect-ratio:1/1){
+  @media (orientation:landscape) and (min-width:481px) and (max-height:500px) and (max-width:1099px){ /* Z6(11-21): 폭 481 이상만(세로 폰 + 자판 창 360×224 등은 «가로»로 안 읽음) */
+    html.stg .vid{width:min(100%,calc((100vh - 44px - env(safe-area-inset-bottom,0px)) * 16 / 9));height:auto;margin:0 auto;padding-top:0;aspect-ratio:16/9}
+  }
+  @supports (height:1dvh){
+    @media (orientation:landscape) and (min-width:481px) and (max-height:500px) and (max-width:1099px){
+      html.stg .vid{width:min(100%,calc((100dvh - 44px - env(safe-area-inset-bottom,0px)) * 16 / 9))}
+    }
+  }
 }
 @media (max-width:359px){.top{gap:6px}.me{max-width:34vw}}
 /* PC 보기: 머리줄은 목록과 같음 · 왼쪽 영상 · 오른쪽 열 352 */
@@ -1439,6 +1457,28 @@ html.dr-open,html.dr-open body{background:#FAF6EC}
     var rf = String(document.referrer || '');
     if (rf.indexOf(location.origin + '/') === 0 && /\/class-admin\.html(?:[?#]|$)/.test(rf)) window.__hcHeal(rf.split('#')[0]);
   }
+  /* P2(11-21 결론안 «첫 화면 앞당기기») ① 미리 잇기: 서버(질의 = CORS · 쿠키 없음 → crossorigin) · 영상 그림(i.ytimg.com · 그림 = crossorigin 없음)
+     주소는 class-api.js SUPA_URL 과 같게 · 연습(demo=1) · 자동 시험 브라우저(webdriver)는 잇지 않음(시험이 진짜 서버에 닿지 않게) */
+  if (!demo && !navigator.webdriver) {
+    (function (a) {
+      var i, l;
+      for (i = 0; i < a.length; i += 1) {
+        try { l = document.createElement('link'); l.rel = 'preconnect'; l.href = a[i][0]; if (a[i][1]) l.crossOrigin = 'anonymous'; document.head.appendChild(l); } catch (e4) { /* 없음 */ }
+      }
+    })([['https://vcfhttzbzgtszpuahibe.supabase.co', 1], ['https://i.ytimg.com', 0]]);
+  }
+  /* 로그인 머리 «HIS CLASS»(11-17 원장님 «둘 다 넣어» · 결론안 줄 없이 · 폭 170): Noto Serif KR wght 600 · 자간 0.12em 글자 모양을 경로로 굳힘(웹 글꼴 · 바깥 요청 없음) ·
+     만든 법 = 알림 폴더 로그인_워드마크_wm_svg.py(나온 글을 여기 window.__hcWM 에 · 11-21 P2 ② 로 화면 코드의 WM_SVG 에서 옮김 · 화면 코드는 WM_SVG = 이것) */
+  window.__hcWM = '<svg class="wm" viewBox="48 -753 6216 771" aria-hidden="true" focusable="false"><path fill="currentColor" d="M48.3 0V-31.6L192.1 -45.1H216.7L364 -31.6V0ZM144.7 0Q146.7 -84.5 146.9 -170.1Q147.2 -255.6 147.2 -342.2V-392.6Q147.2 -479.1 146.9 -564.6Q146.7 -650.2 144.7 -735.2H269.7Q267.7 -651.2 267.2 -565.2Q266.7 -479.1 266.7 -392.6V-366.5Q266.7 -263.1 267.2 -174.3Q267.7 -85.6 269.7 0ZM207.2 -361V-396.1H653.5V-361ZM495.7 0V-31.6L642 -45.1H666.6L811.4 -31.6V0ZM590 0Q592.5 -84.5 593 -173.1Q593.5 -261.6 593.5 -366.5V-392.6Q593.5 -479.1 593 -564.6Q592.5 -650.2 590 -735.2H715.1Q713.5 -651.2 713 -565.2Q712.5 -479.1 712.5 -392.6V-342.2Q712.5 -256.7 713 -171.1Q713.5 -85.6 715.1 0ZM48.3 -703.7V-735.2H364V-703.7L216.7 -691.1H192.1ZM495.7 -703.7V-735.2H811.4V-703.7L666.6 -691.1H642ZM1028.3 0V-31.6L1175.1 -45.1H1200.3L1348.1 -31.6V0ZM1125.7 0Q1128.2 -84.5 1128.4 -170.1Q1128.7 -255.6 1128.7 -342.2V-392.6Q1128.7 -479.1 1128.4 -564.6Q1128.2 -650.2 1125.7 -735.2H1250.7Q1249.2 -651.2 1248.7 -565.2Q1248.2 -479.1 1248.2 -392.6V-342.7Q1248.2 -256.7 1248.7 -171.1Q1249.2 -85.6 1250.7 0ZM1028.3 -703.7V-735.2H1348.1V-703.7L1200.3 -691.1H1175.1ZM1788.8 17.6Q1727.3 17.6 1668.2 1.1Q1609.1 -15.4 1569.5 -41L1575.5 -199.3H1623.2L1665.6 -20.3L1610.8 -44.9L1602.2 -80Q1651.2 -45 1689.2 -33Q1727.2 -21 1778.6 -21Q1857 -21 1902.9 -56.5Q1948.8 -92 1948.8 -158.8Q1948.8 -194.2 1936.5 -220Q1924.3 -245.7 1895.9 -266.6Q1867.5 -287.6 1818.2 -308L1773.7 -327.1Q1680.5 -367.7 1631.9 -420.3Q1583.3 -472.8 1583.3 -554.5Q1583.3 -619.6 1615.9 -663.6Q1648.4 -707.7 1704.5 -730.5Q1760.7 -753.3 1831.4 -753.3Q1889.4 -753.3 1935.7 -738.8Q1982.1 -724.3 2020.6 -697.8L2014.6 -547.5H1965.9L1925.1 -718.4L1982.9 -692.8L1988.5 -656.1Q1948 -688.7 1916.5 -701.7Q1885 -714.7 1842.6 -714.7Q1774.6 -714.7 1731.2 -682Q1687.8 -649.3 1687.8 -587.4Q1687.8 -532.4 1719.2 -499.5Q1750.6 -466.5 1807.1 -442L1855.1 -421.5Q1930.6 -389.4 1974.6 -356.9Q2018.7 -324.4 2037.4 -285.6Q2056.2 -246.8 2056.2 -193.2Q2056.2 -129.7 2023.9 -82.1Q1991.7 -34.6 1931.8 -8.5Q1872 17.6 1788.8 17.6ZM3023.2 17.6Q2941.2 17.6 2872.4 -7.2Q2803.6 -31.9 2752.5 -80.6Q2701.4 -129.3 2673.4 -200.4Q2645.3 -271.4 2645.3 -363.6Q2645.3 -456.2 2674.1 -528.8Q2702.9 -601.3 2754.5 -651.6Q2806.1 -701.8 2875.1 -727.6Q2944.2 -753.3 3023.8 -753.3Q3088.9 -753.3 3137.9 -739.3Q3186.9 -725.2 3235.4 -697.3L3235.3 -528.5H3185.1L3140.8 -717L3203.7 -695.9V-661.9Q3163.8 -691.3 3126.1 -704Q3088.4 -716.8 3042.4 -716.8Q2964.6 -716.8 2903.4 -677.5Q2842.3 -638.3 2807.1 -560.5Q2771.9 -482.8 2771.9 -367.1Q2771.9 -251.5 2807.1 -173.7Q2842.3 -95.9 2903.2 -57.2Q2964.2 -18.5 3041.5 -18.5Q3087 -18.5 3127.3 -31.5Q3167.7 -44.5 3209.2 -75V-40.4L3148.3 -21.2L3192.6 -206.8H3242.8L3243.4 -39.5Q3194.4 -10.5 3141.4 3.5Q3088.4 17.6 3023.2 17.6ZM3459.3 0 3459.9 -31.6 3606.1 -45.1H3619.7L3619.2 0ZM3556.7 0Q3558.7 -84.5 3558.9 -168.1Q3559.2 -251.6 3559.2 -326.9V-392.6Q3559.2 -479.1 3558.9 -564.9Q3558.7 -650.7 3556.7 -735.2H3681.2Q3679.7 -651.2 3679.2 -564.9Q3678.7 -478.7 3678.7 -390.4V-329.8Q3678.7 -253.7 3679.2 -169.6Q3679.7 -85.6 3681.2 0ZM3619.2 0 3619.7 -36.1H3976.5L3918.4 -6.9L3962.7 -205.9H4010.4L4007 0ZM3459.3 -703.7V-735.2H3783.6V-703.7L3634.8 -691.1H3606.1ZM4178.5 0V-31.6L4277.6 -44.1H4295.6L4404.1 -31.6V0ZM4249.5 0 4496.1 -740.2H4570.2L4821.3 0H4699.7L4484.9 -664.1H4505.4L4501.9 -650.1L4295.6 0ZM4359 -244.3 4364.6 -277.4H4676.3L4681.9 -244.3ZM4580.4 0V-32.1L4714.9 -44.6H4756.3L4891.5 -32.1V0ZM5292.8 17.6Q5231.3 17.6 5172.2 1.1Q5113.1 -15.4 5073.5 -41L5079.5 -199.3H5127.2L5169.6 -20.3L5114.8 -44.9L5106.2 -80Q5155.2 -45 5193.2 -33Q5231.2 -21 5282.6 -21Q5361 -21 5406.9 -56.5Q5452.8 -92 5452.8 -158.8Q5452.8 -194.2 5440.5 -220Q5428.3 -245.7 5399.9 -266.6Q5371.5 -287.6 5322.2 -308L5277.7 -327.1Q5184.5 -367.7 5135.9 -420.3Q5087.3 -472.8 5087.3 -554.5Q5087.3 -619.6 5119.9 -663.6Q5152.4 -707.7 5208.5 -730.5Q5264.7 -753.3 5335.4 -753.3Q5393.4 -753.3 5439.7 -738.8Q5486.1 -724.3 5524.6 -697.8L5518.6 -547.5H5469.9L5429.1 -718.4L5486.9 -692.8L5492.5 -656.1Q5452 -688.7 5420.5 -701.7Q5389 -714.7 5346.6 -714.7Q5278.6 -714.7 5235.2 -682Q5191.8 -649.3 5191.8 -587.4Q5191.8 -532.4 5223.2 -499.5Q5254.6 -466.5 5311.1 -442L5359.1 -421.5Q5434.6 -389.4 5478.6 -356.9Q5522.7 -324.4 5541.4 -285.6Q5560.2 -246.8 5560.2 -193.2Q5560.2 -129.7 5527.9 -82.1Q5495.7 -34.6 5435.8 -8.5Q5376 17.6 5292.8 17.6ZM5996.8 17.6Q5935.3 17.6 5876.2 1.1Q5817.1 -15.4 5777.5 -41L5783.5 -199.3H5831.2L5873.6 -20.3L5818.8 -44.9L5810.2 -80Q5859.2 -45 5897.2 -33Q5935.2 -21 5986.6 -21Q6065 -21 6110.9 -56.5Q6156.8 -92 6156.8 -158.8Q6156.8 -194.2 6144.5 -220Q6132.3 -245.7 6103.9 -266.6Q6075.5 -287.6 6026.2 -308L5981.7 -327.1Q5888.5 -367.7 5839.9 -420.3Q5791.3 -472.8 5791.3 -554.5Q5791.3 -619.6 5823.9 -663.6Q5856.4 -707.7 5912.5 -730.5Q5968.7 -753.3 6039.4 -753.3Q6097.4 -753.3 6143.7 -738.8Q6190.1 -724.3 6228.6 -697.8L6222.6 -547.5H6173.9L6133.1 -718.4L6190.9 -692.8L6196.5 -656.1Q6156 -688.7 6124.5 -701.7Q6093 -714.7 6050.6 -714.7Q5982.6 -714.7 5939.2 -682Q5895.8 -649.3 5895.8 -587.4Q5895.8 -532.4 5927.2 -499.5Q5958.6 -466.5 6015.1 -442L6063.1 -421.5Q6138.6 -389.4 6182.6 -356.9Q6226.7 -324.4 6245.4 -285.6Q6264.2 -246.8 6264.2 -193.2Q6264.2 -129.7 6231.9 -82.1Q6199.7 -34.6 6139.8 -8.5Q6080 17.6 5996.8 17.6Z"/></svg>';
+  /* P2 ② 머리 먼저: 이 기기에 열쇠가 있으면(또는 #k= 개인 링크) class-api.js 를 받기 전에 boot 과 같은 머리(wmTopHTML 과 같은 글)를 그림 ·
+     처음 온 학생(로그인 화면) · 앱으로 가는 문 · 미리 보기 주소(preview=)는 그리지 않음(다른 화면 위에 머리가 깜빡이지 않게) */
+  try {
+    var ap = document.getElementById('app'), ak = '';
+    try { ak = JSON.parse(window.localStorage.getItem('lec-key') || '""'); } catch (e5) { ak = ''; }
+    if (ap && !ap.firstChild && !m && !(window.__hisDoor && window.__hisDoor.need()) && ((typeof ak === 'string' && ak) || /^#k=[^&]+/.test(String(location.hash || '')))) {
+      ap.innerHTML = '<div class="wrap"><div class="top lth"><span class="lt wmt" role="img" aria-label="히즈클래스">' + window.__hcWM + '</span></div></div>';
+    }
+  } catch (e6) { /* 없음 = 예전처럼 boot 이 그림 */ }
   var list = demo ? ['class-mock.js', 'class-api.js'] : ['class-api.js'];
   if (pv) list = inner ? ['class-api.js', 'class-preview.js'] :
     (demo ? ['class-mock.js', 'class-api.js', 'class-preview.js'] : ['class-api.js', 'vendor-supabase-2.49.4.js', 'class-preview.js']);
@@ -1464,6 +1504,8 @@ html.dr-open,html.dr-open body{background:#FAF6EC}
 /* 히즈 강의실 · 학생 화면 (ES5 · class-api.js 의 window.Lec 을 씀) */
 window.__lecStart = function () {
   'use strict';
+  /* P5(11-21) 다시 열 때 지난 목록 먼저 그리기 · false = 끔(먼저 그리지 않음 · 이 기기에 적어 둔 지난 목록도 다음 집 정보 때 지움 · 나머지는 예전 그대로) */
+  var HOME_SNAP = true;
   var L = window.Lec;
   var app = document.getElementById('app');
   if (!L) { app.innerHTML = '<div class="wrap"><div class="end1"><p>인터넷 연결을 확인해 주세요.</p></div></div>'; return; }
@@ -1500,11 +1542,15 @@ window.__lecStart = function () {
     inLab: '교실에서 들음',
     examLab: '학교 시험',
     contLab: '이어서 보기',
+    nextLab: '다음', /* P1(11-21) 시험 카드 안 줄 «다음 · 제목» */
+    newLab: '새 강의', /* Q2(11-21) 큰 카드 라벨 · 아래 줄 «새 강의 · 제목» */
     qmany: '한 시간에 질문은 20개까지 올릴 수 있어요.',
     qinput: '내용을 1~1000자로 써 주세요.',
     qparent: '답을 달 수 없는 질문이에요.',
     qanswered: '답이 달린 질문은 지울 수 없어요'
   };
+  /* F6(11-21): 실패 글 = 이 폰이 인터넷에 안 붙었을 때만 M.net · 그 밖(서버 멈춤 · 시간 초과) = «지금 서버에 닿지 않아요. 잠시 뒤 다시 해 주세요.»(class-api.js netMsg) */
+  function netTx() { return typeof L.netMsg === 'function' ? L.netMsg() : M.net; }
 
   var S = {
     key: '', name: '', home: null, lectures: [], consent: null, cver: L.CONSENT_VER,
@@ -1542,6 +1588,13 @@ window.__lecStart = function () {
   function clearHash() {
     try { history.replaceState(null, '', pathOnly()); } catch (e) { location.hash = ''; }
   }
+  /* F2(11-21): 세트 · 이름 판도 #v= 처럼 해시 기록을 쌓음(쿼리 그대로 · 해시만 걷는 clearHash(속은 replaceState · 주소의 path · search 는 그대로)는 씀 · 그 밖의 새 replaceState 없음)
+     goHash = 목록에서는 쌓고 · 세트 · 이름 판 · 미리 보기에서는 그 기록을 바꿔치기(뒤로 한 번 = 목록) */
+  function onSetHash() { return /^#s=/.test(String(location.hash || '')); }
+  function goHash(h) {
+    if (PV || onSetHash() || String(location.hash || '') === '#me') location.replace(h);
+    else location.hash = h;
+  }
   function findLec(id) {
     var i;
     for (i = 0; i < S.lectures.length; i += 1) { if (S.lectures[i].id === id) return S.lectures[i]; }
@@ -1568,7 +1621,7 @@ window.__lecStart = function () {
      ?i=1(교실 QR · 카톡에서 밖으로 넘긴 주소) = 첫 화면을 그린 뒤 판을 저절로 엶 · 읽자마자 주소에서 i 를 지움 · 홈 화면 앱으로 열었으면 안 엶
      첫 영상 끝 한 번 = 영상 끝 띠에 «다음부터 한 번에 열기» 한 줄 + 닫기(띄운 순간 localStorage 표시 · 다시 안 나옴) */
   var PW = window.__hisPwa || { e: null, done: false, cb: null };
-  var pwa = { el: null, from: null, ok: false, busy: false, auto: false, kind: '' };
+  var pwa = { el: null, from: null, ok: false, busy: false, auto: false, kind: '', hm: false, hb: '', pop: 0 };   /* hm · hb · pop = F2(11-21) 이름 판 기록 «#me» */
   var PW_SEEN = 'lec-pwa-end';
   function pwaStandalone() {
     try { if (window.navigator.standalone === true) return true; } catch (e) { /* 없음 */ }
@@ -1705,6 +1758,7 @@ window.__lecStart = function () {
     if (pwa.el) return;
     pwa.from = btn || null;
     pwa.ok = false;
+    pwa.hm = false;
     pwa.kind = kind || ''; /* 'al' = 새 영상 알림 켜는 법(같은 판 모양) */
     var d = document.createElement('div');
     d.className = kind === 'me' ? 'pwa pwme' : 'pwa';
@@ -1717,9 +1771,14 @@ window.__lecStart = function () {
     pwaHtmlCls(true);
     app.setAttribute('aria-hidden', 'true');
     try { $('pwaCard').focus(); } catch (e) { /* 없음 */ }
+    /* F2(11-21): 이름 판 = 기록 «#me» 하나를 쌓음(#v= 와 같은 꼴) → 갤럭시 «뒤로» = 판만 닫음(앱이 안 닫힘) · 미리 보기는 이름 판 없음 */
+    if (kind === 'me' && !PV && String(location.hash || '') !== '#me') { pwa.hm = true; pwa.hb = String(location.hash || ''); location.hash = '#me'; }
   }
-  function pwaClose(back) {
+  /* keep = 이름 판 기록을 걷지 않음(바꿔치기 · 나가기가 따로 다룸) */
+  function pwaClose(back, keep) {
     if (!pwa.el) return;
+    var hm = pwa.hm;
+    pwa.hm = false;
     if (pwa.el.parentNode) pwa.el.parentNode.removeChild(pwa.el);
     pwa.el = null;
     pwaHtmlCls(false);
@@ -1730,6 +1789,15 @@ window.__lecStart = function () {
     }
     pwa.from = null;
     pwa.kind = '';
+    /* F2: 닫기 · × · 바깥 · Esc = 쌓은 «#me» 를 뒤로 한 번으로 걷어 냄(보던 화면은 그대로 · 다음 «뒤로»가 헛돌지 않게) */
+    if (hm && !keep && String(location.hash || '') === '#me') { pwa.pop = Date.now(); history.back(); }
+  }
+  /* F2: 이름 판 안에서 다른 판(홈 화면에 앱으로 추가 · 알림 켜는 법)으로 = 같은 «#me» 기록 위에서 바꿈(뒤로 = 그 판만 닫음) */
+  function pwaSwap(btn, kind) {
+    var hm = pwa.hm, hb = pwa.hb;
+    pwaClose(false, true);
+    pwaOpen(btn, kind);
+    pwa.hm = hm; pwa.hb = hb;
   }
   /* 시트 안만 다시 그림(설치 이벤트가 늦게 왔을 때 · 설치 창을 닫았을 때) */
   function pwaPaint() {
@@ -2037,11 +2105,13 @@ window.__lecStart = function () {
       if (k !== S.key) return;
       var l = ids.length === 1 ? findLec(ids[0]) : null;
       if (l && !l.ended) {
-        if (S.view === 'player' && T && T.lec.id === l.id) return;
-        location.hash = '#v=' + encodeURIComponent(l.id);
+        if (S.view === 'player' && T && T.lec.id === l.id) { VIA = null; return; }   /* X4(11-21 · 검수): 이미 보는 강의 = 기록을 새로 시작하지 않음 → «알림» 표시를 비움(뒤에 «앞으로»로 열 때 붙지 않게) */
+        goHash('#v=' + encodeURIComponent(l.id));   /* F2: 세트 화면이면 그 기록을 바꿔치기(영상에서 뒤로 = 목록) */
         return;
       }
+      VIA = null;   /* X4: 여러 강의 · 끝난 강의 · 없는 강의 = 목록(연 강의 없음) */
       S.nIds = ids.length ? ids : null;
+      if (onSetHash() && !PV) { teardown(); history.back(); return; }   /* F2: 세트 기록 = 뒤로 한 번(hashchange → 목록에서 칠함 · 같은 목록 기록이 둘로 늘지 않게) */
       if (String(location.hash || '').replace(/^#/, '')) clearHash();
       route();
     }
@@ -2097,8 +2167,9 @@ window.__lecStart = function () {
   /* 물고기(currentColor · 다크 모드·무대에서 크림) · 아이콘은 인라인 SVG(바깥 글꼴 없음) */
   var FISH_D = 'M314 0 L370 0 L411 5 L448 14 L466 20 L468 22 L474 23 L481 27 L484 27 L497 34 L500 34 L546 58 L547 60 L554 63 L555 65 L557 65 L558 67 L572 75 L574 78 L579 80 L581 83 L583 83 L597 95 L599 95 L614 109 L616 109 L620 114 L622 114 L630 123 L632 123 L677 168 L679 168 L701 146 L701 144 L721 125 L721 123 L737 107 L737 105 L743 100 L743 98 L748 94 L748 92 L753 88 L753 86 L758 82 L758 80 L763 76 L763 74 L768 70 L768 68 L772 65 L775 59 L783 51 L783 49 L793 38 L793 36 L796 34 L796 32 L806 19 L848 17 L841 38 L832 57 L832 60 L805 113 L803 114 L796 128 L792 132 L791 136 L789 137 L789 139 L787 140 L787 142 L785 143 L785 145 L783 146 L782 150 L779 152 L773 163 L770 165 L770 167 L767 169 L767 171 L758 181 L755 187 L739 204 L741 209 L749 217 L749 219 L752 221 L752 223 L755 225 L755 227 L767 241 L769 246 L772 248 L772 250 L774 251 L774 253 L786 269 L787 273 L791 277 L792 281 L794 282 L795 286 L800 292 L802 298 L804 299 L808 309 L810 310 L823 336 L823 339 L827 345 L827 348 L831 354 L831 357 L843 382 L847 395 L802 394 L799 386 L793 379 L792 375 L789 373 L787 368 L784 366 L782 361 L772 350 L769 344 L764 340 L761 334 L756 330 L756 328 L751 324 L751 322 L746 318 L746 316 L741 312 L741 310 L735 305 L735 303 L728 297 L728 295 L721 289 L721 287 L714 281 L714 279 L706 272 L706 270 L679 242 L673 245 L636 283 L634 283 L611 305 L609 305 L606 309 L600 312 L589 322 L584 324 L582 327 L580 327 L579 329 L577 329 L576 331 L574 331 L573 333 L571 333 L570 335 L568 335 L567 337 L565 337 L549 349 L545 350 L544 352 L540 353 L534 358 L526 361 L525 363 L511 369 L510 371 L500 376 L497 376 L487 382 L479 384 L475 387 L472 387 L470 389 L447 397 L407 407 L372 412 L319 412 L294 409 L266 402 L261 402 L258 400 L250 399 L241 395 L231 393 L229 391 L217 388 L203 381 L200 381 L170 366 L169 364 L150 354 L149 352 L147 352 L146 350 L132 342 L130 339 L125 337 L122 333 L120 333 L117 329 L115 329 L112 325 L110 325 L102 317 L100 317 L94 310 L92 310 L52 271 L52 269 L43 261 L43 259 L36 253 L36 251 L31 247 L31 245 L26 241 L26 239 L13 225 L8 216 L0 207 L0 204 L11 192 L11 190 L15 187 L15 185 L19 182 L19 180 L23 177 L23 175 L27 172 L27 170 L32 166 L32 164 L44 152 L44 150 L61 133 L61 131 L98 95 L100 95 L105 89 L107 89 L122 75 L127 73 L129 70 L134 68 L136 65 L138 65 L145 59 L149 58 L150 56 L154 55 L160 50 L168 47 L169 45 L191 34 L194 34 L200 30 L203 30 L207 27 L210 27 L214 24 L220 23 L227 19 L267 7Z M336 31 L301 34 L265 42 L241 50 L227 57 L224 57 L191 74 L187 78 L183 79 L182 81 L180 81 L179 83 L165 91 L163 94 L161 94 L147 106 L145 106 L131 119 L129 119 L124 125 L122 125 L116 132 L114 132 L63 182 L63 184 L42 205 L57 221 L57 223 L66 231 L66 233 L114 281 L116 281 L116 283 L118 283 L130 295 L132 295 L135 299 L137 299 L140 303 L146 306 L149 310 L151 310 L161 319 L163 319 L173 327 L177 328 L181 332 L187 334 L188 336 L198 340 L199 342 L217 351 L220 351 L226 355 L229 355 L233 358 L236 358 L238 360 L261 368 L289 375 L313 379 L373 380 L408 375 L432 369 L459 360 L473 353 L476 353 L486 347 L489 347 L495 344 L496 342 L517 332 L518 330 L522 329 L523 327 L527 326 L528 324 L532 323 L533 321 L535 321 L536 319 L538 319 L539 317 L553 309 L555 306 L557 306 L559 303 L561 303 L563 300 L569 297 L572 293 L574 293 L577 289 L579 289 L598 271 L600 271 L611 259 L613 259 L663 207 L661 202 L650 191 L650 189 L634 174 L634 172 L622 160 L620 160 L605 144 L603 144 L596 136 L594 136 L588 129 L586 129 L576 119 L574 119 L571 115 L569 115 L555 103 L547 99 L545 96 L543 96 L536 90 L532 89 L528 85 L524 84 L523 82 L519 81 L518 79 L508 75 L507 73 L491 65 L488 65 L480 60 L462 54 L460 52 L416 39 L380 33Z M105 192 L114 192 L118 194 L122 199 L122 211 L118 216 L114 218 L104 218 L97 211 L97 200 L99 196Z';
   /* 로그인 머리 «HIS CLASS»(11-17 원장님 «둘 다 넣어» · 결론안 줄 없이 · 폭 170): Noto Serif KR wght 600 · 자간 0.12em 글자 모양을 경로로 굳힘(웹 글꼴 · 바깥 요청 없음) ·
-     만든 법 = 알림 폴더 로그인_워드마크_wm_svg.py · 화면 읽기는 h1 안 눈에 안 보이는 «히즈클래스» */
-  var WM_SVG = '<svg class="wm" viewBox="48 -753 6216 771" aria-hidden="true" focusable="false"><path fill="currentColor" d="M48.3 0V-31.6L192.1 -45.1H216.7L364 -31.6V0ZM144.7 0Q146.7 -84.5 146.9 -170.1Q147.2 -255.6 147.2 -342.2V-392.6Q147.2 -479.1 146.9 -564.6Q146.7 -650.2 144.7 -735.2H269.7Q267.7 -651.2 267.2 -565.2Q266.7 -479.1 266.7 -392.6V-366.5Q266.7 -263.1 267.2 -174.3Q267.7 -85.6 269.7 0ZM207.2 -361V-396.1H653.5V-361ZM495.7 0V-31.6L642 -45.1H666.6L811.4 -31.6V0ZM590 0Q592.5 -84.5 593 -173.1Q593.5 -261.6 593.5 -366.5V-392.6Q593.5 -479.1 593 -564.6Q592.5 -650.2 590 -735.2H715.1Q713.5 -651.2 713 -565.2Q712.5 -479.1 712.5 -392.6V-342.2Q712.5 -256.7 713 -171.1Q713.5 -85.6 715.1 0ZM48.3 -703.7V-735.2H364V-703.7L216.7 -691.1H192.1ZM495.7 -703.7V-735.2H811.4V-703.7L666.6 -691.1H642ZM1028.3 0V-31.6L1175.1 -45.1H1200.3L1348.1 -31.6V0ZM1125.7 0Q1128.2 -84.5 1128.4 -170.1Q1128.7 -255.6 1128.7 -342.2V-392.6Q1128.7 -479.1 1128.4 -564.6Q1128.2 -650.2 1125.7 -735.2H1250.7Q1249.2 -651.2 1248.7 -565.2Q1248.2 -479.1 1248.2 -392.6V-342.7Q1248.2 -256.7 1248.7 -171.1Q1249.2 -85.6 1250.7 0ZM1028.3 -703.7V-735.2H1348.1V-703.7L1200.3 -691.1H1175.1ZM1788.8 17.6Q1727.3 17.6 1668.2 1.1Q1609.1 -15.4 1569.5 -41L1575.5 -199.3H1623.2L1665.6 -20.3L1610.8 -44.9L1602.2 -80Q1651.2 -45 1689.2 -33Q1727.2 -21 1778.6 -21Q1857 -21 1902.9 -56.5Q1948.8 -92 1948.8 -158.8Q1948.8 -194.2 1936.5 -220Q1924.3 -245.7 1895.9 -266.6Q1867.5 -287.6 1818.2 -308L1773.7 -327.1Q1680.5 -367.7 1631.9 -420.3Q1583.3 -472.8 1583.3 -554.5Q1583.3 -619.6 1615.9 -663.6Q1648.4 -707.7 1704.5 -730.5Q1760.7 -753.3 1831.4 -753.3Q1889.4 -753.3 1935.7 -738.8Q1982.1 -724.3 2020.6 -697.8L2014.6 -547.5H1965.9L1925.1 -718.4L1982.9 -692.8L1988.5 -656.1Q1948 -688.7 1916.5 -701.7Q1885 -714.7 1842.6 -714.7Q1774.6 -714.7 1731.2 -682Q1687.8 -649.3 1687.8 -587.4Q1687.8 -532.4 1719.2 -499.5Q1750.6 -466.5 1807.1 -442L1855.1 -421.5Q1930.6 -389.4 1974.6 -356.9Q2018.7 -324.4 2037.4 -285.6Q2056.2 -246.8 2056.2 -193.2Q2056.2 -129.7 2023.9 -82.1Q1991.7 -34.6 1931.8 -8.5Q1872 17.6 1788.8 17.6ZM3023.2 17.6Q2941.2 17.6 2872.4 -7.2Q2803.6 -31.9 2752.5 -80.6Q2701.4 -129.3 2673.4 -200.4Q2645.3 -271.4 2645.3 -363.6Q2645.3 -456.2 2674.1 -528.8Q2702.9 -601.3 2754.5 -651.6Q2806.1 -701.8 2875.1 -727.6Q2944.2 -753.3 3023.8 -753.3Q3088.9 -753.3 3137.9 -739.3Q3186.9 -725.2 3235.4 -697.3L3235.3 -528.5H3185.1L3140.8 -717L3203.7 -695.9V-661.9Q3163.8 -691.3 3126.1 -704Q3088.4 -716.8 3042.4 -716.8Q2964.6 -716.8 2903.4 -677.5Q2842.3 -638.3 2807.1 -560.5Q2771.9 -482.8 2771.9 -367.1Q2771.9 -251.5 2807.1 -173.7Q2842.3 -95.9 2903.2 -57.2Q2964.2 -18.5 3041.5 -18.5Q3087 -18.5 3127.3 -31.5Q3167.7 -44.5 3209.2 -75V-40.4L3148.3 -21.2L3192.6 -206.8H3242.8L3243.4 -39.5Q3194.4 -10.5 3141.4 3.5Q3088.4 17.6 3023.2 17.6ZM3459.3 0 3459.9 -31.6 3606.1 -45.1H3619.7L3619.2 0ZM3556.7 0Q3558.7 -84.5 3558.9 -168.1Q3559.2 -251.6 3559.2 -326.9V-392.6Q3559.2 -479.1 3558.9 -564.9Q3558.7 -650.7 3556.7 -735.2H3681.2Q3679.7 -651.2 3679.2 -564.9Q3678.7 -478.7 3678.7 -390.4V-329.8Q3678.7 -253.7 3679.2 -169.6Q3679.7 -85.6 3681.2 0ZM3619.2 0 3619.7 -36.1H3976.5L3918.4 -6.9L3962.7 -205.9H4010.4L4007 0ZM3459.3 -703.7V-735.2H3783.6V-703.7L3634.8 -691.1H3606.1ZM4178.5 0V-31.6L4277.6 -44.1H4295.6L4404.1 -31.6V0ZM4249.5 0 4496.1 -740.2H4570.2L4821.3 0H4699.7L4484.9 -664.1H4505.4L4501.9 -650.1L4295.6 0ZM4359 -244.3 4364.6 -277.4H4676.3L4681.9 -244.3ZM4580.4 0V-32.1L4714.9 -44.6H4756.3L4891.5 -32.1V0ZM5292.8 17.6Q5231.3 17.6 5172.2 1.1Q5113.1 -15.4 5073.5 -41L5079.5 -199.3H5127.2L5169.6 -20.3L5114.8 -44.9L5106.2 -80Q5155.2 -45 5193.2 -33Q5231.2 -21 5282.6 -21Q5361 -21 5406.9 -56.5Q5452.8 -92 5452.8 -158.8Q5452.8 -194.2 5440.5 -220Q5428.3 -245.7 5399.9 -266.6Q5371.5 -287.6 5322.2 -308L5277.7 -327.1Q5184.5 -367.7 5135.9 -420.3Q5087.3 -472.8 5087.3 -554.5Q5087.3 -619.6 5119.9 -663.6Q5152.4 -707.7 5208.5 -730.5Q5264.7 -753.3 5335.4 -753.3Q5393.4 -753.3 5439.7 -738.8Q5486.1 -724.3 5524.6 -697.8L5518.6 -547.5H5469.9L5429.1 -718.4L5486.9 -692.8L5492.5 -656.1Q5452 -688.7 5420.5 -701.7Q5389 -714.7 5346.6 -714.7Q5278.6 -714.7 5235.2 -682Q5191.8 -649.3 5191.8 -587.4Q5191.8 -532.4 5223.2 -499.5Q5254.6 -466.5 5311.1 -442L5359.1 -421.5Q5434.6 -389.4 5478.6 -356.9Q5522.7 -324.4 5541.4 -285.6Q5560.2 -246.8 5560.2 -193.2Q5560.2 -129.7 5527.9 -82.1Q5495.7 -34.6 5435.8 -8.5Q5376 17.6 5292.8 17.6ZM5996.8 17.6Q5935.3 17.6 5876.2 1.1Q5817.1 -15.4 5777.5 -41L5783.5 -199.3H5831.2L5873.6 -20.3L5818.8 -44.9L5810.2 -80Q5859.2 -45 5897.2 -33Q5935.2 -21 5986.6 -21Q6065 -21 6110.9 -56.5Q6156.8 -92 6156.8 -158.8Q6156.8 -194.2 6144.5 -220Q6132.3 -245.7 6103.9 -266.6Q6075.5 -287.6 6026.2 -308L5981.7 -327.1Q5888.5 -367.7 5839.9 -420.3Q5791.3 -472.8 5791.3 -554.5Q5791.3 -619.6 5823.9 -663.6Q5856.4 -707.7 5912.5 -730.5Q5968.7 -753.3 6039.4 -753.3Q6097.4 -753.3 6143.7 -738.8Q6190.1 -724.3 6228.6 -697.8L6222.6 -547.5H6173.9L6133.1 -718.4L6190.9 -692.8L6196.5 -656.1Q6156 -688.7 6124.5 -701.7Q6093 -714.7 6050.6 -714.7Q5982.6 -714.7 5939.2 -682Q5895.8 -649.3 5895.8 -587.4Q5895.8 -532.4 5927.2 -499.5Q5958.6 -466.5 6015.1 -442L6063.1 -421.5Q6138.6 -389.4 6182.6 -356.9Q6226.7 -324.4 6245.4 -285.6Q6264.2 -246.8 6264.2 -193.2Q6264.2 -129.7 6231.9 -82.1Q6199.7 -34.6 6139.8 -8.5Q6080 17.6 5996.8 17.6Z"/></svg>';
+     만든 법 = 알림 폴더 로그인_워드마크_wm_svg.py · 화면 읽기는 h1 안 눈에 안 보이는 «히즈클래스» ·
+     P2 ②(11-21): 글자는 맨 앞 읽는 스크립트의 window.__hcWM 으로 옮김(class-api.js 를 받기 전에 같은 머리를 그리려고 · 한 벌만 둠) */
+  var WM_SVG = window.__hcWM || '';
   function fishSVG() {
     return '<svg class="fish" viewBox="0 0 848 412" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="' + FISH_D + '"/></svg>';
   }
@@ -2151,8 +2222,8 @@ window.__lecStart = function () {
       '<div class="head">' + fishSVG() + '<h1 class="wmh"><span class="sr">히즈클래스</span>' + WM_SVG + '</h1><p class="lgs">' +
       (pwaStandalone() ? '처음 한 번만 이름과 등원 번호를 넣어 주세요' : '이름과 등원 번호로 들어와요') + '</p></div>') + /* 설치 안내 결론안: 홈 화면 앱으로 처음 열면 */
       '<form id="loginForm" novalidate autocomplete="off">' +
-      '<label class="fld"><span>이름</span><input id="lgName" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40"></label>' +
-      '<div class="fld"><label for="lgPin">등원 번호 4자리</label><div class="pin4" id="pin4"><input id="lgPin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">' +
+      '<label class="fld"><span>이름</span><input id="lgName" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" enterkeyhint="next"></label>' +   /* F8: 자판 «다음» */
+      '<div class="fld"><label for="lgPin">등원 번호 4자리</label><div class="pin4" id="pin4"><input id="lgPin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" enterkeyhint="go">' +
       '<i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i></div></div>' +
       '<button id="lgBtn" class="btn-fill" type="submit">들어가기</button>' +
       '<p id="lgErr" class="err" role="alert">' + esc(err || '') + '</p>' +
@@ -2201,7 +2272,7 @@ window.__lecStart = function () {
         loadHome();
         return;
       }
-      var e = r && r.err, m = M.net;
+      var e = r && r.err, m = netTx();   /* F6(11-21 · 합친 뒤) */
       if (e === 'input') m = M.input;
       else if (e === 'nomatch') m = M.nomatch;
       else if (e === 'many') m = M.many;
@@ -2209,20 +2280,22 @@ window.__lecStart = function () {
       setHTML('lgErr', esc(m));
     }, function () {
       b.disabled = false;
-      setHTML('lgErr', esc(M.net));
+      setHTML('lgErr', esc(netTx()));   /* F6(11-21 · 합친 뒤): 끊김 / 서버 · 기다림 끝 */
     });
   }
 
   function reLogin() {
     L.lsDel(LS.key); L.lsDel(LS.sess);
+    L.lsDel(HOME0); /* P2 ③ · P5: 이 기기의 지난 집 정보 칸 */
     S.key = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
     S.al = null; S.alFresh = false; S.set = null; S.setDirty = false; S.setMore = false;
     spkFresh();
-    clearHash();
+    if (!/^#v=/.test(String(location.hash || ''))) clearHash();   /* P6(11-21): 강의 주소(#v= · 반 공지 · 알림)는 다시 들어온 뒤 그 강의로 · 나머지 해시만 걷음 */
     showLogin(M.again);
   }
 
   function showGone() {
+    L.lsDel(HOME0); /* P2 ③ · P5 */
     teardown();
     S.view = 'gone';
     app.innerHTML = '<div class="wrap"><div class="end1">' + fishSVG() +
@@ -2231,17 +2304,178 @@ window.__lecStart = function () {
   function showNet() {
     teardown();
     S.view = 'net';
-    app.innerHTML = '<div class="wrap"><div class="end1"><p>' + esc(M.net) + '</p>' +
+    app.innerHTML = '<div class="wrap"><div class="end1"><p>' + esc(netTx()) + '</p>' +   /* F6(11-21 · 합친 뒤) */
       '<button class="btn-fill" type="button" data-act="retry">다시 해 보기</button></div></div>';
   }
 
   /* ------------------------------------------------------------ 집 정보 */
+  /* P2 ③ · P5(11-21): 이 기기에 «지난번 집 정보» 한 칸(lec-home0) = {h: 열쇠 지문(열쇠 글은 안 적음), v: 기록 안내 판, a: 1(동의함), d: 지난 목록(P5 · HOME_SNAP 켬일 때)}
+     동의함 · 같은 판일 때만 적고 · 동의 전이 되면 · 다시 들어오기 · 명단에서 빠짐 · 나가기 = 지움 · 다른 열쇠(다른 학생)의 칸은 지문이 달라 안 읽음 */
+  var HOME0 = 'lec-home0';
+  function keyH(k) {
+    var s = String(k || ''), a = 5381, b = 0, i, c;
+    for (i = 0; i < s.length; i += 1) { c = s.charCodeAt(i); a = ((a * 33) ^ c) >>> 0; b = (c + (b << 6) + (b << 16) - b) >>> 0; }
+    return a.toString(36) + '.' + b.toString(36);
+  }
+  /* Z2(11-21 · 검수): 칸에 때 t(마지막으로 진짜 답을 받아 적은 때) · 14일 지남 · 때 없음 · 시계가 크게 뒤로 감 = 읽지 않고 지움 */
+  var HOME0_DD = 14;   /* 이 기기에 두는 날 수 */
+  function home0(k) {
+    var o = L.lsGet(HOME0, null), n = Date.now();
+    if (setPv()) return null;
+    if (o && typeof o === 'object' && !(o.t > 0 && n - o.t < HOME0_DD * 86400000 && o.t - n < 86400000)) { L.lsDel(HOME0); SNAP_LAST = ''; o = null; }
+    return k && o && typeof o === 'object' && o.a === 1 && o.h === keyH(k) && o.v === S.cver ? o : null;
+  }
+  /* 집 정보를 받을 때마다: 동의함이면 칸을 둠(이미 이 열쇠 · 판이면 그대로 · 지난 목록은 목록을 그릴 때 snapSave) · 아니면 지움 */
+  function home0Mark(k) {
+    var o;
+    if (setPv()) return;
+    if (recMode() !== 'agree') { L.lsDel(HOME0); SNAP_LAST = ''; return; }
+    o = home0(k);
+    if (!o) { L.lsSet(HOME0, { h: keyH(k), v: S.cver, a: 1, t: Date.now() }); SNAP_LAST = ''; }
+    else if (!HOME_SNAP && o.d) { L.lsSet(HOME0, { h: o.h, v: o.v, a: 1, t: Date.now() }); SNAP_LAST = ''; } /* P5 끔 = 적어 둔 지난 목록 지움 */
+    else if (Date.now() - o.t > 86400000) { o.t = Date.now(); L.lsSet(HOME0, o); }   /* Z2: 하루 넘게 묵었을 때만 때를 새로(d 그대로 · 날마다 한 번만 씀) */
+  }
+
+  /* ------------------------------------------------------------ P5(11-21) 지난 목록 먼저 그리기
+     ① 적기(snapSave): 진짜 집 정보로 목록을 그린 뒤 · 동의함 · 칸(lec-home0)이 이 열쇠 · 이 판일 때만 · 바뀐 때만 칸의 d 에 적음
+        d = 그리기에 쓰는 것만(강의 줄 · 출결 · 시험 범위 · 세트 줄 · 이름 · 알림 답의 보임 여부) · 목차는 수만 · 서버 표시(srv) · 동의 · 세션 · 열쇠 글 · 알림 열쇠는 안 적음
+     ② 그리기(snapDraw): 다시 열 때(boot) 집 정보를 부른 바로 뒤 · 칸이 이 열쇠 · 동의함 · 같은 판 · 주소에 #v= 같은 갈 곳 없음 · 알림 단계 자리 아님 · 미리 보기 아님 일 때만
+        S 를 잠깐 바꿔 showList 로 그리고 곧바로 되돌림(그린 뒤 S 에 남는 것 없음 · S.home 은 그대로 null = 동의 · 권한 · 서버 판단은 모두 진짜 답으로만) · 화면 이름 'snap'
+     ③ 그 사이 누름: 막고 무엇을 눌렀는지만 적음 → 진짜 목록을 그린 뒤 같은 것이 있으면 그것을 누름 · 없으면(지운 강의 · 동의 화면 등) 버림
+     ④ 진짜 답: 같은 showList 가 innerHTML 대신 바뀐 곳만 고침(snapMorph · 그림 · 줄이 그대로 남아 깜박이지 않음 · 화면 안 첫 줄 자리를 지켜 스크롤이 튀지 않음) */
+  var SNAP_Z = 1, SNAPPING = false, SNAP_TAP = null, SNAP_LAST = '';
+  function snapLecs(a) {
+    var o = [], i, x, c;
+    for (i = 0; i < a.length; i += 1) {
+      c = {};
+      for (x in a[i]) { if (Object.prototype.hasOwnProperty.call(a[i], x)) c[x] = a[i][x]; }
+      if (isArr(c.chapters)) c.chapters = new Array(c.chapters.length); /* 목록은 목차 수만 씀 */
+      o.push(c);
+    }
+    return o;
+  }
+  function snapSave() {
+    var o, d, s;
+    if (!HOME_SNAP || SNAPPING || setPv() || !S.key || !S.home || recMode() !== 'agree') return;
+    o = home0(S.key);
+    if (!o) return;
+    d = { z: SNAP_Z, n: S.name, l: snapLecs(S.lectures || []), a: S.att, r: S.rng, s: S.set,
+          al: S.al ? { on: S.al.on, show: S.al.show, key: S.al.key ? 1 : 0, at: S.al.at } : null };
+    try { s = JSON.stringify(d); } catch (e) { return; }
+    if (s === SNAP_LAST) return;
+    SNAP_LAST = s;
+    L.lsSet(HOME0, { h: o.h, v: o.v, a: 1, t: Date.now(), d: d });
+  }
+  function snapDraw(k) {
+    var o = HOME_SNAP ? home0(k) : null, d = o && o.d, sv, ok = true;
+    SNAP_TAP = null;
+    if (!d || typeof d !== 'object' || d.z !== SNAP_Z || !isArr(d.l) || S.home) return false;
+    if (String(location.hash || '').replace(/^#/, '') || S.nIds || S.view === 'door' || (window.__hisDoor && window.__hisDoor.need())) return false;
+    sv = { n: S.name, l: S.lectures, c: S.consent, a: S.att, r: S.rng, s: S.set, al: S.al };
+    try {
+      S.name = typeof d.n === 'string' ? d.n : ''; S.lectures = d.l; S.consent = { ver: S.cver, choice: 'agree' };
+      S.att = d.a || null; S.rng = d.r || null; S.set = d.s || null; S.al = d.al || null;
+      /* 알림 단계를 띄울 자리(홈 화면 앱 · 아직 안 물음 · 이 학생 단계 전) = 먼저 그리지 않음(목록 → 단계로 바뀌지 않게) */
+      if (S.alFresh && alCan() && alPerm() === 'default' && !L.lsGet(alStepK(), 0)) ok = false;
+      else { SNAPPING = true; showList(); }
+    } catch (e) { ok = false; }
+    SNAPPING = false;
+    S.name = sv.n; S.lectures = sv.l; S.consent = sv.c; S.att = sv.a; S.rng = sv.r; S.set = sv.s; S.al = sv.al;
+    if (!ok) { if (S.view === 'list') app.innerHTML = '<div class="wrap">' + wmTopHTML() + '</div>'; S.view = ''; return false; }
+    S.view = 'snap';
+    return true;
+  }
+  function snapSel(el) {
+    var t = el.closest ? el.closest('[data-top]') : null;
+    return (el.getAttribute('data-act') || '') + '|' + (el.getAttribute('data-id') || '') + '|' + (el.getAttribute('href') || '') + '|' + (t ? t.getAttribute('data-top') : '');
+  }
+  function snapAll(s) {
+    var a = app.querySelectorAll('[data-act]'), o = [], i;
+    for (i = 0; i < a.length; i += 1) { if (snapSel(a[i]) === s) o.push(a[i]); }
+    return o;
+  }
+  /* Z4(11-21 · 검수): 지난 목록에서 누름을 받은 뒤 2초 동안 집 정보 답이 없으면(!S.home) 머리만 있는 꼴(snapDraw 의 !ok 갈래와 같음)로 되돌리고 그 누름은 버림 · 연결 상태 글 없음 ·
+     S.home 이 있으면(곁 답 기다림 · Z1 누름 막이 중) 절대 되돌리지 않음(Z1 의 미룸이 'snap' 이 아니라고 멈추지 않게) */
+  var SNAP_SLOW = 0, SNAP_SLOW_MS = 2000;
+  document.addEventListener('click', function (e) {
+    var el;
+    if (S.view !== 'snap' || !app.contains(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    el = findAct(e.target);
+    if (el && app.contains(el)) SNAP_TAP = { s: snapSel(el), i: snapAll(snapSel(el)).indexOf(el), a: el.getAttribute('data-act') || '', h: el.getAttribute('href') || '' };
+    if (!SNAP_SLOW) SNAP_SLOW = setTimeout(function () {
+      SNAP_SLOW = 0;
+      if (S.view !== 'snap' || S.home) return;   /* 답이 이미 옴 = 그대로 둠 */
+      SNAP_TAP = null;
+      app.innerHTML = '<div class="wrap">' + wmTopHTML() + '</div>';
+      S.view = '';
+      cbarSync();
+    }, SNAP_SLOW_MS);
+  }, true);
+  function snapTapGo() {
+    var t = SNAP_TAP, a, i;
+    SNAP_TAP = null;
+    if (!t || S.view !== 'list') return;
+    a = snapAll(t.s);
+    if (t.i >= 0 && a[t.i]) { a[t.i].click(); return; }
+    /* Z5(11-21 · 검수): 정확한 짝이 없고 주소(href)가 있으면 같은 data-act · 같은 href 의 첫 번째(카드 자리가 바뀐 같은 강의) · href 없는 단추는 버림 */
+    if (!t.h) return;
+    a = app.querySelectorAll('[data-act]');
+    for (i = 0; i < a.length; i += 1) { if ((a[i].getAttribute('data-act') || '') === t.a && a[i].getAttribute('href') === t.h) { a[i].click(); return; } }
+  }
+  /* Z1(11-21 · 검수): 지난 목록 → 진짜 목록으로 바꾸는 순간 누르는 중 · 막 뗌이면 미룸(quietList 와 같은 기준) · 그 사이 누름은 예전대로 SNAP_TAP 이 받음 */
+  var SNAP_WAIT = 0;
+  function snapBusy() { var ago = Date.now() - press.at; return press.on ? ago < 3000 : ago < 400; }
+  function snapLater() {
+    if (SNAP_WAIT) return;
+    SNAP_WAIT = setTimeout(function () { SNAP_WAIT = 0; if (S.view === 'snap' && S.home) route(); }, 100);
+  }
+  function snapKey(n) { return n.nodeType === 1 ? (n.getAttribute('data-id') || n.getAttribute('id') || n.getAttribute('data-top') || '') : ''; }
+  function snapAttrs(a, b) {
+    var i, n;
+    for (i = a.attributes.length - 1; i >= 0; i -= 1) { n = a.attributes[i].name; if (!b.hasAttribute(n)) a.removeAttribute(n); }
+    for (i = 0; i < b.attributes.length; i += 1) { n = b.attributes[i]; if (a.getAttribute(n.name) !== n.value) a.setAttribute(n.name, n.value); }
+  }
+  /* 짝 찾기: 열쇠(data-id · id · data-top)가 있으면 같은 열쇠 · 없으면 열쇠 없는 같은 꼴(태그)끼리 차례대로 */
+  function snapKids(a, b) {
+    var bk = [], ky = {}, uk = {}, i, x, y, k, ref, c;
+    for (i = 0; i < b.childNodes.length; i += 1) bk.push(b.childNodes[i]);
+    for (i = 0; i < a.childNodes.length; i += 1) {
+      c = a.childNodes[i]; k = snapKey(c);
+      if (k) ky[c.nodeName + '|' + k] = c;
+      else { if (!uk[c.nodeName]) uk[c.nodeName] = []; uk[c.nodeName].push(c); }
+    }
+    for (i = 0; i < bk.length; i += 1) {
+      y = bk[i]; ref = a.childNodes[i] || null; k = snapKey(y);
+      if (k) { x = ky[y.nodeName + '|' + k] || null; if (x) delete ky[y.nodeName + '|' + k]; }
+      else x = uk[y.nodeName] && uk[y.nodeName].length ? uk[y.nodeName].shift() : null;
+      if (!x) { a.insertBefore(document.importNode(y, true), ref); continue; }
+      if (x !== ref) a.insertBefore(x, ref);
+      if (x.nodeType === 1) { if (!x.isEqualNode(y)) { snapAttrs(x, y); snapKids(x, y); } }
+      else if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue;
+    }
+    while (a.childNodes.length > bk.length) a.removeChild(a.lastChild);
+  }
+  function snapMorph(h) {
+    var t = document.createElement('template'), an = null, top = 0, a, i, r;
+    if (!('content' in t)) { app.innerHTML = h; return; }
+    t.innerHTML = h;
+    if ((window.pageYOffset || 0) > 0) {
+      a = app.querySelectorAll('[data-id],[data-top]');
+      for (i = 0; i < a.length && !an; i += 1) { r = a[i].getBoundingClientRect(); if (r.bottom > 0 && r.height > 0) { an = a[i]; top = r.top; } }
+    }
+    snapKids(app, t.content);
+    if (an && app.contains(an)) { r = an.getBoundingClientRect(); if (Math.abs(r.top - top) >= 1) window.scrollBy(0, r.top - top); }
+  }
   /* quiet = 목록만 조용히 다시 그림 · then(N1 알림으로 엶) = 다시 그리는 대신 부를 일(받기에 실패해도 부름) */
   function loadHome(quiet, then) {
     if (!S.key) { showLogin(''); return; }
     var k = S.key;
     var side = quiet ? null : sideStart(k);
     if (side) v2Get(function () {});   /* ①b 세트 칸과 나란히 */
+    if (side && home0(k)) setLoad(side, k, true); /* P2 ③(11-21): 지난번 이 열쇠 = 동의함 · 같은 판 → 세트 목록을 집 정보와 나란히(서버도 동의 전엔 안 줌 · 집 정보가 동의 전이면 버림) */
     L.home(k).then(function (r) {
       if (k !== S.key) return; /* 그새 나감(다른 학생) = 버림 */
       if (!r || !r.ok) {
@@ -2255,10 +2489,12 @@ window.__lecStart = function () {
       S.lectures = r.lectures || [];
       S.consent = r.consent || null;
       if (r.consent_ver) S.cver = r.consent_ver;
+      home0Mark(k);
       if (quiet) { if (then) then(); else quietList(); return; }
       side.home = true; alNoSave(S.al); /* 설치 흐름 고침(11-18): 이름이 선 뒤 알림 답(이미 왔으면)을 이 학생 몫으로 남김 */
-      setLoad(side, k); /* S1 단어 · 구문 · 문법: 집 정보 답 뒤 한 번(같은 0.6초 안에 오면 목록과 함께 그림) */
-      sideWait(side, k, route);
+      if (!side.pre) setLoad(side, k); /* S1 단어 · 구문 · 문법: 집 정보 답 뒤 한 번(같은 0.6초 안에 오면 목록과 함께 그림) */
+      else if (recMode() !== 'agree') setVoid(); /* P2 ③: 먼저 불렀는데 동의 전 = 버림 */
+      sideWait(side, k, function () { route(); loadPaper(k); loadPdf(k); }); /* P2 ④: 영상에서만 쓰는 지문 줄 · 필기 PDF 는 첫 화면을 그린 뒤(영상이 먼저 열려도 늦게 온 답은 paperPaint · pdfPaint 가 넣음) */
     }, function () {
       if (k === S.key && then) { then(); return; }
       if (quiet || k !== S.key) return;
@@ -2279,8 +2515,7 @@ window.__lecStart = function () {
     S.att = null; S.rng = null; S.absAt = 0;
     L.att(k).then(function (a) { if (k === S.key) S.att = a; one(); }, one);
     L.rngMe(k).then(function (r) { if (k === S.key) S.rng = r; one(); }, one);
-    loadPaper(k);
-    loadPdf(k);
+    /* P2 ④(11-21): loadPaper · loadPdf 는 loadHome 이 첫 화면을 그린 뒤 부름 */
     /* N1 새 영상 알림: 홈 화면 앱 + 알림 되는 폰에서만 부름(사파리 탭 · 카카오톡 · PC 탭은 안 부름 = 예전 그대로) ·
        늦게 오면(목록을 이미 그림) 카드가 생길 때만 목록을 조용히 다시 그림 · 첫 로그인 단계는 늦으면 건너뜀(카드로) */
     S.al = null;
@@ -2307,9 +2542,10 @@ window.__lecStart = function () {
       sd.cb = null;
       if (sd.alp && alStepDue()) { alHold(sd, k, f); return; } /* 설치 흐름(11-18): 알림 단계를 띄울 자리 = 알림 답을 AL_WAIT 까지 더 기다림(0.6초 규칙 없음) */
       if (k === S.key) f();
-    }, SIDE_MS);
+    }, S.view === 'snap' ? SNAP_SIDE_MS : SIDE_MS);   /* Z3(11-21 · 검수): 지난 목록이 떠 있을 때만 곁 답을 더 기다림(화면에는 이미 목록 · 늦은 곁 답에 카드가 사라졌다 돌아오지 않게) */
     sd.cb = function () { clearTimeout(t); if (k === S.key) f(); };
   }
+  var SNAP_SIDE_MS = 1500;
   /* 설치 흐름(11-18): 알림 답이 오면 바로(alHeld) · 끝내 안 오면 AL_WAIT 에서 목록(카드로)
      §8-227(11-19): 첫 로그인 뒤 이 기다림 동안 로그인 화면이 남아 있으면 «들어가기»를 막음(다시 눌러 두 번째 로그인이 되던 것) · 기다림이 끝나면(답 · AL_WAIT) 풀고 그대로 홈 ·
      이 기다림이 막은 것만 풂(이미 막혀 있던 단추는 그 일을 한 쪽이 풂) · 기다림 밖(집 정보 받는 중 등)은 예전 그대로 */
@@ -2398,15 +2634,25 @@ window.__lecStart = function () {
       S.alFresh = false;
       if (alOk() && alPerm() === 'default' && !L.lsGet(alStepK(), 0)) { L.lsSet(alStepK(), 1); teardown(); showAlStep(); return; } /* 설치 흐름(11-18): 학생마다 한 번 */
     }
+    if (hs === 'me') {   /* F2: 이름 판 기록 · 판이 닫힌 채 왔음(새로 고침 · 앞으로) = 보던 영상 그대로 · 아니면 목록 */
+      if (pwa.el && pwa.hm) return;
+      if (S.view === 'player' && T && T.lec) { location.replace('#v=' + encodeURIComponent(T.lec.id)); return; }
+      clearHash(); hs = '';
+    }
+    if (/^s=/.test(hs)) {   /* F2: 세트 기록 · 연 세트 그대로면 둠 · 새로 고침 · 주소를 바로 엶 · 앞으로 = 목록(세트는 목록에서 다시 엶) */
+      if (W && S.view === 'set' && setHid() === hs.slice(2)) return;
+      clearHash(); hs = '';
+    }
     if (hs === 'rec') { teardown(); showConsent(true); return; }
     var m = hs.match(/^v=([^&]+)/);
     if (m) {
       var id = '', l;
       try { id = decodeURIComponent(m[1]); } catch (e) { id = ''; } /* 깨진 주소 = 목록으로 */
       l = findLec(id);
-      if (!l) { clearHash(); teardown(); showList(); return; }
-      if (l.ended) { teardown(); showEnded(); return; }
-      if (T && T.lec.id === id && S.view === 'player') return;
+      /* X4(11-21 · 검수): 기록을 시작하지 않고 돌아가는 갈래는 «어디서 눌렀나»(VIA)를 비움(남아 다음 열기에 붙지 않게) */
+      if (!l) { VIA = null; clearHash(); teardown(); showList(); return; }
+      if (l.ended) { VIA = null; teardown(); showEnded(); return; }
+      if (T && T.lec.id === id && S.view === 'player') { VIA = null; return; }
       teardown();
       showPlayer(l);
       return;
@@ -2465,11 +2711,11 @@ window.__lecStart = function () {
       if (r && r.err === 'key') { reLogin(); return; }
       if (r && r.err === 'ver') { S.home = null; loadHome(); return; }
       for (i = 0; i < bs.length; i += 1) bs[i].disabled = false;
-      setHTML('cErr', esc(M.net));
+      setHTML('cErr', esc(netTx()));   /* F6 */
     }, function () {
       if (k !== S.key) return;
       for (i = 0; i < bs.length; i += 1) bs[i].disabled = false;
-      setHTML('cErr', esc(M.net));
+      setHTML('cErr', esc(netTx()));
     });
   }
 
@@ -2659,6 +2905,8 @@ window.__lecStart = function () {
     return h;
   }
   function showList() {
+    if (S.view === 'snap' && !SNAPPING && snapBusy()) { snapLater(); return; }   /* Z1: 누르는 중 · 막 뗌 = 진짜 목록으로 바꾸기를 미룸 */
+    var snapOn = S.view === 'snap' && !SNAPPING; /* P5: 지난 목록이 떠 있음 = 이번 그림은 바뀐 곳만 고침 */
     S.view = 'list';
     var m = recMode(), rec = m === 'agree';
     var arr = listBase().reverse(); /* 서버는 오래된 차례 → 새것부터 · 미리 보기: 학생에게 아직 안 보이는 강의는 목록에 없음 */
@@ -2672,24 +2920,36 @@ window.__lecStart = function () {
     var skip = {};
     for (i = 0; i < ab.length; i += 1) skip['i' + ab[i].id] = 1;
     var best = rec ? contBest(arr, skip) : null, ex = examTop(rec), ans = ansRowHTML(arr);
+    var top = {}, abH = '', heroH = ''; /* P1(11-21): 맨 위 카드 · 그 안 줄에 나온 강의(시험 카드 «다음»이 같은 강의를 또 가리키지 않게) */
     /* 맨 위 카드 차례는 그대로: 결석한 날 수업 › 학교 시험 범위 › 이어서 보기(2차 목업은 이어서 보기가 시험 카드 위 — 정해진 차례를 따름) · «새 답변» 줄은 큰 카드 바로 아래 */
     if (ab.length) {
       if (best && best.id === ab[0].id) best = null; /* 같은 강의면 결석 카드가 대신함 */
-      h += absCardHTML(ab[0], am['i' + ab[0].id], rec, best, ab.length - 1) + ans;
+      abH = absCardHTML(ab[0], am['i' + ab[0].id], rec, best, ab.length - 1) + ans;
+      top['i' + ab[0].id] = 1;
+      if (best) top['i' + best.id] = 1;
       best = null;
       ans = '';
     }
-    if (ex) h += examCardHTML(ex, rec);
-    if (best) {
-      h += '<a class="cont tc hero" href="#v=' + encodeURIComponent(best.id) + '" data-act="go" data-play="1" data-top="cont">' +
+    /* S4(11-19): 결석 카드가 없는 날 3일 안 올라온 안 본 강의 하나(목록 차례 = 새것부터) · 꼴은 큰 카드 그대로 · 열면 바로 재생 · 사라지는 조건 = 줄의 «새 강의»와 같음
+       Q2(가 · 11-21): 예전엔 이어 볼 것이 있으면 안 나옴 → 둘 다 있으면 더 최근 것(올라온 날 > 마지막 본 날 = 새 강의 · 같은 날 = 이어서 보기)이 큰 카드 · 다른 하나는 그 카드 안 아래 줄(heroLnHTML) */
+    var nw = null;
+    if (!ab.length) { for (i = 0; i < arr.length && !nw; i += 1) { if (!arr[i].ended && isNewLec(arr[i], today)) nw = arr[i]; } }
+    if (best && nw) {
+      heroH = L.isoDay(nw.posted_on) > L.isoDay(best.last_at) ? heroLnHTML(nw, rec, true, best, am) : heroLnHTML(best, rec, false, nw, am);
+      top['i' + best.id] = 1;
+      top['i' + nw.id] = 1;
+    } else if (best) {
+      heroH = '<a class="cont tc hero" href="#v=' + encodeURIComponent(best.id) + '" data-act="go" data-play="1" data-top="cont">' +
         cardBody(best, rec, M.contLab, '', '', am['i' + best.id]) + '</a>';
-    } else if (!ab.length) {
-      /* S4(11-19): 이어 볼 것이 없는 날만 3일 안 올라온 안 본 강의 하나(목록 차례 = 새것부터) · 꼴은 큰 카드 그대로 · 열면 바로 재생 · 사라지는 조건 = 줄의 «새 강의»와 같음 */
-      var nw = null;
-      for (i = 0; i < arr.length && !nw; i += 1) { if (!arr[i].ended && isNewLec(arr[i], today)) nw = arr[i]; }
-      if (nw) h += '<a class="newc tc hero" href="#v=' + encodeURIComponent(nw.id) + '" data-act="go" data-play="1" data-top="new">' +
-        cardBody(nw, rec, '새 강의', 'new', '', am['i' + nw.id]) + '</a>';
+      top['i' + best.id] = 1;
+    } else if (nw) {
+      heroH = '<a class="newc tc hero" href="#v=' + encodeURIComponent(nw.id) + '" data-act="go" data-play="1" data-top="new">' +
+        cardBody(nw, rec, M.newLab, 'new', '', am['i' + nw.id]) + '</a>';
+      top['i' + nw.id] = 1;
     }
+    h += abH;
+    if (ex) h += examCardHTML(ex, rec, nextInRange(ex, rec, top));
+    h += heroH;
     h += ans;
     h += alCardHTML(); /* N1 새 영상 알림 카드(홈 화면 앱 · 폰 허락 전에만) */
     h += setGrpHTML(); /* S1 단어 · 구문 · 문법 묶음(없으면 '' = 픽셀 0) */
@@ -2699,12 +2959,35 @@ window.__lecStart = function () {
       h += grpHTML(arr, rec, today, am);
     }
     h += pcqHTML() + pwaBtnHTML('l') + '</div>'; /* 설치 흐름(11-18): PC «폰으로 받기» 카드 · «켜는 법»은 맨 위 카드로 옮김 */
+    if (SNAPPING) { app.innerHTML = h; cbarSync(); return; } /* P5 지난 목록 = 그리기만(움직임 · 본 값 적기 · 설치 안내 · 알림 칠 · 영상 API 미리 받기 없음) */
     alShown = alState();
-    app.innerHTML = h;
+    if (snapOn) snapMorph(h); else app.innerHTML = h;
     listAnim();
     cbarSync();
     pwaAuto();
     if (S.nIds) alFlash();
+    ytPre(arr);
+    snapSave();
+    if (snapOn) setTimeout(snapTapGo, 0); /* P5 ③ 지난 목록에서 누른 것 */
+  }
+  /* P2 ⑤(11-21): 첫 목록을 그린 뒤 한가할 때 영상 API 를 한 번 미리 받음(첫 영상 틀이 더 빨리 뜸) · 연습 · fake · 미리 보기 · 열 강의 없음 = 안 함 ·
+     못 받으면 남은 script 를 거둠(영상을 누를 때 loadYT 가 새로 붙이게 = 예전과 같은 길) */
+  var YTPRE = false;
+  function ytPre(arr) {
+    var i, any = false, f;
+    if (YTPRE || L.DEMO || L.FAKE || setPv() || typeof L.loadYT !== 'function') return;
+    for (i = 0; i < arr.length && !any; i += 1) { if (!arr[i].ended) any = true; }
+    if (!any) return;
+    YTPRE = true;
+    f = function () {
+      L.loadYT().then(null, function () {
+        try {
+          var s = document.querySelector('script[src*="youtube.com/iframe_api"]');
+          if (s && s.parentNode && !(window.YT && typeof window.YT.Player === 'function')) s.parentNode.removeChild(s);
+        } catch (e) { /* 없음 */ }
+      });
+    };
+    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(f, { timeout: 3000 }); else setTimeout(f, 1200);
   }
   /* S5(11-19) 목록 조용한 완성(이 폰 · 학생마다 기억 · 미리 보기는 안 함 · 같은 화면에 다시 들어오면 움직임 0)
      ① «✓ 학습 완료» 줄은 그 강의를 처음 완료로 볼 때 한 번: 체크 원(r 11) 테가 0.7초에 그려지며 채워짐 + 줄 바탕 var(--gB) → 투명 0.9초
@@ -2837,13 +3120,25 @@ window.__lecStart = function () {
     }
     return h + '</div>';
   }
-  /* 이어서 보기: 다 보지 않은 강의 중 마지막으로 본 것(기록 동의일 때만) · skip = 뺄 강의({'i'+id: 1} · 결석한 날 수업) */
+  /* Q2(가 · 11-21): 큰 카드(l · 새 강의면 isNew) + 그 안 아래 줄 하나(o) = 결석 카드와 같은 꼴(div · 위 absgo · 아래 .absln.abscont · 새 모양 없음) ·
+     줄도 큰 카드처럼 바로 재생(예전 큰 카드였던 것이 줄로 내려와도 누르면 하는 일은 같게) · «이어서 보기» 줄은 본 자리가 있으면 «· 12:40부터» */
+  function heroLnHTML(l, rec, isNew, o, am) {
+    var op = +o.pos || 0;
+    return '<div class="' + (isNew ? 'newc' : 'cont') + ' tc hero hasln" data-top="' + (isNew ? 'new' : 'cont') + '"><a class="absgo" href="#v=' + encodeURIComponent(l.id) + '" data-act="go" data-play="1">' +
+      cardBody(l, rec, isNew ? M.newLab : M.contLab, isNew ? 'new' : '', '', am['i' + l.id]) + '</a>' +
+      '<a class="absln abscont" href="#v=' + encodeURIComponent(o.id) + '" data-act="go" data-play="1"><span class="k">' + esc(isNew ? M.contLab : M.newLab) + '</span><span class="v">· ' + esc(o.title) +
+      (isNew && rec && op > 0 ? ' · ' + esc(L.fmtDur(op)) + '부터' : '') + '</span></a></div>';
+  }
+  /* 이어서 보기: 다 보지 않은 강의 중 마지막으로 본 것(기록 동의일 때만) · skip = 뺄 강의({'i'+id: 1} · 결석한 날 수업)
+     Q2(가 · 11-21): 마지막 본 날이 14일 안(오늘 포함 · 결석 카드 13일과 같은 창)인 것만 · 그보다 오래된 것은 목록 줄에만 */
+  var CONT_DD = 13;
   function contBest(arr, skip) {
-    var best = null, bt = -Infinity, i, l, t;
+    var best = null, bt = -Infinity, today = L.isoDay(), i, l, t;
     skip = skip || {};
     for (i = 0; i < arr.length; i += 1) {
       l = arr[i];
       if (l.ended || l.confirmed || (+l.pct || 0) >= L.DONE || !l.last_at || skip['i' + l.id]) continue;
+      if (dayDiff(today, L.isoDay(l.last_at)) > CONT_DD) continue;
       t = L.ts(l.last_at);
       if (t > bt) { bt = t; best = l; }
     }
@@ -2932,13 +3227,39 @@ window.__lecStart = function () {
       /* 원판 rgB r 23 = 링 안쪽 22.5 보다 0.5 커서 트랙 밑에 숨음(이음새 없음) · 다섯 글자 이상(«D-DAY»)은 «시험 중»처럼 .sm 11.5px(링 안쪽 지름 45 · 11-18 대안 A) */
       '</svg><span class="d' + (c.during || String(c.val).length > 4 ? ' sm' : '') + '">' + esc(c.during ? '시험 중' : c.val) + '</span></span>';
   }
-  function examCardHTML(ex, rec) {
-    var c = ex.c;
+  /* nx(P1 · 11-21) = 카드 안 «다음 · 제목» 줄로 바로 재생할 강의(nextInRange) · 없으면 예전 카드 그대로 */
+  function examCardHTML(ex, rec, nx) {
+    var c = ex.c, a, np;
     /* D1 일정만 카드: 같은 링(진도 호 없음) + 첫 줄 하나 · 누를 곳 아님(범위 화면 없음) */
     if (ex.only) return '<div class="exam1 card only" data-top="exam">' + examRing(c, false) + '<span class="mn"><span class="l1">' + esc(examLine(ex)) + '</span></span></div>';
-    return '<a class="exam1 card" href="#rng" data-act="go" data-top="exam" aria-label="' + esc(M.examLab + ' ' + c.title + ' · ' + examSub(c, rec)) + '">' +
+    a = '<a class="exam1' + (nx ? '' : ' card') + '" href="#rng" data-act="go"' + (nx ? '' : ' data-top="exam"') + ' aria-label="' + esc(M.examLab + ' ' + c.title + ' · ' + examSub(c, rec)) + '">' +
       examRing(c, rec) + '<span class="mn"><span class="l1">' + esc(examLine(ex)) + '</span>' +
       '<span class="l2">' + esc(examSub(c, rec)) + '</span></span></a>';
+    if (!nx) return a;
+    /* P1: 흰 카드 한 장 안 = 위 시험 줄(범위 화면으로) + 아래 결석 카드와 같은 줄(.absln · «다음 · 제목 · 12:40부터» · 바로 재생) */
+    np = +nx.pos || 0;
+    return '<div class="exw card" data-top="exam">' + a +
+      '<a class="absln abscont" href="#v=' + encodeURIComponent(nx.id) + '" data-act="go" data-play="1"><span class="k">' + esc(M.nextLab) + '</span><span class="v">· ' + esc(nx.title) +
+      (rec && np > 0 ? ' · ' + esc(L.fmtDur(np)) + '부터' : '') + '</span></a></div>';
+  }
+  /* 범위 강의 차례(범위 화면 · P1 «다음» 같음): 다 본 것 아래 · 덜 본 %부터 · 같으면 범위 차례(수업일 이른 것) */
+  function rngSort(ls) {
+    var ord = {}, i;
+    for (i = 0; i < ls.length; i += 1) ord[ls[i].id] = i;
+    ls.sort(function (x, y) {
+      var px = +x.pct || 0, py = +y.pct || 0, dx = isDone(x, px) ? 1 : 0, dy = isDone(y, py) ? 1 : 0;
+      return (dx - dy) || (px - py) || (ord[x.id] - ord[y.id]);
+    });
+    return ls;
+  }
+  /* P1(11-21 결론안): 시험 카드 «다음» = 범위 화면 첫 줄이 덜 본 강의면 그것(기록 동의일 때만 · 일정만 카드 없음) ·
+     범위를 다 봤으면 없음 · 맨 위 카드 · 그 안 줄과 같은 강의면 없음(top = {'i'+id: 1}) */
+  function nextInRange(ex, rec, top) {
+    var l;
+    if (!rec || !ex || ex.only || !ex.ls || !ex.ls.length) return null;
+    l = rngSort(ex.ls.slice())[0];
+    if (!l || l.ended || isDone(l, +l.pct || 0) || (top && top['i' + l.id])) return null;
+    return l;
   }
   /* 범위 영상 목록(#rng): 덜 본 것 먼저(다 본 것은 아래 · 같으면 수업일 이른 차례) */
   function showRange() {
@@ -2946,14 +3267,8 @@ window.__lecStart = function () {
     if (!ex || ex.only) { clearHash(); showList(); return; } /* 시험이 지났거나 범위가 빠짐(일정만 카드 포함) = 목록으로 */
     S.view = 'rng';
     PYN = pyeonMap(listBase()); /* 범위 화면도 목록과 같은 타일(«N / 편» 차례는 전체 목록 기준) */
-    var today = L.isoDay(), am = attMap(), ls = ex.ls.slice(), ord = {}, i;
-    for (i = 0; i < ls.length; i += 1) ord[ls[i].id] = i;
-    if (rec) {
-      ls.sort(function (x, y) {
-        var px = +x.pct || 0, py = +y.pct || 0, dx = isDone(x, px) ? 1 : 0, dy = isDone(y, py) ? 1 : 0;
-        return (dx - dy) || (px - py) || (ord[x.id] - ord[y.id]);
-      });
-    }
+    var today = L.isoDay(), am = attMap(), ls = ex.ls.slice();
+    if (rec) rngSort(ls);
     var h = '<div class="wrap"><div class="top">' +
       '<button class="backb" type="button" data-act="list"><span class="ar" aria-hidden="true">‹</span>목록</button><span class="sp"></span>' +
       '<span class="me">' + esc(S.name) + '</span></div>' +
@@ -3110,7 +3425,7 @@ window.__lecStart = function () {
   function setTx(e, ctx) {
     var t;
     if (ctx === 'rec' && e === 'limit') return (L.SET_ERR && L.SET_ERR.rec_limit) || REC_TX.limit;
-    if (ctx === 'open' && e === 'network') return M.net;
+    if (ctx === 'open' && e === 'network') return netTx();   /* F6(11-21 · 합친 뒤): 끊김 = 인터넷 글 · 서버 · 기다림 끝 = 서버 글 */
     if (ctx === 'due' && e === 'testing') return SET_TX.due_testing;
     t = L.SET_ERR && typeof L.SET_ERR === 'object' ? L.SET_ERR[e] : null;
     if (typeof t === 'string' && t) return t;
@@ -3163,25 +3478,29 @@ window.__lecStart = function () {
     try { n = localStorage.length; for (i = 0; i < n; i += 1) { if (String(localStorage.key(i)).indexOf('lec-v2b:') === 0) break; } } catch (e) { return; }
     if (i < n) setTimeout(function () { v2Get(function () {}); }, 3000);
   })();
-  /* 집 정보 뒤 한 번 · sd = 함께 기다리는 묶음(sideStart) · null 이면(동의 바로 뒤) 늦게 와도 묶음이 생길 때만 다시 그림 · ①b 2.5초 넘으면 옛 길 */
-  function setLoad(sd, k) {
-    var fin = false, go = 0;
+  /* 집 정보 뒤 한 번 · sd = 함께 기다리는 묶음(sideStart) · null 이면(동의 바로 뒤) 늦게 와도 묶음이 생길 때만 다시 그림 · ①b 2.5초 넘으면 옛 길
+     P2 ③(11-21): pre = 집 정보보다 먼저(지난번 이 열쇠가 동의함 · home0) · 집 정보가 동의 전이라 하면 setVoid 가 이 답을 버림(tok) */
+  function setLoad(sd, k, pre) {
+    var fin = false, go = 0, tok;
     S.set = null; S.setMore = false; S.setDirty = false;
-    if (setPv() || typeof L.setHome !== 'function' || recMode() !== 'agree') return;
-    if (sd && sd.one) sd.n += 1; else sd = null;
+    if (setPv() || typeof L.setHome !== 'function' || (!pre && recMode() !== 'agree')) return;
+    tok = S.setTok = (S.setTok || 0) + 1;
+    if (sd && sd.one) { sd.n += 1; if (pre) sd.pre = true; } else sd = null;
     function run() { if (!go) { go = 1; setHomeX(k).then(got, function () { got(null); }); } }
     function got(r) {
       if (fin) return;
       fin = true;
-      var late = S.view === 'list';
-      if (k === S.key) S.set = r && r.ok ? r : null;
-      if (k === S.key && S.set) sqFlush(); /* 못 보낸 표시가 이 탭에 남아 있으면 조용히 다시(11-18) */
+      var late = S.view === 'list', mine = k === S.key && tok === S.setTok;
+      if (mine) S.set = r && r.ok ? r : null;
+      if (mine && S.set) sqFlush(); /* 못 보낸 표시가 이 탭에 남아 있으면 조용히 다시(11-18) */
       if (sd) sd.one();
-      if (k === S.key && late && S.view === 'list' && setGrpHTML()) quietList();
+      if (mine && late && S.view === 'list' && setGrpHTML()) quietList();
     }
     v2Get(run);
     setTimeout(run, 2500);
   }
+  /* 먼저 부른 세트 답을 버림(집 정보가 동의 전 · 늦게 와도 S.set 을 안 채움 · 기다리는 묶음 수는 got 이 그대로 줄임) */
+  function setVoid() { S.setTok = (S.setTok || 0) + 1; S.set = null; }
   function setFind(id) {
     var a = (S.set && S.set.sets) || [], i;
     for (i = 0; i < a.length; i += 1) { if (a[i] && String(a[i].id) === String(id)) return a[i]; }
@@ -3219,7 +3538,7 @@ window.__lecStart = function () {
     show = S.setMore ? rows.length : Math.min(3, rows.length);
     if (show) {
       h += '<div class="s1g">';
-      for (i = 0; i < show; i += 1) h += setRowHTML(rows[i]);
+      for (i = 0; i < show; i += 1) h += setRowHTML(rows[i], L.isoDay());
       h += '</div>';
     }
     if (x !== null) h += x;
@@ -3231,9 +3550,25 @@ window.__lecStart = function () {
     if (rows.length > show) h += '<button class="absln smore" type="button" data-act="s1more"><span class="k">지난 ' + (rows.length - show) + '개 더</span></button>';
     return h + '</section>';
   }
-  function setRowHTML(s) {
+  /* P4(11-21): 세트 «새» = 3일 안 올라옴(on) · 안 끝남 · 안 열어 봄(서버 기록 없음 · 이 폰에서 연 적 없음 = 강의 «새 강의»와 같은 칸 lec-seen 에 «s:id») */
+  function setTouched(s) {
+    var m = s.me, rc, j;
+    if (seenMap()['is:' + s.id]) return true;
+    if (!m) return false;
+    if (+m.seen > 0 || +m.known > 0 || +m.tn > 0 || +m.best > 0 || +m.said > 0 || +m.spk > 0) return true;
+    if (m.test && m.test !== 'none') return true;
+    rc = m.recs || [];
+    for (j = 0; j < rc.length; j += 1) { if (rc[j] && rc[j].st) return true; }
+    return false;
+  }
+  function isNewSet(s, today) {
+    var d = s && s.on ? dayDiff(today, L.isoDay(s.on)) : 9999;
+    return d >= 0 && d <= 3 && !setDone(s) && !setTouched(s);
+  }
+  function setRowHTML(s, today) {
     var m = s.me || null, n = +s.n || 0, k = s.kind, ok = setDone(s), mt = [], rs = '', rs2 = '', rc2 = '', un = '', pct = 0, rc, na = 0, ns = 0, nk = 0, why = 0, j, st, lab, vis,
-        tn = +s.test_n || 0; /* 시험 문항 수(11-18 · 서버가 전부보다 적을 때만 보냄 · 0 = 전부) */
+        tn = +s.test_n || 0, /* 시험 문항 수(11-18 · 서버가 전부보다 적을 때만 보냄 · 0 = 전부) */
+        nw = isNewSet(s, today || L.isoDay());
     if (s.on) mt.push(L.fmtDay(L.isoDay(s.on)));
     if (k === 'voc') {
       mt.push(n + '개');
@@ -3277,12 +3612,13 @@ window.__lecStart = function () {
       }
     }
     /* 2차 타일: 보이는 글 = 종류 · 링 · 제목(두 줄) · 상태 한 마디 · 날짜 · 수 · 긴 상태는 읽어 주는 이름(aria-label)에(결론안 §4-9) */
-    lab = [KIND_W[k], s.title].concat(mt);
+    lab = (nw ? [KIND_W[k], '새'] : [KIND_W[k]]).concat([s.title], mt);
     if (rs) lab.push(rs);
     if (un) lab.push(un);
     vis = rs2 || rs;
+    /* P4: «새»는 강의 «새 강의»와 같은 꼬리표(.tag.new) · 종류 글 옆 */
     return '<button class="s1t srow" type="button" data-act="s1open" data-id="' + esc(s.id) + '" aria-label="' + esc(lab.join(' · ')) + '">' +
-      '<span class="s1h"><span class="tile"><b>' + KIND_W[k] + '</b></span>' + (m ? ring(pct, ok) : '') + '</span>' +
+      '<span class="s1h"><span class="tile"><b>' + KIND_W[k] + '</b>' + (nw ? ' <span class="tag new">새</span>' : '') + '</span>' + (m ? ring(pct, ok) : '') + '</span>' +
       '<span class="mn"><span class="tt">' + esc(s.title) + '</span>' + (vis ? '<span class="rs' + (rc2 ? ' ' + rc2 : '') + '">' + esc(vis) + '</span>' : '') + '</span></button>';
   }
 
@@ -3298,7 +3634,7 @@ window.__lecStart = function () {
     if (mk && Object.keys(mk).length && S.key && !setPv() && typeof L.setCard === 'function') {
       S.setDirty = true;
       if (W.vb && W.mode === 'mem') L.v2End(S.key, W.vb);   /* ①b */
-      if (!W.ev || W.mode !== 'mem') { try { setCardQ(W.id, mk, function () { /* 없음 */ }); } catch (e0) { /* 없음 */ } }
+      if (!W.ev || W.mode !== 'mem') { try { setCardQ(W.id, mk, function () { /* 없음 */ }, false, true); } catch (e0) { /* 없음 */ } }   /* F5: keepalive */
     }
     if (W.g) spkKill(W.g);
     R = W.g && W.g.R;
@@ -3318,8 +3654,8 @@ window.__lecStart = function () {
     if (lis && W.mode === 'gu' && g.ph === 'b') guDraw();
     /* 숨을 때(안드로이드 뒤로 · 다른 앱 · 폰이 앱을 닫음) 아직 안 보낸 외우기 · 따라 말하기 표시를 setCard 한 번으로 보내고 비움(검수 11-17)
        보낼 것이 없으면 부르지 않음 → 숨김/보임을 되풀이해도 더 안 부름 */
-    if (W && W.mode === 'mem' && !W.ev && W.marks && Object.keys(W.marks).length) memSave(function () { /* 다음 판 고르기용 카드도 memSave 가 고침 */ });
-    else if (g && W.mode === 'gu' && g.marks && Object.keys(g.marks).length) guSave(function () { /* 없음 */ });
+    if (W && W.mode === 'mem' && !W.ev && W.marks && Object.keys(W.marks).length) memSave(function () { /* 다음 판 고르기용 카드도 memSave 가 고침 */ }, true);   /* F5(11-21): keepalive */
+    else if (g && W.mode === 'gu' && g.marks && Object.keys(g.marks).length) guSave(function () { /* 없음 */ }, true);
     /* 따라 말하기 도중 = 그 문장 처음으로(«듣기»를 다시 누를 수 있게 · 쉼 타이머도 끊음) */
     if (g && W.mode === 'gu' && g.busy) { g.run += 1; g.busy = false; g.wait = false; g.hl = -1; g.cue = ''; guDraw(); }
   }
@@ -3353,14 +3689,25 @@ window.__lecStart = function () {
     if (e === 'preview') { setBack(false); return true; }
     return false;
   }
+  /* F2(11-21): 세트 기록 «#s=<id>»(오늘 볼 것 = due) · setPop = «‹ 목록»이 걷은 뒤로 한 번(그 hashchange 는 길을 다시 안 탐) */
+  var setPop = 0;
+  function setHid() { return W ? (W.id ? encodeURIComponent(String(W.id)) : 'due') : ''; }
+  /* 기기 «뒤로»(세트 기록 → 목록 기록) = «‹ 목록»과 같은 길 · 끝 한 번 더(결과로)처럼 세트에 남으면 기록을 다시 쌓음 */
+  function setDevBack() {
+    var w0 = W;
+    setLeave();
+    if (W && W === w0 && S.view === 'set' && W.mode !== 'memsave' && W.mode !== 'gusave' && !PV) goHash('#s=' + setHid());
+  }
   function setOpen(id) {
     var s = id ? setFind(id) : null;
     if (setPv() || !S.set || (id && !s)) return;
+    if (s) seenAdd('s:' + s.id);   /* P4(11-21): 연 세트 = «새» 뗌 */
     v2Get(function () {});   /* ①b */
     S.setY = window.pageYOffset || (document.documentElement && document.documentElement.scrollTop) || 0;
     teardown();
     W = { id: s ? s.id : '', kind: s ? s.kind : 'due', s: s, mode: '', busy: false };
     S.view = 'set';
+    if (!PV) { var sh = '#s=' + setHid(); if (String(location.hash || '') !== sh) goHash(sh); }   /* F2: 목록에서 열면 쌓고 · 세트 안에서 다음 판이면 바꿔치기 */
     try { window.scrollTo(0, 0); } catch (e) { /* 없음 */ }
     if (LN && LN.open(s)) return;   /* ③b */
     if (!s) tStart();
@@ -3373,6 +3720,9 @@ window.__lecStart = function () {
     var y = S.setY || 0, k = S.key, drawn = false, tm = 0, bs, i;
     setStop();
     S.view = 'setwait';
+    if (onSetHash()) {   /* F2: 세트 기록을 걷음 = «‹ 목록» 뒤 기기 «뒤로»가 헛돌지 않게(미리 보기 · 처음 연 기록은 바꿔치기) */
+      if (S.nav && !PV) { setPop = Date.now(); history.back(); } else clearHash();
+    }
     function draw() {
       if (drawn || k !== S.key || S.view !== 'setwait') return;
       drawn = true;
@@ -3409,7 +3759,7 @@ window.__lecStart = function () {
     if (a === 'due') { setOpen(null); return; }
     if (a === 'more') { S.setMore = true; showList(); return; }
     if (a === 'nset') { var y0 = S.setY; setOpen(attr(el, 'data-id')); S.setY = y0; return; }   /* S4 통과 → 다음 판(목록 자리 그대로) */
-    if (a === 'cont') { setRefresh(); S.nav = true; S.autoplay = Date.now(); location.hash = '#v=' + encodeURIComponent(attr(el, 'data-id')); return; }   /* S4 통과 → 이어서 보기(바로 재생) */
+    if (a === 'cont') { setRefresh(); S.nav = true; S.autoplay = Date.now(); goHash('#v=' + encodeURIComponent(attr(el, 'data-id'))); return; }   /* S4 통과 → 이어서 보기(바로 재생) · F2: 세트 기록을 영상으로 바꿔치기(영상에서 뒤로 = 목록) */
     if (!W) return;
     if (a === 'back') { setLeave(); return; }
     if (a === 'rate') { saySetRate(attr(el, 'data-r')); ratePaint(); return; } /* 말 빠르기(다음 말소리부터) */
@@ -3500,7 +3850,7 @@ window.__lecStart = function () {
     }, function () {
       if (my !== WRUN || !W) return;
       W.busy = false;
-      s2Draw(M.net);
+      s2Draw(netTx());   /* F6 */
     });
   }
   function memRound(tap) {
@@ -3615,7 +3965,7 @@ window.__lecStart = function () {
     return g;
   }
   /* 이 판 표시(알아요 1 · 다시만 0)를 한 번 보냄 · 다음 판을 고르려고 들고 있는 카드에도 같은 셈을 함(Lec.setMark) */
-  function memSave(then) {
+  function memSave(then, ka) {
     var mk = W.marks || {}, ks = Object.keys(mk), day = (S.set && S.set.today) || L.isoDay(), i;
     W.marks = {};
     if (W.vb && !W.ev && W.mode === 'memsave') L.v2End(S.key, W.vb);   /* ①b */
@@ -3623,10 +3973,11 @@ window.__lecStart = function () {
     for (i = 0; i < ks.length; i += 1) W.cards[ks[i]] = L.setMark(W.cards[ks[i]] || {}, mk[ks[i]] === 1, 'card', day);
     S.setDirty = true;
     if (W.ev) { L.v2u.end(then); return; }   /* ①b */
-    setCardQ(W.id, mk, then);
+    setCardQ(W.id, mk, then, false, ka);
   }
-  /* 못 보낸 표시(11-18): setCard 가 안 가면 이 탭에 모아 둠(메모리 + sessionStorage · 학생 열쇠 지문 · 오늘 날짜가 다르면 버림 · 같은 카드는 나중 값)
-     → 다음 setCard · 목록을 새로 받을 때 조용히 다시(한 번에 40개까지) · 다시 보내도 안 될 까닭(SQ_DROP)이면 버림 */
+  /* 못 보낸 표시(11-18): setCard 가 안 가면 이 폰에 모아 둠(메모리 + localStorage · 학생 열쇠 지문 · 오늘 날짜가 다르면 버림 · 같은 카드는 나중 값)
+     → 다음 setCard · 목록을 새로 받을 때 조용히 다시(한 번에 40개까지) · 다시 보내도 안 될 까닭(SQ_DROP)이면 버림
+     F5(11-21): sessionStorage → localStorage(앱을 닫아도 남음 · 지문이 다른 학생 것은 안 읽고 덮음 · 나가기에서 지움) · 옛 판이 이 탭에 남긴 것은 한 번 옮김 */
   var SQ_K = 'lec-set-q', SQ_DROP = { key: 1, consent: 1, old: 1, preview: 1, none: 1, kind: 1, input: 1, limit: 1 };
   function sqFp(s) { /* FNV-1a 32 */
     var h = 2166136261, i;
@@ -3638,19 +3989,27 @@ window.__lecStart = function () {
     return h.toString(16);
   }
   function sqLoad() {
-    var f = sqFp(S.key), d = L.isoDay(), o = SQ, raw;
+    var f = sqFp(S.key), d = L.isoDay(), o = SQ, raw, mv = false;
     if (!o) {
-      try { raw = window.sessionStorage.getItem(SQ_K); o = raw ? JSON.parse(raw) : null; } catch (e) { o = null; }
+      try { raw = window.localStorage.getItem(SQ_K); o = raw ? JSON.parse(raw) : null; } catch (e) { o = null; }
+      if (!o) {
+        try { raw = window.sessionStorage.getItem(SQ_K); o = raw ? JSON.parse(raw) : null; if (raw) { window.sessionStorage.removeItem(SQ_K); mv = true; } } catch (e1) { o = null; }
+      }
     }
     if (!o || typeof o !== 'object' || o.f !== f || o.d !== d || !o.s || typeof o.s !== 'object') o = { f: f, d: d, s: {} };
     SQ = o;
+    if (mv) sqSave();
     return o;
   }
   function sqSave() {
     var o = SQ, n = o ? Object.keys(o.s).length : 0;
     try {
-      if (!n) window.sessionStorage.removeItem(SQ_K); else window.sessionStorage.setItem(SQ_K, JSON.stringify(o));
+      if (!n) window.localStorage.removeItem(SQ_K); else window.localStorage.setItem(SQ_K, JSON.stringify(o));
     } catch (e) { /* 없음 */ }
+  }
+  function sqDrop() {
+    SQ = null;
+    try { window.localStorage.removeItem(SQ_K); } catch (e) { /* 없음 */ }
   }
   /* 같은 카드에 표시가 둘 → 큰 값(2 > 1 > 0 · 서버가 표시를 줄이지 않으므로 큰 값이 곧 서버에 남을 값) */
   function sqHi(a, b) { return (+b || 0) > (+a || 0) ? b : a; }
@@ -3663,9 +4022,19 @@ window.__lecStart = function () {
     o.s[id] = cur;
     sqSave();
   }
+  /* X2(11-21 · 검수): 닿은 조각을 저장소에서 뺌(그 사이 값이 달라진 카드는 둠) */
+  function sqOff(key, id, mk) {
+    var o, cur, k;
+    if (key !== S.key) return;
+    o = sqLoad(); id = String(id); cur = o.s[id];
+    if (!cur) return;
+    for (k in mk) { if (mk.hasOwnProperty(k) && cur[k] === mk[k]) delete cur[k]; }
+    if (!Object.keys(cur).length) delete o.s[id];
+    sqSave();
+  }
   /* setCard 대신: 이 묶음에 남은 표시와 새 표시를 카드마다 큰 값으로 합쳐 40개씩 차례로 · then(마지막 답) */
-  function setCardQ(id, mk, then, once) {   /* ①b */
-    var key = S.key, all = {}, parts = [], cur = null, o, p, ks, k, i;
+  function setCardQ(id, mk, then, once, ka) {   /* ①b · ka = keepalive(F5 11-21: 숨을 때 · 화면을 거둘 때 · 40장 조각 = 64KB 안) */
+    var key = S.key, all = {}, parts = [], cur = null, o, p, ks, k, i, opt = ka ? { keepalive: true } : undefined;
     if (setPv() || !key || typeof L.setCard !== 'function') { then(null); return; }
     o = sqLoad(); p = o.s[String(id)];
     if (p) { for (k in p) { if (p.hasOwnProperty(k)) all[k] = p[k]; } delete o.s[String(id)]; sqSave(); }
@@ -3676,11 +4045,15 @@ window.__lecStart = function () {
       cur[ks[i]] = all[ks[i]];
     }
     if (!parts.length) { then(null); return; }
+    /* X2(11-21 · 검수): 숨을 때 · 화면을 거둘 때(keepalive)는 보내기 전에 이 폰에 먼저 적어 둠(답 전에 앱이 닫혀 요청이 실패해도 남음) → 닿은 조각만 뺌
+       같은 표시가 한 번 더 가도 해 없음(lec_set_card 는 같은 날 같은 표시를 같은 값으로 둠 · 하루 저장 수만 1 늚) */
+    if (ka && !once) sqPut(key, id, all);
     function one(j, last) {
       if (j >= parts.length) { then(last); if (key === S.key) sqFlush(); return; }
-      L.setCard(key, id, parts[j]).then(function (r) {
+      (opt ? L.setCard(key, id, parts[j], opt) : L.setCard(key, id, parts[j])).then(function (r) {
         var x;
-        if (r && r.ok) { one(j + 1, r); return; }
+        if (r && r.ok) { if (ka && !once) sqOff(key, id, parts[j]); one(j + 1, r); return; }
+        if (ka && !once && r && SQ_DROP[r.err]) { for (x = j; x < parts.length; x += 1) sqOff(key, id, parts[x]); }   /* X2: 다시 보내도 안 될 까닭 = 먼저 적어 둔 것도 뺌 */
         if (!once && !(r && SQ_DROP[r.err])) { for (x = j; x < parts.length; x += 1) sqPut(key, id, parts[x]); }   /* ①b */
         then(r);
       }, function () {
@@ -3751,7 +4124,7 @@ window.__lecStart = function () {
     }, function () {
       if (my !== WRUN || !W) return;
       W.busy = false;
-      if (W.kind === 'voc') s2Draw(M.net); else setInfo(due ? '쌓인 오답' : W.s.title, M.net);
+      if (W.kind === 'voc') s2Draw(netTx()); else setInfo(due ? '쌓인 오답' : W.s.title, netTx());   /* F6 */
     });
   }
   function tBegin(r) {
@@ -4344,7 +4717,7 @@ window.__lecStart = function () {
     }, function () {
       if (my !== WRUN || !W) return;
       W.busy = false;
-      setInfo(W.s.title, M.net);
+      setInfo(W.s.title, netTx());   /* F6 */
     });
   }
   function guDraw() {
@@ -4638,12 +5011,12 @@ window.__lecStart = function () {
       g.man = true; g.wait = true; g.cue = ''; guDraw(); /* 이 조각을 «다음 듣기»로 다시 */
     });
   }
-  function guSave(then) {
+  function guSave(then, ka) {
     var g = W.g, mk = g.marks || {}, ks = Object.keys(mk);
     g.marks = {};
     if (!ks.length || setPv()) { then(); return; }
     S.setDirty = true;
-    setCardQ(W.id, mk, function () { then(); }); /* 말하기 확인 통과 = 2(서버가 2 를 못 받으면 Lec.setCard 가 1 로 한 번 더) */
+    setCardQ(W.id, mk, function () { then(); }, false, ka); /* 말하기 확인 통과 = 2(서버가 2 를 못 받으면 Lec.setCard 가 1 로 한 번 더) · ka = 숨을 때 keepalive(F5) */
   }
   function guFinish() {
     var my = WRUN, g = W.g;
@@ -5371,6 +5744,7 @@ window.__lecStart = function () {
       skipTo: resumeL > 0 ? resumeL + 5 : 0, stopEnd: false,   /* 검수 B2 M-1: 이어 본 자리 + 5초까지의 멈춤은 지난 것 · «처음부터»면 0 */
       fsLast: null, wasLF: landFull(), endOn: false, endSig: '', paperTx: null, bandSig: '', segs: null   /* 결론안 K: 가로 전체 화면 · 영상 끝 띠 · 종이 줄 · 지문 띠 */
     };
+    T.w0 = L.now(); T.wb = 0; T.lateS = null; T.via = viaTake(l.id);   /* F1 · Q5(11-21): 벽시계 잰 처음 · 이어 센 보기의 앞 몫 · 못 간 보기 · 어디서 눌러 열었나 */
     var box = $('ytbox');
     var cb = {
       ready: onReady, state: onState, rate: onRate, error: onErr
@@ -5520,14 +5894,26 @@ window.__lecStart = function () {
 
   /* ------------------------------------------------------------ 기록 보내기 */
   function claimSession() {
-    var s = L.lsGet(LS.sess, null), now = L.now();
+    var s = L.lsGet(LS.sess, null), now = L.now(), pr;
     T.base = 0;
-    if (s && s.lecture === T.lec.id && s.id && isFinite(+s.at) && now - (+s.at) < SESS_MS) {
+    /* X3(11-21 · 검수): 이어 쓰는 것은 같은 학생(열쇠 지문 k)일 때만 · k 가 없는 옛 판 줄은 새 보기(서버는 보기마다 따로 더하므로 손해 없음) */
+    if (s && s.lecture === T.lec.id && s.id && s.k && s.k === sqFp(S.key) && isFinite(+s.at) && now - (+s.at) < SESS_MS) {
       T.base = Math.max(0, +s.real || 0); /* 같은 보기(20분 안) = 그때까지 보낸 초에서 이어 셈 */
       T.real += T.base;
+      T.wb = Math.max(0, +s.wall || 0);   /* F1: 앞 화면에서 흐른 벽시계 초도 이어 셈(옛 판이 적은 것은 0) */
+      pr = pendRowS(s.id);
+      if (pr) {   /* 앞 화면 기록이 아직 못 감 = 이 보기는 서버가 처음 볼 수 있음 · X1: 그 줄의 본 칸을 이어 합침(첫 기록이 닿아 그 줄이 지워져도 칸이 빠지지 않게) */
+        T.lateS = s.id;
+        if (pr.seen) T.server = L.bmOr(T.server, pr.seen);
+      }
       return s.id;
     }
     return L.uuid();
+  }
+  /* F1(11-21): 이 보기에서 흐른 벽시계 초(영상을 연 때부터 · 이어 센 보기는 앞 몫 더함 · 튼 초보다 작지 않게) */
+  function wallNow() {
+    if (!T) return 0;
+    return Math.ceil(Math.max(T.real, (T.wb || 0) + Math.max(0, L.now() - (T.w0 || L.now())) / 1000));
   }
   function sendBeat(force) {
     if (PV) { if (T) { T.dirty = false; T.lastBeat = L.now(); } return; }   /* 미리 보기 = 진도를 보내지도 · 쌓아 두지도 않음 */
@@ -5535,19 +5921,25 @@ window.__lecStart = function () {
     if (!T.dirty && !force) return;
     if (!T.dirty && T.sess === null && T.real <= 0) return; /* 아직 튼 적 없음 */
     if (!T.sess) T.sess = claimSession();
-    var now = L.now();
+    var now = L.now(), wl = wallNow();
+    /* F1 · Q5(11-21): wall · via · late 는 새 서버(Lec.srv ≥ 2)에만 감(옛 서버 = 같은 11개 · class-api.js beat) · 못 가면 이 줄째 남김(wall 도 같이) */
     var o = {
       key: S.key, lecture: T.lec.id, session: T.sess, seen: bitsNow(),
       total: Math.round(T.real * T.S), pos: Math.round(lecTime()),
       from: Math.floor(T.from === null ? lecTime() : T.from), to: Math.ceil(T.to === null ? lecTime() : T.to),
-      dur: Math.round(T.pDur * T.S), dev: DEV, rate: curRate(), scale: T.S
+      dur: Math.round(T.pDur * T.S), dev: DEV, rate: curRate(), scale: T.S,
+      wall: wl, via: T.via || null, late: T.lateS === T.sess
     };
     T.dirty = false;
     T.lastBeat = now;
-    L.lsSet(LS.sess, { lecture: T.lec.id, id: T.sess, at: now, real: T.real });
+    L.lsSet(LS.sess, { lecture: T.lec.id, id: T.sess, at: now, real: T.real, wall: wl, k: sqFp(S.key) });   /* X3: 학생 지문(열쇠 글은 안 적음) */
     var tr = T, p = L.beat(o);
     fly.push(p);
-    p.then(function (r) { flyOff(p); beatDone(tr, o, r); }, function () { flyOff(p); pendAdd(o); });
+    p.then(function (r) { flyOff(p); beatDone(tr, o, r); }, function () {
+      flyOff(p);
+      pendAdd(o);
+      if (tr === T && T && T.sess === o.session) T.lateS = o.session;   /* F1: 이 보기 다음 기록도 «밀린 줄»로(서버가 이 보기를 아직 모를 수 있음) */
+    });
   }
   /* 보내는 중인 기록(나가기가 잡아 두고 답을 기다림) */
   var fly = [];
@@ -5565,7 +5957,7 @@ window.__lecStart = function () {
         if (r.done && !l.done_at) l.done_at = l.last_at;
         if (r.dur > 0) l.dur = r.dur;
       }
-      if (tr === T && T) { T.server = r.seen || T.server; T.pctS = r.pct; paint(); }
+      if (tr === T && T) { if (T.lateS === o.session) T.lateS = null; T.server = r.seen || T.server; T.pctS = r.pct; paint(); }   /* F1: 이 보기가 서버에 닿음 = 다음 기록은 보통 줄 */
       return;
     }
     var e = r && r.err;
@@ -5575,18 +5967,45 @@ window.__lecStart = function () {
         /* 남의 보기 번호 = 새 번호로 처음부터(이어 센 초는 빼고 다시 보냄) */
         L.lsDel(LS.sess);
         T.real = Math.max(0, T.real - (T.base || 0));
-        T.base = 0; T.sess = null; T.dirty = true;
+        T.base = 0; T.wb = 0; T.lateS = null; T.sess = null; T.dirty = true;
       } else T.stopped = true;
     }
   }
   function pendAdd(o) {
     if (o.key !== S.key) return; /* 나간 학생 기록 = 다음 학생 대기 기록에 넣지 않음 */
-    var a = L.lsGet(LS.pend, []), out = [], i;
-    if (Object.prototype.toString.call(a) !== '[object Array]') a = [];
+    var a = pendRows(), out = [], i;
     for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].session !== o.session) out.push(a[i]); }
+    o.n = L.uuid();   /* F5(11-21): 줄 번호 = 다시 보낸 뒤 그 줄만 지움(같은 보기의 더 새 줄은 남김) */
     out.push(o);
     if (out.length > 30) out = out.slice(out.length - 30);
     L.lsSet(LS.pend, out);
+  }
+  function pendRows() {
+    var a = L.lsGet(LS.pend, []);
+    return Object.prototype.toString.call(a) === '[object Array]' ? a : [];
+  }
+  function pendHas(n) {
+    var a = pendRows(), i;
+    for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].n === n) return true; }
+    return false;
+  }
+  function pendRowS(sid) {   /* X1 · X3(11-21 · 검수): 이 학생(지금 열쇠)의 이 보기에 밀린 줄(없으면 null) */
+    var a = pendRows(), i;
+    for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].session === sid && a[i].key === S.key) return a[i]; }
+    return null;
+  }
+  function pendDrop(n) {
+    var a = pendRows(), out = [], i;
+    for (i = 0; i < a.length; i += 1) { if (a[i] && a[i].n !== n) out.push(a[i]); }
+    if (out.length === a.length) return;
+    if (out.length) L.lsSet(LS.pend, out); else L.lsDel(LS.pend);
+  }
+  /* 밀린 줄 = late(그 줄과 함께 저장한 wall 이 상한 · 새 서버에서만 감) */
+  function lateRow(o) {
+    var x = {}, k;
+    for (k in o) { if (o.hasOwnProperty(k)) x[k] = o[k]; }
+    x.late = true;
+    return x;
   }
   /* 같은 강의 기록이 서버에 닿았을 때: 같은 보기의 대기 기록은 이번 것에 다 들어 있으니 지우고,
      다른 보기의 대기 기록은 나중에 보내도 이어 볼 위치가 뒤로 가지 않게 방금 닿은 위치로 맞춤 */
@@ -5604,25 +6023,103 @@ window.__lecStart = function () {
     if (!ch) return;
     if (out.length) L.lsSet(LS.pend, out); else L.lsDel(LS.pend);
   }
-  function pendFlush() {
-    var a = L.lsGet(LS.pend, []);
-    if (Object.prototype.toString.call(a) !== '[object Array]' || !a.length) return Promise.resolve();
-    L.lsDel(LS.pend);
-    var keep = [];
-    var p = Promise.resolve();
-    a.forEach(function (o) {
-      p = p.then(function () {
-        return L.beat(o).then(function () { /* 보냄(오류 답도 다시 보내지 않음) */ }, function () { keep.push(o); });
-      });
-    });
-    return p.then(function () {
-      if (keep.length) {
-        var now = L.lsGet(LS.pend, []);
-        if (Object.prototype.toString.call(now) !== '[object Array]') now = [];
-        L.lsSet(LS.pend, keep.concat(now).slice(-30));
-      }
-    });
+  /* 밀린 줄 다시 보내기(F1 · F5 11-21)
+     - 이번 실행의 lec_home 답을 받은 뒤에만(L.afterHome · 서버 판 Lec.srv 를 안 뒤) · 그 뒤 화면이 다시 보일 때 · 인터넷이 다시 될 때 ·
+       영상에서 목록으로 올 때(집 정보 답)에도 · 대기분이 있을 때만 · 주기 부르기 없음
+     - 한 번에 하나(PBUSY · 진행 중이면 건너뜀) · 줄마다 답이 오면 그 줄만 지움(보내는 도중 앱이 닫혀도 안 간 줄은 남음 · 오류 답도 다시 보내지 않음 = 예전 그대로)
+     - 인터넷 · 서버 탓으로 못 가면 거기서 멈춤(남은 줄 그대로 · 다음 기회에) · 이 줄만 받지 않으면(4xx) 남기고 다음 줄
+     - 다 보낸 뒤 이 학생 줄이 닿았으면 목록 진도를 서버 답으로 맞춤 */
+  var PBUSY = null, PCUR = '';
+  function pendStop(e) {
+    var s = e && +e.status;
+    return !(s >= 400 && s < 500) || s === 408 || s === 429;
   }
+  function pendFlush() {
+    if (PBUSY) return PBUSY;
+    if (PV || !(L.homeN > 0 || typeof L.afterHome !== 'function')) return Promise.resolve();
+    var a = pendRows(), i, ch = false, hit = [];
+    if (!a.length) return Promise.resolve();
+    for (i = 0; i < a.length; i += 1) { if (a[i] && !a[i].n) { a[i].n = L.uuid(); ch = true; } }   /* 11-21 전 판이 남긴 줄 = 번호부터 */
+    if (ch) L.lsSet(LS.pend, a);
+    function one(j) {
+      while (j < a.length && !(a[j] && pendHas(a[j].n))) j += 1;   /* 그새 나감 · 같은 보기가 닿아 지워진 줄 = 건너뜀 */
+      if (j >= a.length) return Promise.resolve();
+      var o = a[j];
+      PCUR = o.n;
+      return L.beat(lateRow(o)).then(function (r) {
+        PCUR = '';
+        pendDrop(o.n);
+        if (r && r.ok) hit.push([o, r]);
+        return one(j + 1);
+      }, function (e) {
+        PCUR = '';
+        if (pendStop(e)) return null;
+        return one(j + 1);
+      });
+    }
+    PBUSY = one(0).then(function () { PBUSY = null; pendShow(hit); }, function () { PBUSY = null; });
+    return PBUSY;
+  }
+  function pendKick() { if (!PBUSY && pendRows().length) pendFlush(); }
+  function pendShow(hit) {
+    var i, o, r, l, ch = false;
+    for (i = 0; i < hit.length; i += 1) {
+      o = hit[i][0]; r = hit[i][1];
+      if (o.key !== S.key || !(l = findLec(o.lecture))) continue;
+      l.pct = r.pct; l.seen = r.seen; l.watched = r.watched;
+      if (r.done && !l.done_at) l.done_at = nowIso();
+      if (r.dur > 0) l.dur = r.dur;
+      ch = true;
+    }
+    if (ch && !T) quietList();
+  }
+
+  /* Q5(나) 11-21 «어디서 눌러 시작했나»(lec_beat2 p_via · 서버는 그 보기에 처음 온 값만 남김 · 옛 서버에는 안 감)
+     누르는 자리마다 코드를 넣지 않고 문서에 건 듣개 하나 + «이미 있는 클래스 이름 → 코드» 표(카드 HTML 이 바뀌면 이 표만 고침)
+     주소 #v= 로 바로 열면 link(알림이 새로 연 창 ?n=1 = push) · 앱이 열려 있을 때 알림 = push · 영상 끝 «다음» = next ·
+     세트 통과 «이어서 보기» = set · 범위 화면 줄 = exam · 표에 없는 #v= 누름 = other · 모르면(뒤로 · 앞으로) 안 보냄 */
+  var VIA_CLS = [['absgo', 'abs'], ['abscont', 'cont'], ['nans', 'ans'], ['newc', 'card'], ['cont', 'cont']];
+  var VIA_TOP = { exam: 'exam', abs: 'abs', cont: 'cont', 'new': 'card' };
+  /* 합친 뒤(11-21): 카드 안 두 줄 꼴(위 .absgo · 아래 .abscont)을 결석 카드 · Q2 큰 카드(새 강의 / 이어서 보기 + 안 줄) · P1 시험 카드 «다음» 줄이 함께 씀
+     → 바로 위 카드(data-top) + 줄 꼴로 먼저 가름(Q2 아래 줄 = 큰 카드와 반대 · P1 «다음» = exam) · 없으면 아래 VIA_CLS 차례 */
+  var VIA_IN = { 'abs|absgo': 'abs', 'abs|abscont': 'cont', 'new|absgo': 'card', 'new|abscont': 'cont', 'cont|absgo': 'cont', 'cont|abscont': 'card', 'exam|abscont': 'exam' };
+  var VIA = null;
+  function viaSet(id, c) { VIA = id ? { id: String(id), c: c } : null; }
+  function viaTake(id) { var v = VIA; VIA = null; return v && v.id === String(id) ? v.c : null; }
+  /* 알림이 새로 연 창(?n=1)인가: 주소의 n=1 은 머리 PWA 줄이 열자마자 지우므로 처음 받은 문서 주소(탐색 기록)로 봄 · 못 읽으면 아님(link) */
+  function viaN1() {
+    var e = null;
+    if (/[?&]n=1(?:&|$)/.test(String(location.search || ''))) return true;
+    try { e = window.performance && performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null; } catch (x) { e = null; }
+    return !!(e && /[?&]n=1(?:[&#]|$)/.test(String(e.name || '')));
+  }
+  function viaCode(el) {
+    var n = el, i, t, cl = el.classList, up = el.parentNode;
+    t = up && up.getAttribute ? up.getAttribute('data-top') : null;
+    if (t && cl) {
+      if (cl.contains('absgo') && VIA_IN.hasOwnProperty(t + '|absgo')) return VIA_IN[t + '|absgo'];
+      if (cl.contains('abscont') && VIA_IN.hasOwnProperty(t + '|abscont')) return VIA_IN[t + '|abscont'];
+    }
+    for (i = 0; cl && i < VIA_CLS.length; i += 1) { if (cl.contains(VIA_CLS[i][0])) return VIA_CLS[i][1]; }
+    if (cl && cl.contains('row')) return S.view === 'rng' ? 'exam' : 'list';
+    while (n && n !== document) {
+      t = n.getAttribute ? n.getAttribute('data-top') : null;
+      if (t && VIA_TOP.hasOwnProperty(t)) return VIA_TOP[t];
+      n = n.parentNode;
+    }
+    return 'other';
+  }
+  document.addEventListener('click', function (e) {
+    var el = findAct(e.target), act = attr(el, 'data-act'), m, id;
+    if (!el || PV) return;
+    if (act === 'endnext') { if (T && T.endNx && !T.endNx.set) viaSet(T.endNx.id, 'next'); return; }
+    if (act === 's1cont') { viaSet(attr(el, 'data-id'), 'set'); return; }
+    if (act !== 'go') return;
+    m = /^#v=([^&]+)/.exec(attr(el, 'href') || '');
+    if (!m) return;
+    try { id = decodeURIComponent(m[1]); } catch (e1) { return; }
+    viaSet(id, viaCode(el));
+  }, true);
 
   function teardown() {
     mphClear();
@@ -5869,7 +6366,7 @@ window.__lecStart = function () {
       if (k !== S.key || !T || T.lec.id !== lid) return;
       if (!r || !r.ok) {
         if (r && r.err === 'key') { reLogin(); return; }
-        setHTML('qList', '<div class="empty">' + esc(M.net) + '</div>');
+        setHTML('qList', '<div class="empty">' + esc(netTx()) + '</div>');   /* F6 */
         return;
       }
       S.q.items = r.items || [];
@@ -5878,7 +6375,7 @@ window.__lecStart = function () {
       if (S.tab === 'qna') drawQList();
     }, function () {
       if (k !== S.key) return;
-      if (S.tab === 'qna') setHTML('qList', '<div class="empty">' + esc(M.net) + '</div>');
+      if (S.tab === 'qna') setHTML('qList', '<div class="empty">' + esc(netTx()) + '</div>');
     });
   }
 
@@ -5996,7 +6493,7 @@ window.__lecStart = function () {
     }, function () {
       if (k !== S.key || !S.q) return;
       S.q.busy = false; btn.disabled = false;
-      setHTML('qErr', esc(M.net));
+      setHTML('qErr', esc(netTx()));   /* F6 */
     });
   }
 
@@ -6018,7 +6515,7 @@ window.__lecStart = function () {
     }, function () {
       if (k !== S.key || !S.q) return;
       S.q.busy = false;
-      setHTML('rErr', esc(M.net));
+      setHTML('rErr', esc(netTx()));   /* F6 */
     });
   }
 
@@ -6050,20 +6547,21 @@ window.__lecStart = function () {
   /* 누르면 바로 로그인 화면(서버 답을 기다리지 않음). 앞 학생 열쇠와 기록(보내는 중 · 못 보낸 것)을
      잡아 두고 뒤에서 보낸 뒤 나가기를 알림 · 기록 답이 다 오거나 4초가 지나면 · 실패해도 화면은 그대로 */
   function logout() {
-    var k = S.key, a = L.lsGet(LS.pend, []), i, n, sent = false;
+    var k = S.key, a = pendRows(), i, n, sent = false;
     teardown();
     var w = fly.slice();
+    if (PBUSY) w.push(PBUSY);   /* F5(11-21): 다시 보내는 중인 밀린 줄도 열쇠를 거두기 전에 기다림 */
     if (S.al && alCan()) alDrop(k); /* N1: 이 폰 알림 구독 풀기 */
     L.lsDel(LS.key); L.lsDel(LS.sess); L.lsDel(LS.pend); L.lsDel(LS.rate); L.lsDel(LS.seen);
+    sqDrop();   /* F5: 못 보낸 외우기 · 따라 말하기 표시(localStorage)도 지움 */
+    L.lsDel(HOME0); /* P2 ③ · P5(11-21 · S2): 이 기기의 지난 집 정보 · 지난 목록 */
     SEEN = null;
     S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
     S.al = null; S.alFresh = false; S.nIds = null; S.set = null; S.setDirty = false; S.setMore = false;
     spkFresh();
     clearHash();
     showLogin('');
-    if (Object.prototype.toString.call(a) === '[object Array]') {
-      for (i = 0; i < a.length; i += 1) { if (a[i]) w.push(L.beat(a[i])); }
-    }
+    for (i = 0; i < a.length; i += 1) { if (a[i] && (!a[i].n || a[i].n !== PCUR)) w.push(L.beat(lateRow(a[i]))); }   /* 밀린 줄(late) · 지금 다시 보내는 중인 한 줄은 빼고 */
     function bye() {
       if (sent) return;
       sent = true;
@@ -6115,12 +6613,12 @@ window.__lecStart = function () {
       showLogin('');
     } else if (act === 'agree') { choose('agree', el); }
     else if (act === 'recback') { goList(); }
-    else if (act === 'logout') { pwaClose(false); logout(); }
+    else if (act === 'logout') { pwaClose(false, true); logout(); }   /* F2: «#me» 기록은 logout 의 clearHash 가 바꿔치기 */
     else if (act === 'me') { pwaOpen(el, 'me'); }
-    else if (act === 'mepwa') { pwaClose(false); pwaOpen($('pwaBtn'), ''); }
-    else if (act === 'meal') { pwaClose(false); pwaOpen($('alHow'), 'al'); }
-    else if (act === 'merec') { pwaClose(false); if (PV) location.replace('#rec'); else location.hash = '#rec'; } /* <a> 기본 이동은 위에서 막힘 → 주소를 직접 #rec 로(hashchange → 기록 안내 판) · 미리 보기는 기록 없이 바꿔치기(바깥 «닫기» = 뒤로 한 번 · §8-220) */
-    else if (act === 'out') { L.lsDel(LS.key); S.key = ''; S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; S.set = null; spkFresh(); clearHash(); showLogin(''); }
+    else if (act === 'mepwa') { pwaSwap($('pwaBtn'), ''); }
+    else if (act === 'meal') { pwaSwap($('alHow'), 'al'); }
+    else if (act === 'merec') { pwaClose(false, true); goHash('#rec'); } /* <a> 기본 이동은 위에서 막힘 → 주소를 직접 #rec 로(hashchange → 기록 안내 판) · 미리 보기는 기록 없이 바꿔치기(바깥 «닫기» = 뒤로 한 번 · §8-220) · F2: 이름 판 «#me» 기록도 #rec 로 바꿔치기 */
+    else if (act === 'out') { L.lsDel(LS.key); L.lsDel(LS.sess); S.key = '';   /* X3(11-21): 이어 셈 표시도(다음 학생이 이어받지 않게) */ S.home = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; S.set = null; spkFresh(); clearHash(); showLogin(''); }
     else if (act === 'retry') { loadHome(); }
     else if (act === 'list') { mphBack(); goList(); }
     else if (act === 'absmore') { jumpAbs(); }
@@ -6215,7 +6713,14 @@ window.__lecStart = function () {
   document.addEventListener('mouseup', pressOff, true);
 
   document.addEventListener('submit', function (e) {
-    if (e.target && e.target.id === 'loginForm') { e.preventDefault(); doLogin(); }
+    var a, p;
+    if (e.target && e.target.id === 'loginForm') {
+      e.preventDefault();
+      /* F8(11-21): 이름 칸에서 자판 «다음/Enter» = 번호 칸으로만(번호 4자리 전에는 빨간 글 없이) · 4자리면 예전처럼 들어감 */
+      a = document.activeElement; p = $('lgPin');
+      if (a && a.id === 'lgName' && p && String(p.value || '').replace(/[^0-9]/g, '').length !== 4) { try { p.focus(); } catch (e1) { /* 없음 */ } pinPaint(); return; }
+      doLogin();
+    }
   });
   /* S1: 쓰기 칸 Enter = 확인(한글 조합 중에는 안 함) · 단어 카드 Enter · Space = 뒤집기 */
   document.addEventListener('keydown', function (e) {
@@ -6293,18 +6798,29 @@ window.__lecStart = function () {
   document.addEventListener('webkitfullscreenchange', onView);
   window.addEventListener('resize', onView);
   window.addEventListener('orientationchange', function () { setTimeout(onView, 250); });
-  window.addEventListener('hashchange', function () { pwaClose(false); S.nav = true; route(); });
+  /* F2(11-21): 이름 판 «#me» · 세트 «#s=» 기록을 먼저 가름(나머지는 예전 그대로 = 판 닫고 길 찾기) */
+  window.addEventListener('hashchange', function () {
+    var h = String(location.hash || ''), t;
+    if (pwa.pop) { t = pwa.pop; pwa.pop = 0; if (h !== '#me' && Date.now() - t < 3000) return; }   /* 판을 닫으며 걷은 «#me» = 보던 화면 그대로 */
+    if (h === '#me' && pwa.el && pwa.hm) return;   /* 이름 판을 열며 쌓음 */
+    if (pwa.el && pwa.hm) { t = pwa.hb; pwaClose(false, true); if (h === t) return; }   /* 기기 «뒤로» = 이름 판만 닫음 */
+    if (setPop) { t = setPop; setPop = 0; if (h === '' && Date.now() - t < 3000 && (S.view === 'setwait' || S.view === 'list')) { S.nav = true; return; } }   /* «‹ 목록»이 걷은 세트 기록 */
+    if (h === '' && W && S.view === 'set') { S.nav = true; setDevBack(); return; }   /* 기기 «뒤로»(세트 → 목록) = «‹ 목록»과 같은 길 */
+    pwaClose(false); S.nav = true; route();
+  });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden' && T) { sample(); sendBeat(true); }
     if (document.visibilityState === 'hidden' && W) setHide(); /* S1: 다른 앱으로 가면 말소리 · 녹음을 멈춤(녹음한 것은 남음) */
     if (document.visibilityState === 'visible') alBack(); /* N1: 홈 화면 앱으로 돌아옴 */
+    if (document.visibilityState === 'visible') pendKick(); /* F5(11-21): 밀린 진도 다시(대기분이 있을 때만 · 이번 실행 lec_home 답 뒤) */
   });
+  window.addEventListener('online', pendKick);   /* F5: 인터넷이 다시 됨 = 밀린 진도 다시(같은 조건) */
   /* N1: 앱이 열려 있을 때 알림을 누름 → 일꾼이 {type: 'lec-open', ids} 를 보냄 */
   try {
     if (!window.__lecPvIn && navigator.serviceWorker && typeof navigator.serviceWorker.addEventListener === 'function') {
       navigator.serviceWorker.addEventListener('message', function (e) {
         var d = e && e.data;
-        if (d && d.type === 'lec-open') alOpen(alIds(d.ids));
+        if (d && d.type === 'lec-open') { var ai = alIds(d.ids); if (ai.length === 1) viaSet(ai[0], 'push'); alOpen(ai); }   /* Q5: 알림으로 연 강의 = push */
       });
     }
   } catch (eSw) { /* 없음 */ }
@@ -6315,7 +6831,8 @@ window.__lecStart = function () {
       return {
         view: S.view, rec: recMode(), tab: S.tab,
         T: T ? { id: T.lec.id, S: T.S, durL: T.durL, ready: T.ready, real: T.real, local: T.local, server: T.server, sess: T.sess, err: T.err, stopped: T.stopped,
-          stopOn: T.stopOn, stopDone: Object.keys(T.stopDone), to: T.to, skipTo: T.skipTo, stopEnd: T.stopEnd } : null,
+          stopOn: T.stopOn, stopDone: Object.keys(T.stopDone), to: T.to, skipTo: T.skipTo, stopEnd: T.stopEnd, via: T.via || null } : null,
+        viaNext: VIA ? VIA.c : null,
         paper: S.paper, rng: S.rng, absAt: S.absAt, sq: SQ ? Object.keys(SQ.s).length : 0, sqBusy: SQBUSY, spkOff: SPKOFF, spkSoft: SPKSOFT, spkGo: SPKGO, rate: sayRate(), spkOk: spkOk(),
         set: S.set, setDirty: S.setDirty, W: W ? { mode: W.mode, kind: W.kind, id: W.id, ph: W.t ? W.t.ph : '', rec: !!(W.g && W.g.R && W.g.R.on),
           tid: W.t ? W.t.id : '', ti: W.t ? tIdx(W.t) : -1, step: W.t ? W.t.step : 0, fb: !!(W.t && W.t.fb), busy: !!(W.t && W.t.busy), fr: tFresh(W.t),
@@ -6350,11 +6867,15 @@ window.__lecStart = function () {
       S.key = typeof k === 'string' ? k : '';
     }
     S.alFresh = !!S.key && pwaStandalone(); /* 설치 흐름(11-18): 이미 들어온 채 열린 홈 화면 앱(갤럭시 = 크롬과 저장소가 같음)도 알림 단계 자리 · 학생마다 한 번은 route 가 셈 */
+    var vv = String(location.hash || '').match(/^#v=([^&]+)/);   /* Q5: 주소로 바로 연 강의 = link · 알림이 새로 연 창(?n=1) = push */
+    if (vv && !PV) { try { viaSet(decodeURIComponent(vv[1]), viaN1() ? 'push' : 'link'); } catch (eV) { /* 없음 */ } }
+    if (typeof L.afterHome === 'function') L.afterHome(pendFlush);   /* F1(11-21): 밀린 진도 = 이번 실행의 lec_home 답을 받은 뒤(서버 판을 안 뒤) · 아래 한 줄은 답 전이면 그냥 돌아옴(옛 class-api.js 면 예전처럼 바로) */
     pendFlush();
     if (window.__hisDoor && window.__hisDoor.need()) { S.view = 'door'; window.__hisDoor.show(app, { out: kakaoOut, wm: WM_SVG }); return; } /* 설치 흐름(11-18): 앱으로 가는 문 · #k= 개인 링크는 문 스크립트가 먼저 읽음 */
     if (!S.key) { showLogin(''); return; }
     app.innerHTML = '<div class="wrap">' + wmTopHTML() + '</div>';
     loadHome();
+    snapDraw(S.key); /* P5(11-21): 부른 뒤 곧바로 지난 목록(그릴 수 있을 때만 · 답이 오면 그 자리에서 바뀐 곳만 고침) */
   })();
 };
 </script>

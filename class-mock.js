@@ -826,20 +826,23 @@
     var out = [];
     for (i = 0; i < list.length; i += 1) out.push(list[i].v);
     var cs = findConsent(d, k.sid);
-    return {
+    var res = {
       ok: true, me: { name: sname },
       consent: cs ? { choice: cs.choice, ver: cs.ver, at: cs.at } : null,
       consent_ver: CONSENT_VER,
       lectures: out,
       al_mine: mine
     };
+    if (r1On()) res.srv = 2;   /* R1: 성공 답에만 서버 표시(실패 답 key · gone 에는 없음) */
+    return res;
   }
 
   function lec_consent(d, a) {
     var k = findKey(d, a.p_key);
     if (!k) return { ok: false, err: 'key' };
     var ch = a.p_choice == null ? '' : a.p_choice;
-    if (ch !== 'agree' && ch !== 'none') return { ok: false, err: 'input' };
+    /* R1: agree 만 받음(있던 none 줄은 그대로) · R1 전 서버는 none 도 받음 */
+    if (ch !== 'agree' && (r1On() || ch !== 'none')) return { ok: false, err: 'input' };
     if (a.p_ver !== CONSENT_VER) return { ok: false, err: 'ver', ver: CONSENT_VER };
     if (!d.consent) d.consent = [];
     var c = findConsent(d, k.sid), now = pgts(nowMs());
@@ -852,8 +855,13 @@
     return { ok: true, choice: c.choice, ver: c.ver, at: c.at };
   }
 
-  function lec_beat(d, a) {
+  /* R1: lec_beat = lec_beat2(…, 늦은 줄 아님 · 벽시계 없음 · 어디서 없음) 껍데기 · R1 전 서버는 옛 lec_beat 그대로(보기 칸 셋 없음) */
+  function lec_beat(d, a) { return beatCore(d, a, false, null, null); }
+  function lec_beat2(d, a) { return beatCore(d, a, a.p_late, a.p_wall, a.p_via); }
+
+  function beatCore(d, a, pLate, pWall, pVia) {
     var X = L();
+    var R1 = r1On();
     var k = findKey(d, a.p_key);
     if (!k) return { ok: false, err: 'key' };
     var l = findLecture(d, a.p_lecture);
@@ -885,6 +893,7 @@
         id: a.p_session, sid: k.sid, sname: k.sname, lecture_id: l.id, started_at: now, ended_at: now,
         watched: 0, from_s: f0, to_s: f0, dev: X.left(str(a.p_dev), 40), rate: rate
       };
+      if (R1) { s.asked = null; s.via = null; s.late = false; }
       d.session.push(s);
       isNew = true;
     }
@@ -893,8 +902,11 @@
 
     var r = Math.max(1, s.rate);
     var ela = (nowN - tms(s.ended_at)) / 1000;
-    var capW = isNew ? 150 : Math.max(90, rhaz(ela) + 30);
-    var cap = isNew ? rhaz(120 * r) + 30 : Math.max(90, rhaz(ela * r) + 30);
+    /* R1 늦은 줄(새 보기 + p_late + 폰이 잰 벽시계 초 > 0): W = least(벽시계, 길이×4+600, 21600) · 인정 W×배속+30 · 새 칸 W+30 */
+    var late = R1 && isNew && pLate === true && (pWall == null ? 0 : pWall) > 0;
+    var wl = Math.min(Math.max(pWall == null ? 0 : pWall, 0), Math.max(dur, 0) * 4 + 600, MAX_DUR);
+    var capW = late ? wl + 30 : (isNew ? 150 : Math.max(90, rhaz(ela) + 30));
+    var cap = late ? rhaz(wl * r) + 30 : (isNew ? rhaz(120 * r) + 30 : Math.max(90, rhaz(ela * r) + 30));
     var scale = a.p_scale == null ? 1 : +a.p_scale;
     if (!(isFinite(scale) && scale > 0)) scale = 1;
     if (scale !== 1) { /* 연습용만: 빨리 도는 가짜 재생기 */
@@ -909,6 +921,11 @@
     s.watched = old.watched + delta;
     s.from_s = Math.min(old.from_s, Math.max(a.p_from == null ? old.from_s : a.p_from, 0));
     s.to_s = Math.max(old.to_s, Math.min(a.p_to == null ? 0 : a.p_to, MAX_DUR));
+    if (R1) {   /* 보기 칸: asked = 청한 초의 가장 큰 값 · via = 처음 온 값(소문자 · 숫자 · _ 1~12자) · late = 늦은 줄로 인정 */
+      s.asked = Math.max(s.asked == null ? 0 : s.asked, a.p_total == null ? 0 : a.p_total, 0);
+      if (s.via == null) s.via = typeof pVia === 'string' && /^[a-z0-9_]{1,12}$/.test(pVia) ? pVia : null;
+      s.late = !!s.late || late;
+    }
 
     var p = findProgress(d, k.sid, l.id);
     if (!p) {
@@ -1026,6 +1043,7 @@
     if (!x) return { ok: false, err: 'none' };
     if (answered(d, x)) return { ok: false, err: 'answered' };
     x.deleted = true;
+    if (r1On()) x.body = '';   /* R1(P7): 지울 때 본문도 비움 */
     return { ok: true };
   }
 
@@ -1555,7 +1573,7 @@
         if (lec.hidden || (lec.posted_on || t) > t || ended(lec)) return;
         var p = findProgress(d, s.skey, lec.id), cs = findConsent(d, s.skey);
         if (!((p ? p.pct || 0 : 0) < 90) || (p && p.done_by != null)) return;
-        if (cs && cs.choice === 'none') return;
+        if (!r1On() && cs && cs.choice === 'none') return;   /* R1(F3 2단): none 학생도 띠에 셈 */
         var blc = LEGACY ? null : lcls(lec, c.d);
         cl.forEach(function (k) {
           if (s.cls.indexOf(k.id) < 0 || !covers(lec.class_ids || [], k.id) || !lcOk(blc, k.id)) return;
@@ -1589,7 +1607,7 @@
   var IMPL = {
     lec_login: lec_login, lec_home: lec_home, lec_consent: lec_consent, lec_beat: lec_beat, lec_qna_list: lec_qna_list,
     lec_ask: lec_ask, lec_qdel: lec_qdel, lec_logout: lec_logout, lec_att: lec_att, lec_paper: lec_paper,
-    lec_pdf: lec_pdf
+    lec_pdf: lec_pdf, lec_beat2: lec_beat2
   };
 
   /* 함수 모양(PostgREST 와 같게: 이름이 모자라거나 남으면 404 PGRST202 · 값 꼴이 틀리면 400) */
@@ -1600,6 +1618,12 @@
     lec_beat: {
       p_key: 'text', p_lecture: 'uuid', p_session: 'uuid', p_seen: 'text', p_total: 'int', p_pos: 'int',
       p_from: 'int', p_to: 'int', p_dur: 'int', p_dev: 'text', p_rate: 'num?', p_scale: 'num?'
+    },
+    /* R1(11-21): 진도 기록 v2 = lec_beat 인자 + 늦은 줄 · 벽시계 초 · 어디서(R1 전 서버 = 404) */
+    lec_beat2: {
+      p_key: 'text', p_lecture: 'uuid', p_session: 'uuid', p_seen: 'text', p_total: 'int', p_pos: 'int',
+      p_from: 'int', p_to: 'int', p_dur: 'int', p_dev: 'text', p_rate: 'num?', p_late: 'bool?', p_wall: 'int?', p_via: 'text?',
+      p_scale: 'num?'
     },
     lec_qna_list: { p_key: 'text', p_lecture: 'uuid' },
     lec_ask: {
@@ -1691,6 +1715,7 @@
     if ((OLD || NOSET) && /^lec_(set|rec)_/.test(fn)) sig = null;   /* S1 함수가 없는 서버(아래 S1 절) */
     if ((OLD || NOSK) && fn === 'lec_push_count') sig = null;   /* K1 을 아직 안 넣은 서버(위 NOSK) */
     if ((OLD || NOSET || NOV2) && (/_v2$/.test(fn) || fn === 'lec_v2_watch')) sig = null;   /* V2-1 을 아직 안 넣은 서버(아래 V2-1 절) */
+    if (!r1On() && fn === 'lec_beat2') sig = null;   /* R1 을 아직 안 넣은 서버(아래 NOR1) */
     if (!sig) throw httpErr(404, 'PGRST202', 'Could not find the function public.' + fn);
     args = args && typeof args === 'object' && !isArr(args) ? args : {};
     for (k in args) {
@@ -1760,6 +1785,12 @@
   /* K1(11-18) 볼 학교 칸(school_keys)만 없는 서버(지금 운영과 같음 · ?nosk=1 또는 LecMock.noSk(true)) */
   var NOSK = false;
   try { NOSK = /[?&]nosk=1(&|$)/.test(w.location.search); } catch (e) { NOSK = false; }
+  /* R1(11-21)을 아직 안 넣은 서버(지금 운영과 같음 · ?nor1=1 · ?oldsql=1 또는 LecMock.noR1(true)):
+     lec_home 에 srv 없음 · lec_beat2 없음(404) · 옛 상한 · 보기 칸 셋(asked · via · late) 없음 · 동의가 none 도 받음 ·
+     덜 본 학생 · 결석 띠가 none 학생을 뺌 · 지운 질문 본문 그대로 · 선생님 표 = 선생님이면 모두 읽고 씀(반 범위 없음) */
+  var NOR1 = false;
+  try { NOR1 = /[?&]nor1=1(&|$)/.test(w.location.search); } catch (e) { NOR1 = false; }
+  function r1On() { return !(NOR1 || OLD); }
   function isNewCol(k) { return k === 'lesson_more' || k === 'runner' || k === 'lesson_cls' || k === 'files' || k === 'school_keys'; }
   function noCol(k) { return (OLD && isNewCol(k)) || (NOLCLS && k === 'lesson_cls') || (NOPDF && k === 'files') || (NOSK && k === 'school_keys'); }
   function stripNew(l) {
@@ -2025,7 +2056,7 @@
         cons = findConsent(d, rs[j].skey);
         if (p && (p.pct || 0) >= 90) continue;
         if (p && p.done_by != null) continue;
-        if (cons && cons.choice === 'none') continue;
+        if (!r1On() && cons && cons.choice === 'none') continue;   /* R1(F3 2단): none 학생도 덜 본 학생으로 셈 */
         list.push(rs[j]);
       }
       if (!list.length) continue;
@@ -2167,6 +2198,45 @@
   /* 선생님이 아닌 로그인: 표는 읽어도 빈 것처럼([]) · 넣기는 403(행 보안) · 고치기·지우기는 0줄 */
   function denyInsert() { return httpErr(403, '42501', 'new row violates row-level security policy'); }
 
+  /* R1(Q1 · F7) 선생님 표 범위(class-setup.sql lec__my_sids · lec__my_qids 와 같음):
+     원장님(admin) = 모두(null) · 다른 선생님 = 내 반(반 담당 = 내 이름) 학생 열쇠 · R1 전 서버 = 선생님이면 모두(null) */
+  function mySids(d) {
+    if (!ME) return [];
+    if (!r1On() || ME.admin) return null;
+    var mine = classRows(d).filter(function (c) { return c.owner === ME.name; }).map(function (c) { return c.id; });
+    var out = [];
+    roster(d).forEach(function (r) {
+      if ((r.cls || []).some(function (c) { return mine.indexOf(c) >= 0; }) && out.indexOf(r.skey) < 0) out.push(r.skey);
+    });
+    return out;
+  }
+  function myQids(d, sids) {
+    if (sids == null) return null;
+    return d.qna.filter(function (q) { return q.sid != null && sids.indexOf(q.sid) >= 0; }).map(function (q) { return q.id; });
+  }
+  /* 표 줄을 이 선생님이 볼 수 있나(질문 표는 내 학생 줄 또는 내 학생 질문에 달린 줄) */
+  function seeRow(x, sids, qids) {
+    if (sids == null) return true;
+    if (x.sid != null && sids.indexOf(x.sid) >= 0) return true;
+    return !!qids && x.parent != null && qids.indexOf(x.parent) >= 0;
+  }
+  function staffRows(d, rows, qna) {
+    if (!ME) return [];
+    var sids = mySids(d), qids = qna ? myQids(d, sids) : null;
+    return (rows || []).filter(function (x) { return seeRow(x, sids, qids); });
+  }
+  /* lec_session 칸: R1 = asked · via · late 있음(R1 전 보기는 null · null · false) · R1 전 서버 = 세 칸 없음 */
+  function sessRow(x) {
+    var o = {}, k;
+    for (k in x) { if (has(x, k) && k !== 'asked' && k !== 'via' && k !== 'late') o[k] = x[k]; }
+    if (r1On()) {
+      o.asked = x.asked == null ? null : x.asked;
+      o.via = x.via == null ? null : x.via;
+      o.late = !!x.late;
+    }
+    return o;
+  }
+
   /* 선생님 함수 부르기(진짜 화면의 sb.rpc 와 같은 꼴 · 값 꼴 검사 포함) */
   function staffRpc(fn, args) {
     return withDb(function (d) {
@@ -2218,7 +2288,7 @@
     /* 잠금 풀기 → {ok, cleared} */
     unlock: function (skey) { return staffRpc('lec_unlock', { p_skey: skey }); },
     /* 기록 동의 표(선생님은 읽기만) */
-    consents: function () { return withDb(function (d) { return ME ? (d.consent || []) : []; }); },
+    consents: function () { return withDb(function (d) { return staffRows(d, d.consent || [], false); }); },
     classes: function () { return withDb(function (d) { return d.classes; }); },
     lectures: function () { return withDb(function (d) { return ME ? d.lecture.map(stripNew) : []; }); },
 
@@ -2297,15 +2367,22 @@
       });
     },
 
-    progress: function () { return withDb(function (d) { return ME ? d.progress : []; }); },
-    sessions: function () { return withDb(function (d) { return ME ? d.session : []; }); },
-    qna: function () { return withDb(function (d) { return ME ? d.qna : []; }); },
+    /* R1: 원장님 = 모두 · 다른 선생님 = 내 반 학생 줄만(질문은 + 그 학생 질문에 달린 답) · 보기 표는 칸 셋(asked · via · late) */
+    progress: function () { return withDb(function (d) { return staffRows(d, d.progress, false); }); },
+    sessions: function () { return withDb(function (d) { return staffRows(d, d.session, false).map(sessRow); }); },
+    qna: function () { return withDb(function (d) { return staffRows(d, d.qna, true); }); },
 
-    /* 답변: 질문(q = 줄 또는 id) 아래에 선생님 이름으로 · 공개 여부는 질문을 따름 */
-    answer: function (q, body) {
+    /* 답변: 질문(q = 줄 또는 id) 아래에 선생님 이름으로 · 공개 여부는 질문을 따름
+       R1(F7 · 행 보안 lec_staff_add): teacher = 로그인한 선생님 이름(다르면 42501 · 시험용 셋째 인자) · 그 질문이 내 범위(다른 선생님 = 내 학생 질문) */
+    answer: function (q, body, teacher) {
       return withDb(function (d) {
         if (!ME) throw denyInsert();
         var row = findQna(d, q && typeof q === 'object' ? q.id : q);
+        if (r1On()) {
+          if (teacher !== undefined && teacher !== ME.name) throw denyInsert();
+          var sids = mySids(d);
+          if (sids != null && (!row || myQids(d, sids).indexOf(row.id) < 0)) throw denyInsert();
+        }
         if (!row) throw httpErr(400, '23503', 'parent question not found');
         if (body == null) throw httpErr(400, '23502', 'null value in column "body" violates not-null constraint');
         var x = {
@@ -2318,12 +2395,14 @@
       });
     },
 
-    /* 질문 · 답변 지우기 = deleted 표시 */
+    /* 질문 · 답변 지우기 = deleted 표시(R1: deleted 칸만 · 읽는 범위 밖 줄은 0줄 = false · 본문은 그대로) */
     qdelete: function (id) {
       return withDb(function (d) {
         if (!ME) return false;
         var x = findQna(d, id);
         if (!x) return false;
+        var sids = mySids(d);
+        if (!seeRow(x, sids, myQids(d, sids))) return false;
         x.deleted = true;
         return true;
       });
@@ -2382,6 +2461,8 @@
     noPdf: function (on) { if (on !== undefined) NOPDF = !!on; return NOPDF; },
     /* 시험용: K1 볼 학교 칸(school_keys)을 안 넣은 서버 켜기·끄기 */
     noSk: function (on) { if (on !== undefined) NOSK = !!on; return NOSK; },
+    /* 시험용: R1(진도 v2 · srv · 동의 agree 만 · 선생님 표 범위 · 지운 질문 본문)을 안 넣은 서버 켜기·끄기(?nor1=1 과 같음) */
+    noR1: function (on) { if (on !== undefined) NOR1 = !!on; return NOR1; },
     storeFail: function (on) { if (on !== undefined) STOREFAIL = !!on; return STOREFAIL; }
   };
 

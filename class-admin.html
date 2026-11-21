@@ -771,9 +771,9 @@ html.tvon,html.tvon body{overflow:hidden}
 <style id="k-2">
 /* 2차 디자인(11-18 · 원장님 «두 앱 넣어» · 바탕 «크림바탕으로가고»): 애플 앱 틀(사이드바 + 큰 제목 + 머리카락 선 줄 + 인스펙터 + 시트)
    위 규칙은 그대로 두고 여기서 덮음 · 글꼴 Pretendard 를 앱에 실음(바깥 요청 0 · 400 · 600 · 700) · 굵기 셋 400 · 600 · 700 · 가장 작은 글자 12 */
-@font-face{font-family:"Pretendard";font-style:normal;font-weight:400;font-display:swap;src:url(assets/pretendard-400.woff) format("woff")}
-@font-face{font-family:"Pretendard";font-style:normal;font-weight:600;font-display:swap;src:url(assets/pretendard-600.woff) format("woff")}
-@font-face{font-family:"Pretendard";font-style:normal;font-weight:700;font-display:swap;src:url(assets/pretendard-700.woff) format("woff")}
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:400;font-display:swap;src:url(assets/pretendard-400.woff2) format("woff2"),url(assets/pretendard-400.woff) format("woff")}
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:600;font-display:swap;src:url(assets/pretendard-600.woff2) format("woff2"),url(assets/pretendard-600.woff) format("woff")}
+@font-face{font-family:"Pretendard";font-style:normal;font-weight:700;font-display:swap;src:url(assets/pretendard-700.woff2) format("woff2"),url(assets/pretendard-700.woff) format("woff")}
 :root{/* C2 두 앱 한 벌(B §3 · 학생 앱과 같은 값) */
   --bg-s:#FAF6EC;--bg-a:#FDFAF2;--card:#FFFFFF;--edge:rgba(70,52,12,.10);--ink:#1A1A18;--ink2:#57534A;--ink3:#6F6B62;
   --done:#1B6A43;--done-dot:#2E8B57;--warn:#98480A;--warn-dot:#C26A00;--new:#1B5499;--err:#B3302A;--mute-bg:#EFEDE5;--mute:#57534A;
@@ -1510,6 +1510,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 /* J17 서랍 머리 보조 줄: 양쪽 정렬 안 받는 div · 조각마다 한 줄 · 사이 6px */
 .dh .dh-m{display:flex;flex-wrap:wrap;column-gap:6px;margin:2px 0 0;font-size:13px;line-height:18px;color:var(--ink2)}
 .dh .dh-m>span{white-space:nowrap;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.dh .dh-m>span.kd{overflow:visible}   /* P3 «지우기» 단추 테두리(Tab)가 잘리지 않게 */
 /* J23 좁은 표 둘째 줄의 공개 글: 넓을 때 긴 글 · 좁을 때(서랍 열림 · 좁은 창) 짧은 글 · 폰은 줄바꿈이라 긴 글 */
 .k2 .lt .subc .pu-s{display:none}
 @container (max-width:980px){.k2 .lt .subc .pu-l{display:none}.k2 .lt .subc .pu-s{display:inline}}
@@ -1523,7 +1524,7 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 <div id="app"></div>
 <div id="dwb" class="dwb" data-act="dClose" hidden></div>
 <div id="dw" class="dw k2" role="dialog" aria-modal="true" aria-labelledby="dw-t" hidden></div>
-<div id="edb" class="dwb" data-act="edClose" hidden></div>
+<div id="edb" class="dwb" data-act="edAway" hidden></div>
 <div id="ed" class="dw k2" role="dialog" aria-modal="true" aria-labelledby="ed-t" hidden></div>
 <div id="sdb" class="dwb" data-act="sdClose" hidden></div>
 <div id="sd" class="dw k2" role="dialog" aria-modal="true" aria-labelledby="sd-t" tabindex="-1" hidden></div>
@@ -1670,6 +1671,7 @@ window.__lecAdminStart = function () {
        setAsk = 지우기 묻는 세트 · pp = 인쇄 작은 창 · sd = 세트 서랍(붙여 넣기 · 녹음 듣기) */
     set: null, setOld: false, setErr: false, setInit: false, setSel: '', setSt: null, setStErr: '', setFull: {},
     setAsk: '', pp: null, sd: null, sxDraft: null,
+    edKeep: null,   /* P3: 바깥 판 · Esc 로 닫아 둔 새 강의 칸 {ed, v(글 칸), fold} */
     sxW1: null   /* V2-5: 결과 표에서 연 학생 줄 {set, sid, r(첫 답에서 틀린 문항 답), err} */
   };
   var D = null;
@@ -2218,19 +2220,21 @@ window.__lecAdminStart = function () {
     return { all: a, wait: w };
   }
 
-  /* 진도 상태: 선생님 확인 · 기록 안 함 · 동의 전 · 완료(90 이상) · 일부 · 0 */
+  /* 진도 상태: 선생님 확인 · 동의 전 · 완료(90 이상) · 일부 · 0
+     F3(11-21): 예전 «기록 안 함»(none)도 동의 전(L.recOf) · 덜 본 학생 · 결석 칸 · 학부모 문구에 그대로 듦 · 꼬리표만 «예전에 기록 안 함» */
   function stat(l, skey) {
     var p = D.pmap[skey + '\n' + l.id] || null, rec = L.recOf(D.consents, skey), pct;
     if (p && p.done_by) return { k: 'conf', p: p, rec: rec, pct: +p.pct || 0 };
-    if (rec === 'none') return { k: 'none', p: p, rec: rec, pct: 0 };
     if (rec === 'pending' && !p) return { k: 'pend', p: null, rec: rec, pct: 0 };
     pct = p ? Math.round(+p.pct || 0) : 0;
     return { k: pct >= DONE ? 'done' : (pct > 0 ? 'part' : 'zero'), p: p, rec: rec, pct: pct };
   }
+  function wasNone(skey) { return !!(L.wasNone && L.wasNone(D.consents, skey)); }
   function isDone(s) { return s.k === 'conf' || s.k === 'done'; }
-  function isBehind(s) { return !isDone(s) && s.rec !== 'none'; }
+  function isBehind(s) { return !isDone(s); }
   /* «덜 본 학생»: 출결이 있으면 «결석한 날 수업»만(서버 띠와 같은 셈: 수업일 0~13일 전 결석 · 90% 미만 ·
-     확인 전 · 기록 안 함 아님 · 시작 전 아님 · 보강 아님 · 올린 강의) · 출결이 없으면 지금처럼 */
+     확인 전 · 시작 전 아님 · 보강 아님 · 올린 강의) · 출결이 없으면 지금처럼
+     F3: 옛 서버 띠(lec_att_staff)는 예전 «기록 안 함» 학생을 아직 뺌 → 서버 2단(R1)이 들어가면 같아짐 */
   function behindOf(l, skey, s) {
     var x, raw;
     if (!schIn(l, skey)) return false;   /* K1: 볼 학교가 아닌 학생은 «덜 본 학생»에서 뺌 */
@@ -2239,7 +2243,7 @@ window.__lecAdminStart = function () {
     if (!x || x.a !== 'abs' || x.mk || D.ns[skey]) return false;
     if (!(x.d >= D.attLo && x.d <= D.attT)) return false;
     if (l.hidden || !(!l.posted_on || str(l.posted_on) <= D.attT) || isEnded(l)) return false;
-    if (s.rec === 'none' || (s.p && s.p.done_by)) return false;
+    if (s.p && s.p.done_by) return false;
     raw = s.p ? +s.p.pct || 0 : 0;
     return raw < DONE;
   }
@@ -2249,7 +2253,6 @@ window.__lecAdminStart = function () {
     if (c === 'in') return ring(0, 'class');
     if (c === 'done') return ring(1, 'done');
     if (c === 'conf') return ring(1, 'conf');
-    if (c === 'none') return ring(0, 'none');
     if (c === 'pend' || (st && st.k === 'pend')) return ring(0, 'consent');
     return ring(st ? (st.pct || 0) / 100 : 0, c !== 'abs' && st && st.pct > 0 ? 'gray' : '');   /* C2: 주황 링 = 결석한 날 덜 봄만 · «보는 중»은 회색 */
   }
@@ -2270,7 +2273,7 @@ window.__lecAdminStart = function () {
     if (!x) return { cls: s.k, inner: cellInner(s), text: statText(s) };
     if (x.a === 'in') {
       if (s.k === 'conf') sub.push('확인 완료');
-      else if (s.rec !== 'none' && s.pct > 0) sub.push('복습 ' + s.pct + '%');
+      else if (s.pct > 0) sub.push('복습 ' + s.pct + '%');
       return cellMake('in', '교실', sub);
     }
     if (isDone(s)) {
@@ -2278,18 +2281,14 @@ window.__lecAdminStart = function () {
       head = s.k === 'conf' ? '결석 · 확인 완료' : '결석 · 완료';   /* 검수 A M5: 선생님 확인은 «확인 완료 / Benjamin · 11.14»(전 칸과 같은 꼴) */
       if (s.k === 'conf' && p && trim(str(p.done_by))) sub.push(trim(str(p.done_by)));
       if (when) sub.push(md(when));
-    } else if (s.k === 'none') {
-      head = '결석';
-      sub.push('기록 안 함');
     } else if (s.k === 'pend') {
-      head = '결석 · 동의 전';
+      head = '결석 · 동의 전';   /* F3: 예전 «기록 안 함»도 여기(덜 본 학생으로 셈) */
     } else {
       head = '결석 · ' + s.pct + '%';
       if (p && p.last_at) sub.push(md(p.last_at));
     }
     if (x.mk) sub.push('보강');
-    /* K: 결석 · 기록 안 함 = 회색 점선(덜 본 학생으로 세지 않는 칸 · 세는 셈은 그대로) */
-    return cellMake(isDone(s) ? s.k : (s.k === 'none' ? 'none' : 'abs'), head, sub);
+    return cellMake(isDone(s) ? s.k : 'abs', head, sub);
   }
   /* K: 칸 글은 한 줄 «결석 · 23% · 11.15» (좁으면 줄 바꿈) */
   function cellMake(cls, head, sub) {
@@ -2298,7 +2297,6 @@ window.__lecAdminStart = function () {
   }
   function pillHtml(s) {
     if (s.k === 'conf') return '<span class="pl c-conf">확인 완료</span>';
-    if (s.k === 'none') return '<span class="pl c-none">기록 안 함</span>';
     if (s.k === 'pend') return '<span class="pl c-pend">동의 전</span>';
     if (s.k === 'done') return '<span class="pl c-done">완료 ' + s.pct + '%</span>';
     if (s.k === 'part') return '<span class="pl c-part">' + s.pct + '%</span>';
@@ -2308,7 +2306,6 @@ window.__lecAdminStart = function () {
   function cellInner(s) {
     var p = s.p;
     if (s.k === 'conf') return '<b>확인 완료</b><small>' + esc(str(p.done_by)) + (p.done_by_at ? ' · ' + esc(md(p.done_by_at)) : '') + '</small>';
-    if (s.k === 'none') return '<span>기록 안 함</span>';
     if (s.k === 'pend') return '<span>동의 전</span>';
     if (s.k === 'done') return '<b>완료</b><small>' + s.pct + '%' + (p && p.last_at ? ' · ' + esc(md(p.last_at)) : '') + '</small>';
     if (s.k === 'part') return '<b>' + s.pct + '%</b>' + (p && p.last_at ? '<small>' + esc(md(p.last_at)) + '</small>' : '');
@@ -2316,20 +2313,19 @@ window.__lecAdminStart = function () {
   }
   function statText(s) {
     if (s.k === 'conf') return '선생님 확인 완료';
-    if (s.k === 'none') return '기록 안 함';
     if (s.k === 'pend') return '동의 전';
     if (s.k === 'done') return '완료 ' + s.pct + '%';
     return s.pct + '%';
   }
-  function recTag(rec) {
-    if (rec === 'none') return '<span class="tag t-neutral">기록 안 함</span>';
-    if (rec === 'pending') return '<span class="tag t-neutral">동의 전</span>';
+  /* F3: 동의 전 꼬리표 = 예전에 «기록 안 함»을 고른 학생이면 «예전에 기록 안 함»(같은 꼴 · 셈은 동의 전) */
+  function pendTag(skey) { return '<span class="tag t-neutral">' + (wasNone(skey) ? '예전에 기록 안 함' : '동의 전') + '</span>'; }
+  function recTag(rec, skey) {
+    if (rec === 'pending') return pendTag(skey);
     return '<span class="tag t-sage">기록 동의함</span>';
   }
   function stuTags(r) {
     var rec = L.recOf(D.consents, r.skey), h = '';
-    if (rec === 'none') h += '<span class="tag t-neutral">기록 안 함</span>';
-    else if (rec === 'pending') h += '<span class="tag t-neutral">동의 전</span>';
+    if (rec === 'pending') h += pendTag(r.skey);
     if (D.locked[r.skey]) h += '<span class="tag t-coral tg-lk">잠김</span>';
     return h;
   }
@@ -2364,9 +2360,9 @@ window.__lecAdminStart = function () {
   /* 할 일 6(11-16 원장님 «6·9 바꿔» · 검수 L18): 완료 셈의 분모 = 결석한 학생.
      출결을 아는 강의 = «결석 2명 중 완료 1» + «복습 3명»(교실 학생 중 영상을 본 기록이 있는 학생 · hasWatch) · 결석이 없으면 «결석 없음 · 복습 n명» ·
      출결을 모르면 지금 그대로 «완료 n/전체». 결석 = C1 칸과 같은 attOf(여러 수업일 강의 · 보강도 결석) · 완료 = isDone */
-  /* 판단 2(11-16 리더): 본 기록 = 진도 1% 이상(반올림 · «일부»와 같은 문턱) · 기록 안 함 아님.
+  /* 판단 2(11-16 리더): 본 기록 = 진도 1% 이상(반올림 · «일부»와 같은 문턱).
      선생님 확인만 있고 본 기록이 없으면 «복습»에 안 셈 · 본 기록이 있으면 확인이 같이 있어도 셈 */
-  function hasWatch(s) { return s.rec !== 'none' && !!s.p && Math.round(+s.p.pct || 0) > 0; }
+  function hasWatch(s) { return !!s.p && Math.round(+s.p.pct || 0) > 0; }
   function complRows(l, rows) {
     var o = { known: false, abs: 0, absDone: 0, rev: 0, n: 0, m: rows.length }, i, s, x;
     for (i = 0; i < rows.length; i += 1) {
@@ -2636,8 +2632,9 @@ window.__lecAdminStart = function () {
     if (ru.length) ci.push(ti('todoRec', ' data-s="' + esc(ru[0].id) + '"', 't-honey', '새 녹음', '새 녹음 ' + S.set.unheard,
       { t: '새 녹음', s: str(ru[0].title) + (ru.length > 1 ? ' 외 ' + (ru.length - 1) : ''), n: S.set.unheard, u: '개', ic: 'am', i: 'mic' }));
     var lf = S.me.admin && isArr(t.left) ? t.left : [];
+    var lfo = lf.length ? leftOverN(lf) : 0;   /* P7 ①: 30일 기한이 지난 학생 수 */
     if (lf.length) ci.push(ti('todoToggle', ' data-v="left" aria-expanded="' + (S.open.left ? 'true' : 'false') + '"', 't-neutral', '기록 정리', '그만둔 학생 기록 ' + lf.length + '명 · 지우기',
-      { t: '그만둔 학생 기록', s: '누르면 지울 수 있어요', n: lf.length, u: '명', ic: 'gy', i: 'box' }));
+      { t: '그만둔 학생 기록', s: (lfo ? '기한 지난 ' + lfo + '명 · ' : '') + '누르면 지울 수 있어요', n: lf.length, u: '명', ic: 'gy', i: 'box' }));
     var lk = isArr(t.locked) ? t.locked : [];
     if (lk.length) ci.push(ti('todoToggle', ' data-v="locked" aria-expanded="' + (S.open.locked ? 'true' : 'false') + '"', 't-coral', '잠금', '로그인이 잠긴 학생 ' + lk.length,
       { t: '로그인이 잠긴 학생', s: lockSub(lk), n: lk.length, u: '명', ic: 'co', i: 'lock' }));
@@ -2705,17 +2702,58 @@ window.__lecAdminStart = function () {
     }
     return h + '</div></div>';
   }
+  /* P7 ②(11-21): 지우는 범위를 사실대로 — lec_forget(sql 1090~1115 · 진도 · 보기 기록 · 동의 · 질문) + 동의 줄 지움 트리거
+     (sql 6794~6812 lec__set_gone = 세트 진도 · 시험 · 녹음 · 10011 lec__v2_gone = 세트 학습 기록) · 수는 화면이 아는 진도 · 질문만 */
   function forgetAskHtml(skey, name) {
     var c = forgetCounts(skey);
-    return '<div class="ask" role="group" aria-label="기록 지우기 확인"><p>' + esc(name + ' 학생의 히즈클래스 기록(진도 ' + c.n + '개 · 질문 ' + c.m + '개)을 모두 지웁니다. 되돌릴 수 없어요.') + '</p>' +
+    return '<div class="ask" role="group" aria-label="기록 지우기 확인"><p>' + esc(name + ' 학생의 히즈클래스 기록(진도 ' + c.n + '개 · 질문 ' + c.m + '개 · 세트 기록 · 녹음 포함)을 모두 지웁니다. 되돌릴 수 없어요.') + '</p>' +
       '<div class="row"><button type="button" class="btn sm warn" data-act="forgetYes" data-s="' + esc(skey) + '">지우기</button>' +
       '<button type="button" class="btn sm txt" data-act="forgetNo">그만두기</button></div></div>';
   }
+  /* P7 ①(11-21): 그만둔 학생 기록의 30일 기한(기록 안내 판 «학원을 그만두면 30일 안에 지워요» · class.html 2438)
+     기준 = 히즈북스 반 명단의 그만둔 날(withdrawnAt · 명단에 남아 있을 때) · 모르면 마지막 기록(lec_todo left.last_at · 그만둔 날보다 늦지 않음 = 이른 쪽 기한)
+     over = 기한에서 지난 날 수(0 = 오늘 · 음수 = 남음) · 기준을 모르면 null */
+  function leftDue(x) {
+    var rid = str(x && x.skey).split('|')[0], i, j, ss, s, m, base = '', from = 'last', due;
+    for (i = 0; D && isArr(D.classes) && i < D.classes.length && !base; i += 1) {
+      ss = D.classes[i] && isArr(D.classes[i].students) ? D.classes[i].students : [];
+      for (j = 0; j < ss.length; j += 1) {
+        s = ss[j];
+        if (!s || str(s.id) !== rid || !L.truthy(s.withdrawn)) continue;
+        /* Y1(11-21 · 검수): 히즈북스 본앱은 그만둔 날을 점 날짜(YYYY.MM.DD)로 적음 → 점 · 줄표 · 빗금 · 한 자리 달 · 날도 읽음(ISO 시각 꼴도 앞 열 자) */
+        m = /^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/.exec(str(s.withdrawnAt));
+        if (m) { m = m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2); if (isDay(m)) { base = m; from = 'out'; break; } }
+      }
+    }
+    if (!base && x && x.last_at) base = L.isoDay(x.last_at);
+    if (!isDay(base)) return { from: '', base: '', due: '', over: null };
+    due = addDays(base, 30);
+    return { from: from, base: base, due: due, over: dayGap(due, today()) };
+  }
+  /* 날짜 둘(YYYY-MM-DD)의 차(b − a · 날 수) */
+  function dayGap(a, b) {
+    function u(v) { return Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8, 10)); }
+    return Math.round((u(b) - u(a)) / 86400000);
+  }
+  function leftOverN(lf) {
+    var n = 0, i, d;
+    for (i = 0; i < lf.length; i += 1) { d = leftDue(lf[i]); if (d.over !== null && d.over > 0) n += 1; }
+    return n;
+  }
   function leftListHtml(lf) {
-    var h = '<div class="sub"><h3>그만둔 학생 기록</h3>', i, x;
-    for (i = 0; i < lf.length; i += 1) {
-      x = lf[i];
-      h += '<div class="srow"><span class="tx"><strong>' + esc(x.sname) + '</strong><span class="mut"> · 마지막 기록 ' + esc(dayW(x.last_at) || '모름') + '</span></span>' +
+    var h = '<div class="sub"><h3>그만둔 학생 기록</h3><p class="mut sm">기한 = 그만둔 날부터 30일(기록 안내 판의 약속) · 그만둔 날을 모르면 마지막 기록부터 셌어요</p>', i, x, dd, a = [];
+    /* 기한 차례(지난 것 · 가까운 것 먼저 · 기준을 모르면 맨 앞) */
+    for (i = 0; i < lf.length; i += 1) a.push({ x: lf[i], d: leftDue(lf[i]), i: i });
+    a.sort(function (p, q) {
+      if ((p.d.over === null) !== (q.d.over === null)) return p.d.over === null ? -1 : 1;
+      return (p.d.over === null ? 0 : q.d.over - p.d.over) || p.i - q.i;
+    });
+    for (i = 0; i < a.length; i += 1) {
+      x = a[i].x; dd = a[i].d;
+      h += '<div class="srow"><span class="tx"><strong>' + esc(x.sname) + '</strong><span class="mut"> · ' +
+        esc(dd.from === 'out' ? '그만둔 날 ' + dayW(dd.base) : '마지막 기록 ' + (dayW(x.last_at) || '모름')) +
+        (dd.over === null ? ' · 기한 모름' : dd.over > 0 ? '' : ' · 기한 ' + esc(dd.over === 0 ? '오늘' : dayW(dd.due))) + '</span>' +
+        (dd.over !== null && dd.over > 0 ? ' <span class="tag t-coral">기한 ' + dd.over + '일 지남</span>' : '') + '</span>' +
         (S.ask.forget === x.skey ? forgetAskHtml(x.skey, x.sname) :
           '<button type="button" class="btn sm warn" data-act="forgetAsk" data-s="' + esc(x.skey) + '">기록 지우기</button>') + '</div>';
     }
@@ -2769,9 +2807,9 @@ window.__lecAdminStart = function () {
   /* 작은 고리(18 · 반지름 7.5): part = 주황 · gray = 회색(출결 전) · done = 초록 체크 */
   function ring(f, k) {
     var c = 47.12, a = Math.max(0, Math.min(1, +f || 0)) * c, o = '<svg class="rg" viewBox="0 0 18 18" aria-hidden="true" focusable="false">';
-    /* 2차(노트 0-3 · ③-1): 모양으로도 구별 · 동의 전 = 가는 실선 테 + 가로줄 · 기록 안 함 = 점선 테 · 선생님 확인 = 초록 테 + 체크 · 교실 = 작은 점 */
+    /* 2차(노트 0-3 · ③-1): 모양으로도 구별 · 동의 전 = 가는 실선 테 + 가로줄 · 선생님 확인 = 초록 테 + 체크 · 교실 = 작은 점
+       (F3 11-21: 예전 «기록 안 함»도 동의 전 → 점선 테 고리는 뺌) */
     if (k === 'consent') return o + '<circle cx="9" cy="9" r="7" fill="none" stroke="var(--gray-dot)" stroke-width="1.5"/><path d="M6.3 9h5.4" stroke="var(--gray-dot)" stroke-width="1.5" stroke-linecap="round"/></svg>';
-    if (k === 'none') return o + '<circle cx="9" cy="9" r="7" fill="none" stroke="var(--gray-dot)" stroke-width="1.5" stroke-dasharray="2.2 2.4"/></svg>';
     if (k === 'conf') return o + '<circle cx="9" cy="9" r="7.2" fill="none" stroke="var(--grn-dot)" stroke-width="1.6"/><path d="M5.8 9.2l2.2 2.2 4.2-4.4" fill="none" stroke="var(--grn-dot)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     if (k === 'class') return o + '<circle cx="9" cy="9" r="3" fill="var(--gray-dot)"/></svg>';
     if (k === 'done') {
@@ -2990,7 +3028,7 @@ window.__lecAdminStart = function () {
     h += '</tr></tfoot></table></div></div>';
     h += '<p class="stq0" role="status" hidden>찾는 학생이 없어요</p>';   /* 2차(8): 학생 찾기에 맞는 학생이 없을 때(표 줄 수 = 학생 수 그대로) */
     h += '<p class="legend"><span>' + ring(1, 'done') + '90% 넘게 봄(완료)</span><span>' + ring(1, 'conf') + '선생님 확인 완료</span>' +
-      '<span>' + ring(0.4, 'gray') + '보는 중</span><span>' + ring(0, '') + '0%</span><span>' + ring(0, 'none') + ring(0, 'consent') + '기록 안 함 · 동의 전</span>' +
+      '<span>' + ring(0.4, 'gray') + '보는 중</span><span>' + ring(0, '') + '0%</span><span>' + ring(0, 'consent') + '동의 전</span>' +
       (D.att ? '<span>' + ring(0, 'class') + '교실(그날 출석)</span><span>' + ring(0.25, '') + '결석한 날 · 덜 봄</span>' : '') +
       '<span>학생 이름이나 칸을 누르면 자세히 볼 수 있어요</span></p>';
     return h + '</section>';
@@ -3287,8 +3325,10 @@ window.__lecAdminStart = function () {
      C3: 판서 쪽 번호 · 시간 · 인증샷은 넣지 않음 */
   /* K(11-16) 반 공지 네 줄: 머리 · (지문 줄이 있으면) «지문 04~08번 · 판서와 워크북을 펴 두고 보세요. …» · 질문 · 공개 끝 · 주소
      주소와 공개 끝 날짜를 만드는 방식은 그대로 · 지문 번호 목록 줄은 뺌 · 학생 이름 없음 */
-  function noticeText(l) {
-    var d = L.fmtDay(dayOf(l)), head = (d ? d + ' ' : '') + '수업 영상(' + str(l.title) + ')', a, p = noticePaper(l), c;
+  /* P6(11-21): 주소 줄 = 그 강의로 바로(STU_URL + '#v=' + 강의 id · 학생 앱이 로그인 · 동의 뒤까지 #v= 를 지킴) · 쿼리는 안 붙임 · 끝 문장 그대로
+     id = 방금 올린 강의(저장 답의 id · 줄 rw 에는 id 가 없음) · 없으면 l.id · 둘 다 없으면 지금처럼 홈 주소 */
+  function noticeText(l, id) {
+    var d = L.fmtDay(dayOf(l)), head = (d ? d + ' ' : '') + '수업 영상(' + str(l.title) + ')', a, p = noticePaper(l), c, lid = str(id || (l && l.id));
     if (isPosted(l)) a = head + '이 히즈클래스에 올라왔어요. 복습할 때 보세요.';
     else a = head + '은 ' + L.fmtDay(l.posted_on) + '부터 히즈클래스에서 볼 수 있어요. 복습할 때 보세요.';
     if (lecSch(l).length) a = '[' + schNames(lecSch(l)) + '] ' + a;   /* K1: 볼 학교를 고른 강의 */
@@ -3296,7 +3336,7 @@ window.__lecAdminStart = function () {
     if (lecFiles(l).length) a += '\n필기 PDF도 영상 화면 오른쪽 위에서 받을 수 있어요.';
     c = '궁금한 곳은 히즈클래스에서 질문으로 남겨 주세요.';
     if (l.until) c += ' ' + L.fmtMD(l.until) + '까지 볼 수 있어요.';
-    return a + '\n' + c + '\n히즈클래스 주소 ' + STU_URL + '\n홈 화면에 히즈클래스를 추가했다면 이 링크 말고 아이콘으로 여세요.';   /* 설치 안내 결론안(11-16): 끝 한 줄 · 주소는 그대로(?i=1 안 붙임) */
+    return a + '\n' + c + '\n히즈클래스 주소 ' + STU_URL + (lid ? '#v=' + lid : '') + '\n홈 화면에 히즈클래스를 추가했다면 이 링크 말고 아이콘으로 여세요.';   /* 설치 안내 결론안(11-16): 끝 한 줄 · 쿼리는 안 붙임(?i=1 없음) */
   }
   /* 둘째 줄: 워크북이 있는 지문이 없으면 «판서를 펴 두고 보세요.» · 번호가 다 같으면 «워크북 번호는 지문과 같아요.»
      · 다른 곳만 «워크북 번호가 다른 곳: 05번은 워크북 5~6번 · …»(빈 워크북은 적지 않음) */
@@ -3328,7 +3368,7 @@ window.__lecAdminStart = function () {
     if (nt.indexOf(lab.replace(/\s+/g, '')) >= 0 || nt.indexOf(lab.replace(/^\d+강\s*/, '')) >= 0) return '';
     return '지문 ' + lab;
   }
-  function noticeRows(l) { return Math.min(12, noticeText(l).split('\n').length + 2); }
+  function noticeRows(l, id) { return Math.min(12, noticeText(l, id).split('\n').length + 2); }
   function confLine(p) {
     var a = ['선생님 확인'];
     if (trim(p.done_note)) a.push(trim(p.done_note));
@@ -3367,7 +3407,7 @@ window.__lecAdminStart = function () {
     var p = s.p, open = S.cf && S.cf.s === r.skey && S.cf.l === l.id;
     return '<div class="cr k-' + s.k + (open ? ' open' : '') + '"><div class="crm"><button type="button" class="lnk" data-act="stuOpen" data-s="' + esc(r.skey) + '">' + esc(r.sname) + '</button>' + stuTags(r) + attTag(l.id, r.skey) + '</div>' +
       '<button type="button" class="crp" data-act="cellOpen" data-s="' + esc(r.skey) + '" data-l="' + esc(l.id) + '" aria-label="' + esc(r.sname + ' 진도 자세히') + '">' +
-      pillHtml(s) + barHtml(s.k === 'none' || s.k === 'pend' ? 0 : s.pct) + '<span class="mut sm">' + (p && p.last_at ? '마지막 ' + esc(md(p.last_at)) : '') + '</span></button>' +
+      pillHtml(s) + barHtml(s.k === 'pend' ? 0 : s.pct) + '<span class="mut sm">' + (p && p.last_at ? '마지막 ' + esc(md(p.last_at)) : '') + '</span></button>' +
       '<div class="cra">' + (ia && S.drawer ? '' : confCtl(l, r, s)) + '</div></div>';
   }
   function colHtml(d) {
@@ -3471,18 +3511,26 @@ window.__lecAdminStart = function () {
     }
     return h + '</ul>';
   }
+  /* P7 ③(11-21): «본 시간»은 벽시계로 실제로 튼 시간(배속을 곱하지 않음) → 1배속보다 빠르게 본 보기가 있으면 «(2배속 포함)»
+     배속 = 아래 «시청 기록»에서 불러온 보기 묶음의 가장 빠른 배속(묶음을 불러오기 전 · 못 불러오면 붙이지 않음) */
+  function sessRate(sid, lid) {
+    var mx = 1, i, v;
+    if (!S.sess || S.sess.key !== sessKey(sid, lid) || !isArr(S.sess.rows)) return '';
+    for (i = 0; i < S.sess.rows.length; i += 1) { v = +(S.sess.rows[i] && S.sess.rows[i].rate); if (isFinite(v) && v > mx) mx = v; }
+    return mx > 1 ? '(' + mx + '배속 포함)' : '';
+  }
   function cellHtml(d) {
     var l = D.lmap[d.l], r = D.rmap[d.s], s, p, h, cnt = [], n, i, bits, rs, ratio, pct, qs = [], x, facts;
     if (!l || !r) return '';
     s = stat(l, r.skey); p = s.p;
     h = dHead(r.sname + ' · ' + l.title, (L.fmtDay(dayOf(l)) ? L.fmtDay(dayOf(l)) + ' 수업 · ' : '') + '길이 ' + (l.dur > 0 ? L.fmtDur(l.dur) : '모름'));
     h += '<div class="db">';
-    if (s.k === 'none') facts = '기록 안 함을 고른 학생이라 본 정도를 알 수 없어요.';
-    else if (s.k === 'pend') facts = '기록 동의 전이라 아직 본 기록이 없어요.';
-    else if (p) facts = '본 시간 ' + L.fmtMin(p.watched) + ' · ' + (p.sessions || 0) + '번 열어 봄' + (p.last_at ? ' · 마지막 ' + L.fmtWhen(p.last_at) : '');
+    /* F3: 예전 «기록 안 함»도 동의 전(동의하기 전까지 서버가 본 기록을 받지 않음 · 학생 앱은 동의 판을 다시 띄움) */
+    if (s.k === 'pend') facts = wasNone(r.skey) ? '예전에 «기록 안 함»을 고른 학생이에요. 동의하기 전이라 아직 본 기록이 없어요.' : '기록 동의 전이라 아직 본 기록이 없어요.';
+    else if (p) facts = '본 시간 ' + L.fmtMin(p.watched) + sessRate(r.skey, l.id) + ' · ' + (p.sessions || 0) + '번 열어 봄' + (p.last_at ? ' · 마지막 ' + L.fmtWhen(p.last_at) : '');
     else facts = '아직 열지 않았어요.';
     h += '<div class="srow2">' + attTag(l.id, r.skey) + pillHtml(s) + '<span class="mut">' + esc(facts) + '</span></div>';
-    if (+l.dur > 0 && s.k !== 'none') {
+    if (+l.dur > 0) {
       n = L.bmLen(l.dur); bits = p ? str(p.seen) : '';
       for (i = 0; i < n; i += 1) cnt.push(bits.charAt(i) === '1' ? 1 : 0);
       h += '<div class="sec heat"><h3>본 구간</h3>' + barSvg(cnt, 1, l, r.sname + ' 학생이 본 구간', null) + '</div>';
@@ -3532,11 +3580,10 @@ window.__lecAdminStart = function () {
       h += '<option value="' + esc(ls[i].id) + '"' + (ls[i].id === l.id ? ' selected' : '') + '>' + esc(opt) + '</option>';
     }
     h += '</select>';
-    s = stat(l, r.skey); p = s.p;
-    if (s.k === 'none') return h + '<p class="box neutral">기록 안 함을 고른 학생이라 본 정도를 알 수 없어요.</p></div>';
+    s = stat(l, r.skey); p = s.p;   /* F3: 예전 «기록 안 함»도 문구를 만듦(그때 기록 없이 봤을 수 있어 진도 줄이 없으면 «본 기록이 없습니다») */
     txt = L.parentMsg({
       name: r.sname, day: dayOf(l), title: l.title, pct: s.pct,
-      nextNo: p ? L.nextNo(p.seen, l.chapters, l.dur) : '', done: s.k === 'conf', absent: !!st.ab
+      nextNo: p ? L.nextNo(p.seen, l.chapters, l.dur) : '', done: s.k === 'conf', absent: !!st.ab, noRec: !p && wasNone(r.skey)
     });
     h += '<div class="row" style="margin:10px 0 8px"><button type="button" class="chip' + (st.ab ? ' on' : '') + '" aria-pressed="' + (st.ab ? 'true' : 'false') + '" data-act="pmAbsent" data-s="' + esc(r.skey) + '">결석한 수업이에요</button>' +
       (absOn(l.id, r.skey) ? '<span class="mut sm">출결 기록: ' + esc(L.fmtDay(attOf(l.id, r.skey).d)) + ' 결석</span>' : '') + '</div>' +
@@ -3584,7 +3631,7 @@ window.__lecAdminStart = function () {
     lk = D.locked[r.skey];
     all = D.rmapAll[r.skey] || r;
     h = dHead(r.sname, clsNames(all.cls));
-    h += '<div class="db"><div class="srow2">' + recTag(rec) + (lk ? '<span class="tag t-coral">로그인 잠김</span>' : '') + '</div>';
+    h += '<div class="db"><div class="srow2">' + recTag(rec, r.skey) + (lk ? '<span class="tag t-coral">로그인 잠김</span>' : '') + '</div>';
     if (lk) {
       h += '<div class="box coral"><p>' + esc('로그인이 잠겨 있어요 · ' + leftTime(lk.secs) + ' 남음') + '</p>' +
         '<button type="button" class="btn sm strong" data-act="unlock" data-s="' + esc(r.skey) + '">잠금 풀기</button></div>';
@@ -3623,10 +3670,11 @@ window.__lecAdminStart = function () {
   }
   function ytShowUrl(yt) { yt = str(yt); return /^[A-Za-z0-9_-]{11}$/.test(yt) ? 'https://youtu.be/' + yt : yt; }
   function openEditor(id) {
-    var l = id ? D.lmap[id] : null, ids, i, c, dc;
+    var l = id ? D.lmap[id] : null, ids, i, c, dc, kp = !id && S.edKeep && S.edKeep.ed ? S.edKeep : null;
     if (id && !l) return;
     closeDrawer();
     ytDestroy();
+    if (kp) { edKeepOpen(kp); return; }   /* P3: 바깥 판 · Esc 로 닫아 둔 새 강의 칸 그대로 */
     S.ed = {
       id: l ? l.id : '', can: !l || S.me.admin || str(l.created_by) === S.me.name, cls: {}, other: [],
       hidden: !!(l && l.hidden), chs: [], shown: '', durAuto: false, delAsk: false,
@@ -3650,6 +3698,7 @@ window.__lecAdminStart = function () {
       for (i = 0; i < l.chapters.length; i += 1) S.ed.chs.push({ t: L.fmtDur(l.chapters[i].t), title: str(l.chapters[i].title) });
     }
     runLink();
+    if (!l && S.edDraft) S.ed.kept = true;   /* P3: 머리 한 줄 «지난번에 쓰던 칸이에요 · 지우기» */
     $('ed').innerHTML = edHtml(l);
     $('ed').hidden = false; $('edb').hidden = false;
     $('ed').scrollTop = 0;
@@ -3816,6 +3865,7 @@ window.__lecAdminStart = function () {
     var dis = S.ed.can ? '' : ' disabled', h;
     h = '<div class="dh"><div class="dt"><h2 id="ed-t">' + (l ? (S.ed.can ? '강의 고치기' : '강의 보기') : '새 강의') + '</h2>' +
       (l ? '<div class="mut dh-m">' + dhSub(['올린 사람 ' + (l.created_by || '모름'), l.created_at ? whenFull(l.created_at) : '']) + '</div>' : '') +
+      (!l && S.ed.kept ? '<div class="mut dh-m" id="ed-kept"><span>지난번에 쓰던 칸이에요</span><span class="kd"> · <button type="button" class="lnk" data-act="edKeepDel">지우기</button></span></div>' : '') +
       '</div><button type="button" class="x" data-act="edClose" aria-label="닫기">×</button></div><div class="db">';
     if (!S.ed.can) h += '<p class="box neutral">올린 선생님과 원장님만 고칠 수 있어요.</p>';
     if (S.ed.can) {
@@ -4637,8 +4687,9 @@ window.__lecAdminStart = function () {
     function done(rw, saved) {
       S.busy.ed = 0;
       /* K: 새 강의는 같은 자리(서랍)에 반 공지 카드 · 고친 저장은 지금처럼 닫음 · N1: 저장된 줄의 id 로 알림 한 줄 */
-      if (isNew && rw) { S.edDraft = null; dfDrop('ed'); }   /* 올린 새 강의 칸은 남겨 둔 글에서 지움(§8-220) */
-      if (isNew && rw) edNotice(rw, saved && saved.id);
+      if (isNew && rw) { S.edDraft = null; S.edKeep = null; dfDrop('ed'); }   /* 올린 새 강의 칸은 남겨 둔 글에서 지움(§8-220 · P3) */
+      if (isNew && rw && !$('ed').hidden) edNotice(rw, saved && saved.id);
+      else if (isNew && rw) S.ed = null;   /* Y4(11-21 · 검수): 저장 중 서랍을 닫았으면 숨은 서랍에 공지를 그리지 않음(«공지 다시 보기» 길이 없음 → 토스트만 · 쪽 Ctrl+V · 끌어 놓기가 바로 먹게) */
       else closeEditor();
       toast((isNew ? '강의를 올렸어요' : '고친 내용을 저장했어요') + (dropped ? ' · 수업일은 첫날만 남았어요' : '') + (lcDropped ? ' · 수업한 반은 저장되지 않았어요' : '') + (pdfDropped ? ' · 필기 PDF는 저장되지 않았어요' : '') + (skDropped ? ' · 볼 학교는 저장되지 않았어요' : ''));
       /* PDF 를 바꾸거나 뺐으면 옛 파일은 저장이 된 뒤에 · 다른 강의가 안 쓸 때만 지움 */
@@ -4684,7 +4735,7 @@ window.__lecAdminStart = function () {
       '<section class="ntc" aria-labelledby="ed-ntt"><div class="nth"><span class="tag t-sage">방금 올렸어요</span><b id="ed-ntt">' +
       esc((ids.indexOf('*') >= 0 ? '전체' : clsNames(ids)) + ' 반 공지 문구') + '</b></div>' +
       '<p class="ntal" id="ed-ntal" hidden></p>' +
-      '<label class="sr" for="ed-nt">반 공지 문구</label><textarea id="ed-nt" rows="' + noticeRows(rw) + '">' + esc(noticeText(rw)) + '</textarea>' +
+      '<label class="sr" for="ed-nt">반 공지 문구</label><textarea id="ed-nt" rows="' + noticeRows(rw, sid) + '">' + esc(noticeText(rw, sid)) + '</textarea>' +
       '<div class="ntf"><button type="button" class="btn fill" data-act="ntCopy" data-t="ed-nt">' + kIcon('copy') + '반 공지 문구 복사</button>' +
       '<button type="button" class="btn insb" data-act="insTog" aria-expanded="false" aria-controls="ed-ins">' + insIcon('qr') + '설치 안내</button>' +
       '<span class="mut">반 단톡방에 그대로 붙여 넣을 수 있어요. 학생 이름은 들어가지 않아요.</span>' +
@@ -6374,7 +6425,7 @@ window.__lecAdminStart = function () {
     if (!S.sd) { dw.hidden = true; bk.hidden = true; dw.innerHTML = ''; return; }
     was = dw.hidden;
     dw.hidden = false; bk.hidden = false;
-    paint(dw, S.sd.t === 'rec' ? rvHtml() : (lpIs() ? lpHtml() : sxPutHtml()));
+    paint(dw, S.sd.t === 'rec' ? rvHtml() : (S.sd.t === 'snt' ? sntHtml() : (lpIs() ? lpHtml() : sxPutHtml())));
     if (lpIs()) lpBig();
     if (was) dw.scrollTop = 0;
     f = focusSel ? dw.querySelector(focusSel) : null;
@@ -6601,6 +6652,29 @@ window.__lecAdminStart = function () {
       '<button type="button" class="btn txt" data-act="sdClose">그만두기</button><button type="button" class="btn fill" data-act="sxSave"' + (sd.busy ? ' disabled' : '') + '>저장 <span class="kb">Ctrl+Enter</span></button></div></div>';
     return h;
   }
+  /* P4(11-21) 새 세트를 올린 뒤 반 공지: 강의 «방금 올렸어요» 카드(edNotice)와 같은 꼴 · 같은 서랍 자리에 · 복사 단추로 초점 · 학생 이름 없음
+     글 = 머리(학생 앱 종류 이름 «단어 · 구문 · 문법» · class.html KIND_W) · 할 일 한 줄(학생 앱 단추 이름 그대로) · 주소(세트는 홈 · F2 «#s=»는 새로 열면 목록) · 끝 문장(강의 공지와 같음) */
+  var SX_STU = { voc: '단어', gu: '구문', gram: '문법' };
+  function setNoticeText(o) {
+    var w = (SX_STU[o.kind] || '공부') + ' 세트' + (o.n > 1 ? ' ' + o.n + '개' : '') + '(' + str(o.title) + ')', a;
+    if (!o.on || o.on <= today()) a = w + '가 히즈클래스에 올라왔어요.';
+    else a = w + '는 ' + L.fmtDay(o.on) + '부터 히즈클래스에서 볼 수 있어요.';
+    if (o.kind === 'voc') a += '\n① 외우기 ② 시험 차례로 해 보세요.';
+    else if (o.kind === 'gram') a += '\n문제를 풀어 보세요.';
+    else if (o.kind === 'gu') a += '\n듣고 따라 말한 뒤 ★ 문장은 녹음해서 내 주세요.';
+    return a + '\n히즈클래스 주소 ' + STU_URL + '\n홈 화면에 히즈클래스를 추가했다면 이 링크 말고 아이콘으로 여세요.';
+  }
+  function sntHtml() {
+    var sd = S.sd, t = setNoticeText(sd);
+    return '<div class="dh"><div class="dt"><h2 id="sd-t">' + esc(str(sd.title)) + '</h2><p class="mut">' + esc(sd.n > 1 ? '세트 ' + sd.n + '개를 올렸어요' : '세트를 올렸어요') + '</p></div>' +
+      '<button type="button" class="x" data-act="sdClose" aria-label="닫기">×</button></div><div class="db">' +
+      '<section class="ntc" aria-labelledby="sd-ntt"><div class="nth"><span class="tag t-sage">방금 올렸어요</span><b id="sd-ntt">' +
+      esc((sd.cls.indexOf('*') >= 0 ? '전체' : clsNames(sd.cls)) + ' 반 공지 문구') + '</b></div>' +
+      '<label class="sr" for="sd-nt">반 공지 문구</label><textarea id="sd-nt" rows="' + Math.min(12, t.split('\n').length + 2) + '">' + esc(t) + '</textarea>' +
+      '<div class="ntf"><button type="button" class="btn fill" data-act="ntCopy" data-t="sd-nt">' + kIcon('copy') + '반 공지 문구 복사</button>' +
+      '<span class="mut">반 단톡방에 그대로 붙여 넣을 수 있어요. 학생 이름은 들어가지 않아요.</span>' +
+      '<button type="button" class="btn" data-act="sdClose">닫기</button></div></section></div>';
+  }
   /* 붙여 넣은 글 → 종류 칩 · 까닭 한 줄 · 경고 · 미리 보기 표(빨간 줄 먼저 · 6줄 · 구문은 ★ 고르기라 모두) */
   function sxAnHtml() {
     var sp = sxParse(), sd = S.sd, rows = sp.rows, ko = sxKindOf(rows), k = ko.k, ks = ['voc', 'gu', 'gram'], h, i, kk, on, rs, w, bad, msgs, ng, lim, pl, cols, hd, order, pk, shown, r, c, rc, gp, fz, hn;
@@ -6780,9 +6854,10 @@ window.__lecAdminStart = function () {
         msg = sd.id ? '고쳤어요 · 그대로 둔 문항의 학생 기록은 남아요'
           : (!on || on <= today() ? '저장했어요 · ' + clsNames(cls) + ' 학생 폰 목록에 바로 떠요' : '저장했어요 · ' + L.fmtDay(on) + '에 학생 폰에 떠요');
         if (!sd.id) { S.sxDraft = null; dfDrop('sxd'); }
-        S.sd = null;
+        /* P4: 새 세트 = 같은 서랍 자리에 반 공지 카드(복사 단추로 초점) · 고친 저장은 지금처럼 닫음 */
+        S.sd = sd.id ? null : { t: 'snt', kind: k, title: title, n: 1, cls: cls.slice(), on: on || '', id: nid };
         delete S.inputs['sd:txt']; delete S.inputs['sd:title']; delete S.inputs['sd:on'];
-        sxPaintSd();
+        sxPaintSd(S.sd ? '[data-act=ntCopy]' : null);
         S.tab = 'set'; S.setSel = nid; S.setSt = null; S.setStErr = '';
         toast(msg + (warn ? ' · ' + warn : ''), !!warn);
         sxReload();
@@ -6916,9 +6991,9 @@ window.__lecAdminStart = function () {
       sd.busy = false; sd.batch = false;
       if (S.sd !== sd) return;
       S.sxDraft = null; dfDrop('sxd');
-      S.sd = null;
+      S.sd = { t: 'snt', kind: k, title: base, n: made, cls: cls.slice(), on: on || '', id: top };   /* P4: 나눠 올린 세트도 반 공지 카드 하나 */
       delete S.inputs['sd:txt']; delete S.inputs['sd:title']; delete S.inputs['sd:on'];
-      sxPaintSd();
+      sxPaintSd('[data-act=ntCopy]');
       S.tab = 'set'; S.setSel = top; S.setSt = null; S.setStErr = '';
       toast((made > 1 ? made + '세트로 나눠 저장했어요' : '저장했어요') + ' · ' +
         (!on || on <= today() ? clsNames(cls) + ' 학생 폰 목록에 바로 떠요' : L.fmtDay(on) + '에 학생 폰에 떠요') + (tnWarn ? ' · ' + tnWarn : ''), !!tnWarn);
@@ -7266,8 +7341,15 @@ window.__lecAdminStart = function () {
     }, function (e) {
       S.busy[key] = 0;
       if (btn) btn.disabled = false;
-      toast('하지 못했어요. ' + errText(e), true);
+      toast(e && e.hcText ? e.hcText : '하지 못했어요. ' + errText(e), true);
     });
+  }
+  /* Y3(11-21 · 검수): 답 넣기만 — 권한 오류(42501)면 «다시 로그인»이 아니라 이름 어긋남을 알림(R1 뒤 teacher = 서버가 아는 이름 · 다시 로그인해도 안 풀림) · 다른 곳의 errText 는 그대로 */
+  var ANS_DENY = '답을 올리지 못했어요 · 이 계정 이름이 선생님 명단과 다를 수 있어요 · 원장님께 알려 주세요';
+  function ansDeny(e) {
+    var c = str(e && e.code), m = str(e && e.message);
+    if (c === '42501' || /42501|row-level security/i.test(m)) { e = { code: '42501', message: m || '42501', hcText: ANS_DENY }; }
+    throw e;
   }
 
   /* --------------------------------------------------------------- 불러오기 */
@@ -7603,7 +7685,7 @@ window.__lecAdminStart = function () {
         if (!r) break;
         k = ansNext(q);   /* 2차(⑥): 답을 달면 아래 «답변 대기» 질문 답 칸으로(손을 떼지 않고 이어서) */
         i = waitLeft(q);   /* A1: 남은 대기가 없으면 «다 달았어요» 토스트 + [‹ 오늘] */
-        act('ans' + q, el, DA.answer(r, t), k ? '답을 달았어요 · 다음 질문으로' : (i ? '답을 달았어요' : ''), function () {
+        act('ans' + q, el, DA.answer(r, t).then(null, ansDeny), k ? '답을 달았어요 · 다음 질문으로' : (i ? '답을 달았어요' : ''), function () {
           if (!k && !i) toast('답변 대기 질문을 다 달았어요', false, { ms: 1600, go: 'today', btn: '‹ 오늘' });
           delete S.inputs['ans:' + q];
           dfDrop('ans:' + q);   /* 보낸 답은 남겨 둔 글에서도 지움(다시 읽혀도 안 뜸 · §8-220) · 칸도 비움(새로 불러오기 전에 떠나도) */
@@ -7618,6 +7700,8 @@ window.__lecAdminStart = function () {
       case 'qdelYes': act('qdel', el, DA.qdelete(q), '지웠어요', function () { S.ask.qdel = null; }); break;
       /* 편집 칸 */
       case 'edClose': edDropIfNew(); closeEditor(); break;
+      case 'edAway': edAway(); break;   /* P3: 바깥 판 = 닫되 채운 칸은 남김 */
+      case 'edKeepDel': edKeepDel(); break;
       case 'edSave': edSave(el); break;
       case 'edDupDay': edDupDay(l); break;
       case 'edDupGo': if (S.ed) { S.ed.dupOk = L.ytId(trim(edVal('ed-yt'))); edSave(($('ed') || document).querySelector('[data-act=edSave]')); } break;
@@ -7939,8 +8023,7 @@ window.__lecAdminStart = function () {
     }
     if (ev.key === 'Escape' || ev.keyCode === 27) {
       if (S.toastGo && !S.ed && !S.drawer) { k = S.toastGo; toastOff(); S.tab = k; S.qFocus = ''; render(); scrollMain(); return; }   /* A1 */
-      edDropIfNew();
-      if (closeEditor()) return;
+      if (edAway()) return;   /* P3: Esc = 닫되 채운 새 강의 칸은 남김(빈 칸이면 그냥 닫힘) */
       if (S.drawer) closeDrawer();
     }
   }
@@ -8002,8 +8085,11 @@ window.__lecAdminStart = function () {
     edDragMark(false);
     if (pageDropOk(ev) && ev.dataTransfer.files && ev.dataTransfer.files.length) {   /* A2 ②: 쪽 어디에 놓아도 새 강의 서랍 + 읽기 */
       ev.preventDefault();
+      if (edKeepTxt() && edHasTxt(ev.dataTransfer.files)) edKeepGone();   /* P3: 남겨 둔 칸에 txt 가 있는데 새 txt 를 놓음 = 다른 강의 → 비우고 새로 */
+      var kd = !!(S.edKeep || S.edDraft);   /* Y2(11-21 · 검수): 남긴 칸에 이어 넣음 = 알림 글로 알림(섞임 판단은 그대로) */
       openEditor('');
       edFiles(ev.dataTransfer.files);
+      if (kd) toast(ED_KEEP_ON, false, { ms: 2400 });
       return;
     }
     if (!(S.ed && S.ed.can && (inTxt(ev) || inEd(ev.target))) || !ev.dataTransfer || !ev.dataTransfer.files || !ev.dataTransfer.files.length) return;
@@ -8012,7 +8098,7 @@ window.__lecAdminStart = function () {
   });
   /* K: 서랍 안 글 칸 밖에서 붙여 넣어도 실행기 txt 면 읽음(머리줄 [제목] · [히즈클래스] · [히즈 클래스] · [히즈 온라인] · [온라인 클래스] · [설명] · 띄어쓰기 상관없음) */
   document.addEventListener('paste', function (ev) {
-    var t = ev.target, d = ev.clipboardData, v;
+    var t = ev.target, d = ev.clipboardData, v, k;
     /* S1 세트: 붙여 넣은 뒤 이름이 비었으면 이름 칸으로(네 번 누름 · 붙여 넣기 → 이름 → 반 → 저장) */
     if (t && t.id === 'sd-txt' && S.sd && S.sd.t === 'put') {
       setTimeout(function () {
@@ -8026,10 +8112,14 @@ window.__lecAdminStart = function () {
       v = ytTok(d.getData('text'));
       if (v) {
         ev.preventDefault();
+        k = edKeepYt();   /* P3: 남겨 둔 칸이 다른 영상이면 비우고 새로(같은 영상이면 남긴 칸 그대로) */
+        k = k && L.ytId(k) !== L.ytId(v);
+        if (k) edKeepGone();
+        var kp = !k && !!(S.edKeep || S.edDraft);   /* Y2(11-21 · 검수): 남긴 칸을 비우지 않고 이어 씀 */
         openEditor('');
         setEl('ed-yt', v);
         ytCheck();
-        toast('새 강의로 열었어요 · Esc 닫기', false, { ms: 2400 });
+        toast(k ? '새 강의로 열었어요 · 쓰던 칸은 비웠어요' : (kp ? ED_KEEP_ON : '새 강의로 열었어요 · Esc 닫기'), false, { ms: 2400 });
         return;
       }
     }
@@ -8183,8 +8273,70 @@ window.__lecAdminStart = function () {
     function put(id, v) { if (typeof v === 'string' && trim(v)) setEl(id, v); }
     put('ed-yt', d.yt); put('ed-title', d.title); put('ed-book', d.book); put('ed-dur', d.dur); put('ed-post', d.post); put('ed-until', d.until);
   }
-  /* 새 강의를 ×(Esc)로 닫음 = 그 글은 버림(지금처럼) · 고치기 · 올린 뒤 카드 닫기는 남겨 둔 새 강의 글을 건드리지 않음 */
-  function edDropIfNew() { if (S.ed && S.ed.can && !S.ed.id && !S.ed.notice) { S.edDraft = null; dfDrop('ed'); } }
+  /* 새 강의를 × · «그만두기»로 닫음 = 그 글은 버림(지금처럼) · 고치기 · 올린 뒤 카드 닫기는 남겨 둔 새 강의 글을 건드리지 않음 */
+  function edDropIfNew() { if (S.ed && S.ed.can && !S.ed.id && !S.ed.notice) { S.edDraft = null; S.edKeep = null; dfDrop('ed'); } }
+  /* P3(11-21 · 결론안): 바깥 판을 누르거나 Esc = 닫되 채운 새 강의 칸은 남김(빈 칸이면 그냥 닫힘 · × · «그만두기»는 지금처럼 버림).
+     남긴 칸은 그대로(반 · 수업일 · 목차 · 판서 줄 · 볼 학교 · 붙은 PDF까지) 다음 «새 강의»에서 다시 열리고 머리에 «지난번에 쓰던 칸이에요 · 지우기» 한 줄.
+     쪽을 떠나도 글 칸은 남도록 «쓰던 글 남기기»(S.edDraft · §8-220)에도 적음. 고치기 · 보기 · 올린 뒤 카드는 지금처럼 그냥 닫음. */
+  function edFilled() {
+    var i, c;
+    if (edCap() || trim(edVal('ed-dur')) || trim(edVal('ed-until'))) return true;
+    for (i = 0; i < S.ed.days.length; i += 1) { if (trim(S.ed.days[i])) return true; }
+    for (i = 0; i < S.ed.chs.length; i += 1) { c = S.ed.chs[i]; if (trim(c.t) || trim(c.title)) return true; }
+    return !!(pdfCur() || pdfUp());
+  }
+  function edAway() {
+    var ed = S.ed, c, w;
+    if (!ed) return false;
+    if (!ed.can || ed.id || ed.notice) return closeEditor();
+    readDays(); readChs();
+    if (!edFilled()) { edDropIfNew(); return closeEditor(); }
+    c = $('ed-txc'); w = $('ed-txtw');
+    S.edKeep = {
+      ed: ed,
+      v: { txt: edVal('ed-txt'), yt: edVal('ed-yt'), title: edVal('ed-title'), book: edVal('ed-book'), dur: edVal('ed-dur'), post: edVal('ed-post'), until: edVal('ed-until') },
+      fold: c && !c.hidden ? { cls: c.className, s: $('ed-txs') ? $('ed-txs').textContent : '', w: !!(w && w.hidden) } : null
+    };
+    S.edDraft = edCap();
+    /* 올리는 중 · 실패한 PDF 는 그 앞에 붙어 있던 것으로(올리던 답은 버림 · 파일은 지금처럼 저장소에 남음) */
+    if (ed.pdf && (ed.pdf.st === 'up' || ed.pdf.st === 'bad')) { ed.pdf = ed.pdf.keep || { st: 'none' }; ed.pdfSeq = (ed.pdfSeq || 0) + 1; }
+    ed.shown = ''; ed.pushK = ''; ed.pushN = null; ed.delAsk = false; ed.dupOk = '';
+    closeEditor();
+    dfSave();
+    return true;
+  }
+  /* 남긴 칸 다시 열기(openEditor('') 에서 · 서랍 · 영상은 openEditor 가 이미 닫음) */
+  function edKeepOpen(kp) {
+    var ed = kp.ed, v = kp.v, k, f, c, s;
+    S.edKeep = null; S.edDraft = null;
+    for (k in ed.cls) { if (has(ed.cls, k) && k !== '*' && D.myIds.indexOf(k) < 0) delete ed.cls[k]; }   /* 그 사이 없어진 반은 뺌 */
+    if (ed.cls['*'] && !S.me.admin) delete ed.cls['*'];
+    ed.kept = true;
+    S.ed = ed;
+    $('ed').innerHTML = edHtml(null);
+    $('ed').hidden = false; $('edb').hidden = false;
+    $('ed').scrollTop = 0;
+    for (k in v) { if (has(v, k) && typeof v[k] === 'string') setEl('ed-' + k, v[k]); }
+    if (kp.fold) {
+      c = $('ed-txc'); s = $('ed-txs');
+      if (c) { c.className = kp.fold.cls; c.hidden = false; }
+      if (s) s.textContent = kp.fold.s;
+      txtFold(kp.fold.w);
+    }
+    edNotes();
+    chLive();
+    if (trim(edVal('ed-yt'))) ytCheck();
+    f = $('ed-yt');
+    if (f) { try { f.focus(); } catch (e) {} }
+  }
+  /* «지우기» = 남긴 칸을 버리고 빈 «새 강의»로 */
+  function edKeepGone() { S.edKeep = null; S.edDraft = null; dfDrop('ed'); }
+  var ED_KEEP_ON = '쓰던 칸에 이어 넣었어요 · 다른 강의면 «지우기»';   /* Y2(11-21): 남긴 칸을 비우지 않고 이어 씀(붙여 넣기 · 끌어 놓기) */
+  function edKeepDel() { edKeepGone(); closeEditor(); openEditor(''); }
+  /* 남겨 둔 칸(이 쪽에서 닫아 둔 것 · 쪽을 떠났다 돌아온 글)의 링크 · txt */
+  function edKeepYt() { return S.edKeep ? str(S.edKeep.v.yt) : (S.edDraft ? str(S.edDraft.yt) : ''); }
+  function edKeepTxt() { return trim(S.edKeep ? S.edKeep.v.txt : (S.edDraft ? S.edDraft.txt : '')); }
+  function edHasTxt(fl) { var i; for (i = 0; fl && i < fl.length; i += 1) { if (!pdfIsFile(fl[i])) return true; } return false; }
   /* 미리 보기에서 돌아온 쪽을 떠날 때(쓸어 뒤로 온 뒤 «앞으로» = 다시 미리 보기)는 보던 자리도 다시 적음 → 거기서 «닫기»해도 그대로 */
   window.addEventListener('pagehide', function () { if (pvBack) pvSave(); else dfSave(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden) dfSave(); });
