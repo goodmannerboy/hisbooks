@@ -13973,13 +13973,13 @@ create policy lec_staff on public.lec_session for select to authenticated
 create policy lec_staff on public.lec_consent for select to authenticated
   using ((select public.lec__my_sids()) && array['*', sid]);
 create policy lec_staff on public.lec_qna for select to authenticated
-  using ((select public.lec__my_sids()) && array['*', sid] or parent = any ((select public.lec__my_qids())));
+  using ((select public.lec__my_sids()) && array['*', sid] or parent = any ((select public.lec__my_qids())::uuid[]));
 create policy lec_staff_add on public.lec_qna for insert to authenticated
   with check (sid is null and parent is not null and teacher = (select public.lec__my_name())
-              and ((select public.lec__my_sids()) && array['*'] or parent = any ((select public.lec__my_qids()))));
+              and ((select public.lec__my_sids()) && array['*'] or parent = any ((select public.lec__my_qids())::uuid[])));
 create policy lec_staff_upd on public.lec_qna for update to authenticated
-  using ((select public.lec__my_sids()) && array['*', sid] or parent = any ((select public.lec__my_qids())))
-  with check ((select public.lec__my_sids()) && array['*', sid] or parent = any ((select public.lec__my_qids())));
+  using ((select public.lec__my_sids()) && array['*', sid] or parent = any ((select public.lec__my_qids())::uuid[]))
+  with check ((select public.lec__my_sids()) && array['*', sid] or parent = any ((select public.lec__my_qids())::uuid[]));
 
 -- 열다섯째 스스로 점검(R1): 늦은 줄 상한 · 보기 칸 · 껍데기 · srv · 동의 agree 만 · 덜 본 학생의 none · 지운 질문 본문 · 범위 계산 ·
 --   표 권한 · 정책(원장님 = 모두 · 다른 선생님 = 내 반만 · 학생 함수는 그대로) · 강의 지우기 연쇄 · 끝에 모두 되돌림
