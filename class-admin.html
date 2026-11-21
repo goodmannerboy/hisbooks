@@ -451,7 +451,7 @@ b,strong,.bandn strong{font-weight:700}
 .pl{font-size:13px}
 /* 할 일 6(L18): 완료 셈 두 줄 «결석 2명 중 완료 1» / «복습 3명» · 강의 표 단추 · 시청 현황 아래 줄 */
 .cq{position:relative;display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.3;text-align:left}
-.cq b{font-size:13px;font-weight:700}
+.cq b{font-size:13px;font-weight:600}
 .cq small{font-size:12px;font-weight:400;color:var(--ink2)}
 /* 시청 현황 표 아래 줄은 덩어리마다 한 줄(폰 390 에서 «결석 1명 중 / 완료 0» 으로 갈리던 것 · 검수 2차 B L1 · 표는 가로로 밀림) */
 .mt tfoot .cq b,.mt tfoot .cq small{white-space:nowrap}
@@ -498,6 +498,7 @@ b,strong,.bandn strong{font-weight:700}
 .txc .btn{color:inherit;font-size:13px}
 .txc.bad{background:#FBE9E3;color:var(--err)}
 #ed-txtw{margin-top:8px}
+#ed-txtw>.row{margin-top:8px}
 #ed-txt{border:1.5px dashed #CBBF9A;border-radius:12px;min-height:96px;font-size:13px;line-height:1.6}
 /* P1 필기 PDF(11-16): txt 줄 바로 아래 칩(높이 44) · 빈 칸 점선 / 올리는 중 / 붙음 / 뺌 / 실패 · 아래 코랄 줄(내보낸 날) · 호박 줄(PDF 여럿) */
 .pdc{display:flex;align-items:center;gap:8px;min-height:44px;margin-top:8px;padding:0 4px 0 12px;border-radius:12px;border:1px solid #E6DCBF;background:#FFFDF7;color:#1E5A3E;font-size:13px;line-height:1.35}
@@ -926,7 +927,7 @@ html.hc-going .hc-back{opacity:.5;pointer-events:none}
 .k2 .lt span.rb{cursor:default}
 .k2 .lt button.rb:hover{background:var(--fill2)}
 .k2 .lt .rb:focus-visible,.k2 .lt .qc:focus-visible,.k2 .stu:focus-visible,.k2 .more:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.k2 .lt .cq b{font-weight:400;font-size:13px;line-height:18px;white-space:nowrap}
+.k2 .lt .cq b{font-weight:600;font-size:13px;line-height:18px;white-space:nowrap}
 .k2 .lt .cq small{font-size:12px;line-height:16px;color:var(--ink2);white-space:nowrap}
 .k2 .lt .rb.mut .cq b,.k2 .lt span.rb{color:var(--ink2)}
 .qc{position:relative;display:inline-flex;align-items:center;gap:4px;height:30px;margin-left:-6px;padding:0 6px;border:0;border-radius:8px;background:none;color:var(--ink2);font-size:13px;line-height:18px;cursor:pointer}
@@ -1304,8 +1305,8 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 .k2 .qn .qi-1{display:flex;align-items:baseline;gap:8px;min-width:0}
 .k2 .qn .qi-1 b{font-weight:600;font-size:15px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .k2 .qn .qi-w{margin-left:auto;font-size:12px;line-height:16px;color:var(--ink2);white-space:nowrap}
-.k2 .qn .qi-2{font-size:13px;line-height:18px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.k2 .qn .qi-3{font-size:13px;line-height:18px;color:var(--ink2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.k2 .qn .qi-2{font-size:13px;line-height:18px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k2 .qn .qi-3{font-size:13px;line-height:18px;color:var(--ink);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 /* 8-3 강의 고치기 칸 짜임(목업 s-edit): 크림 묶음 · 이름 왼쪽 104 + 값 오른쪽(761 넘을 때) · 목차는 넓게 · 숨기기 스위치(인스펙터) */
 #ed.k2 .egh{margin:18px 0 6px;font-size:13px;line-height:18px;font-weight:600;color:var(--ink2)}
 @media (min-width:761px){
@@ -1518,6 +1519,49 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 /* J06 같은 영상: 저장 줄 한 줄(13/400 주황) + 단추 둘 */
 #ed .edfoot .msg.dup{font-size:13px;line-height:18px;font-weight:400;color:var(--org)}
 #ed .edfoot .msg.dup .dupb{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+/* ── 11-22 디자인 전수 검수 결론안(원장님 «4번 제외하고 결론안대로») ── */
+/* 8 질문: 열린 질문의 «답 달기» = 딥그린 채운 캡슐 36(쪽의 채운 단추 하나 · 두 칸 화면 1024 이상만 · 1024 아래는 질문이 다 펼쳐져 테두리 단추 그대로) */
+@media (min-width:1024px){
+  .k2 .qn .qdet article.th.on .ans .btn[data-act=answer]{min-height:36px;padding:0 16px;border-color:transparent;border-radius:999px;background:var(--acc);color:#FFFFFF;font-size:13px;font-weight:600}
+  .k2 .qn .qdet article.th.on .ans .btn[data-act=answer]:hover{background:var(--acc-hover);border-color:transparent}
+}
+/* 9 오늘: 답 기다리는 질문 줄 셋째 줄 = 질문 글 앞머리 14/400 한 줄(넘치면 …) · 줄 높이 56 → 76 */
+.k2 .todo .tsq{display:block;margin-top:2px;font-size:14px;line-height:20px;font-weight:400;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 10 강의 고치기(.db.edx)만: txt 칸 한 줄 44(누르거나 끌어 오면 · 글이 있으면 96) + «txt · PDF 고르기» 같은 줄 오른쪽 · 영상 미리보기 192×108(761 이상은 영상 묶음 오른쪽 위) · 새 강의는 그대로 */
+#ed .db.edx #ed-txtw:not([hidden]){display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;margin-bottom:8px}   /* 접힌 때(hidden)는 그대로 숨김 · 이 앱에는 [hidden] 공통 규칙이 없어 display 를 주면 접기가 풀림 */
+#ed .db.edx #ed-txt{flex:1 1 280px;min-width:0;height:44px;min-height:44px}
+#ed .db.edx #ed-txt:focus,#ed .db.edx #ed-txt:not(:placeholder-shown),#ed.dg .db.edx #ed-txt{height:auto;min-height:96px}
+#ed .db.edx #ed-txtw>.row{flex:none;margin-top:8px}
+#ed .db.edx .prev{max-width:192px}
+#ed .db.edx #ed-txf>label .mut{display:none}   /* «끌어 놓거나 붙여 넣기»는 칸 안내 글에 있어 이름 옆은 뺌 */
+@media (max-width:760px){#ed .db.edx #ed-txtw>.row{margin-top:0}}
+@media (min-width:761px){
+  #ed.k2 .db.edx .eg:has(#ed-prev.on){position:relative}
+  #ed.k2 .db.edx .eg:has(#ed-prev.on)>.fld{margin-right:218px}
+  #ed.k2 .db.edx .eg>.fld:has(#ed-prev.on){position:static}
+  #ed.k2 .db.edx .eg:has(#ed-prev.on) #ed-prev{position:absolute;top:6px;right:14px;width:192px;margin:0}   /* 네 줄 모두 :has 아래 → :has 를 모르는 브라우저는 칸 안 아래 192 그대로(겹치지 않음) */
+}
+/* (가) 빈 칸 안내 글 = --ink3(쪽 찾기 칸 .stq 는 바탕이 진해 --ink2 그대로) · 목차 «분:초» «없음» 칸 글 650 → 600 · 칸 이름 12/600 */
+::placeholder{color:var(--ink3);opacity:1}
+.chx,.chx .cl{font-weight:600}
+/* (나) 1차 값 남은 것: 목차 줄 14/400 · 로그인 칸 이름 13/600 · 세트 알약 12/600(색 그대로) */
+.chl li{font-size:14px;font-weight:400}
+.lg label{font-size:13px;font-weight:600}
+.sx-p{font-size:12px;font-weight:600}
+/* (다) «결석 N명 중 완료 N» = 13/600(오늘 · 강의 · 시청 현황 같게) → 위 454 · 930 줄에서 고침 */
+/* (라) «공개 예정 …» = 파랑(--new) · 다른 .msg.ok 는 그대로 */
+#ed-postnote.msg.ok{color:var(--new)}
+/* (마) 세트 «자주 틀린 문제»가 요약 바로 아래로 옴 */
+.k2 .sx-of.sx-o1{margin:16px 0 18px}
+/* (바) 폰(760 이하)만: «질문 N» 누르는 곳 폭 44 = 안 보이는 덧칸(::before)으로만 넓힘 → 줄 짜임 · 글 · 그림 자리는 전과 같음(날짜 줄이 더 꺾이지 않게) · 이름 · 로그아웃 줄 = 내용 뒤 맨 아래 */
+.k2 .who.who-m{display:none}
+@media screen and (max-width:760px){
+  .k2 .side .who{display:none}
+  .k2 .mainw>.who.who-m{display:flex;margin:0 12px;padding:8px 4px}
+}
+@media (max-width:760px){
+  .k2 .lt td.qcc .qc::before{content:"";position:absolute;top:0;bottom:0;right:0;width:100%;min-width:44px}
+}
 </style>
 </head>
 <body>
@@ -2440,7 +2484,7 @@ window.__lecAdminStart = function () {
     if (!S.me || !D) return;
     var tb = curTab();
     paint(app, '<div class="wrap k2"><div class="frame">' + sideHtml() + '<div class="mainw">' + demoHtml() + '<main id="main">' + pageHead(tb) +
-      (tb === 'stat' ? statHtml() : (tb === 'qna' ? qnaHtml() : (tb === 'set' ? setHtml() : (tb === 'today' ? todayHtml() : lecHtml())))) + '</main></div></div></div>');
+      (tb === 'stat' ? statHtml() : (tb === 'qna' ? qnaHtml() : (tb === 'set' ? setHtml() : (tb === 'today' ? todayHtml() : lecHtml())))) + '</main>' + whoHtml(1) + '</div></div></div>');
     if (tb === 'stat') { stuFilter(); mxFit(); }
     if (S.qFocus && S.tab === 'qna') {
       var a = app.querySelectorAll('[data-th]'), i;
@@ -2454,8 +2498,14 @@ window.__lecAdminStart = function () {
   /* «HIS CLASS» 글자 경로 = class.html WM_SVG 와 같은 것(11-18 2차 · 웹 글꼴 0 · Noto Serif KR 600 · 자간 0.12em) */
   var WM_SVG = '<svg class="wm" viewBox="48 -753 6216 771" aria-hidden="true" focusable="false"><path fill="currentColor" d="M48.3 0V-31.6L192.1 -45.1H216.7L364 -31.6V0ZM144.7 0Q146.7 -84.5 146.9 -170.1Q147.2 -255.6 147.2 -342.2V-392.6Q147.2 -479.1 146.9 -564.6Q146.7 -650.2 144.7 -735.2H269.7Q267.7 -651.2 267.2 -565.2Q266.7 -479.1 266.7 -392.6V-366.5Q266.7 -263.1 267.2 -174.3Q267.7 -85.6 269.7 0ZM207.2 -361V-396.1H653.5V-361ZM495.7 0V-31.6L642 -45.1H666.6L811.4 -31.6V0ZM590 0Q592.5 -84.5 593 -173.1Q593.5 -261.6 593.5 -366.5V-392.6Q593.5 -479.1 593 -564.6Q592.5 -650.2 590 -735.2H715.1Q713.5 -651.2 713 -565.2Q712.5 -479.1 712.5 -392.6V-342.2Q712.5 -256.7 713 -171.1Q713.5 -85.6 715.1 0ZM48.3 -703.7V-735.2H364V-703.7L216.7 -691.1H192.1ZM495.7 -703.7V-735.2H811.4V-703.7L666.6 -691.1H642ZM1028.3 0V-31.6L1175.1 -45.1H1200.3L1348.1 -31.6V0ZM1125.7 0Q1128.2 -84.5 1128.4 -170.1Q1128.7 -255.6 1128.7 -342.2V-392.6Q1128.7 -479.1 1128.4 -564.6Q1128.2 -650.2 1125.7 -735.2H1250.7Q1249.2 -651.2 1248.7 -565.2Q1248.2 -479.1 1248.2 -392.6V-342.7Q1248.2 -256.7 1248.7 -171.1Q1249.2 -85.6 1250.7 0ZM1028.3 -703.7V-735.2H1348.1V-703.7L1200.3 -691.1H1175.1ZM1788.8 17.6Q1727.3 17.6 1668.2 1.1Q1609.1 -15.4 1569.5 -41L1575.5 -199.3H1623.2L1665.6 -20.3L1610.8 -44.9L1602.2 -80Q1651.2 -45 1689.2 -33Q1727.2 -21 1778.6 -21Q1857 -21 1902.9 -56.5Q1948.8 -92 1948.8 -158.8Q1948.8 -194.2 1936.5 -220Q1924.3 -245.7 1895.9 -266.6Q1867.5 -287.6 1818.2 -308L1773.7 -327.1Q1680.5 -367.7 1631.9 -420.3Q1583.3 -472.8 1583.3 -554.5Q1583.3 -619.6 1615.9 -663.6Q1648.4 -707.7 1704.5 -730.5Q1760.7 -753.3 1831.4 -753.3Q1889.4 -753.3 1935.7 -738.8Q1982.1 -724.3 2020.6 -697.8L2014.6 -547.5H1965.9L1925.1 -718.4L1982.9 -692.8L1988.5 -656.1Q1948 -688.7 1916.5 -701.7Q1885 -714.7 1842.6 -714.7Q1774.6 -714.7 1731.2 -682Q1687.8 -649.3 1687.8 -587.4Q1687.8 -532.4 1719.2 -499.5Q1750.6 -466.5 1807.1 -442L1855.1 -421.5Q1930.6 -389.4 1974.6 -356.9Q2018.7 -324.4 2037.4 -285.6Q2056.2 -246.8 2056.2 -193.2Q2056.2 -129.7 2023.9 -82.1Q1991.7 -34.6 1931.8 -8.5Q1872 17.6 1788.8 17.6ZM3023.2 17.6Q2941.2 17.6 2872.4 -7.2Q2803.6 -31.9 2752.5 -80.6Q2701.4 -129.3 2673.4 -200.4Q2645.3 -271.4 2645.3 -363.6Q2645.3 -456.2 2674.1 -528.8Q2702.9 -601.3 2754.5 -651.6Q2806.1 -701.8 2875.1 -727.6Q2944.2 -753.3 3023.8 -753.3Q3088.9 -753.3 3137.9 -739.3Q3186.9 -725.2 3235.4 -697.3L3235.3 -528.5H3185.1L3140.8 -717L3203.7 -695.9V-661.9Q3163.8 -691.3 3126.1 -704Q3088.4 -716.8 3042.4 -716.8Q2964.6 -716.8 2903.4 -677.5Q2842.3 -638.3 2807.1 -560.5Q2771.9 -482.8 2771.9 -367.1Q2771.9 -251.5 2807.1 -173.7Q2842.3 -95.9 2903.2 -57.2Q2964.2 -18.5 3041.5 -18.5Q3087 -18.5 3127.3 -31.5Q3167.7 -44.5 3209.2 -75V-40.4L3148.3 -21.2L3192.6 -206.8H3242.8L3243.4 -39.5Q3194.4 -10.5 3141.4 3.5Q3088.4 17.6 3023.2 17.6ZM3459.3 0 3459.9 -31.6 3606.1 -45.1H3619.7L3619.2 0ZM3556.7 0Q3558.7 -84.5 3558.9 -168.1Q3559.2 -251.6 3559.2 -326.9V-392.6Q3559.2 -479.1 3558.9 -564.9Q3558.7 -650.7 3556.7 -735.2H3681.2Q3679.7 -651.2 3679.2 -564.9Q3678.7 -478.7 3678.7 -390.4V-329.8Q3678.7 -253.7 3679.2 -169.6Q3679.7 -85.6 3681.2 0ZM3619.2 0 3619.7 -36.1H3976.5L3918.4 -6.9L3962.7 -205.9H4010.4L4007 0ZM3459.3 -703.7V-735.2H3783.6V-703.7L3634.8 -691.1H3606.1ZM4178.5 0V-31.6L4277.6 -44.1H4295.6L4404.1 -31.6V0ZM4249.5 0 4496.1 -740.2H4570.2L4821.3 0H4699.7L4484.9 -664.1H4505.4L4501.9 -650.1L4295.6 0ZM4359 -244.3 4364.6 -277.4H4676.3L4681.9 -244.3ZM4580.4 0V-32.1L4714.9 -44.6H4756.3L4891.5 -32.1V0ZM5292.8 17.6Q5231.3 17.6 5172.2 1.1Q5113.1 -15.4 5073.5 -41L5079.5 -199.3H5127.2L5169.6 -20.3L5114.8 -44.9L5106.2 -80Q5155.2 -45 5193.2 -33Q5231.2 -21 5282.6 -21Q5361 -21 5406.9 -56.5Q5452.8 -92 5452.8 -158.8Q5452.8 -194.2 5440.5 -220Q5428.3 -245.7 5399.9 -266.6Q5371.5 -287.6 5322.2 -308L5277.7 -327.1Q5184.5 -367.7 5135.9 -420.3Q5087.3 -472.8 5087.3 -554.5Q5087.3 -619.6 5119.9 -663.6Q5152.4 -707.7 5208.5 -730.5Q5264.7 -753.3 5335.4 -753.3Q5393.4 -753.3 5439.7 -738.8Q5486.1 -724.3 5524.6 -697.8L5518.6 -547.5H5469.9L5429.1 -718.4L5486.9 -692.8L5492.5 -656.1Q5452 -688.7 5420.5 -701.7Q5389 -714.7 5346.6 -714.7Q5278.6 -714.7 5235.2 -682Q5191.8 -649.3 5191.8 -587.4Q5191.8 -532.4 5223.2 -499.5Q5254.6 -466.5 5311.1 -442L5359.1 -421.5Q5434.6 -389.4 5478.6 -356.9Q5522.7 -324.4 5541.4 -285.6Q5560.2 -246.8 5560.2 -193.2Q5560.2 -129.7 5527.9 -82.1Q5495.7 -34.6 5435.8 -8.5Q5376 17.6 5292.8 17.6ZM5996.8 17.6Q5935.3 17.6 5876.2 1.1Q5817.1 -15.4 5777.5 -41L5783.5 -199.3H5831.2L5873.6 -20.3L5818.8 -44.9L5810.2 -80Q5859.2 -45 5897.2 -33Q5935.2 -21 5986.6 -21Q6065 -21 6110.9 -56.5Q6156.8 -92 6156.8 -158.8Q6156.8 -194.2 6144.5 -220Q6132.3 -245.7 6103.9 -266.6Q6075.5 -287.6 6026.2 -308L5981.7 -327.1Q5888.5 -367.7 5839.9 -420.3Q5791.3 -472.8 5791.3 -554.5Q5791.3 -619.6 5823.9 -663.6Q5856.4 -707.7 5912.5 -730.5Q5968.7 -753.3 6039.4 -753.3Q6097.4 -753.3 6143.7 -738.8Q6190.1 -724.3 6228.6 -697.8L6222.6 -547.5H6173.9L6133.1 -718.4L6190.9 -692.8L6196.5 -656.1Q6156 -688.7 6124.5 -701.7Q6093 -714.7 6050.6 -714.7Q5982.6 -714.7 5939.2 -682Q5895.8 -649.3 5895.8 -587.4Q5895.8 -532.4 5927.2 -499.5Q5958.6 -466.5 6015.1 -442L6063.1 -421.5Q6138.6 -389.4 6182.6 -356.9Q6226.7 -324.4 6245.4 -285.6Q6264.2 -246.8 6264.2 -193.2Q6264.2 -129.7 6231.9 -82.1Q6199.7 -34.6 6139.8 -8.5Q6080 17.6 5996.8 17.6Z"/></svg>';
   /* 사이드바(2차): 이름 자리 = 물고기 + «HIS CLASS» 글자(로그인 머리 · 학생 앱과 같은 WM_SVG) + «관리» · 화면 읽기는 «히즈클래스 관리» */
+  /* 이름 · 로그아웃 줄 · 11-22 결론안 (바): 폰(760 이하)은 사이드바 줄을 숨기고 내용 뒤 맨 아래 줄(m = who-m)을 보임 → 보이는 차례 = 화면 읽기 · Tab 차례 · PC 는 그대로 */
+  function whoHtml(m) {
+    var who = S.me.admin ? S.me.name + ' 원장님' : S.me.name + ' 선생님';
+    return '<div class="who' + (m ? ' who-m' : '') + '"><span class="av" aria-hidden="true">' + esc(who.charAt(0)) + '</span><span class="who-b"><span class="who-n">' + esc(who) + '</span>' +
+      '<button type="button" class="who-out" data-act="logout">로그아웃 · 히즈어학원 앱도 함께</button></span></div>';
+  }
   function sideHtml() {
-    var who = S.me.admin ? S.me.name + ' 원장님' : S.me.name + ' 선생님', wn = waitCount(), sn = S.set && S.set.unheard > 0 ? S.set.unheard : 0;
+    var wn = waitCount(), sn = S.set && S.set.unheard > 0 ? S.set.unheard : 0;
     /* 쪽 이름 + 수: 글은 «질문 2» · «세트 2» 그대로(수는 오른쪽 끝 · 답 기다림은 주황) */
     function t(k, ic, label, n, warn, al) {
       var on = curTab() === k;
@@ -2470,8 +2520,7 @@ window.__lecAdminStart = function () {
       (sxOn() ? t('set', 'sets', '세트', sn > 0 ? sn : null, sn > 0, sn > 0 ? '세트 · 새 녹음 ' + sn : '') : '')   /* A3 ② */ + '</nav>' +
       '<p class="side-sec">학생 앱</p><button type="button" class="ni" data-act="copyAddr">' + nIcon('link') + '<span class="ni-t">학생용 주소 복사</span></button>' +
       (S.addrShow ? '<div class="addr side-url"><label for="addr-in">학생용 주소</label><input id="addr-in" type="text" readonly value="' + esc(STU_URL) + '"></div>' : '') +
-      '<div class="who"><span class="av" aria-hidden="true">' + esc(who.charAt(0)) + '</span><span class="who-b"><span class="who-n">' + esc(who) + '</span>' +
-      '<button type="button" class="who-out" data-act="logout">로그아웃 · 히즈어학원 앱도 함께</button></span></div></div></header>';
+      whoHtml(0) + '</div></header>';
   }
   /* 쪽 머리(2차): 큰 제목 28/700 + 옅은 수 · 오른쪽 도구 줄(다시 불러오기 · 쪽마다 주요 단추) */
   function pageHead(tb) {
@@ -2582,8 +2631,12 @@ window.__lecAdminStart = function () {
       qi = ti('todoQ', '', 't-honey', '질문', '답을 기다리는 질문 ' + w.count, { t: '답을 기다리는 질문', s: waitSub(w), srs: wq3.length > 0, n: w.count, u: '개', ic: 'am', i: 'msg', hd: 1 });
       for (i = 0; i < wq3.length; i += 1) {
         b = wq3[i];
+        /* 11-22 결론안 9: 셋째 줄 = 질문 글 앞머리(줄바꿈 · 겹친 빈칸은 한 칸 · 40자 넘으면 «…» · 글이 없으면 두 줄 그대로) */
+        var bq = trim(str(b.body).replace(/\s+/g, ' '));
+        if (bq.length > 40) bq = trim(bq.slice(0, /[\uD800-\uDBFF]/.test(bq.charAt(39)) ? 39 : 40)) + '…';
         qi += '<button type="button" class="tsr" data-act="todoQGo" data-q="' + esc(b.id) + '" data-l="' + esc(b.lecture) + '"><span class="tsx"><span class="tsn"><b>' + esc(str(b.sname || '학생')) + '</b></span>' +
-          '<span class="tss">' + esc(str(b.title) + ((b.at || b.created_at) ? ' · ' + L.fmtWhen(b.at || b.created_at) : '')) + '</span></span><span class="go" aria-hidden="true">›</span></button>';
+          '<span class="tss">' + esc(str(b.title) + ((b.at || b.created_at) ? ' · ' + L.fmtWhen(b.at || b.created_at) : '')) + '</span>' +
+          (bq ? '<span class="sr"> · </span><span class="tsq">' + esc(bq) + '</span>' : '') + '</span><span class="go" aria-hidden="true">›</span></button>';
       }
       if (w.count > wq3.length && wq3.length) qi += '<button type="button" class="tmore" data-act="todoQ">질문 ' + (w.count - wq3.length) + '개 더 보기</button>';
     }
@@ -3866,15 +3919,15 @@ window.__lecAdminStart = function () {
     h = '<div class="dh"><div class="dt"><h2 id="ed-t">' + (l ? (S.ed.can ? '강의 고치기' : '강의 보기') : '새 강의') + '</h2>' +
       (l ? '<div class="mut dh-m">' + dhSub(['올린 사람 ' + (l.created_by || '모름'), l.created_at ? whenFull(l.created_at) : '']) + '</div>' : '') +
       (!l && S.ed.kept ? '<div class="mut dh-m" id="ed-kept"><span>지난번에 쓰던 칸이에요</span><span class="kd"> · <button type="button" class="lnk" data-act="edKeepDel">지우기</button></span></div>' : '') +
-      '</div><button type="button" class="x" data-act="edClose" aria-label="닫기">×</button></div><div class="db">';
+      '</div><button type="button" class="x" data-act="edClose" aria-label="닫기">×</button></div><div class="db' + (l && S.ed.can ? ' edx' : '') + '">';   /* 11-22 결론안 10: edx = 강의 고치기에서만(새 강의 · 강의 보기는 그대로) */
     if (!S.ed.can) h += '<p class="box neutral">올린 선생님과 원장님만 고칠 수 있어요.</p>';
     if (S.ed.can) {
       /* K: 읽고 나면 한 줄로 접힘 «✓ txt 읽음 · 목차 5줄» + «다시 놓기»(펼치면 «접기») · 서랍 어디에 끌어 놓아도 읽음 */
       h += '<div class="fld" id="ed-txf"><label for="ed-txt">«수업 영상 만들기» txt<span class="mut">끌어 놓거나 붙여 넣기</span></label>' +
         '<div id="ed-txc" class="txc" hidden>' + kIcon('check') + '<span id="ed-txs"></span><span class="sp"></span>' +
         '<button type="button" class="btn sm txt" data-act="edTxtFold" aria-expanded="false" aria-controls="ed-txtw">다시 놓기</button></div>' +
-        '<div id="ed-txtw"><textarea id="ed-txt" rows="3" placeholder="txt 내용을 붙여 넣거나 파일을 서랍에 끌어다 놓으세요. 제목 · 교재 · 수업일 · 목차가 채워져요."></textarea>' +
-        '<div class="row" style="margin-top:8px"><button type="button" class="btn sm" data-act="edFile">' + (pdfOn() ? 'txt · PDF 고르기' : 'txt 파일 고르기') + '</button>' +
+        '<div id="ed-txtw"><textarea id="ed-txt" rows="3" placeholder="' + (l ? 'txt 다시 넣기 · 끌어 놓거나 붙여 넣기' : 'txt 내용을 붙여 넣거나 파일을 서랍에 끌어다 놓으세요. 제목 · 교재 · 수업일 · 목차가 채워져요.') + '"></textarea>' +
+        '<div class="row"><button type="button" class="btn sm" data-act="edFile">' + (pdfOn() ? 'txt · PDF 고르기' : 'txt 파일 고르기') + '</button>' +
         '<input id="ed-file" class="sr" type="file" accept="' + (pdfOn() ? '.txt,text/plain,.pdf,application/pdf" multiple' : '.txt,text/plain"') + ' tabindex="-1" aria-hidden="true"></div></div>' +
         '<p id="ed-txtmsg" class="msg" role="status"></p></div>';
     }
@@ -5309,6 +5362,19 @@ window.__lecAdminStart = function () {
     n = +(st.set && st.set.n) || +it.n || 0;
     pk = sxPk(it, st);
     h += sxSumHtml(k, rows, pk);   /* 2차(8): 결과 위 큰 수 띠(목업 s-sets) */
+    /* 11-22 결론안 (마): 차례 = 요약 → 자주 틀린 문제 → 학생 표 · 틀린 것이 없으면 묶음째 안 그림(빈 칸 없음) · 구문은 이 묶음이 없음 */
+    if (k !== 'gu') {
+      often = [];
+      a = isArr(st.often) ? st.often : [];
+      /* 단어 또는 문제 앞 40자(서버가 자름 → 끝에 …) · 하나씩 알약(문제 안의 « / »와 섞이지 않게) */
+      for (i = 0; i < a.length; i += 1) {
+        d = trim(a[i] && a[i].w);
+        if (d) often.push('<li class="sx-p no"><span class="sx-ow">' + esc(d + (k === 'gram' && d.length >= 40 ? '…' : '')) + '</span>' +
+          (+a[i].n > 0 ? '<span class="sx-on">' + esc(String(+a[i].n)) + '명</span>' : '') + '</li>');
+      }
+      /* 2차(8): 자주 틀린 문제 = 작은 제목 + 크림 묶음 줄(목업 s-sets) · 줄 끝 = 틀린 학생 수(서버 n) */
+      if (often.length) h += '<div class="sx-ft sx-of sx-o1"><h3 class="sx-oh">' + (k === 'voc' ? '자주 틀린 단어' : '자주 틀린 문제') + '</h3><ul class="sx-ol">' + often.join('') + '</ul></div>';
+    }
     /* 구문 네 칸(S1-b · «녹음 동의» 칸 뺌): 문법 표와 같은 나눔(학생 22 · 가운데 넓은 칸 43 · 마지막 20) */
     cols = k === 'voc' ? [['학생', '22%'], ['외움', '13%'], ['시험', '34%'], ['쌓인 오답', '13%'], ['마지막', '18%']]
       : (k === 'gu' ? [['학생', '22%'], ['따라 말하기', '15%'], ['녹음 ★' + pk.length, '43%'], ['마지막', '20%']]
@@ -5328,16 +5394,6 @@ window.__lecAdminStart = function () {
     h += '</tbody></table>';
     h += sxPtsHtml(st) + sxFxHtml(st);   /* V2-5: 포인트별 첫 답 정답률 · 인정 답이 많은 문항(같은 응답 · 누름 0) */
     if (k === 'gu') return h + '<p class="sx-ft">녹음은 30일이 지나면 지워져요(세트 탭을 열 때 정리해요)</p>';
-    often = [];
-    a = isArr(st.often) ? st.often : [];
-    /* 단어 또는 문제 앞 40자(서버가 자름 → 끝에 …) · 하나씩 알약(문제 안의 « / »와 섞이지 않게) */
-    for (i = 0; i < a.length; i += 1) {
-      d = trim(a[i] && a[i].w);
-      if (d) often.push('<li class="sx-p no"><span class="sx-ow">' + esc(d + (k === 'gram' && d.length >= 40 ? '…' : '')) + '</span>' +
-        (+a[i].n > 0 ? '<span class="sx-on">' + esc(String(+a[i].n)) + '명</span>' : '') + '</li>');
-    }
-    /* 2차(8): 자주 틀린 문제 = 작은 제목 + 크림 묶음 줄(목업 s-sets) · 줄 끝 = 틀린 학생 수(서버 n) */
-    if (often.length) h += '<div class="sx-ft sx-of"><h3 class="sx-oh">' + (k === 'voc' ? '자주 틀린 단어' : '자주 틀린 문제') + '</h3><ul class="sx-ol">' + often.join('') + '</ul></div>';
     return h;
   }
   /* 표 줄: 지금 반 학생(명단) 모두 + 반 밖으로 옮긴 학생의 기록 줄 · 덜 한 학생이 위 */

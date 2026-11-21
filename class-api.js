@@ -367,9 +367,20 @@
     return n < 10 ? '0' + n : String(n);
   }
 
-  /* 장면 칩: 그 시각이 든 지문 번호 + 시각('04번 · 17:39') · 번호를 모르면 '17:39' */
+  /* 11-22 (가) 보이는 글의 번호 덩어리: 묶인 지문 '10~11번 …' → '10~11' · '4~5번' → '04~05'(두 자리 맞춤 = 띠 아래 숫자와 같은 꼴 · 띄어쓰기는 뺌) · 하나면 chapterNo 와 같음('4번' → '04') · 없으면 ''
+     «지금 10~11번» · 장면 칩에만 · 정렬 · 띠 번호는 chapterNo 그대로 */
+  function chapterTag(title) {
+    var m = str(title).match(/^\s*(\d{1,3})(?:\s*([~\-])\s*(\d{1,3}))?\s*번/), a, b;
+    if (!m) return '';
+    if (!m[3]) return chapterNo(title);
+    a = parseInt(m[1], 10);
+    b = parseInt(m[3], 10);
+    return (a < 10 ? '0' + a : String(a)) + m[2] + (b < 10 ? '0' + b : String(b));
+  }
+
+  /* 장면 칩: 그 시각이 든 지문 번호 + 시각('04번 · 17:39' · 묶인 지문 '10~11번 · 45:26') · 번호를 모르면 '17:39' */
   function sceneLabel(t, chapters) {
-    var i = chapterAt(chapters, t), no = i >= 0 ? chapterNo(chapters[i].title) : '';
+    var i = chapterAt(chapters, t), no = i >= 0 ? chapterTag(chapters[i].title) : '';
     return no ? no + '번 · ' + fmtDur(t) : fmtDur(t);
   }
 
@@ -1369,6 +1380,7 @@
     chapterAt: chapterAt,
     chapterRanges: chapterRanges,
     chapterNo: chapterNo,
+    chapterTag: chapterTag,
     sceneLabel: sceneLabel,
     chapterSeen: chapterSeen,
     nextNo: nextNo,
