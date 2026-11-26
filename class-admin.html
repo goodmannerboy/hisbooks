@@ -806,9 +806,8 @@ a{color:var(--acc)}
 html.hc-going .hc-back{opacity:.5;pointer-events:none}
 .login.hb{position:relative;padding-top:52px}
 .login .hc-back{position:absolute;top:14px;left:10px}
-.k2 .brand .logo{width:40px;height:20px}
+.k2 .brand .fish{display:block;width:40px;height:20px;flex:none;color:var(--acc)}   /* 11-27 §8-243: 칸 40×20 = 옛 그림 칸 그대로(이름 줄 높이 20) · 물고기는 viewBox 비율대로 40×19.4 가운데(학생 앱 .sres>.fish 와 같은 크기) */
 .k2 .brand .wm{display:block;width:100px;height:auto;flex:none;color:var(--acc)}
-.brand-sub{font-size:13px;line-height:18px;font-weight:600;color:var(--ink2)}
 .k2 .side .tabs{display:flex;flex-direction:column;flex-wrap:nowrap;gap:2px;margin:0;padding:0;border:0}
 .k2 .ni{display:flex;align-items:center;gap:10px;width:100%;min-height:36px;height:36px;margin:0;padding:0 10px;border:0;border-radius:8px;background:transparent;box-shadow:none;
   color:var(--ink);font-size:15px;line-height:20px;font-weight:400;text-align:left;text-decoration:none;cursor:pointer}
@@ -1564,6 +1563,84 @@ body.ins-on .mainw{margin-right:var(--ins-w)}
 @media (max-width:760px){
   .k2 .lt td.qcc .qc::before{content:"";position:absolute;top:0;bottom:0;right:0;width:100%;min-width:44px}
 }
+</style>
+<style id="k-1127">
+/* 11-27 색 배치 결론안(§8-243 · 원장님 «그대로 넣고» · 총괄 넷 회의 결론안 K) — 본문 바닥 = 사이드바 크림 #F4ECD7 한 판 · 흰 카드 + 1px 선 · 금은 요약 카드 셋의 1px 테뿐
+   head 맨 뒤 스타일 블록에 둠(앞의 모든 규칙을 덮는 자리 · 찍어 본 판과 같은 차례) */
+:root{
+  --line2:rgba(70,52,12,.18)
+}
+/* 0. 바닥 = 사이드바와 같은 크림(#F4ECD7) 한 판 · 흰 카드만 위로(사이드바 색은 원안 그대로) */
+.k2 .frame{background:var(--side)}
+.k2 .side.hd{border-right-color:var(--line2)}
+.k2 .who{border-top-color:var(--line2)}
+.k2 .who .av{background:var(--acc);color:var(--card)}
+/* 1. 고른 메뉴 = 딥그린 + 흰 글 600 · 둥글기는 원안 .ni 8px 그대로(999 캡슐 아님) · 그림자 없음 */
+.k2 .ni.on{background:var(--acc);color:var(--card);font-weight:600;box-shadow:none}
+.k2 .ni.on .i{color:var(--card)}
+.k2 .ni.on .bdg,.k2 .ni.on .bdg.warn{color:var(--card)}
+/* 2. 단추 · 입력 */
+.k2 .btn{background:var(--card);border-color:var(--line2)}
+.k2 .btn:hover{background:var(--fill2);border-color:var(--acc-line)}
+.k2 .qn .ans textarea,.dw textarea{border-color:var(--line2)}
+/* 3. 오늘 — 금은 요약 카드 셋의 1px 테 하나뿐 */
+.k2 .todo .tcd{background:var(--card);border:1px solid var(--gold-line)}
+.k2 .todo .tcd .ti:hover,.k2 .todo .tsr:hover,.k2 .todo .tmore:hover{background:var(--group)}
+.k2 .todo .tcd .ti+.ti::before,.k2 .todo .tch+.ti::before,
+.k2 .todo .ti+.tsr::before,.k2 .todo .tsr+.tsr::before,.k2 .todo .tsr+.tmore::before,.k2 .todo .ti+.tmore::before{border-top-color:var(--line2)}
+.k2 .todo .ti.hd .tx{color:var(--ink)}
+.k2 .todo .ti.hd .tn{color:var(--acc)}
+.k2 .todo .ti .tn{font-weight:700;color:var(--ink)}
+.k2 .todo .tchk .ti{background:var(--card);border:1px solid var(--line2)}
+.k2 .todo .tchk .ti:hover{background:var(--group)}
+.k2 .todo .twl{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:2px 4px}
+.k2 .todo .twr+.twr::before{border-top-color:var(--line2)}
+/* 4. 강의 */
+#main>.card.lec .lt{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:2px 4px 6px}
+.k2 .lt thead tr{border-bottom-color:var(--line2)}
+.k2 .lt tr.lr+tr.lr::before{border-top-color:var(--line2)}
+.k2 .lt tr.gh th{font-weight:600;color:var(--ink)}
+/* 5. 시청 */
+.k2 .mxw{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:2px 8px 4px}
+.k2 .mt th,.k2 .mt td,.k2 .mt thead th{border-bottom-color:var(--line2)}
+.k2 .mt thead th,.k2 .mt thead .nm,.k2 .mt .nm,.k2 .mt tfoot td,.k2 .mt tfoot th{background:var(--card)}
+.mxw.more::after{background:linear-gradient(to right,rgba(255,255,255,0),var(--card) 85%);border-radius:0 12px 12px 0}
+/* 6. 질문 */
+@media (min-width:1024px){
+  .k2 .qn .qmail{margin:10px 0 0;min-height:calc(100vh - 160px);background:var(--card);border:1px solid var(--line2);border-radius:12px}
+  .k2 .qn .qlist{padding:6px 8px 12px 8px;border-right-color:var(--line2)}
+  .k2 .qn .qdet{padding:0 24px 24px 24px}
+}
+#main>.card.qn{margin-bottom:0}
+.k2 .qn .qlist>[role=listitem]+[role=listitem] .qi::before{border-top-color:var(--line2)}
+/* 7. 고치기 — 시트 #ed 의 그림자는 그대로 */
+#ed{background:var(--side);box-shadow:var(--shadow),0 0 0 1px var(--line2)}
+#ed .dh{background:var(--bg)}
+.dw .dh{border-bottom-color:var(--line2)}
+#ed.k2 .egh{font-weight:600;color:var(--ink)}
+#ed.k2 input,#ed.k2 select{border-color:var(--line2)}
+@media (min-width:761px){
+  #ed.k2 .eg{background:var(--card);border:1px solid var(--line2)}
+  #ed.k2 .eg>.fld+.fld::before{border-top-color:var(--line2)}
+}
+/* 8. 고른 상태의 모양 단서(가독) — 고른 칩 = 둘레 1px(떨어지는 그림자 없음) · 14px 칩만 700 */
+/*    실제 선택자: 흰 «고른 칩»(띠 안 칸 고르기) 넷 — 채운 딥그린 칩(.chip.on 고1 A반 등)은 «그대로 둘 것»이라 손대지 않음 */
+.k2 .qn>.chips .chip.on,.k2 .stc .stbar>.chips .chip.on,#dw.ip .sec>.chips .chip.on{font-weight:700;box-shadow:0 0 0 1px var(--line2)}
+.k2 .lp-seg .chip.on{font-weight:600;box-shadow:0 0 0 1px var(--line2)}
+.k2 .qn .qi.on{box-shadow:inset 3px 0 0 var(--acc)}
+/* 9. 세트(명세 밖 · 깨진 곳 고침) — 크림 카드(--group #F6EFDD)가 새 바닥 #F4ECD7 위에서 1.01 로 사라져
+      다른 화면 카드와 같이 흰 카드 + 1px 선으로 · 작은 갈래 꼬리표도 흰 바탕 */
+.k2 .sx-sum,.k2 .sx-of .sx-ol{background:var(--card);border:1px solid var(--line2)}
+.k2 .sx-it .sx-k,.k2 .sx-hd .sx-k{background:var(--card)}
+/* 10. 마우스 올린 줄(찍은 뒤 더함 · 그림에는 안 나옴) — 흰 카드 안 줄은 모두 --group 으로 «오늘» 줄과 같게
+       질문 줄은 흰 카드가 있는 1024 이상에서만 · 고른 질문(.on)의 옅은 초록은 그대로 */
+.k2 .lt tr.lr:hover{background:var(--group)}
+@media (min-width:1024px){
+  .k2 .qn .qi:not(.on):hover{background:var(--group)}
+}
+/* 11. 오늘 «그만둔 학생 기록» · «로그인이 잠긴 학생»(넣을 때 찾음 · 접힌 줄을 펴야 보임) — 크림 --group 이 새 바닥 #F4ECD7 위에서 1.03 으로 묻혀
+       9번 세트처럼 흰 카드 + 1px 선(크림 --group 을 쓰는 .grp · #sd .lp-part 는 #FDFAF2 판 안이라 1.10 그대로 둠) */
+.k2 .todo .sub{background:var(--card);border:1px solid var(--line2)}
 </style>
 </head>
 <body>
@@ -2503,9 +2580,14 @@ window.__lecAdminStart = function () {
   }
   function renderAll() { render(); renderDrawer(); }
 
+  /* 물고기(11-27 · §8-243 · 원장님 «귀여운 HIS 없는 물고기 로고»): 학생 앱 class.html 의 FISH_D · fishSVG 와 같은 것(원본 물고기 화소 경계 · 글자 없음 · 색 = currentColor) */
+  var FISH_D = 'M314 0 L370 0 L411 5 L448 14 L466 20 L468 22 L474 23 L481 27 L484 27 L497 34 L500 34 L546 58 L547 60 L554 63 L555 65 L557 65 L558 67 L572 75 L574 78 L579 80 L581 83 L583 83 L597 95 L599 95 L614 109 L616 109 L620 114 L622 114 L630 123 L632 123 L677 168 L679 168 L701 146 L701 144 L721 125 L721 123 L737 107 L737 105 L743 100 L743 98 L748 94 L748 92 L753 88 L753 86 L758 82 L758 80 L763 76 L763 74 L768 70 L768 68 L772 65 L775 59 L783 51 L783 49 L793 38 L793 36 L796 34 L796 32 L806 19 L848 17 L841 38 L832 57 L832 60 L805 113 L803 114 L796 128 L792 132 L791 136 L789 137 L789 139 L787 140 L787 142 L785 143 L785 145 L783 146 L782 150 L779 152 L773 163 L770 165 L770 167 L767 169 L767 171 L758 181 L755 187 L739 204 L741 209 L749 217 L749 219 L752 221 L752 223 L755 225 L755 227 L767 241 L769 246 L772 248 L772 250 L774 251 L774 253 L786 269 L787 273 L791 277 L792 281 L794 282 L795 286 L800 292 L802 298 L804 299 L808 309 L810 310 L823 336 L823 339 L827 345 L827 348 L831 354 L831 357 L843 382 L847 395 L802 394 L799 386 L793 379 L792 375 L789 373 L787 368 L784 366 L782 361 L772 350 L769 344 L764 340 L761 334 L756 330 L756 328 L751 324 L751 322 L746 318 L746 316 L741 312 L741 310 L735 305 L735 303 L728 297 L728 295 L721 289 L721 287 L714 281 L714 279 L706 272 L706 270 L679 242 L673 245 L636 283 L634 283 L611 305 L609 305 L606 309 L600 312 L589 322 L584 324 L582 327 L580 327 L579 329 L577 329 L576 331 L574 331 L573 333 L571 333 L570 335 L568 335 L567 337 L565 337 L549 349 L545 350 L544 352 L540 353 L534 358 L526 361 L525 363 L511 369 L510 371 L500 376 L497 376 L487 382 L479 384 L475 387 L472 387 L470 389 L447 397 L407 407 L372 412 L319 412 L294 409 L266 402 L261 402 L258 400 L250 399 L241 395 L231 393 L229 391 L217 388 L203 381 L200 381 L170 366 L169 364 L150 354 L149 352 L147 352 L146 350 L132 342 L130 339 L125 337 L122 333 L120 333 L117 329 L115 329 L112 325 L110 325 L102 317 L100 317 L94 310 L92 310 L52 271 L52 269 L43 261 L43 259 L36 253 L36 251 L31 247 L31 245 L26 241 L26 239 L13 225 L8 216 L0 207 L0 204 L11 192 L11 190 L15 187 L15 185 L19 182 L19 180 L23 177 L23 175 L27 172 L27 170 L32 166 L32 164 L44 152 L44 150 L61 133 L61 131 L98 95 L100 95 L105 89 L107 89 L122 75 L127 73 L129 70 L134 68 L136 65 L138 65 L145 59 L149 58 L150 56 L154 55 L160 50 L168 47 L169 45 L191 34 L194 34 L200 30 L203 30 L207 27 L210 27 L214 24 L220 23 L227 19 L267 7Z M336 31 L301 34 L265 42 L241 50 L227 57 L224 57 L191 74 L187 78 L183 79 L182 81 L180 81 L179 83 L165 91 L163 94 L161 94 L147 106 L145 106 L131 119 L129 119 L124 125 L122 125 L116 132 L114 132 L63 182 L63 184 L42 205 L57 221 L57 223 L66 231 L66 233 L114 281 L116 281 L116 283 L118 283 L130 295 L132 295 L135 299 L137 299 L140 303 L146 306 L149 310 L151 310 L161 319 L163 319 L173 327 L177 328 L181 332 L187 334 L188 336 L198 340 L199 342 L217 351 L220 351 L226 355 L229 355 L233 358 L236 358 L238 360 L261 368 L289 375 L313 379 L373 380 L408 375 L432 369 L459 360 L473 353 L476 353 L486 347 L489 347 L495 344 L496 342 L517 332 L518 330 L522 329 L523 327 L527 326 L528 324 L532 323 L533 321 L535 321 L536 319 L538 319 L539 317 L553 309 L555 306 L557 306 L559 303 L561 303 L563 300 L569 297 L572 293 L574 293 L577 289 L579 289 L598 271 L600 271 L611 259 L613 259 L663 207 L661 202 L650 191 L650 189 L634 174 L634 172 L622 160 L620 160 L605 144 L603 144 L596 136 L594 136 L588 129 L586 129 L576 119 L574 119 L571 115 L569 115 L555 103 L547 99 L545 96 L543 96 L536 90 L532 89 L528 85 L524 84 L523 82 L519 81 L518 79 L508 75 L507 73 L491 65 L488 65 L480 60 L462 54 L460 52 L416 39 L380 33Z M105 192 L114 192 L118 194 L122 199 L122 211 L118 216 L114 218 L104 218 L97 211 L97 200 L99 196Z';
+  function fishSVG() {
+    return '<svg class="fish" viewBox="0 0 848 412" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="' + FISH_D + '"/></svg>';
+  }
   /* «HIS CLASS» 글자 경로 = class.html WM_SVG 와 같은 것(11-18 2차 · 웹 글꼴 0 · Noto Serif KR 600 · 자간 0.12em) */
   var WM_SVG = '<svg class="wm" viewBox="48 -753 6216 771" aria-hidden="true" focusable="false"><path fill="currentColor" d="M48.3 0V-31.6L192.1 -45.1H216.7L364 -31.6V0ZM144.7 0Q146.7 -84.5 146.9 -170.1Q147.2 -255.6 147.2 -342.2V-392.6Q147.2 -479.1 146.9 -564.6Q146.7 -650.2 144.7 -735.2H269.7Q267.7 -651.2 267.2 -565.2Q266.7 -479.1 266.7 -392.6V-366.5Q266.7 -263.1 267.2 -174.3Q267.7 -85.6 269.7 0ZM207.2 -361V-396.1H653.5V-361ZM495.7 0V-31.6L642 -45.1H666.6L811.4 -31.6V0ZM590 0Q592.5 -84.5 593 -173.1Q593.5 -261.6 593.5 -366.5V-392.6Q593.5 -479.1 593 -564.6Q592.5 -650.2 590 -735.2H715.1Q713.5 -651.2 713 -565.2Q712.5 -479.1 712.5 -392.6V-342.2Q712.5 -256.7 713 -171.1Q713.5 -85.6 715.1 0ZM48.3 -703.7V-735.2H364V-703.7L216.7 -691.1H192.1ZM495.7 -703.7V-735.2H811.4V-703.7L666.6 -691.1H642ZM1028.3 0V-31.6L1175.1 -45.1H1200.3L1348.1 -31.6V0ZM1125.7 0Q1128.2 -84.5 1128.4 -170.1Q1128.7 -255.6 1128.7 -342.2V-392.6Q1128.7 -479.1 1128.4 -564.6Q1128.2 -650.2 1125.7 -735.2H1250.7Q1249.2 -651.2 1248.7 -565.2Q1248.2 -479.1 1248.2 -392.6V-342.7Q1248.2 -256.7 1248.7 -171.1Q1249.2 -85.6 1250.7 0ZM1028.3 -703.7V-735.2H1348.1V-703.7L1200.3 -691.1H1175.1ZM1788.8 17.6Q1727.3 17.6 1668.2 1.1Q1609.1 -15.4 1569.5 -41L1575.5 -199.3H1623.2L1665.6 -20.3L1610.8 -44.9L1602.2 -80Q1651.2 -45 1689.2 -33Q1727.2 -21 1778.6 -21Q1857 -21 1902.9 -56.5Q1948.8 -92 1948.8 -158.8Q1948.8 -194.2 1936.5 -220Q1924.3 -245.7 1895.9 -266.6Q1867.5 -287.6 1818.2 -308L1773.7 -327.1Q1680.5 -367.7 1631.9 -420.3Q1583.3 -472.8 1583.3 -554.5Q1583.3 -619.6 1615.9 -663.6Q1648.4 -707.7 1704.5 -730.5Q1760.7 -753.3 1831.4 -753.3Q1889.4 -753.3 1935.7 -738.8Q1982.1 -724.3 2020.6 -697.8L2014.6 -547.5H1965.9L1925.1 -718.4L1982.9 -692.8L1988.5 -656.1Q1948 -688.7 1916.5 -701.7Q1885 -714.7 1842.6 -714.7Q1774.6 -714.7 1731.2 -682Q1687.8 -649.3 1687.8 -587.4Q1687.8 -532.4 1719.2 -499.5Q1750.6 -466.5 1807.1 -442L1855.1 -421.5Q1930.6 -389.4 1974.6 -356.9Q2018.7 -324.4 2037.4 -285.6Q2056.2 -246.8 2056.2 -193.2Q2056.2 -129.7 2023.9 -82.1Q1991.7 -34.6 1931.8 -8.5Q1872 17.6 1788.8 17.6ZM3023.2 17.6Q2941.2 17.6 2872.4 -7.2Q2803.6 -31.9 2752.5 -80.6Q2701.4 -129.3 2673.4 -200.4Q2645.3 -271.4 2645.3 -363.6Q2645.3 -456.2 2674.1 -528.8Q2702.9 -601.3 2754.5 -651.6Q2806.1 -701.8 2875.1 -727.6Q2944.2 -753.3 3023.8 -753.3Q3088.9 -753.3 3137.9 -739.3Q3186.9 -725.2 3235.4 -697.3L3235.3 -528.5H3185.1L3140.8 -717L3203.7 -695.9V-661.9Q3163.8 -691.3 3126.1 -704Q3088.4 -716.8 3042.4 -716.8Q2964.6 -716.8 2903.4 -677.5Q2842.3 -638.3 2807.1 -560.5Q2771.9 -482.8 2771.9 -367.1Q2771.9 -251.5 2807.1 -173.7Q2842.3 -95.9 2903.2 -57.2Q2964.2 -18.5 3041.5 -18.5Q3087 -18.5 3127.3 -31.5Q3167.7 -44.5 3209.2 -75V-40.4L3148.3 -21.2L3192.6 -206.8H3242.8L3243.4 -39.5Q3194.4 -10.5 3141.4 3.5Q3088.4 17.6 3023.2 17.6ZM3459.3 0 3459.9 -31.6 3606.1 -45.1H3619.7L3619.2 0ZM3556.7 0Q3558.7 -84.5 3558.9 -168.1Q3559.2 -251.6 3559.2 -326.9V-392.6Q3559.2 -479.1 3558.9 -564.9Q3558.7 -650.7 3556.7 -735.2H3681.2Q3679.7 -651.2 3679.2 -564.9Q3678.7 -478.7 3678.7 -390.4V-329.8Q3678.7 -253.7 3679.2 -169.6Q3679.7 -85.6 3681.2 0ZM3619.2 0 3619.7 -36.1H3976.5L3918.4 -6.9L3962.7 -205.9H4010.4L4007 0ZM3459.3 -703.7V-735.2H3783.6V-703.7L3634.8 -691.1H3606.1ZM4178.5 0V-31.6L4277.6 -44.1H4295.6L4404.1 -31.6V0ZM4249.5 0 4496.1 -740.2H4570.2L4821.3 0H4699.7L4484.9 -664.1H4505.4L4501.9 -650.1L4295.6 0ZM4359 -244.3 4364.6 -277.4H4676.3L4681.9 -244.3ZM4580.4 0V-32.1L4714.9 -44.6H4756.3L4891.5 -32.1V0ZM5292.8 17.6Q5231.3 17.6 5172.2 1.1Q5113.1 -15.4 5073.5 -41L5079.5 -199.3H5127.2L5169.6 -20.3L5114.8 -44.9L5106.2 -80Q5155.2 -45 5193.2 -33Q5231.2 -21 5282.6 -21Q5361 -21 5406.9 -56.5Q5452.8 -92 5452.8 -158.8Q5452.8 -194.2 5440.5 -220Q5428.3 -245.7 5399.9 -266.6Q5371.5 -287.6 5322.2 -308L5277.7 -327.1Q5184.5 -367.7 5135.9 -420.3Q5087.3 -472.8 5087.3 -554.5Q5087.3 -619.6 5119.9 -663.6Q5152.4 -707.7 5208.5 -730.5Q5264.7 -753.3 5335.4 -753.3Q5393.4 -753.3 5439.7 -738.8Q5486.1 -724.3 5524.6 -697.8L5518.6 -547.5H5469.9L5429.1 -718.4L5486.9 -692.8L5492.5 -656.1Q5452 -688.7 5420.5 -701.7Q5389 -714.7 5346.6 -714.7Q5278.6 -714.7 5235.2 -682Q5191.8 -649.3 5191.8 -587.4Q5191.8 -532.4 5223.2 -499.5Q5254.6 -466.5 5311.1 -442L5359.1 -421.5Q5434.6 -389.4 5478.6 -356.9Q5522.7 -324.4 5541.4 -285.6Q5560.2 -246.8 5560.2 -193.2Q5560.2 -129.7 5527.9 -82.1Q5495.7 -34.6 5435.8 -8.5Q5376 17.6 5292.8 17.6ZM5996.8 17.6Q5935.3 17.6 5876.2 1.1Q5817.1 -15.4 5777.5 -41L5783.5 -199.3H5831.2L5873.6 -20.3L5818.8 -44.9L5810.2 -80Q5859.2 -45 5897.2 -33Q5935.2 -21 5986.6 -21Q6065 -21 6110.9 -56.5Q6156.8 -92 6156.8 -158.8Q6156.8 -194.2 6144.5 -220Q6132.3 -245.7 6103.9 -266.6Q6075.5 -287.6 6026.2 -308L5981.7 -327.1Q5888.5 -367.7 5839.9 -420.3Q5791.3 -472.8 5791.3 -554.5Q5791.3 -619.6 5823.9 -663.6Q5856.4 -707.7 5912.5 -730.5Q5968.7 -753.3 6039.4 -753.3Q6097.4 -753.3 6143.7 -738.8Q6190.1 -724.3 6228.6 -697.8L6222.6 -547.5H6173.9L6133.1 -718.4L6190.9 -692.8L6196.5 -656.1Q6156 -688.7 6124.5 -701.7Q6093 -714.7 6050.6 -714.7Q5982.6 -714.7 5939.2 -682Q5895.8 -649.3 5895.8 -587.4Q5895.8 -532.4 5927.2 -499.5Q5958.6 -466.5 6015.1 -442L6063.1 -421.5Q6138.6 -389.4 6182.6 -356.9Q6226.7 -324.4 6245.4 -285.6Q6264.2 -246.8 6264.2 -193.2Q6264.2 -129.7 6231.9 -82.1Q6199.7 -34.6 6139.8 -8.5Q6080 17.6 5996.8 17.6Z"/></svg>';
-  /* 사이드바(2차): 이름 자리 = 물고기 + «HIS CLASS» 글자(로그인 머리 · 학생 앱과 같은 WM_SVG) + «관리» · 화면 읽기는 «히즈클래스 관리» */
+  /* 사이드바(2차 · 11-27 §8-243): 이름 자리 = 물고기(fishSVG · 글자 없음) + «HIS CLASS» 글자(로그인 머리 · 학생 앱과 같은 WM_SVG) · «관리» 뺌 · 화면 읽기는 «히즈클래스 관리» */
   /* 이름 · 로그아웃 줄 · 11-22 결론안 (바): 폰(760 이하)은 사이드바 줄을 숨기고 내용 뒤 맨 아래 줄(m = who-m)을 보임 → 보이는 차례 = 화면 읽기 · Tab 차례 · PC 는 그대로 */
   function whoHtml(m) {
     var who = S.me.admin ? S.me.name + ' 원장님' : S.me.name + ' 선생님';
@@ -2522,8 +2604,7 @@ window.__lecAdminStart = function () {
     }
     var hb = window.__hcBackHtml ? window.__hcBackHtml() : '';
     return '<header class="hd side" aria-label="히즈클래스 관리 메뉴"><div class="side-in' + (hb ? ' hb' : '') + '">' + hb +
-      '<p class="brand"><img class="logo" src="his_fish_green.png" alt="히즈어학원" width="40" height="20"><span class="sr">히즈클래스 관리</span>' + WM_SVG +
-      '<span class="brand-sub" aria-hidden="true">관리</span></p>' +
+      '<p class="brand">' + fishSVG() + '<span class="sr">히즈클래스 관리</span>' + WM_SVG + '</p>' +
       '<nav class="tabs" aria-label="화면">' + t('today', 'today', '오늘') + t('lec', 'lecture', '강의') + t('stat', 'watch', '시청 현황') + t('qna', 'qna', '질문', wn, wn > 0) +
       (sxOn() ? t('set', 'sets', '세트', sn > 0 ? sn : null, sn > 0, sn > 0 ? '세트 · 새 녹음 ' + sn : '') : '')   /* A3 ② */ + '</nav>' +
       '<p class="side-sec">학생 앱</p><button type="button" class="ni" data-act="copyAddr">' + nIcon('link') + '<span class="ni-t">학생용 주소 복사</span></button>' +
