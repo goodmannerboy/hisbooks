@@ -6319,7 +6319,8 @@ window.__lecStart = function () {
     if (p.ok) w.classList.add('ok'); else w.classList.remove('ok');
   }
   /* 상태 칸: 재생 전 «학습 전» · 재생하면 «학습 중» · 다 본 강의 «다 봤어요» · 끝 장면 동안 비움
-     % = 띠가 없는 강의(목차 없음)만 «학습 중 N%»(운영 글 그대로 · 띠가 있으면 띠가 진도) */
+     % = 지문 띠가 안 보일 때(강의 길이를 아직 모름)만 «학습 중 N%»(운영 글 그대로) · 띠가 있으면 띠가 진도(목차 없는 강의도 띠 한 칸 = 진도 막대)
+     띠는 열 때 상태 칸보다 늦게 그려짐 → bandDraw 가 끝에서 다시 부름 */
   function g3StPaint() {
     if (!T || !T.rec) return;
     var p = pctNow(), bd = $('band'), txt, sig;
@@ -7172,7 +7173,7 @@ window.__lecStart = function () {
     var D = T.durL > 0 ? T.durL : (+T.lec.dur || 0), sg = D > 0 ? segsOf(T.lec.chapters || [], D) : [], st = D > 0 ? stopList() : [], h = '', i, j, s, x;
     if (D > 0 && !sg.length) sg = [{ t: 0, from: 0, to: D, w: D, no: '', title: '', parts: [] }];
     T.segs = sg; T.bandSig = ''; T.fitSig = ''; T.g3done = null;
-    if (!sg.length) { box.innerHTML = ''; box.hidden = true; return; }
+    if (!sg.length) { box.innerHTML = ''; box.hidden = true; if (T.hv) g3StPaint(); return; }
     for (i = 0; i < sg.length; i += 1) {
       s = sg[i];
       h += '<button type="button" data-act="seek" data-t="' + s.t + '" style="flex:' + s.w + ' 1 0" aria-label="' + esc((s.no ? s.no + '번' : (s.title || '처음')) + ' 처음으로') + '">' +
@@ -7186,6 +7187,7 @@ window.__lecStart = function () {
     box.innerHTML = h;
     box.hidden = false;
     bandPaint();
+    if (T.hv) g3StPaint();   /* 상태 칸 % 는 띠가 보이는지에 따름 = 띠를 그린 뒤 다시(열 때 상태 칸이 먼저 그려짐) */
   }
   function bandPaint() {
     var box = $('band');
