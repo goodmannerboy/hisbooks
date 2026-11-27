@@ -1160,7 +1160,8 @@ html.hv.stg body{background:#0D241A;background-image:none}
 /* 머리 = 작은 교재명 + 굵은 범위 */
 html.hv.stg .ptop .pt span{color:var(--g3-nink3)}
 html.hv.stg .ptop .pt b{color:var(--g3-nink)}
-html.hv.stg .backb{color:var(--g3-nink)}
+html.hv.stg .ptop .backb{color:var(--g3-nink)}
+.g3u.g3fx .backb{font-size:15px}   /* 열고 닫는 동안 밑판(범위 화면) «‹ 목록» = 무대 글자(17px) 말고 원래 크기 */
 html.hv.stg .ptop .pdfb{padding:0 4px 0 12px;border:0;box-shadow:none;background:none;color:var(--g3-nink2);font-size:15px;font-weight:600}
 html.hv.stg .ptop .pdfb svg{color:var(--g3-nink2)}
 html.hv.stg .pdfm{color:var(--g3-nink2)}
@@ -1181,7 +1182,7 @@ html.hv.stg .g3e2{margin-top:12px}
 html.hv.stg .g3nx{display:block;width:100%;height:56px;padding:0 16px;border:0;border-radius:16px;background:var(--g3-nink);color:#0D241A;font-size:15px;line-height:56px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:g3up .24s cubic-bezier(.2,.8,.2,1) .94s both}
 @keyframes g3fd{from{opacity:0}}
 @keyframes g3ck{from{stroke-dashoffset:24}}
-@keyframes g3up{from{opacity:0;transform:translateY(10px)}}
+@keyframes g3up{from{opacity:0;transform:translateY(10px);visibility:hidden}}   /* 뜨기 전(늦춤 .94초 동안)엔 안 눌림 */
 /* 지문 띠: 누를 곳 44 · 보이는 막대 6(영상 아래 20px) · 다 본 지문 = 민트 */
 html.hv.stg .band{gap:3px;margin:1px 0 -19px}
 html.hv.stg .band .bt{top:19px;height:6px;border-radius:2px;background:transparent;box-shadow:inset 0 0 0 1px rgba(242,236,223,.28);transform-origin:50% 50%}
@@ -1202,7 +1203,9 @@ html.hv.stg .g3st{flex:0 0 auto;display:flex;align-items:center;justify-content:
 html.hv.stg .g3st button{pointer-events:auto}
 html.hv.stg .g3st .resume{display:flex;flex-wrap:nowrap;gap:0;margin:0;font-size:13px;line-height:18px}
 html.hv.stg .g3st .resume:not([hidden]) + .ms{display:none}
-html.hv.stg .g3st .resume button{display:flex;align-items:center;min-height:44px;padding:0;border:0;background:none;color:var(--g3-nink);font-weight:600;text-decoration:none}
+html.hv.stg .g3st .resume button{display:flex;align-items:center;min-height:42px;margin-top:2px;padding:0 0 2px;border:0;background:none;color:var(--g3-nink);font-weight:600;text-decoration:none}
+/* 알약 누를 곳: 띠 막대(아래 끝) ~ 알약(위 끝) 사이 10px 를 반씩(위 2px 줄이고 .hit 의 위 8px 넓힘 없앰) = 띠 오른쪽 끝을 눌러도 띠 · 보이는 알약 자리 그대로 */
+html.hv.stg .g3st .hit:after{top:0}
 html.hv.stg .g3re span{display:flex;align-items:center;height:30px;padding:0 12px;border-radius:15px;box-shadow:inset 0 0 0 1px rgba(242,236,223,.34);font-size:13px;white-space:nowrap}
 /* «10초 · 속도» 줄 ↔ 멈추면 같은 높이 «계속 보기 | 나중에» */
 html.hv.stg .g3ctl{position:relative;height:44px;margin:4px 0 0}
@@ -1223,12 +1226,13 @@ html.hv.stg .g3c1 .spd button.on span{background:var(--g3-pill)}
 html.hv.stg .g3c2 button{display:flex;align-items:center;height:44px;padding:0 16px;border:0;background:none;font-size:15px;font-weight:400;color:var(--g3-nink2)}
 html.hv.stg .g3c2 .g3cg{padding-left:0;font-weight:600;color:var(--g3-nink)}
 html.hv.stg .g3c2 i{flex:0 0 auto;width:1px;height:16px;background:rgba(242,236,223,.2)}
-/* 탭 «목차 N | 질문» = 글자 + 민트 밑줄 · 목차 줄 = 점 10(다 봄 민트 · 지금 고리) */
+/* 탭 «목차 N | 질문» = 글자 + 민트 밑줄 · 목차 줄 = 점 10(다 봄 민트 · 지금 고리)
+   누를 곳 = 글자 양옆 11px(탭 사이 22 를 반씩 · «질문»도 44px 넘음) · 보이는 글자 · 밑줄 자리는 그대로 */
 html.hv.stg .tabs{gap:22px;margin:6px 0 0;border-radius:0;background:none;box-shadow:inset 0 -1px rgba(242,236,223,.1)}
 html.hv.stg .tabs::before{display:none}
-html.hv.stg .tabs button{position:relative;flex:0 0 auto;height:44px;padding:0;border-radius:0;background:none;font-size:15px;font-weight:400;color:var(--g3-nink3)}
+html.hv.stg .tabs button{position:relative;flex:0 0 auto;height:44px;padding:0 11px;margin:0 -11px;border-radius:0;background:none;font-size:15px;font-weight:400;color:var(--g3-nink3)}
 html.hv.stg .tabs button.on{background:none;font-weight:600;color:var(--g3-nink)}
-html.hv.stg .tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:1px;background:var(--g3-mint)}
+html.hv.stg .tabs button.on::after{content:"";position:absolute;left:11px;right:11px;bottom:0;height:2px;border-radius:1px;background:var(--g3-mint)}
 html.hv.stg .paper{color:var(--g3-nink2)}
 html.hv.stg .paper svg{color:var(--g3-nink3)}
 html.hv.stg .toc li + li:before,html.hv.stg .toc li.fd + li:not(.fd):before,html.hv.stg .toc li[hidden] + li:before,html.hv.stg .fold + .toc > li:first-child:before{left:22px;border-top-color:rgba(242,236,223,.07)}
@@ -1444,6 +1448,7 @@ button.s1t:active{transition:background-color .24s,transform 90ms var(--e-out)}
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{transition:none !important;animation:none !important;scroll-behavior:auto !important}
   .tc:active .art,.row:active .sth,button.s1t:active,.btn-fill:active,.k2 .btn:active{transform:none}   /* C1 누름도 끔 */
+  html.hv .rgo:active,html.hv .cp:active>span{transform:none}   /* 11-27 범위 화면 누름 줄어듦도 끔 */
 }
 /* 히즈클래스 «앱으로 가는 문»(A단계 · 11-18) · 값 = 목업 그대로(P\v2\flow\flow.css · P\v2\student\style.css 크림 토큰) · 이름에 dr- 를 붙여 class.html 과 안 겹치게
    목업과 다른 곳(진짜 화면이라서): 폰의 브라우저 줄 그림(.osb)은 안 그림 → 화살표 · 번호는 화면 가장자리에 붙임(아래 줄 = position:fixed · 크롬 위 줄 = 쪽 맨 위 absolute · 브라우저 줄 바로 옆 4px)
@@ -2875,6 +2880,7 @@ window.__lecStart = function () {
     if (S.view !== 'list' && S.view !== 'rng') return;
     var ago = Date.now() - press.at;
     if (press.on ? ago < 3000 : ago < 400) { setTimeout(quietList, 100); return; }
+    if (S.view === 'rng' && hvTyping()) { HV_LATER = true; return; } /* 범위 화면 번호 칸에 치는 중 = 다시 그리면 친 번호 · 자판이 사라짐 → 칸을 떠날 때 다시 그림 */
     if (S.view === 'rng') showRange(); else showList();
   }
 
@@ -3536,6 +3542,7 @@ window.__lecStart = function () {
      강의마다 카드 = 실제 썸네일(누르면 멈춘 곳부터 · data-mo = 무대가 자랄 곳) + 아래 끝 4px 지문 띠 + 한 줄 상태 + 지문 단추(그 지문부터 · data-at)
      차례는 그대로(덜 본 것 먼저 · 다 본 것은 아래 · 같으면 수업일 이른 차례) · 교재 머리글 없음(카드 썸네일 안에 교재 이름) */
   function showRange() {
+    var was = S.view === 'rng', q0 = was ? $('rngQ') : null, qv = q0 ? String(q0.value || '') : ''; /* 같은 화면을 조용히 다시 그림 = 친 번호 그대로 */
     hvSync();
     var m = recMode(), rec = m === 'agree', ex = examTop(rec);
     if (!ex || ex.only) { clearHash(); showList(); return; } /* 시험이 지났거나 범위가 빠짐(일정만 카드 포함) = 목록으로 */
@@ -3559,6 +3566,8 @@ window.__lecStart = function () {
     if (btn && go.l) btn.addEventListener('click', function () { viaSet(go.l.id, 'exam'); openAt(go.l.id, go.t, hvTb(go.l.id)); }); /* via = 범위 화면(exam) */
     inp = $('rngQ');
     if (inp) {
+      if (qv) inp.value = qv;
+      inp.addEventListener('blur', function () { if (HV_LATER) { HV_LATER = false; setTimeout(quietList, 120); } }); /* 치는 동안 미룬 다시 그리기 */
       inp.addEventListener('input', function () {
         var v = String(inp.value || '').replace(/\D+/g, '').slice(0, 3);
         if (v !== inp.value) inp.value = v;
@@ -3570,6 +3579,7 @@ window.__lecStart = function () {
         if (String(inp.value || '').length) hvFind(inp.value, ls, inp, false);
       });
     }
+    if (!was) HV_CS = {}; /* 범위 화면에 새로 들어옴 = 다음 볼 단추 자리부터 */
     hvChipScroll();
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (S.view === 'rng') hvChipScroll(); }); } catch (e) { /* 없음 */ }
     pwaAuto();
@@ -3637,7 +3647,6 @@ window.__lecStart = function () {
 
   /* ------------------------------------------------------------ 11-27 결론안 8 · 9 · 10(영상 있는 반 = html.hv 만)
      지문 = 보기 화면 띠와 같은 칸(segsOf · 2% 안 되는 머리 칸은 다음 칸에 붙음) · 다 봄 경계 0.9(띠와 같음) · 진행은 서버가 준 본 칸(l.seen)만 */
-  function hvOn() { return /(^|\s)hv(\s|$)/.test(document.documentElement.className); }
   var HV_CHK = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>',
     HV_PL = '<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2.5 1.2l8 4.8-8 4.8z"/></svg>',
     HV_SR = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
@@ -3818,14 +3827,34 @@ window.__lecStart = function () {
     for (i = 0; i < a.length; i += 1) { if (a[i].getAttribute('href') === h) return a[i]; }
     return null;
   }
-  /* 지문 단추 줄: 다음 볼 단추의 앞 단추가 왼쪽 16 에 오게(위젯 w3 chipScroll) */
+  /* 지문 단추 줄: 다음 볼 단추의 앞 단추가 왼쪽 16 에 오게(위젯 w3 chipScroll)
+     학생이 손으로 민 줄(HV_CS · 강의 id → 자리)은 조용히 다시 그려도 그 자리 그대로 · 범위 화면에 새로 들어오면 비움
+     HV_LATER = 번호 칸에 치는 중이라 미룬 다시 그리기(칸을 떠날 때) */
+  var HV_CS = {}, HV_LATER = false, HV_CSON = false;
+  function hvTyping() { var q = $('rngQ'); return !!(q && document.activeElement === q); }
+  function hvCsKey(c) { var r = c.closest ? c.closest('.rlc') : null; return r ? String(r.getAttribute('data-id') || '') : ''; }
   function hvChipScroll() {
-    var cs = app.querySelectorAll('.cps'), i, c, n, p;
+    var cs = app.querySelectorAll('.cps'), i, c, n, p, k;
+    if (!HV_CSON) {
+      HV_CSON = true;
+      app.addEventListener('scroll', function (e) {
+        var x = e.target, y;
+        if (S.view !== 'rng' || !x || !x.classList || !x.classList.contains('cps')) return;
+        if (Math.abs(x.scrollLeft - (+x.__p || 0)) < 2) return; /* 앱이 맞춘 자리 */
+        y = hvCsKey(x);
+        if (y) HV_CS[y] = x.scrollLeft;
+      }, true);
+    }
     for (i = 0; i < cs.length; i += 1) {
       c = cs[i];
-      n = c.querySelector('.cp.n') || c.querySelector('.cp:not(.d)');
-      p = n && n.previousElementSibling;
-      c.scrollLeft = p ? Math.max(0, p.offsetLeft - 16) : 0;
+      k = hvCsKey(c);
+      if (k && Object.prototype.hasOwnProperty.call(HV_CS, k)) c.scrollLeft = HV_CS[k];
+      else {
+        n = c.querySelector('.cp.n') || c.querySelector('.cp:not(.d)');
+        p = n && n.previousElementSibling;
+        c.scrollLeft = p ? Math.max(0, p.offsetLeft - 16) : 0;
+      }
+      c.__p = c.scrollLeft;
     }
   }
   /* 약속 1(무대와 나눔): 번호 찾기 · 맨 위 «N번부터» 단추 = 그 시각부터 무대를 엶 · fromEl = 그 강의 썸네일 링크(무대가 자랄 곳) */
@@ -6289,13 +6318,14 @@ window.__lecStart = function () {
     setHTML('g3Sm', esc(p.s));
     if (p.ok) w.classList.add('ok'); else w.classList.remove('ok');
   }
-  /* 상태 칸: 재생 전 «학습 전» · 재생하면 «학습 중» · 다 본 강의 «다 봤어요» · 끝 장면 동안 비움(% 없음) */
+  /* 상태 칸: 재생 전 «학습 전» · 재생하면 «학습 중» · 다 본 강의 «다 봤어요» · 끝 장면 동안 비움
+     % = 띠가 없는 강의(목차 없음)만 «학습 중 N%»(운영 글 그대로 · 띠가 있으면 띠가 진도) */
   function g3StPaint() {
     if (!T || !T.rec) return;
-    var p = pctNow(), txt, sig;
+    var p = pctNow(), bd = $('band'), txt, sig;
     if (T.g3end) txt = '';
     else if (T.lec.confirmed || isDone(T.lec, p)) txt = M.g3Done;
-    else if (T.played || p > 0 || T.lec.first_at) txt = M.g3Ing;
+    else if (T.played || p > 0 || T.lec.first_at) txt = M.g3Ing + ((!bd || bd.hidden || !T.segs || !T.segs.length) && p > 0 ? ' ' + p + '%' : '');
     else txt = M.g3Pre;
     sig = 'g|' + txt;
     if (sig !== T.stSig) { T.stSig = sig; setHTML('mySt', esc(txt)); }
@@ -7783,6 +7813,7 @@ window.__lecStart = function () {
   window.addEventListener('pagehide', function () { if (T) { sample(); sendBeat(true); } });
 
   if (L.TEST) {
+    window.__hvQuiet = function () { quietList(); };   /* 11-27 범위 화면 시험: 영상에서 돌아온 뒤 진도 · 1분 넘은 다시 받기의 조용한 다시 그리기 흉내 */
     window.__g3want = function (t) { S.wantAt = t; };   /* 11-27 무대 시험: 약속 1(R 의 «N초부터» 열기) 흉내 */
     window.__g3 = function () {
       return T ? { hv: !!T.hv, done: T.g3done ? T.g3done.slice() : null, hold: !!T.g3hold, end: !!T.g3end, stopTx: T.g3stopTx || '', at: !!T.g3at, reOff: !!T.g3reOff,
