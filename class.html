@@ -3427,12 +3427,12 @@ window.__lecStart = function () {
       inp.addEventListener('input', function () {
         var v = String(inp.value || '').replace(/\D+/g, '').slice(0, 3);
         if (v !== inp.value) inp.value = v;
-        if (v.length >= 2) hvFind(v, ls, inp);
+        if (v) hvFind(v, ls, inp, true);
       });
       inp.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter' && e.keyCode !== 13) return;
         e.preventDefault();
-        if (String(inp.value || '').length) hvFind(inp.value, ls, inp);
+        if (String(inp.value || '').length) hvFind(inp.value, ls, inp, false);
       });
     }
     hvChipScroll();
@@ -3647,9 +3647,11 @@ window.__lecStart = function () {
     }
     return { l: orig[0] || null, t: 0, head: M.rngAll, btn: M.rngAgain };
   }
-  /* 워크북 번호 찾기: 범위 차례대로 목차 제목 번호(«18번» · «23~24번»)에 든 첫 지문 → 그 지문부터 · 없으면 토스트 */
-  function hvFind(v, ls, inp) {
-    var n = parseInt(v, 10), i, j, l, ch, m, a, b, t;
+  /* 워크북 번호 찾기: 범위 차례대로 목차 제목 번호(«18번» · «23~24번»)에 든 첫 지문 → 그 지문부터 · 없으면 토스트
+     치는 중(live)에는 더 긴 번호(«12» → 120~129번 · «0» → 01~09번)가 범위에 있으면 기다림 = 세 자리 번호가 두 자리 번호로 먼저 뛰지 않음 · Enter = 바로 */
+  function hvFind(v, ls, inp, live) {
+    var n = parseInt(v, 10), i, j, l, ch, m, a, b, t, k, s1, s2, hit = null, more = false;
+    v = String(v);
     if (!isFinite(n)) return;
     for (i = 0; i < ls.length; i += 1) {
       l = ls[i];
@@ -3659,17 +3661,22 @@ window.__lecStart = function () {
         if (!m) continue;
         a = parseInt(m[1], 10);
         b = m[2] ? parseInt(m[2], 10) : a;
+        if (a > b) { k = a; a = b; b = k; }
         t = +ch[j].t;
-        if (n >= Math.min(a, b) && n <= Math.max(a, b) && isFinite(t)) {
-          inp.value = '';
-          try { inp.blur(); } catch (e) { /* 없음 */ }
-          viaSet(l.id, 'exam');
-          openAt(l.id, t, hvTb(l.id));
-          return;
+        if (!hit && n >= a && n <= b && isFinite(t)) hit = { l: l, t: t };
+        for (k = a; live && !more && k <= b && k - a < 400; k += 1) {
+          s1 = String(k);
+          s2 = hvPad(k);
+          if ((s1.length > v.length && s1.indexOf(v) === 0) || (s2.length > v.length && s2.indexOf(v) === 0)) more = true;
         }
       }
     }
-    alToast(M.rngNo);
+    if (live && more) return; /* 더 칠 번호가 있음 → 기다림 */
+    if (!hit) { alToast(M.rngNo); return; }
+    inp.value = '';
+    try { inp.blur(); } catch (e) { /* 없음 */ }
+    viaSet(hit.l.id, 'exam');
+    openAt(hit.l.id, hit.t, hvTb(hit.l.id));
   }
   function hvTb(id) {
     var a = app.querySelectorAll('.rtb'), h = '#v=' + encodeURIComponent(id), i;
