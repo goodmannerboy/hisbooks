@@ -459,6 +459,8 @@
 :root{color-scheme:light;color-scheme:only light;--bg:#FAF6EC;--card:#FFFFFF;--edge:rgba(70,52,12,.10);--line:rgba(70,52,12,.13);--dash:#CBBF9A;--ink:#1A1A18;--ink2:#57534A;--acc:#0C4631;--accB:#E3EBDD;--track:rgba(12,70,49,.15);--tile:#E9F0EC;--tileT:#0C4631;--done:#1B6A43;--focus:#0C4631;--rv:#8A8D80;--fillB:#0C4631;--fillT:#FFFFFF;--fill:#EAE1C8;--press:#F3EEE2;--inL:#E6DCBF;--sl:#CBBF9A;--gold:var(--brass);--cur:#F4EEDB;--seen:#0C4631;--gB:#DDF0E5;--gT:var(--done);--aB:#FBF0C9;--aT:var(--warn);--sB:#DFEAF8;--sT:var(--new);--nB:var(--mute-bg);--nT:var(--mute);--cB:#FBE9E3;--cT:var(--err);--art:#F7F2E4;--artT:#0B3D2E;--artL:rgba(70,52,12,.14);--e-out:cubic-bezier(.2,.8,.2,1);--e-soft:cubic-bezier(.3,.7,.2,1);--t1:120ms;--t2:240ms;--t3:420ms;--t4:700ms;--bg-s:#FAF6EC;--bg-a:#FDFAF2;--side:#F4ECD7;--ink3:#6F6B62;--done-dot:#2E8B57;--warn:#98480A;--warn-dot:#C26A00;--new:#1B5499;--err:#B3302A;--mute-bg:#EFEDE5;--mute:#57534A;--brass:#7A5410;--gold-line:#C9A227;--dd-ring:#D9546D;--stg-bg:#0D241A;--stg-ink:#F3F1EA;--stg-ink2:#B9C2BB;--stg-ink3:#9DA9A0;--stg-hi:#8FD0AE}
 /* C1 · C2(11-19 · 결론안 J 값 그대로 · 두 앱 한 벌): 움직임 --e-out · --e-soft · --t1~--t4 · 색 = B §3 기준표 이름(관리와 같은 값) · 상태 색 옛 이름(--gT · --aT · --sT · --cT · --nB · --nT · --gold)은 새 이름을 가리킴(값 그대로 · 무대 html.stg 는 옛 이름을 따로 덮음) */
 html.stg{color-scheme:dark;--bg:#0D241A;--card:rgba(255,255,255,.07);--edge:rgba(255,255,255,.10);--acc:#8FD0AE;--accB:rgba(255,255,255,.11);--line:rgba(255,255,255,.10);--dash:#5A7A6A;--ink:#F3F1EA;--ink2:#B9C2BB;--ink3:#9DA9A0;--track:rgba(255,255,255,.2);--tile:rgba(255,255,255,.11);--tileT:#F3F1EA;--done:#8FD0AE;--focus:#8FD0AE;--rv:#9DA9A0;--fillB:#F3F1EA;--fillT:#0C4631;--press:rgba(255,255,255,.11);--inL:rgba(255,255,255,.14);--sl:rgba(255,255,255,.14);--gold:#8FD0AE;--cur:rgba(255,255,255,.07);--seen:#F3F1EA;--gB:rgba(143,208,174,.16);--gT:#8FD0AE;--aB:rgba(240,178,107,.16);--aT:#F0B26B;--sB:rgba(169,205,232,.16);--sT:#A9CDE8;--nB:rgba(255,255,255,.11);--nT:#B9C2BB;--cB:rgba(242,184,172,.16);--cT:#F2B8AC;--glass:rgba(255,255,255,.11);--sel:rgba(255,255,255,.15)}
+/* 11-27 고급 · 몰입 결론안(«덜어서 고급스럽게 · 한 만큼 채워지는 손맛») 색 한 벌 = 영상 있는 반만(html.hv) · 옛 토큰 값은 그대로(«오늘» 덩어리 · 영상 없는 반 한 픽셀도 안 바뀜) */
+html.hv{--g3-bg:#FAF6EC;--g3-card:#FFFFFF;--g3-paper:#F7F2E4;--g3-acc:#0C4631;--g3-done:#1B6A43;--g3-gold:#C9A227;--g3-rose:#D9546D;--g3-amb:#A8601C;--g3-navy:#2E5373;--g3-coral:#B3302A;--g3-ink:#1A1A18;--g3-ink2:#57534A;--g3-ink3:#6F6B62;--g3-chip:#E3EBDD;--g3-unseen:rgba(190,176,140,.45);--g3-night:#0D241A;--g3-nink:#F2ECDF;--g3-nink2:rgba(242,236,223,.72);--g3-nink3:rgba(242,236,223,.62);--g3-mint:#8FD0AE;--g3-nrose:#F09AAB;--g3-pill:rgba(242,236,223,.12)}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;line-height:1.5;word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent}
@@ -2227,6 +2229,11 @@ window.__lecStart = function () {
     };
     return '<svg width="' + n + '" height="' + n + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (P[name] || '') + '</svg>';
   }
+  /* 11-27 결론안: 강의(영상)가 있는 반만 새 모양 = html.hv · 영상 없는 반은 그대로(지난 목록 먼저 그리기 · 집 정보 받기 · 나가기에서 맞춤) */
+  function hvSync() {
+    var r = document.documentElement, on = !!(S.lectures && S.lectures.length);
+    r.className = (' ' + r.className + ' ').replace(/ hv /g, ' ').replace(/^\s+|\s+$/g, '') + (on ? ' hv' : '');
+  }
   /* 보기 화면 = 무대 색(html.stg) · 다른 화면으로 가면 teardown 이 끔 */
   function stage(on) {
     var r = document.documentElement, m = document.querySelector('meta[name="theme-color"]:not([media])');
@@ -2337,7 +2344,7 @@ window.__lecStart = function () {
   function reLogin() {
     L.lsDel(LS.key); L.lsDel(LS.sess);
     L.lsDel(HOME0); /* P2 ③ · P5: 이 기기의 지난 집 정보 칸 */
-    S.key = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
+    S.key = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; hvSync();
     S.al = null; S.alFresh = false; S.set = null; S.setDirty = false; S.setMore = false;
     spkFresh();
     if (!/^#v=/.test(String(location.hash || ''))) clearHash();   /* P6(11-21): 강의 주소(#v= · 반 공지 · 알림)는 다시 들어온 뒤 그 강의로 · 나머지 해시만 걷음 */
@@ -2427,7 +2434,7 @@ window.__lecStart = function () {
       S.att = d.a || null; S.rng = d.r || null; S.set = d.s || null; S.al = d.al || null;
       /* 알림 단계를 띄울 자리(홈 화면 앱 · 아직 안 물음 · 이 학생 단계 전) = 먼저 그리지 않음(목록 → 단계로 바뀌지 않게) */
       if (S.alFresh && alCan() && alPerm() === 'default' && !L.lsGet(alStepK(), 0)) ok = false;
-      else { SNAPPING = true; showList(); }
+      else { SNAPPING = true; hvSync(); showList(); }
     } catch (e) { ok = false; }
     SNAPPING = false;
     S.name = sv.n; S.lectures = sv.l; S.consent = sv.c; S.att = sv.a; S.rng = sv.r; S.set = sv.s; S.al = sv.al;
@@ -2537,6 +2544,7 @@ window.__lecStart = function () {
       S.homeAt = Date.now();
       S.name = (r.me && r.me.name) || S.name;
       S.lectures = r.lectures || [];
+      hvSync();
       S.consent = r.consent || null;
       if (r.consent_ver) S.cver = r.consent_ver;
       home0Mark(k);
@@ -6675,7 +6683,7 @@ window.__lecStart = function () {
     sqDrop();   /* F5: 못 보낸 외우기 · 따라 말하기 표시(localStorage)도 지움 */
     L.lsDel(HOME0); /* P2 ③ · P5(11-21 · S2): 이 기기의 지난 집 정보 · 지난 목록 */
     SEEN = null;
-    S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null;
+    S.key = ''; S.name = ''; S.home = null; S.lectures = []; S.consent = null; S.att = null; S.paper = null; S.pdf = null; S.rng = null; hvSync();
     S.al = null; S.alFresh = false; S.nIds = null; S.set = null; S.setDirty = false; S.setMore = false;
     spkFresh();
     clearHash();
