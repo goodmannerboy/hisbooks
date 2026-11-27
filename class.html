@@ -1091,6 +1091,129 @@ html.stg .ky{background:var(--glass);color:var(--ink)}
   html.stg .pch{border-bottom-color:var(--line)}
   html.stg .pgrid .vid{border-radius:12px}
 }
+/* 11-27 무대(묶음 1·2 · html.hv 일 때만 · 영상 없는 반 · 목록 «오늘» 덩어리는 그대로)
+   한 겹 먹빛 #0D241A · 글 #F2ECDF(100 · 72 · 62%) · 민트 #8FD0AE · 글 크기 다섯(12 · 13 · 15 · 17 · 19) · 상자 · 테두리 칸 없음(고른 배속만 옅은 알약)
+   .g3u = 열고 닫는 동안 무대 밑에 남는 목록(밝은 토큰 그대로 · 무대 규칙이 안 먹게) · .g3o = 닫을 때 떼어 낸 무대 */
+.g3u{--bg:#FAF6EC;--card:#FFFFFF;--edge:rgba(70,52,12,.10);--line:rgba(70,52,12,.13);--dash:#CBBF9A;--ink:#1A1A18;--ink2:#57534A;--ink3:#6F6B62;--acc:#0C4631;--accB:#E3EBDD;--track:rgba(12,70,49,.15);--tile:#E9F0EC;--tileT:#0C4631;--done:#1B6A43;--focus:#0C4631;--rv:#8A8D80;--fillB:#0C4631;--fillT:#FFFFFF;--press:#F3EEE2;--inL:#E6DCBF;--sl:#CBBF9A;--gold:#7A5410;--cur:#F4EEDB;--seen:#0C4631;--gB:#DDF0E5;--gT:#1B6A43;--aB:#FBF0C9;--aT:#98480A;--sB:#DFEAF8;--sT:#1B5499;--nB:#EFEDE5;--nT:#57534A;--cB:#FBE9E3;--cT:#B3302A;--glass:initial;--sel:initial;color-scheme:light;color-scheme:only light;color:var(--ink);background:var(--bg)}
+.g3u.g3fx{position:fixed;left:0;top:0;right:0;bottom:0;z-index:0;overflow:hidden;pointer-events:none}
+.g3fx *,.g3o *{animation:none !important;transition:none !important}
+.g3ui,.g3oi{position:absolute}
+#app.g3in{position:relative;z-index:1;min-height:100vh;background:#0D241A}
+#app.g3cl{min-height:100vh}
+.g3o{position:fixed;left:0;top:0;right:0;bottom:0;z-index:50;overflow:hidden;background:#0D241A;pointer-events:none}
+.g3ov{position:absolute;overflow:hidden;background:#000;transform-origin:0 0}
+.g3ov img{display:block;width:100%;height:100%;object-fit:cover}
+html.hv.stg body{background:#0D241A;background-image:none}
+/* 머리 = 작은 교재명 + 굵은 범위 */
+html.hv.stg .ptop .pt span{color:var(--g3-nink3)}
+html.hv.stg .ptop .pt b{color:var(--g3-nink)}
+html.hv.stg .backb{color:var(--g3-nink)}
+html.hv.stg .ptop .pdfb{padding:0 4px 0 12px;border:0;box-shadow:none;background:none;color:var(--g3-nink2);font-size:15px;font-weight:600}
+html.hv.stg .ptop .pdfb svg{color:var(--g3-nink2)}
+html.hv.stg .pdfm{color:var(--g3-nink2)}
+/* 영상 칸: 재생 단추 그림(포스터가 있는 동안만 · 누름은 재생기로) · 끝 장면(재생기를 숨기고 그 자리에) */
+html.hv.stg .vid .g3pb{display:none}
+html.hv.stg .vid .vpost + .g3pb{position:absolute;right:20px;top:50%;display:flex;align-items:center;justify-content:center;width:56px;height:56px;margin-top:-28px;border-radius:50%;background:rgba(20,20,18,.55);color:#FFFFFF;pointer-events:none}
+html.hv.stg .g3pb svg{width:18px;height:18px;margin-left:3px;fill:currentColor}
+html.hv.stg .vid.g3e #ytbox,html.hv.stg .vid.g3e .vpost{visibility:hidden}
+html.hv.stg .vid.g3e .g3pb{display:none}
+html.hv.stg .g3end{position:absolute;left:0;top:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:0 20px;background:#0D241A;color:var(--g3-nink)}
+html.hv.stg .g3e1,html.hv.stg .g3e2{width:100%;max-width:360px}
+html.hv.stg .g3e1{display:flex;align-items:center;gap:10px;font-size:17px;line-height:24px;font-weight:700;animation:g3fd .7s ease-out both}
+html.hv.stg .g3ck{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--g3-mint);color:var(--g3-mint)}
+html.hv.stg .g3ck svg{width:18px;height:18px}
+html.hv.stg .g3ck path{stroke-dasharray:24;stroke-dashoffset:0;animation:g3ck .42s ease-out .3s both}
+html.hv.stg .g3e1.nd .g3ck{box-shadow:inset 0 0 0 2px var(--g3-nink3);color:var(--g3-nink3)}
+html.hv.stg .g3e2{margin-top:12px}
+html.hv.stg .g3nx{display:block;width:100%;height:56px;padding:0 16px;border:0;border-radius:16px;background:var(--g3-nink);color:#0D241A;font-size:15px;line-height:56px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:g3up .24s cubic-bezier(.2,.8,.2,1) .94s both}
+@keyframes g3fd{from{opacity:0}}
+@keyframes g3ck{from{stroke-dashoffset:24}}
+@keyframes g3up{from{opacity:0;transform:translateY(10px)}}
+/* 지문 띠: 누를 곳 44 · 보이는 막대 6(영상 아래 20px) · 다 본 지문 = 민트 */
+html.hv.stg .band{gap:3px;margin:1px 0 -19px}
+html.hv.stg .band .bt{top:19px;height:6px;border-radius:2px;background:transparent;box-shadow:inset 0 0 0 1px rgba(242,236,223,.28);transform-origin:50% 50%}
+html.hv.stg .band button.on .bt{box-shadow:inset 0 0 0 1px rgba(242,236,223,.6)}
+html.hv.stg .band .bt b{background:rgba(242,236,223,.6)}
+html.hv.stg .band button.d .bt,html.hv.stg .band button.d .bt b{background:var(--g3-mint);box-shadow:none}
+html.hv.stg .band em{top:13px;background:var(--g3-nink3)}
+html.hv.stg .band .bl{display:none}
+/* «지금» 줄(그 자리에서 바뀜) + 오른쪽 상태 칸(학습 전 · 학습 중 · 다 봤어요 · «처음부터» · 되돌리기 알약) */
+html.hv.stg .g3nw{position:relative;display:flex;align-items:flex-start;height:52px;margin:12px 0 0;pointer-events:none}
+html.hv.stg .g3nwi{flex:1 1 auto;min-width:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .24s}
+html.hv.stg .g3nwi.up{transform:translateY(-12px);opacity:0}
+html.hv.stg .g3nwi.dn{transform:translateY(12px);opacity:0;transition:none}
+html.hv.stg .g3nwi b{display:block;font-size:19px;line-height:28px;font-weight:700;letter-spacing:-.02em;color:var(--g3-nink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.hv.stg .g3nwi small{display:block;margin-top:4px;font-size:13px;line-height:20px;color:var(--g3-nink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.hv.stg .g3nwi.ok b{color:var(--g3-mint)}
+html.hv.stg .g3st{flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;height:44px;margin:-9px 0 0 12px;font-size:13px;line-height:18px;color:var(--g3-nink3);white-space:nowrap;font-variant-numeric:tabular-nums}
+html.hv.stg .g3st button{pointer-events:auto}
+html.hv.stg .g3st .resume{display:flex;flex-wrap:nowrap;gap:0;margin:0;font-size:13px;line-height:18px}
+html.hv.stg .g3st .resume:not([hidden]) + .ms{display:none}
+html.hv.stg .g3st .resume button{display:flex;align-items:center;min-height:44px;padding:0;border:0;background:none;color:var(--g3-nink);font-weight:600;text-decoration:none}
+html.hv.stg .g3re span{display:flex;align-items:center;height:30px;padding:0 12px;border-radius:15px;box-shadow:inset 0 0 0 1px rgba(242,236,223,.34);font-size:13px;white-space:nowrap}
+/* «10초 · 속도» 줄 ↔ 멈추면 같은 높이 «계속 보기 | 나중에» */
+html.hv.stg .g3ctl{position:relative;height:44px;margin:4px 0 0}
+html.hv.stg .g3c1,html.hv.stg .g3c2{position:absolute;left:0;top:0;display:flex;align-items:center;width:100%;height:100%;transition:opacity .24s,transform .24s cubic-bezier(.2,.8,.2,1),visibility 0s}
+html.hv.stg .g3c1{justify-content:space-between}
+html.hv.stg .g3c2,html.hv.stg .g3ctl.pz .g3c1{visibility:hidden;opacity:0;transition:opacity .24s,transform .24s cubic-bezier(.2,.8,.2,1),visibility 0s linear .24s}
+html.hv.stg .g3c2{transform:translateY(8px)}
+html.hv.stg .g3ctl.pz .g3c1{transform:translateY(-8px)}
+html.hv.stg .g3ctl.pz .g3c2{visibility:visible;opacity:1;transform:none;transition:opacity .24s,transform .24s cubic-bezier(.2,.8,.2,1),visibility 0s}
+html.hv.stg .g3c1 .b10{width:auto;height:44px;gap:6px;padding:0 8px 0 0;border:0;border-radius:0;background:none;font-size:13px;font-weight:400;color:var(--g3-nink2)}
+html.hv.stg .g3c1 .b10 svg{width:18px;height:18px}
+html.hv.stg .g3c1 .spd{flex:0 0 auto;display:flex;width:auto;height:44px;border-radius:0;background:none;box-shadow:none}
+html.hv.stg .g3c1 .spd::before{display:none}
+html.hv.stg .g3c1 .spd button{display:flex;align-items:center;justify-content:center;flex:0 0 auto;width:auto;min-width:44px;height:44px;padding:0;border-radius:0;background:none;font-size:13px;font-weight:400;color:var(--g3-nink3)}
+html.hv.stg .g3c1 .spd button.on{background:none;font-weight:600;color:var(--g3-nink)}
+html.hv.stg .g3c1 .spd span{display:flex;align-items:center;justify-content:center;min-width:38px;height:32px;padding:0 6px;border-radius:16px;font-variant-numeric:tabular-nums}
+html.hv.stg .g3c1 .spd button.on span{background:var(--g3-pill)}
+html.hv.stg .g3c2 button{display:flex;align-items:center;height:44px;padding:0 16px;border:0;background:none;font-size:15px;font-weight:400;color:var(--g3-nink2)}
+html.hv.stg .g3c2 .g3cg{padding-left:0;font-weight:600;color:var(--g3-nink)}
+html.hv.stg .g3c2 i{flex:0 0 auto;width:1px;height:16px;background:rgba(242,236,223,.2)}
+/* 탭 «목차 N | 질문» = 글자 + 민트 밑줄 · 목차 줄 = 점 10(다 봄 민트 · 지금 고리) */
+html.hv.stg .tabs{gap:22px;margin:6px 0 0;border-radius:0;background:none;box-shadow:inset 0 -1px rgba(242,236,223,.1)}
+html.hv.stg .tabs::before{display:none}
+html.hv.stg .tabs button{position:relative;flex:0 0 auto;height:44px;padding:0;border-radius:0;background:none;font-size:15px;font-weight:400;color:var(--g3-nink3)}
+html.hv.stg .tabs button.on{background:none;font-weight:600;color:var(--g3-nink)}
+html.hv.stg .tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:1px;background:var(--g3-mint)}
+html.hv.stg .paper{color:var(--g3-nink2)}
+html.hv.stg .paper svg{color:var(--g3-nink3)}
+html.hv.stg .toc li + li:before,html.hv.stg .toc li.fd + li:not(.fd):before,html.hv.stg .toc li[hidden] + li:before,html.hv.stg .fold + .toc > li:first-child:before{left:22px;border-top-color:rgba(242,236,223,.07)}
+html.hv.stg .toc li:has(> button.cur):before,html.hv.stg .toc li:has(> button.cur) + li:before{display:block}
+html.hv.stg .toc button{grid-template-columns:10px minmax(0,1fr) auto;gap:12px;min-height:48px;padding:10px 0;border-radius:0;background:none;color:var(--g3-nink2)}
+html.hv.stg .toc.nodot button{grid-template-columns:minmax(0,1fr) auto}
+html.hv.stg .toc button.cur{background:none;color:var(--g3-nink)}
+html.hv.stg .toc button.cur .tt{font-weight:600}
+html.hv.stg .toc .tm,html.hv.stg .toc .tag.wb{color:var(--g3-nink3)}
+html.hv.stg .toc .now{color:var(--g3-mint)}
+html.hv.stg .fold{gap:12px;min-height:48px;padding:10px 0;color:var(--g3-nink2)}
+html.hv.stg .fold .fchev{color:var(--g3-nink3)}
+html.hv.stg .dot{width:10px;height:10px;border:0;border-radius:50%;background:none;box-shadow:inset 0 0 0 1.5px rgba(242,236,223,.34)}
+html.hv.stg .dot.half{background:linear-gradient(90deg,var(--g3-mint) 50%,transparent 50%);box-shadow:inset 0 0 0 1.5px var(--g3-mint)}
+html.hv.stg .dot.full{background:var(--g3-mint);box-shadow:none}
+html.hv.stg .toc button.cur .dot{box-shadow:inset 0 0 0 2px var(--g3-nink)}
+html.hv.stg .toc button.cur .dot.full{box-shadow:0 0 0 2px #0D241A,0 0 0 3.5px var(--g3-nink)}
+/* 홈 화면 추가 권유 = 아래 칸 맨 끝 작은 줄(영상 칸 밖) */
+html.hv.stg .g3pw{margin:16px 0 0}
+html.hv.stg .g3pw .pwh{display:flex;align-items:center;gap:4px;padding-top:4px;border-top:1px solid rgba(242,236,223,.1)}
+html.hv.stg .g3pw .pwhb{flex:1 1 auto;display:flex;align-items:center;gap:8px;min-width:0;min-height:44px;padding:0;border:0;background:none;color:var(--g3-nink2);font-size:13px;font-weight:600;text-align:left}
+html.hv.stg .g3pw .pwhx{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin-right:-12px;padding:0;border:0;background:none;color:var(--g3-nink3)}
+/* 아래 칸 위쪽 14px 흐림(폰 = 붙은 영상 칸 바로 아래 · PC = 오른쪽 칸 위) */
+@media (max-width:1099px){
+  html.hv.stg .vid{overflow:visible}
+  html.hv.stg .vid::after{content:"";position:absolute;left:0;right:0;top:100%;height:14px;background:linear-gradient(#0D241A,rgba(13,36,26,0));pointer-events:none}
+}
+@media (orientation:landscape) and (min-width:481px) and (max-height:500px) and (max-width:1099px){
+  html.hv.stg.w19 .vid::after{display:none}
+  html.stg.w19 .g3u .wrap{display:block}
+}
+@media (min-width:1100px){
+  html.hv.stg .ptop .pt{flex-direction:column;align-items:flex-start;gap:0}
+  html.hv.stg .ptop .pt span{order:-1;max-width:100%;font-size:12px;line-height:16px;font-weight:600}
+  html.hv.stg .ptop .pt b{max-width:100%;font-size:17px;line-height:22px;font-weight:700}
+  html.hv.stg .pgrid .tabs{margin-top:0}
+  html.hv.stg .pgrid .pr{padding-top:14px;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 14px);mask-image:linear-gradient(to bottom,transparent,#000 14px)}
+}
 /* S1 단어 · 구문 · 문법(11-17 · 여덟 기능 결론안 · lead2_design S1~S8 · G V3~V7): 목록 묶음(맨 위 카드 아래) · 공부 화면(가운데 480 · 폰 먼저)
    굵기 400/600/700(2차 · 13px 이하는 600까지) · 가장 작은 글 12 · 누르는 곳 44 이상 · 양쪽 정렬 문단에 text-wrap:balance 없음 */
 .sw,.sgrp{word-break:keep-all;overflow-wrap:break-word}
@@ -2234,13 +2357,25 @@ window.__lecStart = function () {
     var r = document.documentElement, on = !!(S.lectures && S.lectures.length);
     r.className = (' ' + r.className + ' ').replace(/ hv /g, ' ').replace(/^\s+|\s+$/g, '') + (on ? ' hv' : '');
   }
+  /* 11-27 무대(묶음 1·2): 새 모양(html.hv)일 때만 쓰는 상태 · th = 무대 열기 전 맨 위 색(닫으면 그대로 돌려 놓음) · swap = 같은 무대에서 다음 강의로 바로 넘어가는 중 · cg = «목록» 누른 순간의 자리(닫힘 움직임용) */
+  function hvOn() { return (' ' + document.documentElement.className + ' ').indexOf(' hv ') >= 0; }
+  var G3 = { th: null, swap: false, cg: null, oc: null, uc: null };
+  function g3ThemeOff() {
+    var m = document.querySelector('meta[name="theme-color"]:not([media])');
+    if (m && G3.th != null) m.setAttribute('content', G3.th);
+    G3.th = null;
+  }
   /* 보기 화면 = 무대 색(html.stg) · 다른 화면으로 가면 teardown 이 끔 */
   function stage(on) {
     var r = document.documentElement, m = document.querySelector('meta[name="theme-color"]:not([media])');
     r.className = (' ' + r.className + ' ').replace(/ stg /g, ' ').replace(/^\s+|\s+$/g, '') + (on ? ' stg' : '');
     wideSync();
     landWas = land19();   /* 가로로 든 채 강의를 열었으면 «막 들어옴»으로 안 봄(뒤의 창 크기 바뀜에 맨 위로 튀지 않게) */
-    if (m) m.setAttribute('content', on ? '#123224' : '#FAF6EC'); /* 2차: 무대 맨 위 색 */
+    if (m) {
+      if (on && hvOn()) { if (G3.th == null) G3.th = m.getAttribute('content') || '#FAF6EC'; m.setAttribute('content', '#0D241A'); }   /* 새 모양 무대 = 먹빛 · 닫으면 원래 값 */
+      else if (G3.th != null) { m.setAttribute('content', G3.th); G3.th = null; }
+      else m.setAttribute('content', on ? '#123224' : '#FAF6EC'); /* 2차: 무대 맨 위 색 */
+    }
   }
   /* 11-22 폰 가로 19:9 이상 짜임(html.stg.w19)을 켜는 조건 = 화면 생김(긴 변 ÷ 짧은 변 2.1 이상 · 19:9 = 2.111 · 아이폰은 screen 이 늘 세로 값이라 긴 변 · 짧은 변으로 봄)
      무대일 때만 붙임 · 창 크기가 바뀔 때도 다시 봄(접는 폰) · screen 을 못 읽으면 끔(= F4 짜임 그대로) */
@@ -5471,7 +5606,24 @@ window.__lecStart = function () {
   Fake.prototype.destroy = function () { this.dead = true; clearInterval(this.iv); };
 
   /* ------------------------------------------------------------ 플레이어 화면 */
+  /* 무대 묶음(11-27): 학생에게 보이는 새 글 */
+  M.g3Seen = ' 봤어요';
+  M.g3All = ' 다 봤어요';
+  M.g3Done = '다 봤어요';
+  M.g3Ing = '학습 중';
+  M.g3Pre = '학습 전';
+  M.g3Now = '지금 ';
+  M.g3End = '끝까지 봤어요';
+  M.g3Came = '끝까지 왔어요';
+  M.g3Next = '다음 강의 · ';
+  M.g3List = '목록으로';
+  M.g3Go = '계속 보기';
+  M.g3Later = '나중에';
+  M.g3Restart = '처음부터';
+  M.g3Stop = '멈춘 곳 ';
   function showPlayer(l) {
+    var pv0 = S.view, hv = hvOn(), ug = null;
+    g3Clean();
     S.view = 'player';
     S.tab = S.wantTab === 'qna' ? 'qna' : 'toc'; /* 2차 홈 «새 답변» 줄 = 바로 «질문» 쪽 */
     S.wantTab = '';
@@ -5482,8 +5634,10 @@ window.__lecStart = function () {
        PC(1100 이상) = 목록과 같은 머리줄 + 왼쪽 영상 · 오른쪽 열(멈추고 풀기 판 · 탭 · 종이 줄 · 목차) */
     var sub = []; /* PC 부제목 = 교재 하나(11-17 · 수업일 «11.10(화) 수업»은 뺌 · 목록 타일과 같이 날짜 없음) */
     if (l.book) sub.push(l.book);
+    /* 무대(11-27): 목록을 누르고 열면 지금 목록을 밑판으로 남겨 두고 그 위로 무대를 엶(섞지 않음) · 열기 전에 잡아야 함(stage 가 html 색을 바꿈) */
+    if (hv && !G3.swap && (pv0 === 'list' || pv0 === 'rng') && !noMo() && app.firstChild) ug = g3Under();
     stage(true);
-    var h = '<div class="wrap wide">' + topHTML('pch') + '<div class="ptop">' +
+    var h = hv ? g3PlayerHTML(l, rec, sub) : '<div class="wrap wide">' + topHTML('pch') + '<div class="ptop">' +
       '<button class="backb" type="button" data-act="list"><span class="ar" aria-hidden="true">‹</span>목록</button>' +
       '<div class="pt"><b>' + esc(l.title) + '</b>' + (sub.length ? '<span>' + esc(sub.join(' · ')) + '</span>' : '') + '</div>' + pdfBtnHTML(l) + '</div>' +
       (lecPdf(l.id) ? '<p class="pdfm" id="pdfM" role="status"></p>' : '') +
@@ -5496,16 +5650,18 @@ window.__lecStart = function () {
       '<div class="ctl"><button class="b10" type="button" data-act="back10" aria-label="10초 뒤로">' + icon('back', 16) + '10초</button>' +
       '<div class="spd" role="group" aria-label="배속">';
     var i;
-    for (i = 0; i < RATES.length; i += 1) h += '<button type="button" data-act="rate" data-r="' + RATES[i] + '" aria-label="' + RATES[i] + '배">' + RATES[i] + '</button>';
-    h += '</div></div>' +
-      '<div class="stopw m" id="stopM" role="status" hidden></div>' +
-      '<div class="resume" id="resume" hidden></div>' +
-      '</div><div class="pr">' +
-      '<div class="stopw w" id="stopW" role="status" hidden></div>' +
-      '<div class="tabs" role="tablist"><button type="button" role="tab" data-act="tab" data-tab="toc" id="tabToc" class="on">목차</button>' +
-      '<button type="button" role="tab" data-act="tab" data-tab="qna" id="tabQna">질문</button></div>' +
-      '<div class="tbody" id="tbody"></div></div></div>' +
-      '</div>';
+    if (!hv) {
+      for (i = 0; i < RATES.length; i += 1) h += '<button type="button" data-act="rate" data-r="' + RATES[i] + '" aria-label="' + RATES[i] + '배">' + RATES[i] + '</button>';
+      h += '</div></div>' +
+        '<div class="stopw m" id="stopM" role="status" hidden></div>' +
+        '<div class="resume" id="resume" hidden></div>' +
+        '</div><div class="pr">' +
+        '<div class="stopw w" id="stopW" role="status" hidden></div>' +
+        '<div class="tabs" role="tablist"><button type="button" role="tab" data-act="tab" data-tab="toc" id="tabToc" class="on">목차</button>' +
+        '<button type="button" role="tab" data-act="tab" data-tab="qna" id="tabQna">질문</button></div>' +
+        '<div class="tbody" id="tbody"></div></div></div>' +
+        '</div>';
+    }
     app.innerHTML = h;
     try { window.scrollTo(0, 0); } catch (e) { /* 없음 */ }
     vpostWatch();
@@ -5516,7 +5672,7 @@ window.__lecStart = function () {
     paperPaint();
     if (S.tab === 'qna') openQna(); else drawToc(true);
     bandDraw();
-    mphIn(l);
+    if (hv) g3Open(l, ug); else mphIn(l);
   }
   /* S2(11-19) 썸네일이 무대가 됨 — J 값(380ms · 바탕 240ms · 돌아갈 때 320ms · 둥글기 따라감)을 View Transition 대신 겹 그림(FLIP)으로
      까닭: View Transition 은 화면 바꾸기를 콜백(다음 프레임)으로 미룸 → 재생기 만들기가 누름 처리에서 떨어짐(아이폰 소리 조건) · 그래서 길(route)은 지금 그대로 두고
@@ -5550,6 +5706,7 @@ window.__lecStart = function () {
     if (noMo() || hr.indexOf('#v=') !== 0) return;
     try { id = decodeURIComponent(hr.slice(3)); } catch (e) { return; }
     b = el.querySelector('.art, .sth');
+    if (!b && el.closest) { var mo = el.closest('[data-mo]'); if (mo) b = mo.querySelector('.art, .sth'); } /* 약속 2(11-27): 그림 밖 고리 = 그 줄의 그림 */
     im = b ? b.querySelector('.art-i, .sth-i') : null;
     r = b ? b.getBoundingClientRect() : null;
     MPH = { id: id, t: Date.now(), r: onScr(r) ? r : null, rad: b ? getComputedStyle(b).borderTopLeftRadius : '0px', kind: b ? (b.classList.contains('art') ? 'art' : 'sth') : '',
@@ -5569,6 +5726,7 @@ window.__lecStart = function () {
   function mphBack() {
     var v = $('vid'), r;
     MPH = null;
+    if (hvOn()) { G3.cg = { t: Date.now() }; return; } /* 무대: 닫는 그림은 teardown 이 잡음(g3CloseWant) */
     if (!T || noMo() || !v || v.hidden) return;
     r = v.getBoundingClientRect();
     MPH = { back: true, id: String(T.lec.id), t: Date.now(), r: onScr(r) ? r : null, rad: getComputedStyle(v).borderTopLeftRadius, kind: T.mphKind || '', src: T.postSrc || '' };
@@ -5576,6 +5734,7 @@ window.__lecStart = function () {
   function mphOut() {
     var m = MPH, q, b, el = null, i, j, ks;
     MPH = null;
+    if (hvOn()) return;
     if (!m || !m.back || Date.now() - m.t > 1500 || noMo() || S.view !== 'list') return;
     mphClear();
     mphBg('#0D241A');
@@ -5610,6 +5769,311 @@ window.__lecStart = function () {
     p.id = '';
     a = now ? null : anim(p, [{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-out', fill: 'forwards' });
     if (a) a.onfinish = function () { rmEl(p); }; else rmEl(p);
+  }
+
+  /* ------------------------------------------------------------ 11-27 무대(묶음 1·2 · html.hv 일 때만)
+     열기 = 목록을 밑판(.g3u)으로 남겨 두고 무대(#app)를 썸네일 사각형에서 잘라 펼침(clip-path 380ms) · 영상 칸은 썸네일 자리 · 크기에서 제자리로 · 섞지 않음(크림 판 없음)
+     닫기 = 무대를 겹판(.g3o)으로 떼어 내고 그 아래 목록을 그린 뒤 썸네일 자리로 거꾸로 320ms(화면 밖이면 아래로 300ms)
+     재생기는 누른 탭 안에서 그대로 만듦(움직임은 그 뒤에 겹쳐서만) · 움직임 줄이기 · animate 없음 = 바로 */
+  var G3_FULL = 'inset(0px 0px 0px 0px round 0px 0px 0px 0px)';
+  function g3Px(v) { return Math.max(0, +v || 0).toFixed(1) + 'px'; }
+  function g3Inset(t, r, b, l) { return 'inset(' + g3Px(t) + ' ' + g3Px(r) + ' ' + g3Px(b) + ' ' + g3Px(l) + ' round 20px 20px 0px 0px)'; }
+  function g3Strip(el) { var a = el.querySelectorAll('[id]'), i; for (i = 0; i < a.length; i += 1) a[i].removeAttribute('id'); }
+  function g3Run(el, kf, o, arr) {
+    var a = null;
+    if (!el || typeof el.animate !== 'function') return null;
+    try { a = el.animate(kf, o); } catch (e) { a = null; }
+    if (a && arr) arr.push(a);
+    return a;
+  }
+  function g3Inert(el) { el.setAttribute('aria-hidden', 'true'); el.setAttribute('inert', ''); }
+  /* 지금 목록을 그대로 떼어 밑판으로(누름 · 읽기 막음 · id 지움 = $() 가 밑판을 안 집음) */
+  function g3Under() {
+    var ar = app.getBoundingClientRect(), u = document.createElement('div'), ui = document.createElement('div');
+    u.className = 'g3u g3fx';
+    g3Inert(u);
+    ui.className = 'g3ui';
+    ui.style.top = ar.top + 'px'; ui.style.left = ar.left + 'px'; ui.style.width = ar.width + 'px';
+    while (app.firstChild) ui.appendChild(app.firstChild);
+    g3Strip(ui);
+    u.appendChild(ui);
+    document.body.appendChild(u);
+    G3.uc = u;
+    return u;
+  }
+  function g3UnderEnd(cancel) {
+    var arr = G3.oa, i, v;
+    if (G3.ut) { clearTimeout(G3.ut); G3.ut = 0; }
+    G3.oa = null;
+    if (cancel && arr) { for (i = 0; i < arr.length; i += 1) { try { arr[i].cancel(); } catch (e) { /* 없음 */ } } }
+    rmEl(G3.uc);
+    G3.uc = null;
+    app.classList.remove('g3in');
+    v = $('vid');
+    if (v) v.style.transformOrigin = '';
+  }
+  function g3Open(l, ug) {
+    var m = MPH, v = $('vid'), r = null, ar, vr, a, arr, fs, i, pb, sc;
+    MPH = null;
+    if (m && !m.back && m.id === String(l.id) && Date.now() - m.t <= 1500) { r = m.r; if (T) T.mphKind = m.kind; }
+    if (!ug || !v || noMo() || typeof app.animate !== 'function') { g3UnderEnd(false); return; }
+    arr = G3.oa = [];
+    app.classList.add('g3in');
+    ar = app.getBoundingClientRect();
+    if (r && r.width > 0) {
+      a = g3Run(app, [{ clipPath: g3Inset(r.top - ar.top, ar.right - r.right, ar.bottom - r.bottom, r.left - ar.left) }, { clipPath: G3_FULL }], { duration: 380, easing: E_OUT }, arr);
+      vr = v.getBoundingClientRect();
+      sc = vr.width > 0 ? r.width / vr.width : 1;
+      v.style.transformOrigin = '0 0';
+      g3Run(v, [{ transform: 'translate(' + (r.left - vr.left).toFixed(1) + 'px,' + (r.top - vr.top).toFixed(1) + 'px) scale(' + sc.toFixed(4) + ')' }, { transform: 'none' }], { duration: 380, easing: E_OUT }, arr);
+      fs = app.querySelectorAll('.pch, .ptop, .pdfm, .pl > :not(.vid), .pr');
+      for (i = 0; i < fs.length; i += 1) g3Run(fs[i], [{ opacity: 0 }, { opacity: 1 }], { duration: 160, delay: 220, easing: 'linear', fill: 'backwards' }, arr);
+      pb = v.querySelector('.g3pb');
+      if (pb) g3Run(pb, [{ opacity: 0 }, { opacity: 1 }], { duration: 160, delay: 260, easing: 'linear', fill: 'backwards' }, arr);
+    } else {
+      a = g3Run(app, [{ transform: 'translateY(' + Math.round(window.innerHeight || 800) + 'px)' }, { transform: 'none' }], { duration: 340, easing: E_OUT }, arr);
+    }
+    if (!a) { g3UnderEnd(true); return; }
+    a.onfinish = function () { if (G3.oa === arr) g3UnderEnd(false); };
+    /* 끝 알림이 안 오면(탭이 숨음 등) 정리 · 시험이 움직임을 멈춰 둔 동안은 기다림 */
+    var chk = function () {
+      if (G3.oa !== arr) return;
+      var ps = a.playState;
+      if (ps === 'running' || ps === 'paused' || ps === 'pending') { G3.ut = setTimeout(chk, 800); return; }
+      g3UnderEnd(false);
+    };
+    G3.ut = setTimeout(chk, 800);
+  }
+  /* 닫는 움직임을 할 수 있으면 그 자리를 잡음(teardown 첫머리 · «목록» 누름에서 1.5초 안 · 같은 무대 바꿈 · 오류 화면이면 바로) */
+  function g3CloseWant() {
+    var c = G3.cg, v;
+    G3.cg = null;
+    if (!c || !T || T.err || G3.swap || S.view !== 'player' || !hvOn() || noMo() || Date.now() - c.t > 1500 || typeof app.animate !== 'function') return null;
+    v = $('vid');
+    if (!v || v.hidden) return null;
+    return { id: String(T.lec.id), src: T.postSrc || '', kind: T.mphKind || '', vr: v.getBoundingClientRect() };
+  }
+  function g3CloseGrab(gc) {
+    g3CloseEnd();
+    var ar = app.getBoundingClientRect(), o = document.createElement('div'), oi = document.createElement('div'), ov = document.createElement('div'), im, c;
+    o.className = 'g3o';
+    g3Inert(o);
+    oi.className = 'g3oi';
+    oi.style.top = ar.top + 'px'; oi.style.left = ar.left + 'px'; oi.style.width = ar.width + 'px';
+    while (app.firstChild) oi.appendChild(app.firstChild);
+    g3Strip(oi);
+    ov.className = 'g3ov';
+    ov.style.left = gc.vr.left + 'px'; ov.style.top = gc.vr.top + 'px'; ov.style.width = gc.vr.width + 'px'; ov.style.height = gc.vr.height + 'px';
+    if (gc.src) { im = document.createElement('img'); im.alt = ''; im.src = gc.src; ov.appendChild(im); }
+    o.appendChild(oi);
+    o.appendChild(ov);
+    document.body.appendChild(o);
+    app.classList.add('g3u');
+    app.classList.add('g3cl');
+    c = G3.oc = { o: o, oi: oi, ov: ov, vr: gc.vr, id: gc.id, kind: gc.kind, a: null, t: 0 };
+    var chk = function () {
+      if (G3.oc !== c) return;
+      var ps = c.a ? c.a.playState : 'pending';
+      if (ps === 'running' || ps === 'paused' || (ps === 'pending' && !c.go)) { c.t = setTimeout(chk, 800); return; }
+      g3CloseEnd();
+    };
+    c.t = setTimeout(chk, 1200);
+    if (window.requestAnimationFrame) window.requestAnimationFrame(g3CloseGo); else setTimeout(g3CloseGo, 0);
+  }
+  function g3CloseGo() {
+    var c = G3.oc, W, H, q, ks, j, i, b = null, r = null, x, mo;
+    if (!c || c.go) return;
+    c.go = true;
+    if ((S.view !== 'list' && S.view !== 'rng') || typeof c.o.animate !== 'function' || noMo()) { g3CloseEnd(); return; }
+    W = c.o.clientWidth; H = c.o.clientHeight;
+    q = app.querySelectorAll('a[href="#v=' + encodeURIComponent(c.id) + '"]');
+    ks = c.kind ? ['.' + c.kind, '.art, .sth'] : ['.art, .sth'];
+    for (j = 0; j < ks.length && !b; j += 1) {
+      for (i = 0; i < q.length && !b; i += 1) {
+        x = q[i].querySelector(ks[j]);
+        if (!x && q[i].closest) { mo = q[i].closest('[data-mo]'); if (mo) x = mo.querySelector(ks[j]); }
+        if (x) { r = x.getBoundingClientRect(); if (r.width > 0 && r.bottom >= 8 && r.top <= H - 8) b = x; }
+      }
+    }
+    if (b) {
+      g3Run(c.oi, [{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: 'linear', fill: 'forwards' });
+      c.a = g3Run(c.o, [{ clipPath: G3_FULL }, { clipPath: g3Inset(r.top, W - r.right, H - r.bottom, r.left) }], { duration: 320, easing: E_OUT, fill: 'forwards' });
+      g3Run(c.ov, [{ transform: 'none' }, { transform: 'translate(' + (r.left - c.vr.left).toFixed(1) + 'px,' + (r.top - c.vr.top).toFixed(1) + 'px) scale(' + (c.vr.width > 0 ? r.width / c.vr.width : 1).toFixed(4) + ')' }], { duration: 320, easing: E_OUT, fill: 'forwards' });
+    } else {
+      c.a = g3Run(c.o, [{ transform: 'translateY(0px)' }, { transform: 'translateY(' + Math.round(H || 800) + 'px)' }], { duration: 300, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' });
+    }
+    if (!c.a) { g3CloseEnd(); return; }
+    c.a.onfinish = function () { if (G3.oc === c) g3CloseEnd(); };
+  }
+  function g3CloseEnd() {
+    var c = G3.oc, r;
+    if (!c) return;
+    G3.oc = null;
+    if (c.t) clearTimeout(c.t);
+    rmEl(c.o);
+    app.classList.remove('g3u');
+    app.classList.remove('g3cl');
+    if (S.view !== 'player') {
+      r = document.documentElement;
+      r.className = (' ' + r.className + ' ').replace(/ stg /g, ' ').replace(/^\s+|\s+$/g, '');
+      wideSync();
+      landWas = land19();
+    }
+  }
+  function g3Clean() { g3CloseEnd(); g3UnderEnd(true); }
+  /* 무대 판(폰 = 머리 → 영상(끝 장면 · 재생 단추 그림 안) → 지문 띠 → «지금» 줄 · 상태 칸 → 10초·속도 ↔ 계속 보기 | 나중에 → 탭 · 목차) */
+  function g3PlayerHTML(l, rec, sub) {
+    var vp = vpostHTML(l), h, i;
+    h = '<div class="wrap wide">' + topHTML('pch') + '<div class="ptop">' +
+      '<button class="backb" type="button" data-act="list"><span class="ar" aria-hidden="true">‹</span>목록</button>' +
+      '<div class="pt"><b>' + esc(l.title) + '</b>' + (sub.length ? '<span>' + esc(sub.join(' · ')) + '</span>' : '') + '</div>' + pdfBtnHTML(l) + '</div>' +
+      (lecPdf(l.id) ? '<p class="pdfm" id="pdfM" role="status"></p>' : '') +
+      '<div class="pgrid" id="pgrid"><div class="pl">' +
+      '<div class="vid" id="vid"><div class="yt" id="ytbox"></div>' + vp + (vp ? '<span class="g3pb" aria-hidden="true">' + icon('play', 22) + '</span>' : '') +
+      '<div class="g3end" id="g3End" role="status" hidden></div></div>' +
+      '<div class="card verr" id="verr" hidden><p id="verrT"></p><button class="btn-line" type="button" data-act="list">목록으로</button></div>' +
+      '<div class="band" id="band" role="group" aria-label="지문" hidden></div>' +
+      '<div class="g3nw" id="g3Nw"><div class="g3nwi" id="g3Nwi"><b id="nowCh"></b><small id="g3Sm"></small></div>' +
+      '<div class="g3st" id="g3St"><div class="resume" id="resume" hidden></div>' + (rec ? '<span class="ms" id="mySt"></span>' : '') + '</div>' +
+      '<span class="sr" id="g3Sr" role="status"></span></div>' +
+      '<div class="g3ctl" id="g3Ctl"><div class="g3c1"><button class="b10" type="button" data-act="back10" aria-label="10초 뒤로">' + icon('back', 18) + '10초</button>' +
+      '<div class="spd" role="group" aria-label="배속">';
+    for (i = 0; i < RATES.length; i += 1) h += '<button type="button" data-act="rate" data-r="' + RATES[i] + '" aria-label="' + RATES[i] + '배"><span>' + RATES[i] + '</span></button>';
+    h += '</div></div><div class="g3c2"><button type="button" class="g3cg" data-act="stopGo">' + esc(M.g3Go) + '</button><i aria-hidden="true"></i>' +
+      '<button type="button" class="g3lt" data-act="stopLater">' + esc(M.g3Later) + '</button></div></div>' +
+      '</div><div class="pr">' +
+      '<div class="tabs" role="tablist"><button type="button" role="tab" data-act="tab" data-tab="toc" id="tabToc" class="on">목차</button>' +
+      '<button type="button" role="tab" data-act="tab" data-tab="qna" id="tabQna">질문</button></div>' +
+      '<div class="tbody" id="tbody"></div><div class="g3pw" id="g3Pw" hidden></div></div></div></div>';
+    return h;
+  }
+  function g3St() { try { return T.P.state(); } catch (e) { return -1; } }
+  function g3ChTitle(c) { var s = String((c && c.title) || ''), k = s.indexOf(' · '); return k >= 0 ? s.slice(k + 3) : ''; }
+  /* «지금» 줄: 굵은 줄 = 지금 지문 · 작은 줄 = 지문 제목(멈춤 = 멈춘 곳 · 자동 멈춤 = 그 글) · 바뀔 때 위로 12px 빠지고 아래에서 들어옴 */
+  function g3Now(t, ch, i) {
+    if (!T || T.g3hold || !$('g3Nwi')) return;
+    var b, s, ok = false;
+    if (T.g3end) { ok = g3Fin(); b = T.lec.title + (ok ? M.g3All : ''); s = T.lec.book || ''; }
+    else {
+      b = i >= 0 ? M.g3Now + nowName(ch[i]) : T.lec.title;
+      if (T.stopOn && T.g3stopTx) s = T.g3stopTx;
+      else if (T.played && g3St() === 2) s = M.g3Stop + L.fmtDur(t);
+      else s = (i >= 0 ? g3ChTitle(ch[i]) : '') || T.lec.book || '';
+    }
+    g3NowSet(b, s, ok);
+  }
+  function g3NowSet(b, s, ok) {
+    var w = $('g3Nwi'), sig = b + '|' + s + '|' + (ok ? 1 : 0), me = T;
+    if (!w || !T || sig === T.g3nSig) return;
+    T.g3nSig = sig;
+    T.g3nPend = { b: b, s: s, ok: !!ok };
+    if (!T.g3nOn || noMo()) { T.g3nOn = true; g3NowPut(w); return; }
+    if (T.g3nT) return;   /* 빠지는 중 = 들어올 글만 바꿈 */
+    w.classList.add('up');
+    T.g3nT = setTimeout(function () {
+      if (T !== me) return;
+      T.g3nT = 0;
+      var x = $('g3Nwi');
+      if (!x) return;
+      g3NowPut(x);
+      x.classList.remove('up');
+      x.classList.add('dn');
+      void x.offsetWidth;
+      x.classList.remove('dn');
+    }, 240);
+  }
+  function g3NowPut(w) {
+    var p = T && T.g3nPend;
+    if (!p) return;
+    setHTML('nowCh', esc(p.b));
+    setHTML('g3Sm', esc(p.s));
+    if (p.ok) w.classList.add('ok'); else w.classList.remove('ok');
+  }
+  /* 상태 칸: 재생 전 «학습 전» · 재생하면 «학습 중» · 다 본 강의 «다 봤어요» · 끝 장면 동안 비움(% 없음) */
+  function g3StPaint() {
+    if (!T || !T.rec) return;
+    var p = pctNow(), txt, sig;
+    if (T.g3end) txt = '';
+    else if (T.lec.confirmed || isDone(T.lec, p)) txt = M.g3Done;
+    else if (T.played || p > 0 || T.lec.first_at) txt = M.g3Ing;
+    else txt = M.g3Pre;
+    sig = 'g|' + txt;
+    if (sig !== T.stSig) { T.stSig = sig; setHTML('mySt', esc(txt)); }
+  }
+  /* 멈추면(자동 멈춤 포함) «10초 · 속도» 줄 ↔ «계속 보기 | 나중에» */
+  function g3PzSync() {
+    var c = $('g3Ctl'), pz;
+    if (!c || !T) return;
+    pz = !T.g3end && !T.err && ((T.stopOn && !T.stopEnd) || (T.played && g3St() === 2));
+    if (pz !== c.classList.contains('pz')) { if (pz) c.classList.add('pz'); else c.classList.remove('pz'); }
+  }
+  /* 지문 판 깨기: «다 봄»(0.9)을 지금 막 넘은 칸만(열 때 이미 다 본 칸 · 건너뛴 칸은 아님) */
+  function g3Cross(dv, cur) {
+    var o = T.g3done, i;
+    if (!o || o.length !== dv.length) { T.g3done = dv.slice(); return; }
+    T.g3done = dv.slice();
+    for (i = 0; i < dv.length; i += 1) {
+      if (dv[i] && !o[i] && T.played && !T.g3end && i >= cur - 1 && i <= cur) g3Clear(i);
+    }
+  }
+  function g3Clear(i) {
+    var box = $('band'), bt = box && box.children[i] ? box.children[i].firstChild : null, sg = T.segs && T.segs[i], nm, rs, me = T;
+    anim(bt, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(1.45)', offset: 0.45 }, { transform: 'scaleY(1)' }], { duration: 240, easing: 'ease-out' });
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { /* 없음 */ }
+    rs = $('resume');
+    if (rs && !rs.hidden && !rs.getAttribute('data-mv')) rs.hidden = true;   /* «처음부터» 알약 숨김 */
+    T.g3reOff = true;
+    if (T.g3reT) { clearTimeout(T.g3reT); T.g3reT = 0; }
+    if (!sg) return;
+    nm = (L.chapterTag ? L.chapterTag(sg.title) : sg.no) || sg.no;
+    nm = nm ? nm + '번' : String(sg.title || '').split(' · ')[0];
+    if (!nm) return;
+    T.g3hold = false;
+    g3NowSet(nm + M.g3Seen, g3ChTitle(sg), true);
+    T.g3hold = true;
+    if (T.g3holdT) clearTimeout(T.g3holdT);
+    T.g3holdT = setTimeout(function () { if (T !== me) return; T.g3holdT = 0; T.g3hold = false; T.g3nSig = ''; paint(); }, 1600);
+  }
+  /* 끝 장면(영상 칸 안): 체크 원 + «끝까지 봤어요» → 940ms 뒤 단추 하나(다음 강의 · 범위 / 없으면 목록으로) · 홈 화면 권유는 영상 칸 밖(아래 칸 끝) */
+  function g3EndShow() {
+    var e = $('g3End'), v = $('vid'), nx, btn, h, l2, rs, pw, fin;
+    if (!e || !T) return;
+    nx = endNext();
+    T.endNx = nx;
+    if (!T.endOn && T.pwaHint == null) T.pwaHint = pwaEndOnce();
+    if (!nx) btn = '<button type="button" class="g3nx" data-act="list">' + esc(M.g3List) + '</button>';
+    else if (nx.set) btn = '<button type="button" class="g3nx" data-act="endnext" data-id="' + esc(nx.id) + '">' + esc(nx.lab) + '</button>';
+    else { l2 = findLec(String(nx.id)); btn = '<button type="button" class="g3nx" data-act="endnext" data-id="' + esc(nx.id) + '">' + esc(M.g3Next + ((l2 && l2.title) || nx.lab)) + '</button>'; }
+    fin = g3Fin();
+    h = '<div class="g3e1' + (fin ? '' : ' nd') + '"><span class="g3ck">' + icon('check', 20) + '</span><span>' + esc(fin ? M.g3End : M.g3Came) + '</span></div><div class="g3e2">' + btn + '</div>';
+    if (T.endSig !== h) { T.endSig = h; e.innerHTML = h; }
+    if (T.g3end) return;
+    T.endOn = true; T.g3end = true;
+    e.hidden = false;
+    if (v) v.classList.add('g3e');
+    rs = $('resume');
+    if (rs) { rs.hidden = true; rs.removeAttribute('data-mv'); }
+    T.mv = null; T.g3reOff = true;
+    if (T.g3reT) { clearTimeout(T.g3reT); T.g3reT = 0; }
+    pw = $('g3Pw');
+    if (pw) { if (T.pwaHint) { pw.innerHTML = pwaEndHTML(); pw.hidden = false; } else { pw.innerHTML = ''; pw.hidden = true; } }
+    T.g3hold = false;
+    if (T.g3holdT) { clearTimeout(T.g3holdT); T.g3holdT = 0; }
+    T.stSig = '';
+    g3StPaint();
+    g3NowSet(T.lec.title + (fin ? M.g3All : ''), T.lec.book || '', fin);
+    g3PzSync();
+  }
+  /* 끝 장면 글은 실제로 본 만큼만(옛 끝 띠와 같은 기준): 학습 완료(선생님 확인 · L.DONE) 또는 기록 안 함 = «끝까지 봤어요» · 아니면 «끝까지 왔어요» */
+  function g3Fin() { return !T.rec || isDone(T.lec, pctNow()); }
+  function g3EndHide() {
+    var e = $('g3End'), v = $('vid'), pw = $('g3Pw');
+    if (e) e.hidden = true;
+    if (v) v.classList.remove('g3e');
+    if (pw) { pw.hidden = true; pw.innerHTML = ''; }
+    T.endOn = false; T.g3end = false; T.endSig = '';
+    if (T.pwaHint) T.pwaHint = false;
+    T.stSig = ''; T.g3nSig = '';
   }
 
   /* ------------------------------------------------------------ C3 종이 자리 · C7 멈추고 풀기 */
@@ -5688,15 +6152,20 @@ window.__lecStart = function () {
     T.wasLF = lf;
   }
   function stopShow(x, atEnd) {
-    var h = '<p class="sq">' + icon('pen', 18) + '<span>' + esc(L.stopText(x)) + '</span></p><div class="sb">' +
-      '<button type="button" class="go" data-act="stopGo">계속 보기</button>' +
-      '<button type="button" class="lt" data-act="stopLater">나중에</button></div>';
-    var ids = ['stopM', 'stopW'], i, e;
-    for (i = 0; i < ids.length; i += 1) { e = $(ids[i]); if (e) { e.innerHTML = h; e.hidden = false; } }
+    var hv = !!(T && T.hv);
+    if (hv) { T.g3stopTx = L.stopText(x); setHTML('g3Sr', atEnd ? '' : esc(T.g3stopTx)); }   /* 11-27 무대: 판 없음 · 글은 «지금» 줄 · 단추는 «10초 · 속도» 줄 자리(g3PzSync) · 화면 읽기는 옛 판(role=status)처럼 읽어 줌 */
+    else {
+      var h = '<p class="sq">' + icon('pen', 18) + '<span>' + esc(L.stopText(x)) + '</span></p><div class="sb">' +
+        '<button type="button" class="go" data-act="stopGo">계속 보기</button>' +
+        '<button type="button" class="lt" data-act="stopLater">나중에</button></div>';
+      var ids = ['stopM', 'stopW'], i, e;
+      for (i = 0; i < ids.length; i += 1) { e = $(ids[i]); if (e) { e.innerHTML = h; e.hidden = false; } }
+    }
     T.stopOn = true;
     T.stopEnd = !!atEnd;
     T.stopT = Date.now();
-    showUnderVid($('stopM'));
+    if (hv) paint();
+    showUnderVid(hv ? $('g3Ctl') : $('stopM'));
     /* 검수 B2 M-2: (세로) 전체 화면이면 판이 안 보이므로 전체 화면을 끔(안 되면 조용히 넘어감 · 아이폰 영상 전체 화면은 페이지에서 못 끔)
        가로 전체 화면은 위 landFull 에서 멈추지 않으므로 여기 오지 않음(결론안 K 8절) */
     try {
@@ -5708,7 +6177,9 @@ window.__lecStart = function () {
   function stopHide() {
     var ids = ['stopM', 'stopW'], i, e;
     for (i = 0; i < ids.length; i += 1) { e = $(ids[i]); if (e) { e.hidden = true; e.innerHTML = ''; } }
-    if (T) { T.stopOn = false; T.stopEnd = false; }
+    if (T) { T.stopOn = false; T.stopEnd = false; T.g3stopTx = ''; }
+    if (T && T.hv) setHTML('g3Sr', '');
+    if (T && T.hv && !T.err) paint();
   }
   /* 폰: 영상이 위에 고정돼 있어 판·띠가 영상에 가리거나 화면 밖이면 영상 바로 아래로 굴림(PC는 그 칸이 안 보여 그냥 넘어감) */
   function showUnderVid(el) {
@@ -5725,6 +6196,7 @@ window.__lecStart = function () {
   }
   /* 영상 끝 띠(결론안 K · 새로 넣음): 영상 바로 아래 카드 · 학습 완료 기준은 지금 로직(isDone = 선생님 확인 또는 L.DONE) · 기록 안 함 = 첫 문장만 */
   function endShow() {
+    if (T && T.hv) { g3EndShow(); return; }   /* 11-27 무대: 끝 장면은 영상 칸 안 */
     var e = $('endW');
     if (!e || !T) return;
     var p = pctNow(), D = T.durL > 0 ? T.durL : (+T.lec.dur || 0), t;
@@ -5784,6 +6256,12 @@ window.__lecStart = function () {
     if (!nx) return;
     if (nx.set) { S.nextSet = String(nx.id); goList(); return; }
     S.autoplay = Date.now();
+    /* 11-27 무대: 다음 강의는 같은 무대에서 누른 탭 안에서 바로 만들고(아이폰 소리) 주소만 바꿈(route 는 같은 강의면 그대로 둠) */
+    var l2 = T.hv ? findLec(String(nx.id)) : null;
+    if (l2 && !l2.ended) {
+      G3.swap = true;
+      try { teardown(); showPlayer(l2); } finally { G3.swap = false; }
+    }
     location.replace('#v=' + encodeURIComponent(nx.id));
   }
   function nextSetGo() {
@@ -5792,6 +6270,7 @@ window.__lecStart = function () {
     if (id && S.view === 'list' && setFind(id)) setOpen(id);
   }
   function endHide() {
+    if (T && T.hv) { g3EndHide(); return; }
     var e = $('endW');
     if (e) e.hidden = true;
     if (T) { T.endOn = false; if (T.pwaHint) T.pwaHint = false; } /* 설치 안내 한 줄은 한 번만(다시 틀었다 끝나도 안 나옴) */
@@ -5800,6 +6279,9 @@ window.__lecStart = function () {
   function startTrack(l) {
     var rec = recMode() === 'agree';
     var resumeL = rec ? Math.max(0, (+l.pos || 0) - 3) : 0;
+    var wa = S.wantAt, wat = false;   /* 약속 1(11-27): 목록에서 «N초부터»로 열면 그 자리부터(한 번 쓰고 지움) */
+    S.wantAt = null;
+    if (typeof wa === 'number' && isFinite(wa) && wa >= 0) { resumeL = wa; wat = true; }
     T = {
       lec: l, rec: rec, P: null, S: 1, pDur: 0, durL: +l.dur > 0 ? +l.dur : 0, ready: false,
       secs: [], local: '', server: l.seen || '', sess: null, real: 0,
@@ -5810,6 +6292,7 @@ window.__lecStart = function () {
       skipTo: resumeL > 0 ? resumeL + 5 : 0, stopEnd: false,   /* 검수 B2 M-1: 이어 본 자리 + 5초까지의 멈춤은 지난 것 · «처음부터»면 0 */
       fsLast: null, wasLF: landFull(), endOn: false, endSig: '', paperTx: null, bandSig: '', segs: null   /* 결론안 K: 가로 전체 화면 · 영상 끝 띠 · 종이 줄 · 지문 띠 */
     };
+    T.hv = hvOn(); T.g3at = wat;   /* 11-27 무대(새 모양)인가 · 원하는 자리로 열었나 */
     T.w0 = L.now(); T.wb = 0; T.lateS = null; T.via = viaTake(l.id);   /* F1 · Q5(11-21): 벽시계 잰 처음 · 이어 센 보기의 앞 몫 · 못 간 보기 · 어디서 눌러 열었나 */
     var box = $('ytbox');
     var cb = {
@@ -5835,9 +6318,19 @@ window.__lecStart = function () {
       else if (resumeL > 0) T.pendSeekL = resumeL;  /* 연습용 = 길이를 안 뒤에 옮김 */
       T.P = new YTP(box, l.yt, startP, cb);
     }
-    if (resumeL >= 1) {
+    if (resumeL >= 1 && !wat) {
       var rs = $('resume');
-      rs.innerHTML = '<span>' + esc(L.fmtDur(resumeL)) + '부터 이어서</span><span>·</span><button type="button" data-act="restart" class="hit">처음부터</button>';
+      if (T.hv) {
+        /* 11-27 무대: «처음부터» 알약 하나(상태 칸 자리 · 30초 · 판 깨면 숨김) · 이어 본 자리는 화면 읽기 글(.sr) */
+        rs.innerHTML = '<span class="sr">' + esc(L.fmtDur(resumeL)) + '부터 이어서</span><button type="button" data-act="restart" class="hit g3re"><span>' + esc(M.g3Restart) + '</span></button>';
+        var me = T;
+        T.g3reT = setTimeout(function () {
+          if (T !== me) return;
+          T.g3reT = 0; T.g3reOff = true;
+          var r = $('resume');
+          if (r && !r.getAttribute('data-mv')) r.hidden = true;
+        }, 30000);
+      } else rs.innerHTML = '<span>' + esc(L.fmtDur(resumeL)) + '부터 이어서</span><span>·</span><button type="button" data-act="restart" class="hit">처음부터</button>';
       rs.hidden = false;
     }
     T.iv = setInterval(sample, 1000);
@@ -5847,7 +6340,7 @@ window.__lecStart = function () {
 
   function onReady() {
     if (!T) return;
-    vpostOff(false);
+    if (!T.hv) vpostOff(false);   /* 11-27 무대: 포스터는 첫 재생까지 그대로 */
     var want = rateWant();
     if (RATES.indexOf(want) >= 0 && want !== 1) T.P.rate(want);
     checkDur();
@@ -5858,6 +6351,7 @@ window.__lecStart = function () {
     if (!T) return;
     if (st === 1) {
       T.played = true;
+      if (T.hv) vpostOff(true);   /* 11-27 무대: 재생되면 포스터 바로 숨김(서서히 없음) */
       if (T.endOn) endHide();
       /* 멈춤 판이 선 채 유튜브 재생 단추로 다시 틀면 판만 닫고 그대로 봄(멈춘 직후 0.4초 안의 늦은 알림은 무시) */
       if (T.stopOn && Date.now() - T.stopT >= 400) stopHide();
@@ -5867,6 +6361,7 @@ window.__lecStart = function () {
         var want = rateWant();
         if (RATES.indexOf(want) >= 0 && Math.abs(T.P.rate() - want) > 0.01) T.P.rate(want);
       }
+      if (T.hv) paint();   /* 상태 칸 «학습 중» · 멈춤 줄 되돌림 */
     }
     if (st === 2 || st === 0) {
       sample();
@@ -6188,15 +6683,20 @@ window.__lecStart = function () {
   }, true);
 
   function teardown() {
+    var gc = g3CloseWant(); /* 11-27 새 모양 무대를 «목록»으로 닫을 때 = 무대 그림을 잠깐 세워 두고 썸네일 자리로 거꾸로(무대 색은 움직임이 끝날 때 끔) */
     mphClear();
-    stage(false);
+    g3Clean();
+    if (gc) g3ThemeOff(); else stage(false);
     setStop(); /* S1 공부 화면: 말소리 · 녹음 · 마이크 · 타이머 · 내 소리 주소를 모두 거둠(주소가 바뀌어 다른 화면으로 가도) */
-    if (!T) return;
-    try { sample(); sendBeat(true); } catch (e) { /* 없음 */ }
-    if (T.iv) clearInterval(T.iv);
-    try { T.P.destroy(); } catch (e2) { /* 없음 */ }
-    T = null;
-    window.__fake = null;
+    if (T) {
+      try { sample(); sendBeat(true); } catch (e) { /* 없음 */ }
+      if (T.iv) clearInterval(T.iv);
+      if (T.g3reT) clearTimeout(T.g3reT);
+      try { T.P.destroy(); } catch (e2) { /* 없음 */ }
+      T = null;
+      window.__fake = null;
+    }
+    if (gc) g3CloseGrab(gc);
   }
 
   /* ------------------------------------------------------------ 플레이어 그리기 */
@@ -6237,12 +6737,16 @@ window.__lecStart = function () {
   function paint() {
     if (!T) return;
     var t = lecTime(), ch = T.lec.chapters || [], i = L.chapterAt(ch, t);
-    var cn = i >= 0 ? '지금 ' + esc(nowName(ch[i])) : '';
-    var c = $('nowCh');
-    if (c && c.getAttribute('data-s') !== String(i)) { c.innerHTML = cn; c.setAttribute('data-s', String(i)); }
-    var D = T.durL > 0 ? T.durL : (+T.lec.dur || 0), tt = L.fmtDur(Math.min(t, D > 0 ? D : t)) + (D > 0 ? ' / ' + L.fmtDur(D) : ''), ne = $('nowT');
-    if (ne && ne.textContent !== tt) ne.textContent = tt;
-    if (T.rec) {
+    if (T.hv) g3Now(t, ch, i);   /* 11-27 무대: «지금» 줄(그 자리에서 바뀜) */
+    else {
+      var cn = i >= 0 ? '지금 ' + esc(nowName(ch[i])) : '';
+      var c = $('nowCh');
+      if (c && c.getAttribute('data-s') !== String(i)) { c.innerHTML = cn; c.setAttribute('data-s', String(i)); }
+      var D = T.durL > 0 ? T.durL : (+T.lec.dur || 0), tt = L.fmtDur(Math.min(t, D > 0 ? D : t)) + (D > 0 ? ' / ' + L.fmtDur(D) : ''), ne = $('nowT');
+      if (ne && ne.textContent !== tt) ne.textContent = tt;
+    }
+    if (T.hv) g3StPaint();
+    else if (T.rec) {
       var p = pctNow(), done = isDone(T.lec, p), txt;
       if (T.lec.confirmed) txt = '학습 완료 · 선생님 확인';
       else if (done) txt = '학습 완료';
@@ -6255,10 +6759,11 @@ window.__lecStart = function () {
       }
     }
     bandPaint();
+    if (T.hv) g3PzSync();
     if (T.endOn) endShow();
     if (S.tab === 'toc') drawToc(false);
     if (S.tab === 'qna' && S.q && !S.q.frozen && S.q.useAt) paintScene();
-    if (T.played && T.P.state() === 1) {
+    if (!T.hv && T.played && T.P.state() === 1) {
       var rs = $('resume');
       if (rs && !rs.hidden && !rs.getAttribute('data-mv') && t > T.resumeL + 20) rs.hidden = true;   /* «이어서» 줄만(되돌리기 줄은 제 30초 · 11-22 5) */
     }
@@ -6336,7 +6841,7 @@ window.__lecStart = function () {
     if (!box || !T) return;
     var D = T.durL > 0 ? T.durL : (+T.lec.dur || 0), sg = D > 0 ? segsOf(T.lec.chapters || [], D) : [], st = D > 0 ? stopList() : [], h = '', i, j, s, x;
     if (D > 0 && !sg.length) sg = [{ t: 0, from: 0, to: D, w: D, no: '', title: '', parts: [] }];
-    T.segs = sg; T.bandSig = ''; T.fitSig = '';
+    T.segs = sg; T.bandSig = ''; T.fitSig = ''; T.g3done = null;
     if (!sg.length) { box.innerHTML = ''; box.hidden = true; return; }
     for (i = 0; i < sg.length; i += 1) {
       s = sg[i];
@@ -6355,19 +6860,20 @@ window.__lecStart = function () {
   function bandPaint() {
     var box = $('band');
     if (!box || !T || !T.segs || !T.segs.length || box.hidden) return;
-    var D = T.durL > 0 ? T.durL : (+T.lec.dur || 0), t = lecTime(), sg = T.segs, cur = 0, w = [], ss = [], i, v, nm;
+    var D = T.durL > 0 ? T.durL : (+T.lec.dur || 0), t = lecTime(), sg = T.segs, cur = 0, w = [], ss = [], dv = [], i, v, nm;
     var seen = T.rec && D > 0 ? L.chapterSeen(bitsNow(), T.lec.chapters || [], D) : [];
     for (i = 0; i < sg.length; i += 1) {
       if (t >= sg[i].from) cur = i;
       v = !T.rec ? 0 : (sg[i].parts.length ? segSeen(sg[i], seen) : pctNow() / 100);
       w.push(Math.max(0, Math.min(100, Math.round(v * 100))));
       ss.push(!T.rec ? '' : (v >= 0.9 ? '다 봄' : (v >= 0.1 ? '반쯤 봄' : '안 봄')));   /* 목차 점과 같은 경계(0.9 · 0.1) */
+      dv.push(!!T.rec && v >= 0.9);
     }
-    var bs = box.children, sig = cur + '|' + w.join(',') + '|' + ss.join(',');
+    var bs = box.children, sig = cur + '|' + w.join(',') + '|' + ss.join(',') + '|' + (T.hv ? 1 : 0);
     if (sig !== T.bandSig) {
       T.bandSig = sig;
       for (i = 0; i < bs.length && i < sg.length; i += 1) {
-        bs[i].className = i === cur ? 'on' : '';
+        bs[i].className = (i === cur ? 'on' : '') + (T.hv && dv[i] ? (i === cur ? ' d' : 'd') : '');
         if (i === cur) bs[i].setAttribute('aria-current', 'true'); else bs[i].removeAttribute('aria-current');
         bs[i].firstChild.firstChild.style.width = w[i] + '%';
         /* 11-22 (라) 이름 = «05번 처음으로 · 다 봄»(묶인 지문은 목차 제목 번호 «10~11번» · 기록 안 함이면 상태 없이) */
@@ -6375,6 +6881,7 @@ window.__lecStart = function () {
         bs[i].setAttribute('aria-label', (nm ? nm + '번' : (sg[i].title || '처음')) + ' 처음으로' + (ss[i] ? ' · ' + ss[i] : ''));
       }
     }
+    if (T.hv) g3Cross(dv, cur);   /* 11-27 지문 판 깨기 */
     var fs = cur + '|' + box.clientWidth;
     if (fs === T.fitSig) return;
     T.fitSig = fs;
@@ -6392,6 +6899,7 @@ window.__lecStart = function () {
   function seekL(t) {
     if (!T || !T.P || T.err) return;
     t = Math.max(0, +t || 0);
+    if (T.hv) vpostOff(true);   /* 11-27 무대: 띠 · 목차 줄로 옮겨도 포스터 숨김 */
     if (!T.ready && L.DEMO && !L.FAKE && (+T.lec.dur || 0) > 0) {
       T.pendSeekL = t;
       T.P.play();
@@ -6438,7 +6946,8 @@ window.__lecStart = function () {
     MV_SEQ += 1;
     tk = String(MV_SEQ);
     T.mv = { back: a, snap: snap || '' };
-    rs.innerHTML = '<span>' + (nm ? esc(nm) + roOf(nm) + ' ' : '') + '옮겼어요</span><span aria-hidden="true">·</span><button type="button" data-act="mvback" class="hit" aria-label="' + esc(at) + (roOf(at) || '로') + ' 되돌리기">‹ ' + esc(at) + (roOf(at) || '로') + '</button>';
+    if (T.hv) rs.innerHTML = '<span class="sr">' + (nm ? esc(nm) + roOf(nm) + ' ' : '') + '옮겼어요</span><button type="button" data-act="mvback" class="hit g3re" aria-label="' + esc(at) + (roOf(at) || '로') + ' 되돌리기"><span>‹ ' + esc(at) + (roOf(at) || '로') + '</span></button>';   /* 11-27 무대: 상태 칸 자리 알약 하나 */
+    else rs.innerHTML = '<span>' + (nm ? esc(nm) + roOf(nm) + ' ' : '') + '옮겼어요</span><span aria-hidden="true">·</span><button type="button" data-act="mvback" class="hit" aria-label="' + esc(at) + (roOf(at) || '로') + ' 되돌리기">‹ ' + esc(at) + (roOf(at) || '로') + '</button>';
     rs.setAttribute('data-mv', tk);
     rs.hidden = false;
     setTimeout(function () {
@@ -6457,7 +6966,7 @@ window.__lecStart = function () {
     rs = $('resume');
     if (!rs) return;
     rs.removeAttribute('data-mv');
-    if (mv.snap) { rs.innerHTML = mv.snap; rs.hidden = false; } else rs.hidden = true;
+    if (mv.snap && !(T.hv && T.g3reOff)) { rs.innerHTML = mv.snap; rs.hidden = false; } else rs.hidden = true;   /* 11-27 무대: «처음부터» 알약은 30초 · 판 깨기 뒤엔 다시 안 띄움 */
   }
 
   /* ------------------------------------------------------------ 질문 */
@@ -6751,6 +7260,7 @@ window.__lecStart = function () {
     else if (act === 'absmore') { jumpAbs(); }
     else if (act === 'endnext') { endGo(); }   /* S4 영상 끝 다음 한 걸음 */
     else if (act === 'restart') {
+      if (T) { T.g3reOff = true; if (T.g3reT) { clearTimeout(T.g3reT); T.g3reT = 0; } }
       if (T && T.P) { T.pendSeekL = null; T.skipTo = 0; seekL(0); }   /* 처음부터 = 모든 멈춤을 다시 봄(검수 B2 M-1) */
       var rs = $('resume'); if (rs) rs.hidden = true;
     } else if (act === 'rate') {
@@ -6768,7 +7278,9 @@ window.__lecStart = function () {
       if (T && T.P) { if (T.P.state() === 1) T.P.pause(); else T.P.play(); }
     } else if (act === 'stopGo' || act === 'stopLater') {
       /* C7 · 계속 보기 = 바로 재생 · 나중에 = 판을 닫고 바로 이어 재생(그 지문은 이 화면에서 다시 안 멈춤 · 검수 A)
-         영상 끝에서 선 판(검수 B2 L-2)은 닫기만(다시 틀지 않음) */
+         영상 끝에서 선 판(검수 B2 L-2)은 닫기만(다시 틀지 않음)
+         11-27 무대: 그냥 멈춘 때(자동 멈춤 아님)의 «나중에» = 목록으로(결론안 위젯) */
+      if (act === 'stopLater' && T && T.hv && !T.stopOn) { mphBack(); goList(); return; }
       var endOn = !!(T && T.stopEnd);
       stopHide();
       if (T && T.P && !T.err && !endOn) T.P.play();
@@ -6831,6 +7343,13 @@ window.__lecStart = function () {
     else if (act === 'pwainstall') { pwaInstall(el); }
     else if (act === 'pwakakao') { pwaKakao(); }
     else if (act === 'pwahx') {
+      if (T && T.hv) {
+        T.pwaHint = false;
+        var pw = $('g3Pw'); if (pw) { pw.hidden = true; pw.innerHTML = ''; }
+        var gb = $('g3End') && $('g3End').querySelector('button');
+        if (gb) { try { gb.focus(); } catch (e5) { /* 없음 */ } }
+        return;
+      }
       if (T) { T.pwaHint = false; endShow(); }
       var eb = $('endW') && $('endW').querySelector('[data-act=list]');
       if (eb) { try { eb.focus(); } catch (e4) { /* 없음 */ } }
@@ -6963,6 +7482,12 @@ window.__lecStart = function () {
   window.addEventListener('pagehide', function () { if (T) { sample(); sendBeat(true); } });
 
   if (L.TEST) {
+    window.__g3want = function (t) { S.wantAt = t; };   /* 11-27 무대 시험: 약속 1(R 의 «N초부터» 열기) 흉내 */
+    window.__g3 = function () {
+      return T ? { hv: !!T.hv, done: T.g3done ? T.g3done.slice() : null, hold: !!T.g3hold, end: !!T.g3end, stopTx: T.g3stopTx || '', at: !!T.g3at, reOff: !!T.g3reOff,
+        played: !!T.played, st: g3St(), resumeL: T.resumeL, pct: T.rec ? pctNow() : -1, fin: g3Fin(), sr: ($('g3Sr') || {}).textContent || '', id: String(T.lec.id), endOn: !!T.endOn, stopOn: !!T.stopOn, stopEnd: !!T.stopEnd, pwa: !!T.pwaHint,
+        segs: T.segs ? T.segs.map(function (s) { return [s.from, s.to, s.w]; }) : null, stops: T.stopList ? T.stopList.map(function (x) { return x.stop; }) : null } : null;
+    };
     window.__lecDbg = function () {
       return {
         view: S.view, rec: recMode(), tab: S.tab,
