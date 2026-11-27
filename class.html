@@ -6360,7 +6360,7 @@ window.__lecStart = function () {
     nm = nm ? nm + '번' : String(sg.title || '').split(' · ')[0];
     if (!nm) return;
     T.g3hold = false;
-    g3NowSet(nm + M.g3Seen, g3ChTitle(sg), true);
+    g3NowSet(nm + M.g3Seen, (T.stopOn && T.g3stopTx) ? T.g3stopTx : g3ChTitle(sg), true);   /* 같은 순간 자동 멈춤 = 작은 글은 멈춤 글(«N번 봤어요» 굵은 줄은 그대로) */
     T.g3hold = true;
     if (T.g3holdT) clearTimeout(T.g3holdT);
     T.g3holdT = setTimeout(function () { if (T !== me) return; T.g3holdT = 0; T.g3hold = false; T.g3nSig = ''; paint(); }, 1600);
@@ -6484,7 +6484,11 @@ window.__lecStart = function () {
   }
   function stopShow(x, atEnd) {
     var hv = !!(T && T.hv);
-    if (hv) { T.g3stopTx = L.stopText(x); setHTML('g3Sr', atEnd ? '' : esc(T.g3stopTx)); }   /* 11-27 무대: 판 없음 · 글은 «지금» 줄 · 단추는 «10초 · 속도» 줄 자리(g3PzSync) · 화면 읽기는 옛 판(role=status)처럼 읽어 줌 */
+    if (hv) {
+      T.g3stopTx = L.stopText(x);
+      setHTML('g3Sr', atEnd ? '' : esc(T.g3stopTx));
+      if (T.g3hold && T.g3nPend && !atEnd) g3NowSet(T.g3nPend.b, T.g3stopTx, T.g3nPend.ok);   /* 지문 판 깨기가 «지금» 줄을 붙잡는 동안(1.6초) = 굵은 줄 그대로 · 작은 글만 멈춤 글 */
+    }   /* 11-27 무대: 판 없음 · 글은 «지금» 줄 · 단추는 «10초 · 속도» 줄 자리(g3PzSync) · 화면 읽기는 옛 판(role=status)처럼 읽어 줌 */
     else {
       var h = '<p class="sq">' + icon('pen', 18) + '<span>' + esc(L.stopText(x)) + '</span></p><div class="sb">' +
         '<button type="button" class="go" data-act="stopGo">계속 보기</button>' +
